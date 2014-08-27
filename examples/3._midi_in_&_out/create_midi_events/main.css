@@ -1,0 +1,41 @@
+h4{
+    font-weight: bolder;
+    margin-bottom: 7px;
+}
+#log{
+    border: 1px solid #bbb;
+    width: 200px;
+    min-height: 30px;
+    max-height: 150px;
+    overflow: auto;
+}
+#container{
+    width: 90%;
+}
+#container > div{
+    float: left;
+    margin-right: 40px;
+    margin-bottom: 25px;
+}
+
+input[type="range"]{
+    width: 512px;
+    margin: 15px 20px 10px 0px;
+}
+/*
+input[type="range"] ~ label{
+    display: inline-block;
+    width: 200px;
+}
+*/
+
+
+/*clearfix*/
+.cf:before,
+.cf:after {
+    content: " ";
+    display: table;
+}
+.cf:after {
+    clear: both;
+}

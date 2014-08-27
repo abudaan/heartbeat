@@ -1,0 +1,205 @@
+html{
+	background-color: #fff;
+}
+body{
+	overflow: hidden;
+}
+#controls{
+	float: left;
+	background-color: #fff;
+	width: 100%;
+	min-height: 30px;
+	border-top: 1px solid #333;
+	/*overflow: auto;*/
+}
+#controls div{
+	font-size: 15px;
+	font-weight: bold;
+	font-family: monospace;
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	margin: 3px;
+}
+#controls input[type='button']{
+	float: left;
+	margin: 5px 3px;
+}
+#controls select{
+	/*padding: 10px;*/
+	margin-top: 6px;
+	height: 20px;
+}
+#play, #stop{
+	width: 50px;
+	height: 20px;
+}
+#controls input[type='range']{
+	float: left;
+	height: 30px;
+	margin-top: -3px;
+	width: 120px;
+}
+#time-bars-beats{
+	color: #FF1CAE;
+}
+#time-seconds{
+	color: #71DE71;
+}
+#time-ticks{
+	color: #FF9500;
+}
+#time-millis{
+	color: #7100FF;
+}
+#tempo{
+	color: #1BB2E0;
+}
+#signature{
+	color: #1BB2E0;
+}
+#position{
+	color: #FF9500;
+}
+#pitch{
+	color: #FF9500;
+}
+#scale-label{
+	color: #211E1E;
+}
+#mouse-x, #mouse-y{
+	color: #1BB2E0;
+}
+.pipe{
+	color: #eee;
+	margin-top: 0px;
+}
+
+#playhead{
+	position: absolute;
+	z-index: 10;
+	height: 100%;
+	width: 21px;
+	background-color: rgba(255,255,255,0.3);
+}
+#playhead-line{
+	width: 10px;
+	height: 100%;
+	border-right: 1px solid #0000ff;
+}
+
+#editor{
+	/*background-color: #ffc;*/
+	/*background-color: #211E1E;*/
+	background-color: #fff;
+	float: left;
+	overflow: auto;
+	overflow: hidden;
+}
+#score{
+	height: 100%;
+	width: 100%;
+	/*min-width: 100px;*/
+	/*background-color: #fcf;*/
+	position: relative;
+	/*overflow: hidden;*/
+}
+#bar-lines{
+	height: 100%;
+	position: absolute;
+	z-index: 1;
+}
+#beat-lines{
+	height: 100%;
+	position: absolute;
+	z-index: 1;
+}
+#sixteenth-lines{
+	height: 100%;
+	position: absolute;
+	z-index: 1;
+}
+#pitch-lines{
+	width: 100%;
+	position: absolute;
+	z-index: 1;
+}
+#notes{
+	position: absolute;
+	z-index: 2;
+}
+#parts{
+	position: absolute;
+	z-index: 1;
+}
+.pitch-line{
+	position: absolute;
+	background-image: url('img/pitch-line.png');
+	background-position: top;
+	background-repeat: repeat-x;
+	width: 100%;
+}
+.black-key{
+	background-color: #ddd;
+}
+.bar-line{
+	position: absolute;
+	background-image: url('img/bar-line.png');
+	background-repeat: repeat-y;
+	background-position: left;
+	height: 100%;
+}
+.beat-line{
+	position: absolute;
+	background-image: url('img/beat-line.png');
+	background-repeat: repeat-y;
+	background-position: left;
+	height: 100%;
+}
+.sixteenth-line{
+	position: absolute;
+	background-image: url('img/sixteenth-line-dotted.png');
+	background-repeat: repeat-y;
+	background-position: left;
+	height: 100%;
+}
+.note{
+	position: absolute;
+	background-color: #0000ff;
+	border: none;
+	/*z-index: 10;*/
+	/*border: 1px solid #00ff00;*/
+}
+.note-active{
+	background-color: #00ff00;
+	border: none;
+	/*z-index: 10;*/
+	/*border: 1px solid #0000ff;*/
+}
+.note-muted{
+	background-color: #555;
+	/*border: 1px solid #000;	*/
+}
+.part{
+	position: absolute;
+	/*background-color: rgba(55,55,55,0.5);*/
+	background-color: rgba(27, 178, 224, 0.5);
+	/*z-index: 9;*/
+	/*border: 1px solid #f00;*/
+}
+.part-active{
+	background-color: rgba(255,0,0,0.5);
+	/*z-index: 9;*/
+	/*border: 1px solid #f00;*/
+}
+.part-muted{
+	background-color: rgba(55,55,55,0.5);
+}
+.cf:before,
+.cf:after {
+	content: " ";
+	display: table;
+}
+.cf:after {
+	clear: both;
+}

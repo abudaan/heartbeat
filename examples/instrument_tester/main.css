@@ -1,0 +1,70 @@
+html, body{
+    font-family: monospace;
+    font-size: 12px;
+}
+/*
+input[type='range']{
+    margin: 5px 20px;
+    display: inline-block;
+}
+*/
+select{
+    font-family: monospace;
+    font-size: 13px;
+}
+#message{
+    font-family: monospace;
+    font-size: 13px;
+    width: 90%;
+    /*padding: 10px;*/
+    /*width: 400px;*/
+    /*border: 1px solid #eee;*/
+    margin: 5px 10px 10px 10px;
+}
+#message > table{
+    float: left;
+    margin: 5px;
+    width: calc(50% - 20px);
+}
+input[type='range']{
+    -webkit-appearance: none;
+    width: 300px;
+    height: 20px;
+    background-color: #efefef;
+    margin-left: 5px;
+}
+input[type="range"]::-webkit-slider-thumb {
+     -webkit-appearance: none;
+    background-color: #00AEF0;
+    /*opacity: 0.5;*/
+    width: 8px;
+    height: 20px;
+}
+#release{
+    width: 500px;
+}
+label div{
+    font-family: monospace;
+    font-size: 12px;
+    margin: 10px 2px;
+}
+label{
+    display: inline-block;
+    margin: 5px;
+}
+#dropdownmenus{
+    margin: 20px 10px 10px 10px;
+}
+#compression_type, #compression_level{
+    margin: 15px 10px 10px 10px;
+}
+select{
+    margin-right: 20px;
+}
+h3{
+    font-size: 110%;
+    margin: 25px 0px 0px 10px;
+}
+em{
+    font-weight: bolder;
+}

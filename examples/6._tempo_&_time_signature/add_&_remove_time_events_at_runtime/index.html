@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src='main.js'></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <div id="help">
+        <p>You can add tempo and time signature events by clicking the "add" button.</p>
+        <p>You can change the values of bpm, nominator and denominator in the input fields.</p>
+        <p>The time event will be inserted at the position of the playhead.</p>
+        <p>You can add or remove time events while the song is playing.</p>
+        <p>You can remove a time event by selecting a time event in the drop down menu and then click the "remove" button.</p>
+        <p>The MIDI standard allows you to add multiple events at the same position. By clicking the button "remove double time events" you can remove double tempo and/or time signature events. Only the lastly added event of the same type will be kept. For instance if you add 2 tempo events at 2.1.1.0, the first with bpm 123 and the second with 125, after clicking the button the tempo event with bpm 123 will be removed.</p>
+    </div>
+    <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
+    <br/>
+    <input type="button" id="start" value="start">
+    <input type="button" id="stop" value="stop">
+    <br/>
+    <br/>
+    <label for="tempo">tempo event:</label>
+    <input type="input" id="tempo" value="120">
+    <input type="button" id="add-tempo" value="add">
+    <br/>
+    <label for="time-signature">time signature event:</label>
+    <input type="input" id="time-signature" value="4/4">
+    <input type="button" id="add-time-signature" value="add">
+    <br/>
+    <select id="time-events"></select>
+    <input type="button" id="remove-time-event" value="remove">
+    <br/>
+    <br/>
+    <input type="button" id="remove-double-time-events" value="remove double time events">
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

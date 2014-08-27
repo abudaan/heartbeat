@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <div id="container" class="cf">
+        <div id="inputs">
+            <h4>midi inputs:</h4>
+        </div>
+        <div id="outputs">
+            <h4>midi outputs:</h4>
+        </div>
+    </div>
+    <!-- <h4>channel</h4> -->
+    <select id="channel">
+        <option id="0">1</option>
+        <option id="1">2</option>
+        <option id="2">3</option>
+        <option id="3">4</option>
+        <option id="4">5</option>
+        <option id="5">6</option>
+        <option id="6">7</option>
+        <option id="7">8</option>
+        <option id="8">9</option>
+        <option id="9">10</option>
+        <option id="10">11</option>
+        <option id="11">12</option>
+        <option id="12">13</option>
+        <option id="13">14</option>
+        <option id="14">15</option>
+        <option id="15">16</option>
+    </select>
+    <!-- <h4>type</h4> -->
+    <select id="event_type">
+        <option id="0">choose event type</option>
+        <option id="128">NOTE OFF</option>
+        <option id="144">NOTE ON</option>
+        <option id="160">POLY PRESSURE</option>
+        <option id="176">CONTROL CHANGE</option>
+        <option id="192">PROGRAM CHANGE</option>
+        <option id="208">CHANNEL PRESSURE</option>
+        <option id="224">PITCH BEND</option>
+    </select>
+    <br>
+    <label for="data1"><div>data1: 0</div><input type="range" id="data1" min="0" max="127" value="0"></label>
+    <br>
+    <label for="data2"><div>data2: 0</div><input type="range" id="data2" min="0" max="127" value="0"></label>
+    <br>
+    <input type="button" id="send" value="send midi event">
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

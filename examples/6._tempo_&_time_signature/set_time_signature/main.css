@@ -1,0 +1,33 @@
+input[type="range"]{
+    width: 60%;
+    display: inline-block;
+}
+label{
+    display: inline-block;
+    width: 150px;
+}
+#tempo{
+    margin-bottom: 20px;
+}
+#nominator{
+    margin-bottom: 0px;
+}
+em{
+    font-weight: bolder;
+}
+.smaller{
+    font-size: 90%;
+}
+select{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: -5px;
+}
+#time-signature{
+    font-weight: bolder;
+}
+#position{
+    display: inline-block;
+    margin-left: 25px;
+    font-size: 110%;
+}

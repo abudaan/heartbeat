@@ -1,0 +1,9 @@
+#console{
+    width: 600px;
+    max-height: 450px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+input[type="button"]{
+    margin-bottom: 10px;
+}

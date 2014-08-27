@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <p>
+        Play some notes on your keyboard, you'll hear the notes played back as sinewave tones.
+    </p>
+    <p>
+        Press the "load" button, and after the asset pack has been loaded play some notes again: you'll hear a piano sound
+    </p>
+    <p>
+        Press the "unload" button: you'll hear the sinewave sound again
+    </p>
+    </br>
+    <input type="button" id="load" value="load" />
+    <input type="button" id="unload" value="unload" />
+    <div id="console"></div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <br/>
+    <p>asset_pack_basic.json</p>
+    <pre class="language-json" data-src="../../../assets/examples/asset_pack_basic_keyrange.json"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+#console{
+    width: 500px;
+    max-height: 100px;
+    overflow: auto;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src='main.js'></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <input type="button" id="start" value="start">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="reset" value="reset">
+    </br>
+    <label>tempo:</label><input type="range" id="tempo" min="0" max="1" step="any" value="0"/>
+    </br>
+    <label>volume:</label><input type="range" id="volume" min="0" max="1" step="any" value="0"/>
+    </br>
+    <label>velocity accented tick:</label><input type="range" id="velocity-accented-tick" min="0" max="1" step="1" value="0"/>
+    </br>
+    <label>velocity non accented tick:</label><input type="range" id="velocity-non-accented-tick" min="0" max="1" step="1" value="0"/>
+    </br>
+    <label>notenumber accented tick:</label><input type="range" id="notenumber-accented-tick" min="0" max="1" step="1" value="0"/>
+    </br>
+    <label>notenumber non accented tick:</label><input type="range" id="notenumber-non-accented-tick" min="0" max="1" step="1" value="0"/>
+    </br>
+    <label>notelength accented tick:</label><input type="range" id="notelength-accented-tick" min="0" max="1" step="1" value="0"/>
+    </br>
+    <label>notelength non accented tick:</label><input type="range" id="notelength-non-accented-tick" min="0" max="1" step="1" value="0"/>
+    <br/>
+    <span>Select an instrument</span>
+    <select id="instrument">
+        <option value="metronome">default</option>
+        <option value="piano">piano</option>
+        <option value="sinewave">sinewave</option>
+    </select>
+    <span>[note that the default instrument only has samples for notenumbers 60 and 61]<span>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

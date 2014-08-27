@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <p>
+        First record some events with your midi keyboard. After you have stopped the recording, the recorded events will be printed to the log on the left side. In the log on the right side appear the events of the song. Initially, the logs will display exactly the same information. If you click the "quantize" button the log on the right side will be updated and show the quantized events.
+    </p>
+    <p>
+        In this example you can only quantize to quarter notes, but heartbeat allows you to quantize events to arbitrary values, see the <a href="http://heartbeatjs.org/docs/quantize-and-fixed-length/" target="_parent">documentation</a>.
+    </p>
+    <br/>
+    <input type="button" id="play" value="play">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="record-start" value="start record">
+    <input type="button" id="record-delete" value="remove all recorded notes">
+    <input type="button" id="quantize" value="quantize">
+    <input type="button" id="undo-quantize" value="undo-quantize">
+    <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
+
+    <div id="log" class="cf">
+        <div>
+            <span>recorded events:</span>
+            <div id="recorded_events" class="output"></div>
+        </div>
+        <div>
+            <span>song events:</span>
+            <div id="song_events" class="output"></div>
+        </div>
+    </div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

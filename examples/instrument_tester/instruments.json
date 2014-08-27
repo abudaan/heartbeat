@@ -1,0 +1,22 @@
+{
+    "Harp": {
+        "folder": "sso",
+        "url": "harp"
+    },
+    "Marimba": {
+        "folder": "patcharena",
+        "url": "marimba"
+    },
+    "Congas": {
+        "folder": "sso/percussion",
+        "url": "congas"
+    },
+    "City Piano": {
+        "folder": "city-piano",
+        "url": "city-piano"
+    },
+    "City Piano velocity layers": {
+        "folder": "city-piano",
+        "url": "city-piano-velocity-layers"
+    }
+}

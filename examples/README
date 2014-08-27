@@ -1,0 +1,26 @@
+Most examples rely on the assets in the assets folder.
+
+Because the assets are quite large in file size they are not added this repository.
+
+Originally the assets were stored in a separate repository and included as a submodule in heartbeat, but the assets repository grew over 1GB which is not allowed on both GitHub and Bitbucket.
+
+Therefor the assets can be downloaded as a separate archive from the heartbeat server. Note that the version number of the assets archive might change per commit; please make sure that you have downloaded the right version for your current git checkout. You can find a file with name of the version you should use in the assets folder (for instance: assets.v1). This file contains the download link.
+
+After downloading upzip the archive in the /assets folder.
+
+Dependent on the version of the assets, you should get a directory structure that looks somewhat like this:
+
+/assets
+    /city-piano
+    /examples
+    /ir
+    /midi
+    /patcharena
+    /sso
+        /brass
+        /etcetera
+/build
+/examples
+/fonts
+/src
+/tools

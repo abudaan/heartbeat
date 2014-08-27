@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <p>
+        The recording starts at the position of the playhead. Preroll is on by default, which means that you can record during the precount. This is handy for upbeats. You can not (yet) record events before the first bar.
+    </p>
+    <br/>
+    <input type="button" id="play" value="play">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="record-start" value="start record">
+    <input type="button" id="record-undo" value="undo last recording">
+    <select id="recordings">
+        <option>No recordings yet</option>
+    </select>
+    <input type="button" id="record-delete" value="delete recording">
+    <input type="button" id="preroll" value="preroll off">
+    <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
+    <label for="precount"><div>precount bars: 0</div><input type="range" id="precount" value="0" min="0" max="4" step="1"></label>
+
+    <div id="log" class="cf">
+        <div>
+            <span>song events:</span>
+            <div id="song_events" class="output"></div>
+        </div>
+        <div>
+            <span>recorded events:</span>
+            <div id="recorded_events" class="output"></div>
+        </div>
+    </div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

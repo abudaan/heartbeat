@@ -1,0 +1,16 @@
+#tempo{
+    width: 500px;
+}
+#position{
+    font-size: 110%;
+    margin: 10px 0;
+    /*display: inline-block;*/
+}
+label{
+    width: 210px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+em{
+    font-weight: bolder;
+}

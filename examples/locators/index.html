@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <input type="button" id="play" value="play">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="loop" value="turn loop on">
+    <input type="button" id="metronome" value="turn metronome off">
+    <span>select a snap value for the locator sliders:</span>
+    <select id="snap">
+        <option value='0.25'>bar</option>
+        <option value='1' >beat</option>
+        <option value='2'>8th</option>
+        <option value='4'>16th</option>
+        <option value='8'>32th</option>
+        <option value='16' selected>64th</option>
+        <option value='384'>tick</option>
+    </select>
+    <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
+    <label for="left_locator"><div>left locator: 1</div><input class='legal' type="range" id="left_locator" value="0" min="0" max="1" step="any"></label>
+    <label for="right_locator"><div>right locator: 1</div><input class='legal' type="range" id="right_locator" value="0" min="0" max="1" step="any"></label>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../js/prism.js"></script>
+</body>
+</html>

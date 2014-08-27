@@ -1,0 +1,41 @@
+#tempo{
+    width: 50px;
+}
+#time-signature{
+    width: 50px;
+}
+#position{
+    font-size: 110%;
+    margin: 10px 0;
+    /*display: inline-block;*/
+}
+em{
+    font-weight: bolder;
+}
+label #playhead{
+    width: 90%;
+    margin: 12px 0;
+}
+label div{
+    font-weight: bold;
+}
+label[for="time-signature"], label[for="tempo"]{
+    width: 200px;
+    display: inline-block;
+    margin: 12px 0;
+}
+select{
+    margin: 12px 0;
+}
+.small{
+    font-size: 80%;
+}
+input[type="button"]{
+    margin: 0;
+}
+p{
+    margin: 8px 0;
+}
+#help{
+    margin-bottom: 40px;
+}

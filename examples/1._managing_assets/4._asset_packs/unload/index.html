@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <input type="button" id="method1" value="removeAssetPack(assetPack)" />
+    <input type="button" id="method2" value="removeAssetPack('basic asset pack')" />
+    <input type="button" id="method3" value="removeInstrument('piano')" />
+    <input type="button" id="method4" value="removeInstrument('piano', true)" />
+    <input type="button" id="method5" value="removeMidiFile('Sonata Facile')" />
+    <input type="button" id="method6" value="removeSamplePack('VS8F')" />
+    <p>
+        Check the code below to see what each unload method does.
+    </p>
+    <div id="console"></div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <br/>
+    <p>asset_pack_basic.json</p>
+    <pre class="language-json" data-src="../../../../assets/examples/asset_pack_basic_keyrange.json"></pre>
+    <script src="../../../js/prism.js"></script>
+</body>
+</html>

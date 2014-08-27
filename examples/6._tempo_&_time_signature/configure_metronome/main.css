@@ -1,0 +1,13 @@
+input[type="range"]{
+    width: 60%;
+    display: inline-block;
+}
+label{
+    display: inline-block;
+    width: 350px;
+    margin-bottom: 20px;
+}
+em{
+    font-weight: bolder;
+}
+

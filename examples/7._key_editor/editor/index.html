@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>heartbeat</title>
+    <meta name='viewport' content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no'>
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <!-- <link rel="stylesheet" type="text/css" href="../../css/examples.css"> -->
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <div id='editor'>
+        <div id='score'>
+            <div id='pitch-lines'></div>
+            <div id='bar-lines'></div>
+            <div id='beat-lines'></div>
+            <div id='sixteenth-lines'></div>
+            <div id='notes'></div>
+            <div id='parts'></div>
+            <div id='playhead'>
+                <div id='playhead-line'></div>
+            </div>
+        </div>
+    </div>
+    <div id='controls'>
+        <input type='button' id='play' value='play' />
+        <input type='button' id='stop' value='stop' />
+
+        <div id='time-bars-beats'></div>
+
+        <div class='pipe'>|</div>
+        <div id='time-seconds'></div>
+
+        <div class='pipe'>|</div>
+        <div id='mouse-x'>0</div>
+
+        <div class='pipe'>|</div>
+        <div id='mouse-y'>0</div>
+
+        <div class='pipe'>|</div>
+        <input type='button' id='first' value='<<' />
+        <input type='button' id='prev' value='<' />
+        <div id='page-numbers'>page 0 of 0</div>
+        <input type='button' id='next' value='>' />
+        <input type='button' id='last' value='>>' />
+
+        <div class='pipe'>|</div>
+        <div>
+            <input type='range' id='scale-slider'/>
+            <label for='scale-slider' id='scale-label'>#bars 16</label>
+        </div>
+    </div>
+</body>
+</html>

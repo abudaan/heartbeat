@@ -1,0 +1,18 @@
+#playhead{
+    width: 90%;
+}
+#sustain-pedal, #tempo{
+    height: 30px;
+    width: 160px;
+    margin-bottom: 10px;
+    border: 1px solid #666;
+    border-radius: 2px;
+    line-height: 30px;
+    padding-left: 3px;
+}
+#sustain-pedal.down{
+    background-color: #71DE71;
+    color: #fff;
+}
+#tempo{
+}

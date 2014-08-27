@@ -1,0 +1,102 @@
+/* apply a natural box layout model to all elements */
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+}
+html{
+    height: 100%;
+}
+body{
+    background-color: #fff;
+    font-family: "Open Sans", Arial, "Lucida Grande", sans-serif;
+    /*font-family: "Open Sans";*/
+    font-size: 16px;
+    color: #777;
+    line-height: 1.2em;
+    overflow: hidden;
+    height: 100%;
+}
+pre, code{
+    font-size: 14px;
+    line-height: 1.2em;
+}
+pre{
+    border: 1px solid #ddd;
+}
+code{
+    font-family: monospace;
+}
+#side{
+    position: fixed;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    border-right: 1px dotted #555;
+}
+#logo{
+    cursor: pointer;
+    /*text-align: center;*/
+    line-height: 70px;
+    font-family: vag_roundedbold;
+    font-size: 25px;
+    letter-spacing: 4px;
+    color: #FF1CAE;
+    margin: 0 30px;
+}
+#logo_beat{
+    color: #1BB2E0;
+    letter-spacing: 2px;
+}
+#logo_js{
+    color: #71DE71;
+    /*color: #ccc;*/
+    letter-spacing: 0px;
+}
+#viewer{
+    float:left;
+    /*width: calc(100% - 300px);*/
+    height: 100%;
+    margin-left: 300px;
+    overflow: hidden;
+}
+nav{
+    margin-right: 25px;
+}
+ul{
+    margin: 0 0 0 25px;
+    margin-bottom: 10px;
+}
+li{
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 13px;
+}
+li.active:hover{
+    text-decoration: underline;
+    color: #1BB2E0;
+}
+li.selected{
+}
+li.selected span{
+    padding: 0px 2px;
+    background-color: #71DE71;
+    color: #fff !important;
+    font-weight: 300;
+    cursor: default;
+}
+h3{
+    /*margin-left: 23px;*/
+    font-size: 15px;
+    font-weight: 300;
+    margin-bottom: 3px;
+    color: #777;
+}
+h4{
+    /*margin-left: 23px;*/
+    font-size: 13px;
+    font-weight: 300;
+    margin-bottom: 3px;
+    color: #777;
+}
+.folder{
+    margin-left: 7px;
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <form id="inputs"><div>getting midi ports...</div></form>
+    <form id="outputs"></form>
+    <p>
+        Note that some virtual midi devices echo the incoming events on the midi input to the midi output. This means that you can get endless midi loops, for instance if you listen to midi input of a certain device and sent events to the midi output of the same device. This applies to IAC device on OSX and LoopBe devices on Windows. The Virmidi devices on Linux don't echo incoming events to the output.
+    </p>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

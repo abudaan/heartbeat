@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../../build/heartbeat.js"></script>
+    <script src='main.js'></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <input type="button" id="start" value="start">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="metronome" value="metronome off">
+    <div id="position"></div>
+    <label>nominator:</label><input type="range" id="nominator" min="0" max="1" step="0.01" value="0"/>
+    <br/>
+    <label>denominator:</label>
+    <select id="denominator">
+        <option value="1">whole note</option>
+        <option value="2">half note</option>
+        <option value="4">quarter note</option>
+        <option value="8">eighth note</option>
+        <option value="16">16th note</option>
+        <option value="32">32th note</option>
+        <option value="64">64th note</option>
+    </select>
+    <br/>
+    <label>time signature @ 2nd bar:</label><span id="time-signature"><em>3/8</em></span>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>
