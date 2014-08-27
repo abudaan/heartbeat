@@ -2,7 +2,7 @@ heartbeat
 =========
 
 
-Heartbeat is a set of tools for easy MIDI handling in your browser. The tools can be used separately but they also work very well together.
+Heartbeat is a set of tools for easy MIDI handling in your browser. The tools can be used separately but they also work very well together. [key features](#key-features).
 
 With heartbeat you can import existing MIDI files or create new files from scratch. There is a large number of tools available for editing and manipulating the MIDI data and you can save the result to a local MIDI file.
 
@@ -24,15 +24,14 @@ There are a couple of instruments available that show you what is possible. For 
 
 Documentation can be found on [heartbeatjs.org](http://heartbeatjs.org) but it is utterly incomplete. The examples expose some of the features and their working, but that still leaves plenty of features unexplained. I am working hard to get the documentation complete.
 
-Meanwhile if you have questions about heartbeat, drop me a line or create an issue in [GitHub](https://github.com/abudaan/heartbeat/issues).
+Meanwhile if you have questions about heartbeat, drop me a line or create an [issue](https://github.com/abudaan/heartbeat/issues).
 
 
+<a name="key-features"></a>
+###key features:
 
-key features
-============
 
-
-### MIDI:
+####MIDI:
 - create midi file from scratch
 - import existing midi files
 - save midi data to file (SMF 1.0)
@@ -45,7 +44,7 @@ key features
 - midi data can be shared or moved across songs, tracks and parts very easily
 
 
-### Instruments:
+####Instruments:
 - support multiple velocity layers
 - support control change events for sustain pedal, volume and panning
 - sustained instruments (like organ, stings, pads)
@@ -55,7 +54,7 @@ key features
 - instrument samples can be transposed at runtime (experimental)
 
 
-### Audio
+####Audio
 - volume and panning controller per track
 - volume controller per song and one master volume output with compression
 - channel effects per track: reverb, panning, autopan and more to come
