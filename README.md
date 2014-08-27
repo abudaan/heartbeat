@@ -28,10 +28,10 @@ Meanwhile if you have questions about heartbeat, drop me a line or create an [is
 
 
 <a name="key-features"></a>
-*key features*
+####key features
 
 
-#MIDI:
+######MIDI:
 - create midi file from scratch
 - import existing midi files
 - save midi data to file (SMF 1.0)
@@ -44,7 +44,7 @@ Meanwhile if you have questions about heartbeat, drop me a line or create an [is
 - midi data can be shared or moved across songs, tracks and parts very easily
 
 
-#Instruments:
+######Instruments:
 - support multiple velocity layers
 - support control change events for sustain pedal, volume and panning
 - sustained instruments (like organ, stings, pads)
@@ -54,7 +54,7 @@ Meanwhile if you have questions about heartbeat, drop me a line or create an [is
 - instrument samples can be transposed at runtime (experimental)
 
 
-#Audio
+######Audio
 - volume and panning controller per track
 - volume controller per song and one master volume output with compression
 - channel effects per track: reverb, panning, autopan and more to come
