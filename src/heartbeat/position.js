@@ -395,8 +395,8 @@
                 positionData.millisPerTick = millisPerTick;
                 positionData.secondsPerTick = secondsPerTick;
 
-                //positionData.percentage = ticks / song.durationTicks;
-                positionData.percentage = millis / song.durationMillis;
+                positionData.percentage = ticks / song.durationTicks;
+                //positionData.percentage = millis / song.durationMillis;
                 break;
         }
 
@@ -540,16 +540,17 @@
             case 'percentage':
                 snap = position[2];
 
+                //millis = position[1] * song.durationMillis;
+                //fromMillis(song, millis);
+                //console.log(millis);
+
+                ticks = position[1] * song.durationTicks;
                 if(snap !== undefined){
-                    ticks = position[1] * song.durationTicks;
                     ticks = floor(ticks/snap) * snap;
-                    fromTicks(song, ticks);
+                    //fromTicks(song, ticks);
                     //console.log(ticks);
-                }else{
-                    millis = position[1] * song.durationMillis;
-                    fromMillis(song, millis);
-                    //console.log(millis);
                 }
+                fromTicks(song, ticks);
                 calculateBarsAndBeats();
                 tmp = getPositionData(song);
                 //console.log('diff', position[1] - tmp.percentage);
