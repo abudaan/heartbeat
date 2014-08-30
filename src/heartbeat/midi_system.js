@@ -17,8 +17,8 @@
 
         songMidiEventListener,
 
-        midiInputsOrder,
-        midiOutputsOrder,
+        midiInputsOrder = [],
+        midiOutputsOrder = [],
         midiInitialized = false,
         midiEventListenerId = 0;
 
@@ -41,7 +41,7 @@
                     //console.time('parse ports');
                     ports = midi.inputs();
                     doubleNames = {};
-                    midiInputsOrder = [];
+                    //midiInputsOrder = [];
 
                     for(i = 0, numPorts = ports.length; i < numPorts; i++){
                         port = ports[i];
@@ -87,7 +87,7 @@
 
                     ports = midi.outputs();
                     doubleNames = {};
-                    midiOutputsOrder = [];
+                    //midiOutputsOrder = [];
 
                     for(i = 0, numPorts = ports.length; i < numPorts; i++){
                         port = ports[i];
@@ -144,20 +144,29 @@
                         console.log('device disconnected', e);
                     }, false);
                     cb();
+
+                    sequencer.webmidi = true;
                 },
                 // on error
                 function midiAccessOnError(e){
                     console.log('MIDI could not be initialized:', e);
                     midiInitialized = true;
+                    sequencer.webmidi = false;
                     cb();
                 }
             );
         // browsers without WebMIDI API
         }else{
-            console.log('No MIDI support; use Google Chrome or Chromium');
+            if(sequencer.browser === 'chrome' || sequencer.browser === 'chromium'){
+                console.log('Web MIDI API not enabled');
+            }else{
+                console.log('Web MIDI API not supported');
+            }
             midiInitialized = true;
+            sequencer.webmidi = false;
             cb();
         }
+
     }
 
 

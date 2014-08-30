@@ -58,8 +58,18 @@ window.onload = function(){
     }
 
 
-    window.addEventListener('resize', resize, false);
-    window.addEventListener('hashchange', gotoHash, false);
-    resize();
-    gotoHash();
+    sequencer.ready(function init(){
+        if(sequencer.webmidi !== true){
+            if(sequencer.browser === 'chrome' || sequencer.browser === 'chromium'){
+                //alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser or press the "relaunch" button at the bottom of the page\n\nNow all your MIDI devices are connected to heartbeat.');
+                alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser\n\nNow all your MIDI devices are connected to heartbeat.');
+            }else{
+                alert('Web MIDI API not supported in ' + sequencer.browser + '.\n\nYou can use heartbeat anyway but you can not connect your MIDI devices to heartbeat.\n\nSome examples require MIDI in or out, please use Google Chrome or Chromium for these examples');
+            }
+        }
+        window.addEventListener('resize', resize, false);
+        window.addEventListener('hashchange', gotoHash, false);
+        resize();
+        gotoHash();
+    });
 };
