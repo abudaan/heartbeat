@@ -17,6 +17,12 @@
     <p>
         The recording starts at the position of the playhead. Preroll is on by default, which means that you can record during the precount. This is handy for upbeats. You can not (yet) record events before the first bar.
     </p>
+    <p>
+        To enable Web MIDI API on Chromium, Chrome or Canary:
+        <br> - point your browser to chrome://flags
+        <br> - search for MIDI and click 'enable'
+        <br> - restart your browser
+    </p>
     <br/>
     <input type="button" id="play" value="play">
     <input type="button" id="stop" value="stop">
@@ -27,6 +33,7 @@
     </select>
     <input type="button" id="record-delete" value="delete recording">
     <input type="button" id="preroll" value="preroll off">
+    <input type="button" id="save" value="save midi file">
     <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
     <label for="precount"><div>precount bars: 0</div><input type="range" id="precount" value="0" min="0" max="4" step="1"></label>
 

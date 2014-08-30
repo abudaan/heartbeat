@@ -16,6 +16,7 @@ window.onload = function(){
         btnDeleteRecording = document.getElementById('record-delete'),
         btnUndoRecording = document.getElementById('record-undo'),
         btnPreRoll = document.getElementById('preroll'),
+        btnSave = document.getElementById('save'),
         selectRecordings = document.getElementById('recordings'),
         divEvents = document.getElementById('song_events'),
         divRecorded = document.getElementById('recorded_events'),
@@ -161,6 +162,11 @@ window.onload = function(){
             song.update();
             delete recordingHistory[selectedRecordingId];
             handleRecordedEvents();
+        });
+
+
+        btnSave.addEventListener('click', function(){
+            sequencer.saveSongAsMidiFile(song);
         });
 
 

@@ -8053,7 +8053,7 @@ if (typeof module !== "undefined" && module !== null) {
             arrayBuffer, dataView, uintArray;
 
 
-        byteArray = byteArray.concat(str2Bytes(numTracks.toString(16), 2), defu);
+        byteArray = byteArray.concat(str2Bytes(numTracks.toString(16), 2), HDR_PPQ);
         //console.log(byteArray);
         byteArray = byteArray.concat(trackToBytes(song.timeEvents, song.durationTicks, 'tempo'));
         //console.log(song.durationMillis);
