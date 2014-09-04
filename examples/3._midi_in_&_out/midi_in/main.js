@@ -13,15 +13,15 @@ window.onload = function(){
         path = '../../../assets';
 
 
-    // load basic asset pack; this pack contains a piano
-    sequencer.addAssetPack({url: path + '/examples/asset_pack_basic.json'}, init);
+    // load asset pack; this pack contains a violin
+    sequencer.addAssetPack({url: path + '/sso/strings/violin.ogg.3.json'}, init);
 
     function init(){
         console.log(sequencer.storage);
         var track, song;
 
         track = sequencer.createTrack();
-        track.setInstrument('piano');
+        track.setInstrument('Violin');
         // set monitor to true to route the incoming midi events to the track
         track.monitor = true;
         track.setMidiInput('all');

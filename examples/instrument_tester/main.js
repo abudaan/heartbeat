@@ -33,9 +33,6 @@ window.onload = function(){
 
         basePath = '../../assets/',
 
-        // chromium does not support mp3 for obvious reasons
-        irSamplesUrl = sequencer.browser === 'chromium' ? '../../assets/ir/VS8F.ogg.4.json' : '../../assets/ir/VS8F.mp3.128.json',
-
         sliderKeyScalingPanningLowestNote,
         sliderKeyScalingPanningHighestNote,
         sliderKeyScalingReleaseLowestNote,
@@ -58,7 +55,7 @@ window.onload = function(){
             }
             // load an assetpack that contains a lot of IR samples, they will be stored in sequencer/storage/audio/impulse_response/
             sequencer.addAssetPack({
-                    url: irSamplesUrl
+                    url: basePath + 'ir/VS8F.mp3.128.json'
                 },
                 function(){
                     init(JSON.parse(request.response));
@@ -332,16 +329,6 @@ window.onload = function(){
             compressionType = 'mp3';
             compressionLevel = 112;
         }
-
-        // conversely, WebAUDIO in chromium doesn't support mp3 format
-        else if(sequencer.browser === 'chromium'){
-            selectCompressionType.selectedIndex = 1;
-            selectCompressionType.disabled = true;
-            selectCompressionLevel.disabled = false;
-            selectCompressionLevel.innerHTML = optionsOGG;
-            compressionType = 'ogg';
-            compressionLevel = 3;
-        }
     }
 
 
@@ -362,10 +349,10 @@ window.onload = function(){
             instrument = sequencer.createInstrument(path);
             track.setInstrument(instrument);
             setSliders();
-            divMessage.innerHTML = instrument.getInfoAsHTML();
+            showInstrumentInfo(instrument);
         }else{
             enableUI(false);
-            message.innerHTML = 'loading ' + instrumentName + ' (' + compressionType + ' ' + compressionLevel + ')';
+            divMessage.innerHTML = 'loading ' + instrumentName + ' (' + compressionType + ' ' + compressionLevel + ')';
             // if you test this locally, you have to download the json files: wget -r --no-parent --no-host http://heartbeatjs.org/assets/
             // or checkout the assets submodule: git submodule init && git submodule update
             sequencer.addAssetPack({url: file}, function(assetpack){
@@ -378,7 +365,7 @@ window.onload = function(){
                 instrument = sequencer.createInstrument(path);
                 track.setInstrument(instrument);
                 setSliders();
-                divMessage.innerHTML = instrument.getInfoAsHTML();
+                showInstrumentInfo(instrument);
                 enableUI(true);
             });
         }
@@ -420,10 +407,8 @@ window.onload = function(){
     /*
         Show some information about the instrument, you can set/edit this information in the json file
         when you create/generate the instrument or afterwards.
-
-        The file size is the size of both the instrument and the samplepack
     */
-    function setMessage(instrument){
+    function showInstrumentInfo(instrument){
         divMessage.innerHTML = instrument.getInfoAsHTML();
     }
 

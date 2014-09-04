@@ -33,6 +33,7 @@
             return;
         }
 
+        midiInitialized = true;
 
         if(navigator.requestMIDIAccess !== undefined){
             navigator.requestMIDIAccess().then(
@@ -130,7 +131,6 @@
 
                     sequencer.numMidiOutputs = midiOutputsOrder.length;
 
-                    midiInitialized = true;
                     //console.log(sequencer.midiInputs, sequencer.midiOutputs);
                     //console.log(midiInputsOrder, midiOutputsOrder);
                     //console.timeEnd('parse ports');
@@ -143,30 +143,25 @@
                     midi.addEventListener('ondisconnect', function(e){
                         console.log('device disconnected', e);
                     }, false);
-                    cb();
 
                     sequencer.webmidi = true;
+                    cb();
                 },
                 // on error
                 function midiAccessOnError(e){
                     console.log('MIDI could not be initialized:', e);
-                    midiInitialized = true;
-                    sequencer.webmidi = false;
                     cb();
                 }
             );
         // browsers without WebMIDI API
         }else{
-            if(sequencer.browser === 'chrome' || sequencer.browser === 'chromium'){
+            if(sequencer.browser === 'chrome'){
                 console.log('Web MIDI API not enabled');
             }else{
                 console.log('Web MIDI API not supported');
             }
-            midiInitialized = true;
-            sequencer.webmidi = false;
             cb();
         }
-
     }
 
 

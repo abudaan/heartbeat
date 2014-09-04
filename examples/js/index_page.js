@@ -59,8 +59,9 @@ window.onload = function(){
 
 
     sequencer.ready(function init(){
-        if(sequencer.webmidi !== true){
-            if(sequencer.browser === 'chrome' || sequencer.browser === 'chromium'){
+        //console.log(sequencer.webmidi, sequencer.browser);
+        if(sequencer.webmidi === false){
+            if(sequencer.browser === 'chrome'){
                 //alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser or press the "relaunch" button at the bottom of the page\n\nNow all your MIDI devices are connected to heartbeat.');
                 alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser\n\nNow all your MIDI devices are connected to heartbeat.');
             }else{

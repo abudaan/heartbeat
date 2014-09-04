@@ -4,7 +4,7 @@
 
     var
         // satisfy jslint
-        alert = window.alert,
+        //alert = window.alert,
         console = window.console,
 
         protectedScope,
@@ -23,29 +23,6 @@
         legacy = false;
 
 
-
-    if(window.AudioContext){
-        context = new window.AudioContext();
-        if(context.createGainNode === undefined){
-            context.createGainNode = context.createGain;
-        }
-    }else if(window.webkitAudioContext){
-        context = new window.webkitAudioContext();
-    }else if(window.oAudioContext){
-        context = new window.oAudioContext();
-    }else if(window.msAudioContext){
-        context = new window.msAudioContext();
-    }else{
-        //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-        alert('browser not supported');
-        return;
-    }
-
-    src = context.createBufferSource();
-    if(src.start === undefined){
-        legacy = true;
-    }
-
     if(ua.match(/(iPad|iPhone|iPod)/g)){
         os = 'ios';
     }else if(ua.indexOf('Android') !== -1){
@@ -61,10 +38,13 @@
     if(ua.indexOf('Chrome') !== -1){
         // chrome, chromium and canary
         browser = 'chrome';
-        if(new Audio().canPlayType('audio/mp3') === ''){
+        /*
+        //console.log(new Audio().canPlayType('audio/mp3'));
+        if(new Audio().canPlayType('audio/mp3') !== 'probably'){
             // chromium does not support mp3
             browser = 'chromium';
         }
+        */
     }else if(ua.indexOf('Safari') !== -1){
         browser = 'safari';
     }else if(ua.indexOf('Firefox') !== -1){
@@ -74,6 +54,37 @@
     }
 
     //console.log(os, browser, '---', ua);
+
+
+    if(window.AudioContext){
+        context = new window.AudioContext();
+        if(context.createGainNode === undefined){
+            context.createGainNode = context.createGain;
+        }
+    }else if(window.webkitAudioContext){
+        context = new window.webkitAudioContext();
+    }else if(window.oAudioContext){
+        context = new window.oAudioContext();
+    }else if(window.msAudioContext){
+        context = new window.msAudioContext();
+    }else{
+        //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
+        window.sequencer = {
+            browser: browser,
+            os: os
+        };
+        alert('heartbeat requires the Web Audio API which is not yet implemented in ' + browser + '; please use another browser');
+        window.sequencer.ready = function(cb){
+            cb();
+        }
+        return;
+    }
+
+    src = context.createBufferSource();
+    if(src.start === undefined){
+        legacy = true;
+    }
+
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
     window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
@@ -153,6 +164,8 @@
         os: os,
         browser: browser,
         legacy: legacy,
+        webmidi: false,
+        webaudio: true,
         util: {},
         debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',

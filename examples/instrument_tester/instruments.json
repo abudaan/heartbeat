@@ -11,6 +11,10 @@
         "folder": "sso/percussion",
         "url": "congas"
     },
+    "Violin": {
+        "folder": "sso/strings",
+        "url": "violin"
+    },
     "City Piano": {
         "folder": "city-piano",
         "url": "city-piano"
