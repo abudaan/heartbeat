@@ -149,7 +149,7 @@ function parse(lines){
 
     //console.log(json.elements);
 
-    //fs.writeFileSync('testoop.json', JSON.stringify(json));
+    fs.writeFileSync('testoop.json', JSON.stringify(json));
 
     return json;
 }

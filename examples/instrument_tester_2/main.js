@@ -17,16 +17,19 @@ window.onload = function(){
         instrumentName,
         instrumentFolder,
 
-        // mp3 is chosen because it is supported in all Web Audio enabled browsers
-        compressionType = 'mp3',
-        compressionLevel = 128,
-
         minRelease = 0,
         maxRelease = 40000,
 
         divMessage = document.getElementById('message'),
         dropdownmenus = document.getElementById('dropdownmenus'),
         divReleaseInfo = document.getElementById('current_release_info'),
+
+        selectCompressionType = document.getElementById('compression_type'),
+        selectCompressionLevel = document.getElementById('compression_level'),
+        compressionType,
+        compressionLevel,
+        optionsOGG = '<option value="-1">level</option><option value="3">3</option><option value="4">4</option>',
+        optionsMP3 = '<option value="-1">level</option><option value="112">112kbps</option><option value="128">128kbps</option>',
 
         basePath = '../../assets/',
 
@@ -80,7 +83,6 @@ window.onload = function(){
         track = sequencer.createTrack();
         // set monitor to true to route the incoming midi events to the track
         track.monitor = true;
-        // connect all midi inputs to the track
         track.setMidiInput('all');
         track.addEffect(reverb);
 
@@ -140,6 +142,30 @@ window.onload = function(){
             var sample = samples[selectImpulseResponse.selectedIndex - 1];
             // update the IR sample that the reverb uses
             reverb.node.buffer = sample.data;
+        });
+
+
+        selectCompressionType.addEventListener('change', function(){
+            compressionType = selectCompressionType[selectCompressionType.selectedIndex].value;
+            if(compressionType === '-1'){
+                selectInstrument.disabled = true;
+                selectCompressionLevel.disabled = true;
+            }else{
+                selectCompressionLevel.disabled = false;
+                selectCompressionLevel.innerHTML = compressionType === 'ogg' ? optionsOGG : optionsMP3;
+            }
+        });
+
+
+        selectCompressionLevel.addEventListener('change', function(){
+            compressionLevel = selectCompressionLevel[selectCompressionLevel.selectedIndex].value;
+            if(compressionLevel === '-1'){
+                selectInstrument.disabled = true;
+                selectInstrument.disabled = true;
+            }else{
+                selectInstrument.disabled = false;
+                loadInstrument();
+            }
         });
 
 
@@ -287,6 +313,22 @@ window.onload = function(){
         });
 
         enableUI(true);
+
+        // disable the instrument dropdown until a compression type and level have been chosen
+        selectInstrument.disabled = true;
+
+        // disable the compression level dropdown until a compression type has been chosen
+        selectCompressionLevel.disabled = true;
+
+        // WebAUDIO on ios doesn't support ogg format
+        if(sequencer.os === 'ios'){
+            selectCompressionType.selectedIndex = 2;
+            selectCompressionType.disabled = true;
+            selectCompressionLevel.disabled = false;
+            selectCompressionLevel.innerHTML = optionsMP3;
+            compressionType = 'mp3';
+            compressionLevel = 112;
+        }
     }
 
 

@@ -2,6 +2,12 @@ html, body{
     font-family: monospace;
     font-size: 12px;
 }
+/*
+input[type='range']{
+    margin: 5px 20px;
+    display: inline-block;
+}
+*/
 select{
     font-family: monospace;
     font-size: 13px;
@@ -10,6 +16,9 @@ select{
     font-family: monospace;
     font-size: 13px;
     width: 90%;
+    /*padding: 10px;*/
+    /*width: 400px;*/
+    /*border: 1px solid #eee;*/
     margin: 5px 10px 10px 10px;
 }
 #message > table{
@@ -45,6 +54,9 @@ label{
 }
 #dropdownmenus{
     margin: 20px 10px 10px 10px;
+}
+#compression_type, #compression_level{
+    margin: 15px 10px 10px 10px;
 }
 select{
     margin-right: 20px;

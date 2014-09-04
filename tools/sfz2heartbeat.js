@@ -47,7 +47,7 @@ var
         'samplepack_author': undefined, // author of the midi file (not necessarily the composer)
         'samplepack_license': undefined, // copyright, creative commons, etc.
         'samplepack_info': undefined, // further info that might be interesting such as creation date
-        'release_duration': undefined,
+        'release_duration': 0,
         'release_envelope': 'equal power',
         'key_scaling_release': false,
         'key_scaling_panning': false,
@@ -557,12 +557,16 @@ function addCompressionToExtension(p, config){
         dirname = path.dirname(p),
         newPath;
 
+    //console.log(p);
+
     if(config.use_compression_type_in_extension === true && config.use_compression_level_in_extension === true){
         newPath = dirname + '/' + basename + '.' + config.compression_type + '.' + config.compression_level + ext;
     }else if(config.use_compression_type_in_extension === true){
         newPath = dirname + '/' + basename + '.' + config.compression_type + ext;
     }else if(config.use_compression_level_in_extension === true){
         newPath = dirname + '/' + basename + '.' + config.compression_level + ext;
+    }else{
+        newPath = p;
     }
 
     //console.log(newPath);

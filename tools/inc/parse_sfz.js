@@ -260,6 +260,7 @@ function loopElements(index, callback){
             if(releaseDuration === undefined){
                 groupRelease = element.ampeg_release;
             }
+            //console.log(releaseDuration, groupRelease);
             //console.log(groupLovel, groupHivel);
             if(groupHivel === undefined && groupLovel !== undefined){
                 groupLovel = parseInt(groupLovel, 10);
@@ -461,20 +462,30 @@ function parseRegion(region, callback){
 
 
 function addToSamplePack(id, base64){
-    if(hasSustainLoop !== false){
-        samplepack.mapping[id] = {
-            //d: base64.substring(0,10),
-            d: base64,
-            s: sustainLoop
-        };
-    }else{
+
+    if(hasSustainLoop === false && groupRelease === undefined){
         //samplepack.mapping[id] = base64.substring(0,10);
         samplepack.mapping[id] = base64;
+        return;
+    }
+
+
+    samplepack.mapping[id] = {
+        //d: base64.substring(0,10),
+        d: base64
+    };
+
+    if(hasSustainLoop !== false){
+        samplepack.mapping[id].s = sustainLoop;
     }
 
     if(groupRelease !== undefined){
         samplepack.mapping[id].g = groupIndex;
+        // quick fix:
+        instrument.release_duration = groupRelease;
     }
+
+    //console.log(id, samplepack.mapping[id], groupRelease);
 }
 
 

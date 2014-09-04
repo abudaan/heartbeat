@@ -14,7 +14,16 @@
     <link rel="stylesheet" type="text/css" href="main.css">
 </head>
 <body>
-    <h3>Choose an instrument and an impulse response sample if you like. You can tweak the instrument with the sliders below.</h3>
+    <p class="warn">This example might be a bit unstable, you can use the other instrument tester</p>
+    <h3>Select compression type and level</h3>
+    <select id="compression_type">
+        <option value="-1">type</option>
+        <option value="ogg">ogg</option>
+        <option value="mp3">mp3</option>
+    </select>
+    <select id="compression_level">
+        <option value="-1">level</option>
+    </select>
     <div id="dropdownmenus"></div>
     <div id="message" class='cf'>loading...</div>
     <label><div>reverb: 0%</div><input type="range" value="0" min="0" max="1" step="any" id="reverb"/></label>

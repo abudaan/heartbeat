@@ -10,6 +10,7 @@ src/mozilla/
 src/mozillla/
 
 tools/heartbeat_tmp
+tools/testoop.json
 tools/out
 tools/build_examples_page.js
 tools/build_site_page.js

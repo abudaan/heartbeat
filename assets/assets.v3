@@ -1,6 +1,6 @@
 Please download the assets archive from:
 
-http://heartbeatjs.org/assets.v2.zip
+http://heartbeatjs.org/assets.v3.zip
 
 
 Extract the archive in your /assets folder.
@@ -10,7 +10,9 @@ Now your heartbeat folder should like this:
 
     /assets
         /city-piano
+        /detunized
         /examples
+        /freesound
         /ir
         /midi
         /patcharena

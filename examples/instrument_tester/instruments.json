@@ -1,11 +1,31 @@
 {
-    "Harp": {
-        "folder": "sso",
-        "url": "harp"
+    "Rhodes": {
+        "folder": "freesound",
+        "url": "rhodes"
+    },
+    "SB-Rhodos2": {
+        "folder": "detunized",
+        "url": "sb-rhodos2"
+    },
+    "CK-IceSkates": {
+        "folder": "detunized",
+        "url": "ck-iceskates"
+    },
+    "SHK2-SquareRoot": {
+        "folder": "detunized",
+        "url": "shk2-squareroot"
+    },
+    "City Piano Light": {
+        "folder": "city-piano",
+        "url": "city-piano-light"
     },
     "Marimba": {
         "folder": "patcharena",
         "url": "marimba"
+    },
+    "Harp": {
+        "folder": "sso",
+        "url": "harp"
     },
     "Congas": {
         "folder": "sso/percussion",
@@ -14,6 +34,10 @@
     "Violin": {
         "folder": "sso/strings",
         "url": "violin"
+    },
+    "Trumpet": {
+        "folder": "sso/brass",
+        "url": "trumpet"
     },
     "City Piano": {
         "folder": "city-piano",
