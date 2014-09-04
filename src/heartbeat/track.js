@@ -458,7 +458,7 @@
             part.reset(true, true);
         }
         track.needsUpdate = true;
-        return removed.length === 1 ? removed[0] : removed;
+        return removed;
     }
 
 
@@ -643,7 +643,14 @@
     };
 
 
-    Track.prototype.removePart = Track.prototype.removeParts = function(){
+    Track.prototype.removePart = function(){
+        var args = getPartsAndConfig(arguments, this),
+            removed = removeParts(args, this);
+        return removed.length === 1 ? removed[0] : removed;
+    };
+
+
+    Track.prototype.removeParts = function(){
         var args = getPartsAndConfig(arguments, this);
         return removeParts(args, this);
     };

@@ -434,7 +434,7 @@
                     result.push(arg);
                 }
             }
-        };
+        }
 
         loop(args, 0, args.length);
         return result;
