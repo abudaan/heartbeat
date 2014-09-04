@@ -434,7 +434,7 @@
 
     function removeParts(args, track){
         if(args === false){
-            return;
+            return [];
         }
         var i, part,
             removed = [],

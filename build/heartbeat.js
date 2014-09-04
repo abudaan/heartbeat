@@ -17215,7 +17215,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     function removeParts(args, track){
         if(args === false){
-            return;
+            return [];
         }
         var i, part,
             removed = [],

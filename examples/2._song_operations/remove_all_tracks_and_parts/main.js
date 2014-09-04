@@ -52,6 +52,9 @@ window.onload = function(){
             i++;
         }
 
+        // add an extra empty track
+        tracks.push(sequencer.createTrack());
+
         song.addTracks(tracks);
         song.update();
 
@@ -95,5 +98,4 @@ window.onload = function(){
             element.disabled = !flag;
         }
     }
-
 };
