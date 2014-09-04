@@ -304,6 +304,10 @@
         }else if(isNaN(data) === false){
             track = song.tracks[data];
         }
+
+        if(track === undefined){
+            track = false;
+        }
         return track;
     };
 
@@ -360,21 +364,22 @@
 
 
     removeTracks = function(tobeRemoved, song){
-        var i, track, tracksById = song.tracksById, removed = [];
+        var i, track, removed = [];
+
         for(i = tobeRemoved.length - 1; i >= 0; i--){
             track = getTrack(tobeRemoved[i]);
+            if(track === false){
+                continue;
+            }
             //console.log(track);
             if(track.song !== undefined && track.song !== song){
                 console.warn('can\'t remove: this track belongs to song', track.song.id);
                 continue;
             }
-            if(track === false){
-                continue;
-            }
             track.state = 'removed';
             track.disconnect(song.gainNode);
             track.reset();
-            removed.push(removed);
+            removed.push(track);
         }
         return removed;
     };

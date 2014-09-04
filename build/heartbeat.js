@@ -13138,6 +13138,10 @@ if (typeof module !== "undefined" && module !== null) {
         }else if(isNaN(data) === false){
             track = song.tracks[data];
         }
+
+        if(track === undefined){
+            track = false;
+        }
         return track;
     };
 
@@ -13194,21 +13198,22 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     removeTracks = function(tobeRemoved, song){
-        var i, track, tracksById = song.tracksById, removed = [];
+        var i, track, removed = [];
+
         for(i = tobeRemoved.length - 1; i >= 0; i--){
             track = getTrack(tobeRemoved[i]);
+            if(track === false){
+                continue;
+            }
             //console.log(track);
             if(track.song !== undefined && track.song !== song){
                 console.warn('can\'t remove: this track belongs to song', track.song.id);
                 continue;
             }
-            if(track === false){
-                continue;
-            }
             track.state = 'removed';
             track.disconnect(song.gainNode);
             track.reset();
-            removed.push(removed);
+            removed.push(track);
         }
         return removed;
     };
@@ -16147,7 +16152,7 @@ if (typeof module !== "undefined" && module !== null) {
 }());
 
 
-(function() {
+(function(){
 
     'use strict';
 
@@ -16167,10 +16172,10 @@ if (typeof module !== "undefined" && module !== null) {
         update2;
 
 
-    update = function(song, updateTimeEvents) {
+    update = function(song, updateTimeEvents){
 
-        if (sequencer.playing === true) {
-            scheduledTasks.updateSong = function() {
+        if(sequencer.playing === true){
+            scheduledTasks.updateSong = function(){
                 update2(song, updateTimeEvents);
             };
             return;
@@ -16180,7 +16185,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    update2 = function(song, updateTimeEvents) {
+    update2 = function(song, updateTimeEvents){
         //console.log('update song');
         //console.time('update song');
         var
@@ -16222,32 +16227,32 @@ if (typeof module !== "undefined" && module !== null) {
             partsById = {};
 
 
-        if (updateTimeEvents === true) {
+        if(updateTimeEvents === true){
             //console.log('update time events');
             parseTimeEvents(song);
         }
 
 
-        for (id1 in song.tracksById) {
+        for(id1 in song.tracksById){
 
-            if (song.tracksById.hasOwnProperty(id1)) {
+            if(song.tracksById.hasOwnProperty(id1)){
 
                 track = song.tracksById[id1];
 
                 //console.log('song update', track.needsUpdate);
 
-                if (track.needsUpdate === true) {
+                if(track.needsUpdate === true){
                     track.update();
                 }
 
 
-                for (id2 in track.partsById) {
-                    if (track.partsById.hasOwnProperty(id2)) {
+                for(id2 in track.partsById){
+                    if(track.partsById.hasOwnProperty(id2)){
 
                         part = track.partsById[id2];
                         //console.log(part.id, part.needsUpdate, part.dirtyEvents);
 
-                        if (part.needsUpdate === true) {
+                        if(part.needsUpdate === true){
                             //console.log('song update calls part.update()');
                             part.update();
                         }
@@ -16256,11 +16261,10 @@ if (typeof module !== "undefined" && module !== null) {
 
                         dirtyEvents = part.dirtyEvents;
 
-                        for (id3 in dirtyEvents) {
-                            if (dirtyEvents.hasOwnProperty(id3)) {
+                        for(id3 in dirtyEvents){
+                            if(dirtyEvents.hasOwnProperty(id3)){
                                 event = dirtyEvents[id3];
-
-                                switch (event.state) {
+                                switch(event.state){
                                     case 'new':
                                         newEvents.push(event);
                                         break;
@@ -16281,11 +16285,11 @@ if (typeof module !== "undefined" && module !== null) {
 
                         dirtyNotes = part.dirtyNotes;
 
-                        for (id3 in dirtyNotes) {
-                            if (dirtyNotes.hasOwnProperty(id3)) {
+                        for(id3 in dirtyNotes){
+                            if(dirtyNotes.hasOwnProperty(id3)){
                                 note = dirtyNotes[id3];
                                 //console.log(note.state);
-                                switch (note.state) {
+                                switch(note.state){
                                     case 'new':
                                         newNotes.push(note);
                                         break;
@@ -16308,7 +16312,7 @@ if (typeof module !== "undefined" && module !== null) {
                         }
                         console.log(part.state, part.track);
                         */
-                        if (part.state !== 'removed') {
+                        if(part.state !== 'removed'){
                             notes = notes.concat(part.notes);
                             events = events.concat(part.events);
                         } else {
@@ -16317,7 +16321,7 @@ if (typeof module !== "undefined" && module !== null) {
                         }
 
 
-                        switch (part.state) {
+                        switch(part.state){
                             case 'new':
                                 newParts.push(part);
                                 partsById[part.id] = part;
@@ -16340,7 +16344,7 @@ if (typeof module !== "undefined" && module !== null) {
                 parts = parts.concat(track.parts);
 
 
-                switch (track.state) {
+                switch(track.state){
                     case 'clean':
                         track.index = tracks.length;
                         tracks.push(track);
@@ -16371,34 +16375,34 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         songAndTimeEvents = [].concat(events, song.timeEvents);
-        songAndTimeEvents.sort(function(a, b) {
+        songAndTimeEvents.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        events.sort(function(a, b) {
+        events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        notes.sort(function(a, b) {
+        notes.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        parts.sort(function(a, b) {
+        parts.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        for (i = events.length - 1; i >= 0; i--) {
+        for(i = events.length - 1; i >= 0; i--){
             event = events[i];
             eventsById[event.id] = event;
         }
 
-        for (i = notes.length - 1; i >= 0; i--) {
+        for(i = notes.length - 1; i >= 0; i--){
             note = notes[i];
             notesById[note.id] = note;
         }
 
 
-        if (updateTimeEvents === false) {
+        if(updateTimeEvents === false){
 
             //console.log(newEvents);
             //console.log(tmp.length, events.length, newEvents.length, changedEvents.length, song.timeEvents.length, song.metronome.events.length);
@@ -16456,7 +16460,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         songAndMetronomeEvents = [].concat(events, song.metronome.events);
-        songAndMetronomeEvents.sort(function(a, b) {
+        songAndMetronomeEvents.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
@@ -16489,11 +16493,11 @@ if (typeof module !== "undefined" && module !== null) {
         song.removedParts = removedParts;
 
 
-        if (song.grid !== undefined) {
+        if(song.grid !== undefined){
             song.grid.update();
         }
 
-        if (song.keyEditor !== undefined) {
+        if(song.keyEditor !== undefined){
             song.keyEditor.updateSong({
                 numBars: song.bars,
                 newEvents: newEvents,
@@ -16510,7 +16514,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    function checkDuration(song, trim) {
+    function checkDuration(song, trim){
         var lastEvent = song.lastEventTmp,
             position, key;
 
@@ -16521,8 +16525,8 @@ if (typeof module !== "undefined" && module !== null) {
         if(song.fixedLength){
             // don't allow the song to grow
             song.lastBar = song.bars;
-        }else if(trim) {
-            // remove bars that don't contain any events (called via song.trim())
+        }else if(trim){
+            // remove bars that don't contain any events(called via song.trim())
             song.lastBar = lastEvent.bar;
         }else{
             // grow if needed
@@ -16545,8 +16549,8 @@ if (typeof module !== "undefined" && module !== null) {
         //console.log(song.bars, '->', position.barsAsString, song.durationMillis, song.durationTicks);
 
         // update song.lastEvent
-        for (key in position) {
-            if (position.hasOwnProperty(key)) {
+        for(key in position){
+            if(position.hasOwnProperty(key)){
                 //console.log(key, position[key])
                 song.lastEvent[key] = position[key];
             }
@@ -16555,13 +16559,13 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function parseMetronomeEvents(song, events) {
+    function parseMetronomeEvents(song, events){
         //console.log('parseMetronomeEvents', events.length);
         var tmp = events.concat(song.timeEvents);
         parseMidiEvents(song, tmp);
 
         events = events.concat(song.events);
-        events.sort(function(a, b) {
+        events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
         //console.log(1,song.allEvents.length);
@@ -16576,12 +16580,12 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function parseParts(song, parts) {
+    function parseParts(song, parts){
         var i, part;
 
         //console.log(' → parse parts', parts.length);
 
-        for (i = parts.length - 1; i >= 0; i--) {
+        for(i = parts.length - 1; i >= 0; i--){
             part = parts[i];
             //part.update();
             //part.track.update();
@@ -16597,15 +16601,15 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function parseMidiNotes(song, notes) {
+    function parseMidiNotes(song, notes){
         var i, note;
 
         //console.log(' → parseMidiNotes', notes.length);
 
-        for (i = notes.length - 1; i >= 0; i--) {
+        for(i = notes.length - 1; i >= 0; i--){
             note = notes[i];
             //console.log(note);
-            if (note.endless === true) {
+            if(note.endless === true){
                 note.durationTicks = sequencer.ticks - note.noteOn.ticks;
                 note.durationMillis = sequencer.millis - note.noteOn.millis;
             } else {
@@ -16620,7 +16624,7 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function parseRecordedEvents(song, events) {
+    function parseRecordedEvents(song, events){
         var i, timeData,
             position, event,
             time,
@@ -16638,10 +16642,10 @@ if (typeof module !== "undefined" && module !== null) {
         //console.log(song, events, timestamp);
         //console.log('parseRecordedEvents', timestamp, startMillis);
 
-        for (i = 0; i < maxi; i++) {
+        for(i = 0; i < maxi; i++){
             event = events[i];
 
-            time = (event.recordMillis - timestamp) + startMillis;
+            time =(event.recordMillis - timestamp) + startMillis;
             position = playhead.update('millis', time - totalTime); // update by supplying the diff in millis
             totalTime = time;
 
@@ -16691,54 +16695,54 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function sortEvents(events) {
+    function sortEvents(events){
         var maxi = events.length,
             i, event, lastTick = -100000,
             buffer,
             newOrder = [];
 
-        for (i = 0; i < maxi; i++) {
+        for(i = 0; i < maxi; i++){
             event = events[i];
-            if (buffer === undefined) {
+            if(buffer === undefined){
                 buffer = [];
             }
             buffer.push(event);
-            if (event.ticks !== lastTick) {
-                if (buffer.length > 1) {
+            if(event.ticks !== lastTick){
+                if(buffer.length > 1){
                     // console.log('unsorted', buffer.length);
                     // buffer.forEach(function(e){
                     //     console.log(e.ticks, e.type, e.data1, e.data2);
                     // });
 
-                    buffer.sort(function(a, b) {
+                    buffer.sort(function(a, b){
 
                         // question is: comes a after b
 
-                        if (b.type === 144 && a.type === 128) {
+                        if(b.type === 144 && a.type === 128){
                             // note off before note on
                             return false;
 
 
-                        } else if (b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 127) {
+                        } else if(b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 127){
                             // sustain pedal down before note on
                             return false;
 
 
-                        } else if (b.type === 176 && b.data1 === 64 && b.data2 === 127 && a.type === 128) {
+                        } else if(b.type === 176 && b.data1 === 64 && b.data2 === 127 && a.type === 128){
                             // note off before sustain pedal down
                             return false;
 
 
-                        } else if (b.type === 128 && a.type === 176 && a.data1 === 64 && a.data2 === 0) {
+                        } else if(b.type === 128 && a.type === 176 && a.data1 === 64 && a.data2 === 0){
                             // sustain pedal up before note off -> for better performance, the note off event doesn't get added to the sustainPedalSamples array
                             return false;
 
-                        } else if (b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 0) {
+                        } else if(b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 0){
                             // sustain pedal up before note on
                             return false;
 
 
-                        } else if (a.type === 176 && a.data1 === 64 && a.data2 === 0 && b.type === 176 && b.data1 === 64 && b.data2 === 127) {
+                        } else if(a.type === 176 && a.data1 === 64 && a.data2 === 0 && b.type === 176 && b.data1 === 64 && b.data2 === 127){
                             // sustain pedal up should come before sustain pedal up
                             return false;
 
@@ -16766,7 +16770,7 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.protectedScope.checkDuration = checkDuration;
     sequencer.protectedScope.parseMetronomeEvents = parseMetronomeEvents;
 
-    sequencer.protectedScope.addInitMethod(function() {
+    sequencer.protectedScope.addInitMethod(function(){
         getPosition = sequencer.protectedScope.getPosition;
         parseMidiEvents = sequencer.protectedScope.parseMidiEvents;
         parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
