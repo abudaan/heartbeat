@@ -1,12 +1,4 @@
 {
-    "Rhodes": {
-        "folder": "freesound",
-        "url": "rhodes"
-    },
-    "SB-Rhodos2": {
-        "folder": "detunized",
-        "url": "sb-rhodos2"
-    },
     "CK-IceSkates": {
         "folder": "detunized",
         "url": "ck-iceskates"
@@ -14,6 +6,14 @@
     "SHK2-SquareRoot": {
         "folder": "detunized",
         "url": "shk2-squareroot"
+    },
+    "SB-Rhodos2": {
+        "folder": "detunized",
+        "url": "sb-rhodos2"
+    },
+    "Rhodes": {
+        "folder": "freesound",
+        "url": "rhodes"
     },
     "City Piano Light": {
         "folder": "city-piano",

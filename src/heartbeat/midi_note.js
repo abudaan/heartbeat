@@ -2,7 +2,7 @@
 
     'use strict';
 
-    var 
+    var
         MidiNote,
 
         // satisfy jslint
@@ -17,7 +17,7 @@
 
         midiNoteId = 0;
 
-    /*  
+    /*
         @params: noteOn event, noteOff event
         @params: start ticks, end ticks, note number, velocity
 
@@ -62,11 +62,11 @@
             }
             if(noteNumber < 0 || noteNumber > 127){
                 console.error('MidiNote has wrong note number');
-                return;             
+                return;
             }
             if(velocity < 0 || velocity > 127){
                 console.error('MidiNote has wrong velocity');
-                return;             
+                return;
             }
             on = createMidiEvent(startTicks, sequencer.NOTE_ON, noteNumber, velocity);
             if(off){
@@ -79,7 +79,7 @@
 
         on.midiNote = this;
         this.noteOn = on;
-        
+
         if(off === undefined){
             this.endless = true;
         }else{
@@ -94,7 +94,7 @@
         this.note = on.note;
         this.number = on.noteNumber;
         this.ticks = on.ticks;
-        this.velocity = on.velocity;                
+        this.velocity = on.velocity;
         this.id = 'N' + midiNoteId + new Date().getTime();
         this.name = on.noteName;
         this.className = 'MidiNote';
@@ -102,7 +102,7 @@
         midiNoteId++;
     };
 
-    
+
     MidiNote.prototype.addNoteOff = function(off){
         var on = this.noteOn;
         off.midiNote = this;
@@ -111,10 +111,10 @@
         this.durationTicks = off.ticks - on.ticks;
         this.durationMillis = off.millis - on.millis;
         this.endless = false;
-    }; 
+    };
 
-
-    MidiNote.prototype.setDuration = function(duration_in_ticks){ 
+/*
+    MidiNote.prototype.setDuration = function(duration_in_ticks){
         if(duration_in_ticks <= 0){
             console.error('duration of a MidiNote has to be greater then 0');
             return;
@@ -126,8 +126,8 @@
             this.part.needsUpdate = true;
         }
     };
-
-
+*/
+/*
     MidiNote.prototype.setEnd = function(ticks){
         this.noteOff.ticks = ticks;
         if(this.part){
@@ -142,34 +142,34 @@
             this.part.needsUpdate = true;
         }
     };
-    
+
 
     MidiNote.prototype.setVelocity = function(velocity){
         if(velocity < 0 || velocity > 127){
             return;
         }
-        this.velocity = this.noteOn.data1 = this.noteOn.velocity = velocity;        
+        this.velocity = this.noteOn.data1 = this.noteOn.velocity = velocity;
     };
 
-    
+*/
     MidiNote.prototype.setPitch = function(pitch){
         if(pitch < 0 || pitch > 127){
             return;
         }
         this.noteOn.setPitch(pitch);
         if(this.endless === false){
-            this.noteOff.setPitch(pitch);               
-        }               
+            this.noteOff.setPitch(pitch);
+        }
         this.name = this.noteOn.noteName;
     };
 
-    
+
     sequencer.protectedScope.addInitMethod(function(){
         createMidiEvent = sequencer.createMidiEvent;
         typeString = sequencer.protectedScope.typeString;
     });
 
-    
+
     sequencer.createMidiNote = function(){
         return new MidiNote(Array.prototype.slice.call(arguments));
     };

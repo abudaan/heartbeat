@@ -53,6 +53,12 @@
         browser = 'opera';
     }
 
+    if(os === 'ios'){
+        if(ua.indexOf('CriOS') !== -1){
+            browser = 'chrome';
+        }
+    }
+
     //console.log(os, browser, '---', ua);
 
 

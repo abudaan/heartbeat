@@ -59,15 +59,39 @@ window.onload = function(){
 
 
     sequencer.ready(function init(){
-        //console.log(sequencer.webmidi, sequencer.browser);
-        if(sequencer.webmidi === false){
-            if(sequencer.browser === 'chrome'){
-                //alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser or press the "relaunch" button at the bottom of the page\n\nNow all your MIDI devices are connected to heartbeat.');
-                alert('Web MIDI API supported!\n\nTo enable it:\n\n - point your browser to chrome://flags\n - search for "MIDI" and click "enable"\n - connect your MIDI devices (if you haven\'t already)\n - restart your browser\n\nNow all your MIDI devices are connected to heartbeat.');
+        var os = sequencer.os,
+            browser = sequencer.browser,
+            message = '';
+
+        browser = browser.substring(0,1).toUpperCase() + browser.substring(1);
+
+        if(os === 'ios'){
+            message = 'Although heartbeat supports iOS, not all examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
+            message += 'Web MIDI API is not supported on iOS so you can not connect your MIDI devices to heartbeat.\n\n';
+            message += 'Some examples require MIDI in or out, these examples won\'t work on this device';
+        }else if(os === 'android'){
+            message = 'Although heartbeat supports Android, not all examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
+        }
+
+        if(sequencer.webmidi === false && os !== 'ios'){
+            if(browser === 'Chrome'){
+                message += 'Web MIDI API supported!\n\n';
+                message += 'To enable it:\n\n';
+                message += ' - point your browser to chrome://flags\n';
+                message += ' - search for "MIDI" and click "enable"\n';
+                message += ' - connect your MIDI devices (if you haven\'t already)\n';
+                message += ' - restart your browser\n\n';
+                message += 'Now all your MIDI devices are connected to heartbeat.';
             }else{
-                alert('Web MIDI API not supported in ' + sequencer.browser + '.\n\nYou can use heartbeat anyway but you can not connect your MIDI devices to heartbeat.\n\nSome examples require MIDI in or out, please use Google Chrome or Chromium for these examples');
+                message += 'The Web MIDI API is not supported in ' + browser + ' so you can not connect your MIDI devices to heartbeat.\n\n';
+                message += 'Some examples require MIDI in or out, please use Google Chrome or Chromium for these examples.';
             }
         }
+
+        if(message !== ''){
+            alert(message);
+        }
+
         window.addEventListener('resize', resize, false);
         window.addEventListener('hashchange', gotoHash, false);
         resize();

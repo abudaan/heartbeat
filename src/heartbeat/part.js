@@ -229,13 +229,16 @@
         for(i = events.length - 1; i >= 0; i--){
             e = events[i];
             e.transpose(semi);
+        /*
+            // moved to midi_event.js
             if(e.state !== 'new'){
                 e.state = 'changed';
             }
+        */
             //console.log(e.state);
         }
-        part.needsUpdate = true;
-        if(part.state !== 'new' && part.track){
+        //part.needsUpdate = true; -> moved to midi_event.js
+        if(part.state !== 'new' && part.track !== undefined){
             part.state = 'changed';
             part.track.needsUpdate = true;
         }
@@ -404,7 +407,11 @@
     Part.prototype.transposeNote = function(note, semi){
         transposeEvents({events:[note.noteOn, note.noteOff], config:[semi]}, this);
     };
-
+/*
+    Part.prototype.setNotePitch = function(note, pitch){
+        note.setPitch(pitch);
+    };
+*/
 
     Part.prototype.reverseByTicks = function(duration){
         if(this.needsUpdate){

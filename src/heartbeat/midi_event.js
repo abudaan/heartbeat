@@ -184,6 +184,7 @@
         return event;
     };
 
+    // not sure if this should be added to the public API of MidiEvent
     MidiEvent.prototype.transpose = function(semi){
         if(this.type !== 0x80 && this.type !== 0x90){
             console.error('you can only transpose note on and note off events');
@@ -208,11 +209,16 @@
         this.octave = note.octave;
         this.frequency = note.frequency;
 
-        // if(this.endEvent){
-        //  this.endEvent.transpose(semi);
-        // }
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
     };
 
+
+    // not sure if this should be added to the public API of MidiEvent
     MidiEvent.prototype.setPitch = function(pitch){
         if(this.type !== 0x80 && this.type !== 0x90){
             console.error('you can only set the pitch of note on and note off events');
@@ -231,11 +237,15 @@
         this.octave = note.octave;
         this.frequency = note.frequency;
 
-        if(this.endEvent){
-            this.endEvent.setPitch(pitch);
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
         }
     };
 
+/*
     MidiEvent.prototype.setPosition = function(position){
         this.bpm = this.bpm || position.bpm || -1;
         this.ticks = this.ticks || position.ticks || this.ticks;
@@ -256,8 +266,15 @@
         this.tick = position.tick || -1;
         this.barsAsString = position.barsAsString || 'N/A';
         this.barsAsArray = position.barsAsArray || 'N/A';
-    };
 
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
+    };
+*/
 
     MidiEvent.prototype.reset = function(fromPart, fromTrack, fromSong){
         fromPart = fromPart === undefined ? true : false;
