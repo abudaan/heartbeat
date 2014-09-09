@@ -66,11 +66,11 @@ window.onload = function(){
         browser = browser.substring(0,1).toUpperCase() + browser.substring(1);
 
         if(os === 'ios'){
-            message = 'Although heartbeat supports iOS, not all examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
+            message = 'Although heartbeat supports iOS, the examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
             message += 'Web MIDI API is not supported on iOS so you can not connect your MIDI devices to heartbeat.\n\n';
             message += 'Some examples require MIDI in or out, these examples won\'t work on this device';
         }else if(os === 'android'){
-            message = 'Although heartbeat supports Android, not all examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
+            message = 'Although heartbeat supports Android, the examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
         }
 
         if(sequencer.webmidi === false && os !== 'ios'){

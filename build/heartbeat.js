@@ -6969,6 +6969,7 @@ if (typeof module !== "undefined" && module !== null) {
         if(this.endless === false){
             this.noteOff.setPitch(pitch);
         }
+        this.number = this.noteOn.noteNumber;
         this.name = this.noteOn.noteName;
     };
 
