@@ -1155,6 +1155,28 @@
             this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
         }
 
+/*
+
+        tmp = this.song.parts;
+        n = false;
+        // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+        for(i = tmp.length - 1; i >= 0; i--){
+            p = tmp[i];
+            console.log(p.keepWhenEmpty);
+            if(p.keepWhenEmpty === true){
+                continue;
+            }
+            if(p.events.length === 0){
+                //console.log('empty part!');
+                p.track.removePart(p);
+                n = true;
+            }
+        }
+        if(n){
+            this.song.update();
+        }
+*/
+
         s = {
 
             events: {
@@ -1215,13 +1237,16 @@
         this.changedParts = [];
         this.removedParts = [];
 
-
+/*
         tmp = this.song.parts;
         n = false;
 
         // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
         for(i = tmp.length - 1; i >= 0; i--){
             p = tmp[i];
+            if(p.keepWhenEmpty === true){
+                continue;
+            }
             if(p.events.length === 0){
                 //console.log('empty part!');
                 p.track.removePart(p);
@@ -1231,7 +1256,7 @@
         if(n){
             this.song.update();
         }
-
+*/
         return s;
     };
 

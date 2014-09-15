@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+<script src='/src/heartbeat/open_module.js'></script>
+<script src='/src/heartbeat/asset_manager.js'></script>
+<script src='/src/heartbeat/assetpack.js'></script>
+<script src='/src/heartbeat/audio_event.js'></script>
+<script src='/src/heartbeat/channel_effects.js'></script>
+<script src='/src/heartbeat/event_statistics.js'></script>
+<script src='/src/heartbeat/find_event.js'></script>
+<script src='/src/heartbeat/instrument.js'></script>
+<script src='/src/heartbeat/instrument_config.js'></script>
+<script src='/src/heartbeat/key_editor.js'></script>
+<script src='/src/heartbeat/key_editor_iterator_factory.js'></script>
+<script src='/src/heartbeat/metronome.js'></script>
+<script src='/src/heartbeat/midi_event.js'></script>
+<script src='/src/heartbeat/midi_event_names.js'></script>
+<script src='/src/heartbeat/midi_file.js'></script>
+<script src='/src/heartbeat/midi_note.js'></script>
+<script src='/src/heartbeat/midi_parse.js'></script>
+<script src='/src/heartbeat/midi_stream.js'></script>
+<script src='/src/heartbeat/midi_system.js'></script>
+<script src='/src/heartbeat/midi_write.js'></script>
+<script src='/src/heartbeat/note.js'></script>
+<script src='/src/heartbeat/parse_midi_events.js'></script>
+<script src='/src/heartbeat/parse_time_events.js'></script>
+<script src='/src/heartbeat/part.js'></script>
+<script src='/src/heartbeat/playhead.js'></script>
+<script src='/src/heartbeat/position.js'></script>
+<script src='/src/heartbeat/sample.js'></script>
+<script src='/src/heartbeat/samplepack.js'></script>
+<script src='/src/heartbeat/scheduler.js'></script>
+<script src='/src/heartbeat/sequencer.js'></script>
+<script src='/src/heartbeat/song.js'></script>
+<script src='/src/heartbeat/song_event_listener.js'></script>
+<script src='/src/heartbeat/song_follow_event.js'></script>
+<script src='/src/heartbeat/song_grid.js'></script>
+<script src='/src/heartbeat/song_update.js'></script>
+<script src='/src/heartbeat/track.js'></script>
+<script src='/src/heartbeat/transpose.js'></script>
+<script src='/src/heartbeat/util.js'></script>
+<script src='/src/heartbeat/quantize_fixed-length.js'></script>
+<script src='/src/heartbeat/close_module.js'></script>
+<!--
+    <script src="../../../build/heartbeat.js"></script>
+-->
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <input type="button" id="start" value="start">
+    <input type="button" id="stop" value="stop">
+    <input type="button" id="add_events" value="add events">
+    <input type="button" id="remove_events" value="remove events">
+    <label for="keep_when_empty">keep part when empty<input type="checkbox" id="keep_when_empty" checked></label>
+    <div id="console"></div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../../js/prism.js"></script>
+</body>
+</html>

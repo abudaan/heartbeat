@@ -420,6 +420,7 @@
             ids.push(type + '_' + id);
         });
 
+        //console.log(obj.midiEventListeners);
         return ids.length === 1 ? ids[0] : ids;
     }
 

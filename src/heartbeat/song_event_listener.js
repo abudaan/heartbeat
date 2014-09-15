@@ -77,6 +77,7 @@
                 //console.log(type, listenerId);
                 return listenerId;
            default:
+                //console.log(type, args[1], args[2]);
                 return this.followEvent.addEventListener(type, args[1], args[2]);
         }
     };

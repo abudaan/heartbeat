@@ -79,6 +79,7 @@
         this.state = 'clean';
         this.mute = false;
         this.solo = false;
+        this.keepWhenEmpty = true; // if set to false, the parts gets deleted automatically if it contains no events
     };
 
     getEventsAndConfig = function(args, part){
@@ -298,6 +299,9 @@
             event.state = 'removed';
             event.reset();
             removed.push(event);
+        }
+        if(part.track !== undefined){
+            part.track.needsUpdate = true;
         }
         part.needsUpdate = true;
         return removed;

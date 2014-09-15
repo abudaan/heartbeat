@@ -168,8 +168,9 @@
 			event;
 
 		events = this.song.playhead.activeEvents;
+//		events = this.song.playhead.changedEvents; -> do something with a snapshot here
 		numEvents = events.length;
-/*		
+/*
 		if(numEvents !== undefined && numEvents > 0){
 			console.log(numEvents, position.barsAsString, this.bar, this.beat);
 		}

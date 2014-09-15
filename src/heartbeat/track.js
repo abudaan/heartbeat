@@ -938,9 +938,16 @@
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
+
                 if(part.needsUpdate === true){
                     //console.log(part);
                     part.update();
+                }
+
+                //console.log(part.events.length, part.keepWhenEmpty);
+
+                if(part.events.length === 0 && part.keepWhenEmpty === false){
+                    this.removePart(part);
                 }
 
                 if(part.state !== 'removed'){

@@ -4910,6 +4910,28 @@ if (typeof module !== "undefined" && module !== null) {
             this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
         }
 
+/*
+
+        tmp = this.song.parts;
+        n = false;
+        // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+        for(i = tmp.length - 1; i >= 0; i--){
+            p = tmp[i];
+            console.log(p.keepWhenEmpty);
+            if(p.keepWhenEmpty === true){
+                continue;
+            }
+            if(p.events.length === 0){
+                //console.log('empty part!');
+                p.track.removePart(p);
+                n = true;
+            }
+        }
+        if(n){
+            this.song.update();
+        }
+*/
+
         s = {
 
             events: {
@@ -4970,13 +4992,16 @@ if (typeof module !== "undefined" && module !== null) {
         this.changedParts = [];
         this.removedParts = [];
 
-
+/*
         tmp = this.song.parts;
         n = false;
 
         // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
         for(i = tmp.length - 1; i >= 0; i--){
             p = tmp[i];
+            if(p.keepWhenEmpty === true){
+                continue;
+            }
             if(p.events.length === 0){
                 //console.log('empty part!');
                 p.track.removePart(p);
@@ -4986,7 +5011,7 @@ if (typeof module !== "undefined" && module !== null) {
         if(n){
             this.song.update();
         }
-
+*/
         return s;
     };
 
@@ -7832,6 +7857,7 @@ if (typeof module !== "undefined" && module !== null) {
             ids.push(type + '_' + id);
         });
 
+        //console.log(obj.midiEventListeners);
         return ids.length === 1 ? ids[0] : ids;
     }
 
@@ -9318,6 +9344,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.state = 'clean';
         this.mute = false;
         this.solo = false;
+        this.keepWhenEmpty = true; // if set to false, the parts gets deleted automatically if it contains no events
     };
 
     getEventsAndConfig = function(args, part){
@@ -9537,6 +9564,9 @@ if (typeof module !== "undefined" && module !== null) {
             event.state = 'removed';
             event.reset();
             removed.push(event);
+        }
+        if(part.track !== undefined){
+            part.track.needsUpdate = true;
         }
         part.needsUpdate = true;
         return removed;
@@ -12166,7 +12196,7 @@ if (typeof module !== "undefined" && module !== null) {
                     if(event.type === 128 || event.type === 144 || event.type === 176){
                         //midiOutput.send([event.type, event.data1, event.data2], time + sequencer.midiOutLatency);
                         midiOutput.send([event.type + channel, event.data1, event.data2], time);
-                    }else if(event.type === 192){
+                    }else if(event.type === 192 || event.type === 224){
                         midiOutput.send([event.type + channel, event.data1], time);
                     }
                 });
@@ -12979,7 +13009,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.fixedLengthValue = config.fixedLengthValue || false;
         this.positionType = config.positionType || 'all';
         this.useMetronome = config.useMetronome;
-        this.fixedLength = config.fixedLength === true;
+        this.autoSize = config.autoSize === true;
         this.playbackSpeed = 1;
         this.defaultInstrument = config.defaultInstrument || sequencer.defaultInstrument;
         this.recordId = -1;
@@ -14761,6 +14791,7 @@ if (typeof module !== "undefined" && module !== null) {
                 //console.log(type, listenerId);
                 return listenerId;
            default:
+                //console.log(type, args[1], args[2]);
                 return this.followEvent.addEventListener(type, args[1], args[2]);
         }
     };
@@ -14996,8 +15027,9 @@ if (typeof module !== "undefined" && module !== null) {
 			event;
 
 		events = this.song.playhead.activeEvents;
+//		events = this.song.playhead.changedEvents; -> do something with a snapshot here
 		numEvents = events.length;
-/*		
+/*
 		if(numEvents !== undefined && numEvents > 0){
 			console.log(numEvents, position.barsAsString, this.bar, this.beat);
 		}
@@ -16551,9 +16583,9 @@ if (typeof module !== "undefined" && module !== null) {
 
         //console.log('checkDuration', lastEvent.barsAsString,lastEvent.bar,song.lastBar);
         //console.log(lastEvent);
-        //console.log(song.fixedLength);
+        //console.log(song.autoSize);
 
-        if(song.fixedLength){
+        if(song.autoSize === false){
             // don't allow the song to grow
             song.lastBar = song.bars;
         }else if(trim){
@@ -17750,9 +17782,16 @@ if (typeof module !== "undefined" && module !== null) {
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
+
                 if(part.needsUpdate === true){
                     //console.log(part);
                     part.update();
+                }
+
+                //console.log(part.events.length, part.keepWhenEmpty);
+
+                if(part.events.length === 0 && part.keepWhenEmpty === false){
+                    this.removePart(part);
                 }
 
                 if(part.state !== 'removed'){

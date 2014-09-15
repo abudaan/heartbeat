@@ -236,7 +236,7 @@
                     if(event.type === 128 || event.type === 144 || event.type === 176){
                         //midiOutput.send([event.type, event.data1, event.data2], time + sequencer.midiOutLatency);
                         midiOutput.send([event.type + channel, event.data1, event.data2], time);
-                    }else if(event.type === 192){
+                    }else if(event.type === 192 || event.type === 224){
                         midiOutput.send([event.type + channel, event.data1], time);
                     }
                 });

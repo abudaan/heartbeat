@@ -366,9 +366,9 @@
 
         //console.log('checkDuration', lastEvent.barsAsString,lastEvent.bar,song.lastBar);
         //console.log(lastEvent);
-        //console.log(song.fixedLength);
+        //console.log(song.autoSize);
 
-        if(song.fixedLength){
+        if(song.autoSize === false){
             // don't allow the song to grow
             song.lastBar = song.bars;
         }else if(trim){
