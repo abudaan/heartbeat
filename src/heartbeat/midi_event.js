@@ -6,6 +6,7 @@
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
+        slice = Array.prototype.slice,
 
         //import
         createNote, // → defined in note.js
@@ -33,7 +34,6 @@
         this.eventNumber = midiEventId;
         this.channel = 'any';
         //console.log(midiEventId, this.type, this.id);
-        this.isDirty = true;
         this.muted = false;
         //console.log(midiEventId, this.type);
         midiEventId++;
@@ -63,7 +63,9 @@
                 data.push(args[4]);//channel
             }
         }else{
-            console.log('wrong number of arguments, please consult documentation');
+            if(sequencer.debug >= 1){
+                console.error('wrong number of arguments, please consult documentation');
+            }
             return false;
         }
         //console.log(data);
@@ -145,57 +147,54 @@
             default:
                 console.warn('not a recognized type of midi event!');
         }
-/*
-        this.className =  'MidiEvent';
-        this.id = 'M' + midiEventId + new Date().getTime();
-        this.eventNumber = midiEventId;
-        //console.log(midiEventId, this.type, this.id);
-        this.isDirty = false;
-        //console.log(midiEventId, this.type);
-        midiEventId++;
-        //this.setPosition({});
-*/
     };
 
 
-    MidiEvent.prototype.clone = function(){
+    MidiEvent.prototype.clone = MidiEvent.prototype.copy = function(){
         var event = new MidiEvent(),
             property;
-        //console.log('clone midi event', this.id, '->', event.id);
+
         for(property in this){
             if(this.hasOwnProperty(property)){
-                if(property !== 'clone' && property !== 'id' && property !== 'eventNumber' && property !== 'midiNote'){
+                //console.log(property);
+                if(property !== 'id' && property !== 'eventNumber' && property !== 'midiNote'){
                     event[property] = this[property];
                 }
-                //event.ticks = 0;
-                event.part = undefined;
+                event.song = undefined;
                 event.track = undefined;
-                // if(property === 'id'){
-                //  //event.id = copyName(this.id);
-                //  event.id = 'event_' + midiEventId;
-                //  event.eventNumber = midiEventId;
-                //  //console.log(midiEventId, this.type);
-                //  midiEventId++;
-                // }else if(property !== 'clone'){
-                //  event[property] = this[property];
-                // }
+                event.trackId = undefined;
+                event.part = undefined;
+                event.partId = undefined;
             }
         }
         return event;
     };
 
-    // not sure if this should be added to the public API of MidiEvent
+
     MidiEvent.prototype.transpose = function(semi){
         if(this.type !== 0x80 && this.type !== 0x90){
-            console.error('you can only transpose note on and note off events');
+            if(sequencer.debug >= 1){
+                console.error('you can only transpose note on and note off events');
+            }
             return;
         }
+
         //console.log('transpose',semi,this);
         if(typeString(semi) === 'array'){
-            //check for semitones or hertz, not urgent
-            semi = parseInt(semi[1],10);
+            var type = semi[0];
+            if(type === 'hertz'){
+                //convert hertz to semi
+            }else if(type === 'semi' || type === 'semitone'){
+                semi = semi[1];
+            }
+        }else if(isNaN(semi) === true){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
         }
-        var tmp = this.data1 + semi;
+
+        var tmp = this.data1 + parseInt(semi, 10);
         if(tmp < 0){
             tmp = 0;
         }else if(tmp > 127){
@@ -218,18 +217,28 @@
     };
 
 
-    // not sure if this should be added to the public API of MidiEvent
     MidiEvent.prototype.setPitch = function(pitch){
         if(this.type !== 0x80 && this.type !== 0x90){
-            console.error('you can only set the pitch of note on and note off events');
+            if(sequencer.debug >= 1){
+                console.error('you can only set the pitch of note on and note off events');
+            }
             return;
         }
         if(typeString(pitch) === 'array'){
-            //check for note number or hertz, not urgent
-            pitch = parseInt(pitch[1],10);
+            var type = pitch[0];
+            if(type === 'hertz'){
+                //convert hertz to pitch
+            }else if(type === 'semi' || type === 'semitone'){
+                pitch = pitch[1];
+            }
+        }else if(isNaN(pitch) === true){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
         }
 
-        this.data1 = pitch;
+        this.data1 = parseInt(pitch,10);
         var note = createNote(this.data1);
         this.note = note;
         this.noteName = note.fullName;
@@ -245,27 +254,44 @@
         }
     };
 
-/*
-    MidiEvent.prototype.setPosition = function(position){
-        this.bpm = this.bpm || position.bpm || -1;
-        this.ticks = this.ticks || position.ticks || this.ticks;
 
-        this.millis = position.millis || -1;
-        this.seconds = position.seconds || -1;
+    MidiEvent.prototype.move = function(ticks){
+        if(isNaN(ticks)){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
+        }
+        this.ticks += parseInt(ticks, 10);
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
+    };
 
-        this.hour = position.hour || -1;
-        this.minute = position.minute || -1;
-        this.second = position.second || -1;
-        this.millisecond = position.millisecond || -1;
-        this.timeAsString = position.timeAsString || -1;
-        this.timeAsArray = position.timeAsArray || -1;
 
-        this.bar = position.bar || -1;
-        this.beat = position.beat || -1;
-        this.sixteenth = position.sixteenth || -1;
-        this.tick = position.tick || -1;
-        this.barsAsString = position.barsAsString || 'N/A';
-        this.barsAsArray = position.barsAsArray || 'N/A';
+    MidiEvent.prototype.moveTo = function(){
+        var position = slice.call(arguments);
+        //console.log(position);
+
+        if(position[0] === 'ticks' && isNaN(position[1]) === false){
+            this.ticks = parseInt(position[1], 10);
+        }else if(this.song === undefined){
+            if(sequencer.debug >= 1){
+                console.error('The midi event has not been added to a song yet; you can only move to ticks values');
+            }
+        }else{
+            position = this.song.getPosition(position);
+            if(position === false){
+                if(sequencer.debug >= 1){
+                    console.error('wrong position data');
+                }
+            }else{
+                this.ticks = position.ticks;
+            }
+        }
 
         if(this.state !== 'new'){
             this.state = 'changed';
@@ -274,12 +300,14 @@
             this.part.needsUpdate = true;
         }
     };
-*/
+
 
     MidiEvent.prototype.reset = function(fromPart, fromTrack, fromSong){
+
         fromPart = fromPart === undefined ? true : false;
         fromTrack = fromTrack === undefined ? true : false;
         fromSong = fromSong === undefined ? true : false;
+
         if(fromPart){
             this.part = undefined;
             this.partId = undefined;
@@ -292,21 +320,19 @@
         if(fromSong){
             this.song = undefined;
         }
-        //this.setPosition({});
     };
-
 
 
     sequencer.createMidiEvent = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             className = args[0].className;
 
         if(className === 'MidiEvent'){
-            //return args;
-            return args[0].clone();
+            return args[0].copy();
         }
         return new MidiEvent(args);
     };
+
 
     sequencer.protectedScope.addInitMethod(function(){
         createNote = sequencer.createNote;

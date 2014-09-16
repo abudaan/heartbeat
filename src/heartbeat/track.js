@@ -322,11 +322,6 @@
 
             //console.log(part.id, part.trackId);
 
-            if(part.track !== undefined){
-                //console.warn('this part has already been added to track', part.track.id, ', adding a copy');
-                part = part.copy();
-            }
-
             part.song = song;
             part.track = track;
             part.trackId = track.id;
@@ -934,7 +929,7 @@
         this.notes = [];
         this.events = [];
 
-        var i, id, part, event, note;
+        var i, id, part, event, events, note;
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
@@ -948,6 +943,14 @@
 
                 if(part.events.length === 0 && part.keepWhenEmpty === false){
                     this.removePart(part);
+                }
+
+                if(part.state === 'new' && this.song !== undefined){
+                    events = part.events;
+                    for(i = events.length - 1; i >= 0; i--){
+                        event = events[i];
+                        event.song = this.song;
+                    }
                 }
 
                 if(part.state !== 'removed'){

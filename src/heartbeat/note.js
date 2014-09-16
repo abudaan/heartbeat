@@ -234,6 +234,11 @@
     };
 
 
+    function getPitch(hertz){
+        //fm  =  2(m−69)/12(440 Hz).
+    }
+
+
     checkNoteName = function(){
         var
             args = Array.prototype.slice.call(arguments),

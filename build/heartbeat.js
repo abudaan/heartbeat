@@ -318,6 +318,11 @@ if (typeof module !== "undefined" && module !== null) {
     if(ua.indexOf('Chrome') !== -1){
         // chrome, chromium and canary
         browser = 'chrome';
+
+        if(ua.indexOf('OPR') !== -1){
+            browser = 'opera';
+        }
+
         /*
         //console.log(new Audio().canPlayType('audio/mp3'));
         if(new Audio().canPlayType('audio/mp3') !== 'probably'){
@@ -329,8 +334,6 @@ if (typeof module !== "undefined" && module !== null) {
         browser = 'safari';
     }else if(ua.indexOf('Firefox') !== -1){
         browser = 'firefox';
-    }else if(ua.indexOf('Opera') !== -1){
-        browser = 'opera';
     }
 
     if(os === 'ios'){
@@ -5962,6 +5965,7 @@ if (typeof module !== "undefined" && module !== null) {
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
+        slice = Array.prototype.slice,
 
         //import
         createNote, // → defined in note.js
@@ -5989,7 +5993,6 @@ if (typeof module !== "undefined" && module !== null) {
         this.eventNumber = midiEventId;
         this.channel = 'any';
         //console.log(midiEventId, this.type, this.id);
-        this.isDirty = true;
         this.muted = false;
         //console.log(midiEventId, this.type);
         midiEventId++;
@@ -6019,7 +6022,9 @@ if (typeof module !== "undefined" && module !== null) {
                 data.push(args[4]);//channel
             }
         }else{
-            console.log('wrong number of arguments, please consult documentation');
+            if(sequencer.debug >= 1){
+                console.error('wrong number of arguments, please consult documentation');
+            }
             return false;
         }
         //console.log(data);
@@ -6101,57 +6106,54 @@ if (typeof module !== "undefined" && module !== null) {
             default:
                 console.warn('not a recognized type of midi event!');
         }
-/*
-        this.className =  'MidiEvent';
-        this.id = 'M' + midiEventId + new Date().getTime();
-        this.eventNumber = midiEventId;
-        //console.log(midiEventId, this.type, this.id);
-        this.isDirty = false;
-        //console.log(midiEventId, this.type);
-        midiEventId++;
-        //this.setPosition({});
-*/
     };
 
 
-    MidiEvent.prototype.clone = function(){
+    MidiEvent.prototype.clone = MidiEvent.prototype.copy = function(){
         var event = new MidiEvent(),
             property;
-        //console.log('clone midi event', this.id, '->', event.id);
+
         for(property in this){
             if(this.hasOwnProperty(property)){
-                if(property !== 'clone' && property !== 'id' && property !== 'eventNumber' && property !== 'midiNote'){
+                //console.log(property);
+                if(property !== 'id' && property !== 'eventNumber' && property !== 'midiNote'){
                     event[property] = this[property];
                 }
-                //event.ticks = 0;
-                event.part = undefined;
+                event.song = undefined;
                 event.track = undefined;
-                // if(property === 'id'){
-                //  //event.id = copyName(this.id);
-                //  event.id = 'event_' + midiEventId;
-                //  event.eventNumber = midiEventId;
-                //  //console.log(midiEventId, this.type);
-                //  midiEventId++;
-                // }else if(property !== 'clone'){
-                //  event[property] = this[property];
-                // }
+                event.trackId = undefined;
+                event.part = undefined;
+                event.partId = undefined;
             }
         }
         return event;
     };
 
-    // not sure if this should be added to the public API of MidiEvent
+
     MidiEvent.prototype.transpose = function(semi){
         if(this.type !== 0x80 && this.type !== 0x90){
-            console.error('you can only transpose note on and note off events');
+            if(sequencer.debug >= 1){
+                console.error('you can only transpose note on and note off events');
+            }
             return;
         }
+
         //console.log('transpose',semi,this);
         if(typeString(semi) === 'array'){
-            //check for semitones or hertz, not urgent
-            semi = parseInt(semi[1],10);
+            var type = semi[0];
+            if(type === 'hertz'){
+                //convert hertz to semi
+            }else if(type === 'semi' || type === 'semitone'){
+                semi = semi[1];
+            }
+        }else if(isNaN(semi) === true){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
         }
-        var tmp = this.data1 + semi;
+
+        var tmp = this.data1 + parseInt(semi, 10);
         if(tmp < 0){
             tmp = 0;
         }else if(tmp > 127){
@@ -6174,18 +6176,28 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    // not sure if this should be added to the public API of MidiEvent
     MidiEvent.prototype.setPitch = function(pitch){
         if(this.type !== 0x80 && this.type !== 0x90){
-            console.error('you can only set the pitch of note on and note off events');
+            if(sequencer.debug >= 1){
+                console.error('you can only set the pitch of note on and note off events');
+            }
             return;
         }
         if(typeString(pitch) === 'array'){
-            //check for note number or hertz, not urgent
-            pitch = parseInt(pitch[1],10);
+            var type = pitch[0];
+            if(type === 'hertz'){
+                //convert hertz to pitch
+            }else if(type === 'semi' || type === 'semitone'){
+                pitch = pitch[1];
+            }
+        }else if(isNaN(pitch) === true){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
         }
 
-        this.data1 = pitch;
+        this.data1 = parseInt(pitch,10);
         var note = createNote(this.data1);
         this.note = note;
         this.noteName = note.fullName;
@@ -6201,27 +6213,44 @@ if (typeof module !== "undefined" && module !== null) {
         }
     };
 
-/*
-    MidiEvent.prototype.setPosition = function(position){
-        this.bpm = this.bpm || position.bpm || -1;
-        this.ticks = this.ticks || position.ticks || this.ticks;
 
-        this.millis = position.millis || -1;
-        this.seconds = position.seconds || -1;
+    MidiEvent.prototype.move = function(ticks){
+        if(isNaN(ticks)){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
+        }
+        this.ticks += parseInt(ticks, 10);
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
+    };
 
-        this.hour = position.hour || -1;
-        this.minute = position.minute || -1;
-        this.second = position.second || -1;
-        this.millisecond = position.millisecond || -1;
-        this.timeAsString = position.timeAsString || -1;
-        this.timeAsArray = position.timeAsArray || -1;
 
-        this.bar = position.bar || -1;
-        this.beat = position.beat || -1;
-        this.sixteenth = position.sixteenth || -1;
-        this.tick = position.tick || -1;
-        this.barsAsString = position.barsAsString || 'N/A';
-        this.barsAsArray = position.barsAsArray || 'N/A';
+    MidiEvent.prototype.moveTo = function(){
+        var position = slice.call(arguments);
+        //console.log(position);
+
+        if(position[0] === 'ticks' && isNaN(position[1]) === false){
+            this.ticks = parseInt(position[1], 10);
+        }else if(this.song === undefined){
+            if(sequencer.debug >= 1){
+                console.error('The midi event has not been added to a song yet; you can only move to ticks values');
+            }
+        }else{
+            position = this.song.getPosition(position);
+            if(position === false){
+                if(sequencer.debug >= 1){
+                    console.error('wrong position data');
+                }
+            }else{
+                this.ticks = position.ticks;
+            }
+        }
 
         if(this.state !== 'new'){
             this.state = 'changed';
@@ -6230,12 +6259,14 @@ if (typeof module !== "undefined" && module !== null) {
             this.part.needsUpdate = true;
         }
     };
-*/
+
 
     MidiEvent.prototype.reset = function(fromPart, fromTrack, fromSong){
+
         fromPart = fromPart === undefined ? true : false;
         fromTrack = fromTrack === undefined ? true : false;
         fromSong = fromSong === undefined ? true : false;
+
         if(fromPart){
             this.part = undefined;
             this.partId = undefined;
@@ -6248,21 +6279,19 @@ if (typeof module !== "undefined" && module !== null) {
         if(fromSong){
             this.song = undefined;
         }
-        //this.setPosition({});
     };
-
 
 
     sequencer.createMidiEvent = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             className = args[0].className;
 
         if(className === 'MidiEvent'){
-            //return args;
-            return args[0].clone();
+            return args[0].copy();
         }
         return new MidiEvent(args);
     };
+
 
     sequencer.protectedScope.addInitMethod(function(){
         createNote = sequencer.createNote;
@@ -8559,6 +8588,11 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
+    function getPitch(hertz){
+        //fm  =  2(m−69)/12(440 Hz).
+    }
+
+
     checkNoteName = function(){
         var
             args = Array.prototype.slice.call(arguments),
@@ -9087,8 +9121,6 @@ if (typeof module !== "undefined" && module !== null) {
         event.millisecond = timeData.millisecond;
         event.timeAsString = timeData.timeAsString;
         event.timeAsArray = timeData.timeAsArray;
-
-        event.isDirty = false;
     }
 
 
@@ -9465,9 +9497,12 @@ if (typeof module !== "undefined" && module !== null) {
                 e.ticks = ticks;
             }
 
+            e.track = track;
+            e.trackId = track ? track.id : undefined;
+
+            e.song = undefined;
             if(track !== undefined){
-                e.track = track;
-                e.trackId = track ? track.id : undefined;
+                e.song = track.song;
             }
 
             if(e.state !== 'recorded'){
@@ -9583,7 +9618,6 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = notes.length - 1; i >= 0; i--){
             note = notes[i];
             note.setPitch(min + (max - note.number));
-            note.isDirty = true;
             on = note.noteOn;
             off = note.noteOff;
             on.state = 'changed';
@@ -9642,7 +9676,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    Part.prototype.removeEvents = function(){//events
+    Part.prototype.removeEvent = Part.prototype.removeEvents = function(){//events
         var args = getEventsAndConfig(arguments, this);
         if(args === false){
             return false;
@@ -9734,8 +9768,8 @@ if (typeof module !== "undefined" && module !== null) {
         var part = new Part(copyName(this.name)),
             partTicks = this.ticks,
             eventsById = this.eventsById,
-            clones = [],
-            clone, id, event;
+            copies = [],
+            copy, id, event;
             //console.log('Part.copy', events);
 
         part.song = undefined;
@@ -9745,13 +9779,13 @@ if (typeof module !== "undefined" && module !== null) {
         for(id in eventsById){
             if(eventsById.hasOwnProperty(id)){
                 event = eventsById[id];
-                clone = event.clone();
+                copy = event.copy();
                 //console.log(clone.ticks, partTicks);
-                clone.ticks = clone.ticks - partTicks;
-                clones.push(clone);
+                copy.ticks = copy.ticks - partTicks;
+                copies.push(copy);
             }
         }
-        part.addEvents(clones);
+        part.addEvents(copies);
         return part;
     };
 
@@ -10848,7 +10882,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         if(position === false){
             console.error('wrong position data');
-            return;
+            return false;
         }
 
         switch(type){
@@ -16432,6 +16466,23 @@ if (typeof module !== "undefined" && module !== null) {
             }
         }
 
+
+        for(i = removedEvents.length - 1; i >=0; i--){
+            event = removedEvents[i];
+            event.state = 'clean';
+        }
+
+        for(i = removedNotes.length - 1; i >=0; i--){
+            note = removedNotes[i];
+            note.state = 'clean';
+        }
+
+        for(i = removedParts.length - 1; i >=0; i--){
+            part = removedParts[i];
+            part.state = 'clean';
+        }
+
+
         // calculate the ticks position of the recorded events
         if(recordedEvents.length > 0){
             parseRecordedEvents(song, recordedEvents);
@@ -17166,11 +17217,6 @@ if (typeof module !== "undefined" && module !== null) {
 
             //console.log(part.id, part.trackId);
 
-            if(part.track !== undefined){
-                //console.warn('this part has already been added to track', part.track.id, ', adding a copy');
-                part = part.copy();
-            }
-
             part.song = song;
             part.track = track;
             part.trackId = track.id;
@@ -17778,7 +17824,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.notes = [];
         this.events = [];
 
-        var i, id, part, event, note;
+        var i, id, part, event, events, note;
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
@@ -17792,6 +17838,14 @@ if (typeof module !== "undefined" && module !== null) {
 
                 if(part.events.length === 0 && part.keepWhenEmpty === false){
                     this.removePart(part);
+                }
+
+                if(part.state === 'new' && this.song !== undefined){
+                    events = part.events;
+                    for(i = events.length - 1; i >= 0; i--){
+                        event = events[i];
+                        event.song = this.song;
+                    }
                 }
 
                 if(part.state !== 'removed'){

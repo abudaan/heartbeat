@@ -500,7 +500,7 @@
 
         if(position === false){
             console.error('wrong position data');
-            return;
+            return false;
         }
 
         switch(type){

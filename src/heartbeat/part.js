@@ -200,9 +200,12 @@
                 e.ticks = ticks;
             }
 
+            e.track = track;
+            e.trackId = track ? track.id : undefined;
+
+            e.song = undefined;
             if(track !== undefined){
-                e.track = track;
-                e.trackId = track ? track.id : undefined;
+                e.song = track.song;
             }
 
             if(e.state !== 'recorded'){
@@ -318,7 +321,6 @@
         for(i = notes.length - 1; i >= 0; i--){
             note = notes[i];
             note.setPitch(min + (max - note.number));
-            note.isDirty = true;
             on = note.noteOn;
             off = note.noteOff;
             on.state = 'changed';
@@ -377,7 +379,7 @@
     };
 
 
-    Part.prototype.removeEvents = function(){//events
+    Part.prototype.removeEvent = Part.prototype.removeEvents = function(){//events
         var args = getEventsAndConfig(arguments, this);
         if(args === false){
             return false;
@@ -469,8 +471,8 @@
         var part = new Part(copyName(this.name)),
             partTicks = this.ticks,
             eventsById = this.eventsById,
-            clones = [],
-            clone, id, event;
+            copies = [],
+            copy, id, event;
             //console.log('Part.copy', events);
 
         part.song = undefined;
@@ -480,13 +482,13 @@
         for(id in eventsById){
             if(eventsById.hasOwnProperty(id)){
                 event = eventsById[id];
-                clone = event.clone();
+                copy = event.copy();
                 //console.log(clone.ticks, partTicks);
-                clone.ticks = clone.ticks - partTicks;
-                clones.push(clone);
+                copy.ticks = copy.ticks - partTicks;
+                copies.push(copy);
             }
         }
-        part.addEvents(clones);
+        part.addEvents(copies);
         return part;
     };
 

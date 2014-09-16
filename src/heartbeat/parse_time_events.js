@@ -189,8 +189,6 @@
         event.millisecond = timeData.millisecond;
         event.timeAsString = timeData.timeAsString;
         event.timeAsArray = timeData.timeAsArray;
-
-        event.isDirty = false;
     }
 
 

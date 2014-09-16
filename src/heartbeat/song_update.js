@@ -215,6 +215,23 @@
             }
         }
 
+
+        for(i = removedEvents.length - 1; i >=0; i--){
+            event = removedEvents[i];
+            event.state = 'clean';
+        }
+
+        for(i = removedNotes.length - 1; i >=0; i--){
+            note = removedNotes[i];
+            note.state = 'clean';
+        }
+
+        for(i = removedParts.length - 1; i >=0; i--){
+            part = removedParts[i];
+            part.state = 'clean';
+        }
+
+
         // calculate the ticks position of the recorded events
         if(recordedEvents.length > 0){
             parseRecordedEvents(song, recordedEvents);

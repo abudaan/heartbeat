@@ -38,6 +38,11 @@
     if(ua.indexOf('Chrome') !== -1){
         // chrome, chromium and canary
         browser = 'chrome';
+
+        if(ua.indexOf('OPR') !== -1){
+            browser = 'opera';
+        }
+
         /*
         //console.log(new Audio().canPlayType('audio/mp3'));
         if(new Audio().canPlayType('audio/mp3') !== 'probably'){
@@ -49,8 +54,6 @@
         browser = 'safari';
     }else if(ua.indexOf('Firefox') !== -1){
         browser = 'firefox';
-    }else if(ua.indexOf('Opera') !== -1){
-        browser = 'opera';
     }
 
     if(os === 'ios'){
