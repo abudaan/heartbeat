@@ -13,6 +13,8 @@
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
         bufferTime = sequencer.bufferTime * 1000,
 
+        called,
+
         Scheduler;
 
 
@@ -42,67 +44,98 @@
                 break;
             }
         }
+        called = 0;
     };
 
 
-    Scheduler.prototype.getEvents = function(maxtime){
-        var i, event, events = [], note;
+    Scheduler.prototype.getEvents = function(){
+        var i, event, events = [], note, noteOn, noteOff, endMillis, endTicks, diff, buffertime;
 
         // if we approach the loop point, we schedule a whole buffer of events at the start of the loop and then start
         // to schedule again after the song position has reached the loop end point. at that time, the value of this.looped
         // will be set to false again so the scheduler can continue to schedule events
+/*
         if(this.looped === true){
             //console.log('bypass');
             return events;
         }
-
+*/
         //console.log(this.song.millis, maxtime, this.index);
         //console.log(this.song.millis < this.song.loopEnd);
+        //console.log(this.song.millis, maxtime);
 
-        if(this.song.doLoop && maxtime >= this.song.loopEnd && this.looped === false && this.song.millis < this.song.loopEnd){
-            this.looped = true;
-            //console.log('LOOP', this.song.loopEnd, maxtime);
-            for(i = this.index; i < this.numEvents; i++){
-                event = this.events[i];
-                if(event.millis < this.song.loopEnd){
-                    //console.log('  ', event.track.name, maxtime, this.index, this.numEvents);
-                    events.push(event);
-                    this.index++;
-                }else{
-                    break;
+        buffertime = sequencer.bufferTime * 1000;
+        if(this.song.doLoop === true && this.song.loopDuration < buffertime){
+            this.maxtime = this.songMillis + this.song.loopDuration - 1;
+            //console.log(maxtime, this.song.loopDuration);
+        }
+
+        if(this.song.doLoop === true){
+
+            if(this.maxtime >= this.song.loopEnd){
+
+                diff = this.maxtime - this.song.loopEnd;
+                this.maxtime = this.song.loopStart + diff;
+
+                //console.log(maxtime, this.song.loopEnd, diff);
+
+                if(this.looped === false){
+                    //console.log(this.song.millis, maxtime, diff);
+                    this.looped = true;
+                    //console.log('LOOP', this.song.loopEnd, maxtime);
+                    for(i = this.index; i < this.numEvents; i++){
+                        event = this.events[i];
+                        if(event.millis < this.song.loopEnd){
+                            //console.log('  ', event.track.name, maxtime, this.index, this.numEvents);
+                            event.elapsedLoops = this.song.elapsedLoops;
+                            event.time = this.startTime + event.millis - this.songStartMillis;
+                            events.push(event);
+                            this.index++;
+                        }else{
+                            break;
+                        }
+                    }
+
+                    // stop overflowing notes-> move the note off event to the position of the right locator (end of the loop)
+                    endTicks = this.song.loopEndTicks - 1;
+                    endMillis = this.song.getPosition('ticks', endTicks).millis;
+                    for(i in this.notes){
+                        if(this.notes.hasOwnProperty(i)){
+                            note = this.notes[i];
+                            noteOn = note.noteOn;
+                            noteOff = note.noteOff;
+                            if(noteOff.millis <= this.song.loopEnd){
+                                continue;
+                            }
+                            event = sequencer.createMidiEvent(endTicks, 128, noteOn.data1, 0);
+                            event.millis = endMillis;
+                            event.part = noteOn.part;
+                            event.track = noteOn.track;
+                            event.midiNote = noteOn.midiNote;
+                            event.elapsedLoops = this.song.elapsedLoops;
+                            event.time = this.startTime + event.millis - this.songStartMillis;
+                            events.push(event);
+                        }
+                    }
+                    this.notes = {};
+                    this.setIndex(this.song.loopStart);
+                    this.song.startTime += this.song.loopDuration;
+                    this.startTime = this.song.startTime;
                 }
+            }else{
+                this.looped = false;
             }
-///*
-            // stop overflowing notes
-            for(i in this.notes){
-                if(this.notes.hasOwnProperty(i)){
-                    note = this.notes[i].noteOn;
-                    event = sequencer.createMidiEvent(this.song.loopEndTicks - 1, 128, note.data1, 0);
-                    event.millis = this.song.loopEnd - 1;
-                    event.part = note.part;
-                    event.track = note.track;
-                    event.midiNote = note.midiNote;
-                    events.push(event);
-                }
-            }
-            this.notes = {};
-//*/
-            this.setIndex(this.song.loopStart);
-            //maxtime = this.song.loopStart + (maxtime - this.song.loopEnd);
-            maxtime = this.song.loopStart + bufferTime;
-            //console.log('---> overflow', maxtime);
         }
 
 
         for(i = this.index; i < this.numEvents; i++){
             event = this.events[i];
-            if(event.millis < maxtime){
-                //if(this.looped){
-                //    console.log(event);
-                //}
+            if(event.millis < this.maxtime){
                 // if(this.song.bar >= 6 && event.track.name === 'Sonata # 3'){
                 //     console.log('  song:', this.song.millis, 'event:', event.millis, ('(' + event.type + ')'), 'max:', maxtime, 'id:', event.midiNote.id);
                 // }
+                event.elapsedLoops = this.song.elapsedLoops;
+                event.time = this.startTime + event.millis - this.songStartMillis;
                 events.push(event);
                 if(event.midiNote !== undefined){
                     if(event.type === 144){
@@ -123,42 +156,32 @@
     Scheduler.prototype.update = function(){
         var i,
             event,
-            time,
-            track,
-            channel,
-            //currentTime = sequencer.getTime() * 1000,
-            startTime,
-            startTime2,
-            songStartMillis,
-            millis,
-            maxtime,
             events,
-            numEvents;
-
-        this.inTransition = false;
-
-        //console.log('precounting', this.song.precounting);
+            numEvents,
+            track,
+            channel;
 
         if(this.song.precounting === true){
-            millis = this.song.metronome.millis;
-            maxtime = millis + (sequencer.bufferTime * 1000);
-            events = this.song.metronome.getPrecountEvents(maxtime);
-            //console.log(maxtime, millis, this.song.metronome.endMillis);
+            this.songMillis = this.song.metronome.millis;
+            this.maxtime = this.songMillis + (sequencer.bufferTime * 1000);
+            events = this.song.metronome.getPrecountEvents(this.maxtime);
 
-            if(maxtime > this.song.metronome.endMillis){
+            if(this.maxtime > this.song.metronome.endMillis){
                 // start scheduling events of the song -> add the first events of the song
-                maxtime = this.song.millis + (sequencer.bufferTime * 1000);
-                events = events.concat(this.getEvents(maxtime));
-                //this.song.precounting = false;
-                // we are in transition, meaning that for calculating their schedule time the precount events
-                // use the startTime of the metronome, and the song events use the startTime of the song
-                this.inTransition = true;
-                //console.log(this.inTransition, sequencer.getTime());
+                this.songMillis = 0;//this.song.millis;
+                this.maxtime = this.song.millis + (sequencer.bufferTime * 1000);
+                this.startTime = this.song.startTime;
+                this.startTime2 = this.song.startTime2;
+                this.songStartMillis = this.song.startMillis;
+                events = events.concat(this.getEvents());
             }
         }else{
-            millis = this.song.millis;
-            maxtime = millis + (sequencer.bufferTime * 1000);
-            events = this.getEvents(maxtime);
+            this.songMillis = this.song.millis;
+            this.maxtime = this.songMillis + (sequencer.bufferTime * 1000);
+            this.startTime = this.song.startTime;
+            this.startTime2 = this.song.startTime2;
+            this.songStartMillis = this.song.startMillis;
+            events = this.getEvents();
         }
 
         numEvents = events.length;
@@ -166,81 +189,38 @@
         for(i = 0; i < numEvents; i++){
             event = events[i];
             track = event.track;
-            //console.log((sequencer.bufferTime/event.secondsPerTick) * event.ticksPerBeat);
 
             if(
                 event.mute === true ||
                 event.part.mute === true ||
                 event.track.mute === true ||
-                //event.track.midiOutput !== undefined ||
                 (event.track.type === 'metronome' && this.song.useMetronome === false)
                 )
             {
                 continue;
             }
 
-            if(this.inTransition === true){
-                if(event.part.id === 'precount'){
-                    startTime = this.song.metronome.startTime;
-                    startTime2 = this.song.metronome.startTime2;
-                    songStartMillis = 0;//this.song.metronome.startMillis;
-                }else{
-                    startTime = this.song.startTime;
-                    startTime2 = this.song.startTime2;
-                    songStartMillis = this.song.startMillis;
-                }
-            }else if(this.song.precounting === true){
-                startTime = this.song.metronome.startTime;
-                startTime2 = this.song.metronome.startTime2;
-                songStartMillis = 0;//this.song.metronome.startMillis;
-            }else{
-                startTime = this.song.startTime;
-                startTime2 = this.song.startTime2;
-                songStartMillis = this.song.startMillis;
-            }
 
             if(track.routeToMidiOut === false){
-                time = (startTime + event.millis - songStartMillis)/1000;
-/*
-                if(this.song.precounting){
-                    console.log(startTime, event.millis, songStartMillis, time, sequencer.getTime());
-                }
-*/
-                //console.log(time, event.millis, event.ticks);
-                //if(this.song.precounting){
-                //   console.log(time, sequencer.getTime(), startTime, songStartMillis, event.millis);
-                //}
-                //console.log(time, event.part.id, event.id, sequencer.getTime(), startTime, this.song.precounting, this.inTransition);
-                if(time < sequencer.getTime() && this.looped === true){
-                    time += (this.song.loopEnd - this.song.loopStart)/1000;
-                }
-/*
-                if(event.type === 144){
-                    console.log('e', event.millis, 's', millis, 'now', sequencer.getTime() * 1000, 'rt', time * 1000, 'ss', this.song.startTime);
-                }
-*/
-                track.instrument.processEvent(event, time);
-            }else{
-                // if(startTime2 === undefined){
-                //     startTime2 = window.performance.now();
+                // if(event.type === 144){
+                //     console.log(event.time/1000, sequencer.getTime(), event.time/1000 - sequencer.getTime());
                 // }
-                time = startTime2 + event.millis - songStartMillis;
-                if(time < sequencer.getTime() && this.looped === true){
-                    time += (this.song.loopEnd - this.song.loopStart);
-                }
+                track.instrument.processEvent(event, event.time/1000);
+            }else{
                 channel = track.channel;
                 if(channel === 'any' || channel === undefined || isNaN(channel) === true){
                     channel = 0;
                 }
                 objectForEach(track.midiOutputs, function(midiOutput){
                     if(event.type === 128 || event.type === 144 || event.type === 176){
-                        //midiOutput.send([event.type, event.data1, event.data2], time + sequencer.midiOutLatency);
-                        midiOutput.send([event.type + channel, event.data1, event.data2], time);
+                        //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                        midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
                     }else if(event.type === 192 || event.type === 224){
-                        midiOutput.send([event.type + channel, event.data1], time);
+                        midiOutput.send([event.type + channel, event.data1], event.time);
                     }
                 });
-                this.lastEventTime = time;
+                // needed for Song.resetExternalMidiDevices()
+                this.lastEventTime = event.time;
             }
         }
     };

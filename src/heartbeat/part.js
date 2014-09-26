@@ -498,10 +498,20 @@
         }
         this.mute = false;
         this.solo = flag;
+        // stop all sounds here
+        this.allNotesOff();
         if(this.track){
             this.track.setPartSolo(this, flag);
         }
         //console.log(this.solo, this.mute);
+    };
+
+
+    Part.prototype.allNotesOff = function(){
+        if(this.track === undefined){
+            return;
+        }
+        this.track.instrument.allNotesOffPart(this.id);
     };
 
 

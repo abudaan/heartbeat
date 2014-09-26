@@ -872,6 +872,37 @@
     };
 
 
+    Instrument.prototype.allNotesOffPart = function(partId){
+        var sample, sampleId,
+            scheduledSamples = this.scheduledSamples;
+
+        // make this more subtle
+        this.stopSustain(0);
+        this.sustainPedalDown = false;
+
+        //console.log(scheduledSamples);
+
+        if(scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true){
+            return;
+        }
+
+        for(sampleId in scheduledSamples){
+            if(scheduledSamples.hasOwnProperty(sampleId)){
+                //console.log('allNotesOff', sampleId);
+                sample = scheduledSamples[sampleId];
+                if(sample){
+                    sample.unschedule(0, unscheduleCallback);
+                }
+            }
+        }
+        this.scheduledSamples = {};
+
+        objectForEach(this.scheduledEvents, function(event, eventId){
+            delete timedTasks['event_' + eventId];
+        });
+        this.scheduledEvents = {};
+    };
+
     Instrument.prototype.update = function(value){
         var sampleId, sample;
         //console.log(this.scheduledSamples);

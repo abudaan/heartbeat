@@ -124,7 +124,7 @@
         this.illegalLoop = true;
         this.loopStart = 0;
         this.loopEnd = 0;
-        this.loopedTime = 0;
+        this.loopDuration = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -461,13 +461,13 @@
         var
             //now = window.performance.now(),
             now = sequencer.getTime() * 1000,
-            diff = now - song.timeStamp;
+            diff = now - song.timeStamp,
+            millis = song.millis + diff;
 
         song.diff = diff;
         //console.log(diff);
 
         song.timeStamp = now;
-        // put followEvent and scheduler before playhead.update(), otherwise followEvent will miss the first event (scheduler could come after playhead.update)
 
         if(song.precounting === true){
             song.metronome.millis += diff;
@@ -476,24 +476,40 @@
             return;
         }
 
-        song.playhead.update('millis', diff);
-        song.followEvent.update();
-        song.scheduler.update(diff);
-
+        // is this comment still valid?
+        // put followEvent and scheduler before playhead.update(), otherwise followEvent will miss the first event (scheduler could come after playhead.update)
+        song.prevMillis = song.millis;
+        //song.playhead.update('millis', diff);
+        // song.followEvent.update();
+        // song.scheduler.update();
+        //console.log(song.millis, diff, song.loopEnd);
         //console.log(song.doLoop, song.scheduler.looped, song.millis > song.loopEnd);
-        if(song.doLoop && song.scheduler.looped && song.millis > song.loopEnd){
-            song.scheduler.looped = false;
-            song.playhead.set('millis', song.loopStart);
-            song.loopedTime += (song.loopEnd - song.loopStart);
-            song.startTime += (song.loopEnd - song.loopStart);
-        }else if(song.millis >= song.durationMillis){
+        if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){
+            //console.log(song.prevMillis, song.millis);
+            //song.scheduler.looped = false;
+            song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
+            song.followEvent.update();
+            //console.log('-->', song.millis);
+            song.scheduler.update();
+            //song.startTime += (song.loopEnd - song.loopStart);
+        }else if(millis >= song.durationMillis){
             song.playhead.update('millis', song.durationMillis - song.millis);
+            song.followEvent.update();
             song.pause();
             song.endOfSong = true;
             dispatchEvent(song, 'end');
+        }else{
+            song.playhead.update('millis', diff);
+            song.followEvent.update();
+            song.scheduler.update();
         }
+
+        //console.log(now, sequencer.getTime());
         //console.log(song.barsAsString);
         //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
+        //console.log(song.millis);
+
+
     };
 
 
@@ -519,7 +535,7 @@
             this.playhead.set('millis', 0);
             this.scheduler.setIndex(0);
         }
-        // may be we can remove this.timeStamp: it isn't used because this.startTime is used for calculating the scheduling of events
+        // timeStamp is used for calculating the diff in time of every consecutive frame
         this.timeStamp = sequencer.getTime() * 1000;
         this.startTime = this.timeStamp;
         try{
@@ -558,7 +574,7 @@
                 }
             };
         }
-
+        // this value will be deducted from the millis value of the event as soon as the event get scheduled
         this.startMillis = this.millis;
         //console.log(this.startMillis);
 
@@ -825,6 +841,7 @@
         }
         this.illegalLoop = this.loopStart >= this.loopEnd;
         this.doLoop = (this.illegalLoop === false && this.loop === true);
+        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
         // if(this.doLoop === false && this.loop === true){
         //     dispatchEvent('loop_off', this);
         // }
@@ -849,6 +866,7 @@
         //console.log(this.loopEnd);
         this.illegalLoop = this.loopEnd <= this.loopStart;
         this.doLoop = (this.illegalLoop === false && this.loop === true);
+        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
         // if(previousState !== false && this.loop === true){
         //     dispatchEvent('loop_off', this);
         // }
