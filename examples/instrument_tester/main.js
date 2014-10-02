@@ -17,9 +17,8 @@ window.onload = function(){
         instrumentName,
         instrumentFolder,
 
-        // mp3 is chosen because it is supported in all Web Audio enabled browsers
-        compressionType = 'mp3',
-        compressionLevel = 128,
+        compressionType,
+        compressionLevel,
 
         minRelease = 0,
         maxRelease = 40000,
@@ -43,16 +42,26 @@ window.onload = function(){
     enableUI(false);
 
 
+    // we have to wait for the sequencer because we want to know which audio types are supported
+    sequencer.ready(function(){
+        compressionType = sequencer.ogg === true ? 'ogg' : 'mp3';
+        compressionLevel = sequencer.ogg === true ? 4 : 128;
+        load()
+    });
+
+
     // load a json file that contains all groovy instruments so we can populate the dropdown menu
-    (function load(){
-        var request = new XMLHttpRequest();
+    function load(){
+        var request = new XMLHttpRequest(),
+            url = sequencer.ogg === true ? basePath + 'ir/VS8F.ogg.4.json' : basePath + 'ir/VS8F.mp3.128.json';
+
         request.onload = function(){
             if(request.status !== 200){
                 return;
             }
             // load an assetpack that contains a lot of IR samples, they will be stored in sequencer/storage/audio/impulse_response/
             sequencer.addAssetPack({
-                    url: basePath + 'ir/VS8F.mp3.128.json'
+                    url: url
                 },
                 function(){
                     init(JSON.parse(request.response));
@@ -64,7 +73,7 @@ window.onload = function(){
         // we can't use reponse type json because iOS doesn't support it
         request.responseType = 'text';
         request.send();
-    }());
+    }
 
 
     function init(instruments){

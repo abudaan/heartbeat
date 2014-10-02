@@ -5,16 +5,16 @@
 
     var
         // satisfy jslint
-        //alert = window.alert,
+        alert = window.alert,
         console = window.console,
 
         protectedScope,
         initMethods = [],
 
+        src,
         context,
         gainNode,
         compressor,
-        src,
         sampleIndex = 0,
         compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
 
@@ -65,7 +65,6 @@
 
     //console.log(os, browser, '---', ua);
 
-
     if(window.AudioContext){
         context = new window.AudioContext();
         if(context.createGainNode === undefined){
@@ -86,15 +85,25 @@
         alert('heartbeat requires the Web Audio API which is not yet implemented in ' + browser + '; please use another browser');
         window.sequencer.ready = function(cb){
             cb();
-        }
+        };
         return;
     }
 
+    // check for older implementations of WebAudio
     src = context.createBufferSource();
     if(src.start === undefined){
         legacy = true;
     }
 
+
+/*
+    var audioTest = new Audio();
+    //wav = audioTest.canPlayType('audio/wav');// === '' ? false : true;
+    canplayOgg = audioTest.canPlayType('audio/ogg');// === '' ? false : true;
+    canplayMp3 = audioTest.canPlayType('audio/mpeg');// === '' ? false : true;
+    console.log('wav', audioTest.canPlayType('audio/wav'), 'ogg', canplayOgg, 'mp3', canplayMp3);
+    audioTest = null;
+*/
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
     window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
@@ -187,9 +196,11 @@
             Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
             @alias sequencer#legacy
         */
-        legacy: legacy,
+        legacy: false,
         webmidi: false,
         webaudio: true,
+        ogg: false,
+        mp3: false,
         util: {},
         debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',
