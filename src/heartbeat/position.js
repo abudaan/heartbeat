@@ -395,6 +395,7 @@
                 positionData.millisPerTick = millisPerTick;
                 positionData.secondsPerTick = secondsPerTick;
 
+                // use ticks to make tempo changes visible by a faster moving playhead
                 positionData.percentage = ticks / song.durationTicks;
                 //positionData.percentage = millis / song.durationMillis;
                 break;

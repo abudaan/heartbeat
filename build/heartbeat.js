@@ -282,6 +282,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     'use strict';
 
+
     var
         // satisfy jslint
         //alert = window.alert,
@@ -445,13 +446,27 @@ if (typeof module !== "undefined" && module !== null) {
 
 
 
-    window.sequencer = {
-
+    /**
+        @namespace sequencer
+    */
+     window.sequencer = {
         protectedScope: protectedScope,
         ui: {},
         ua: ua,
+        /**
+            The operating system
+            @alias sequencer#os
+        */
         os: os,
+        /**
+            The name of thebrowser in lowercase, e.g. firefox, opera, safari, chromium, etc.
+            @alias sequencer#browser
+        */
         browser: browser,
+        /**
+            Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
+            @alias sequencer#legacy
+        */
         legacy: legacy,
         webmidi: false,
         webaudio: true,
@@ -1560,197 +1575,203 @@ if (typeof module !== "undefined" && module !== null) {
 
 /*
 
-	operators:
+    operators:
 
-	- max
-	- min
-	- avg
-	- all
-
-
-	eventStats.get('noteNumber max');
-	eventStats.get('noteNumber min');
-	eventStats.get('noteNumber avg');
-
-	eventStats.get('data2 max type = PITCH_BEND');
-	eventStats.get('data2 min');
-	eventStats.get('data2 avg');
-
-	eventStats.get('velocity avg bar = 3');
-
-	eventStats.get('velocity max musical_time > 1,1,1,0 < 8,1,1,0');
-	
-
-	return {
-		min: min,
-		max: max,
-		avg: avg
-	};
+    - max
+    - min
+    - avg
+    - all
 
 
-	implementation:
+    eventStats.get('noteNumber max');
+    eventStats.get('noteNumber min');
+    eventStats.get('noteNumber avg');
 
-	song.getStats(searchString);
-	track.getStats(searchString);
-	sequencer.getStats(events, searchString);
+    eventStats.get('data2 max type = PITCH_BEND');
+    eventStats.get('data2 min');
+    eventStats.get('data2 avg');
+
+    eventStats.get('velocity avg bar = 3');
+
+    eventStats.get('velocity max musical_time > 1,1,1,0 < 8,1,1,0');
+
+
+    return {
+        min: min,
+        max: max,
+        avg: avg
+    };
+
+
+    implementation:
+
+    song.getStats(searchString);
+    track.getStats(searchString);
+    sequencer.getStats(events, searchString);
 
 
 */
 
-
 (function(){
 
-	'use strict';
+    'use strict';
 
-	var 
-		//import
-		createNote = sequencer.createNote, // → defined in note.js
-		findEvent = sequencer.findEvent, // → defined in find_event.js
-		round = sequencer.protectedScope.round, // → defined in util.js
-		getEvents = sequencer.protectedScope.getEvents, // → defined in find_event.js
-		typeString = sequencer.protectedScope.typeString, // → defined in util.js
+    var
+        //import
+        createNote = sequencer.createNote, // → defined in note.js
+        findEvent = sequencer.findEvent, // → defined in find_event.js
+        round = sequencer.protectedScope.round, // → defined in util.js
+        getEvents = sequencer.protectedScope.getEvents, // → defined in find_event.js
+        typeString = sequencer.protectedScope.typeString, // → defined in util.js
 
-		supportedOperators = 'max min avg all',
-		supportedProperties = 'data1 data2 velocity noteNumber noteName frequency',
-			
-		//public
-		getStats;
+        supportedOperators = 'max min avg all',
+        supportedProperties = 'data1 data2 velocity noteNumber noteName frequency',
 
-
-	getStats = function(){
-		var args = Array.prototype.slice.call(arguments),
-			numArgs = args.length,
-			property,
-			operator,
-			events,
-			searchPattern,
-			patternLength,
-			i,maxi,event,propValue,
-			minNoteName,
-			maxNoteName,
-			min = 128,//Number.MAX_VALUE,
-			max = -1,
-			sum = 0,
-			avg = 0,
-			useNoteName = false;
+        //public
+        getStats;
 
 
-		events = getEvents(args[0]);
-
-		if(events.length === 0){
-			//console.warn('getStats: no events');
-			return -1;
-		}
-
-		searchPattern = args[1];
-		
-		if(typeString(searchPattern) !== 'string'){
-			console.error('please provide a search string like for instance get(\'velocity max bar >= 1 < 8\')');
-			return -1;
-		}
-
-		if(numArgs > 2){
-			console.warn('ignoring invalid arguments, please consult documentation');
-		}
-		
-		searchPattern = searchPattern.split(' ');
-		patternLength = searchPattern.length;	
-
-		property = searchPattern[0];			
-		operator = searchPattern[1];
-		
-		if(supportedProperties.indexOf(property) === -1){
-			console.error('you can\'t use \'min\', \'max\' or \'avg\'', 'on the property', property);
-			return -1;
-		}
-
-		if(supportedOperators.indexOf(operator) === -1){
-			console.error(operator, 'is not a valid operator');
-			return -1;
-		}
+    /**
+        @memberof sequencer
+        @instance
+        @param {array} events
+        @param {string} searchString
+        @description Get statistics of an array of events, see [documentation]{@link http://heartbeatjs.org/docs/statistics}
+    */
+    getStats = function(){
+        var args = Array.prototype.slice.call(arguments),
+            numArgs = args.length,
+            property,
+            operator,
+            events,
+            searchPattern,
+            patternLength,
+            i,maxi,event,propValue,
+            minNoteName,
+            maxNoteName,
+            min = 128,//Number.MAX_VALUE,
+            max = -1,
+            sum = 0,
+            avg = 0,
+            useNoteName = false;
 
 
-		if(patternLength > 2){
-			
-			//if(patternLength !== 5 && !(patternLength >= 7)){
-			if(patternLength === 6){
-				console.warn('ignoring cruft found in search string, please consult documentation');
-			}
+        events = getEvents(args[0]);
 
-			searchPattern.shift(); // remove property
-			searchPattern.shift(); // remove operator
+        if(events.length === 0){
+            //console.warn('getStats: no events');
+            return -1;
+        }
 
-			//filter events
-			events = findEvent(events, searchPattern.join(' '));	
-		}
+        searchPattern = args[1];
 
-		//console.log(events);
+        if(typeString(searchPattern) !== 'string'){
+            console.error('please provide a search string like for instance get(\'velocity max bar >= 1 < 8\')');
+            return -1;
+        }
 
-		if(property === 'noteName'){
-			property = 'noteNumber';
-			useNoteName = true;
-		}
+        if(numArgs > 2){
+            console.warn('ignoring invalid arguments, please consult documentation');
+        }
 
-		for(i = 0, maxi = events.length; i < maxi; i++){
-			event = events[i];
-			propValue = event[property];
+        searchPattern = searchPattern.split(' ');
+        patternLength = searchPattern.length;
 
-			if(propValue > max){
-				//console.log('max', propValue, max);
-				max = propValue;
-				maxNoteName = event.noteName;
-			}
-			if(propValue < min){
-				//console.log('min', propValue, min);
-				min = propValue;
-				minNoteName = event.noteName;
-			}
+        property = searchPattern[0];
+        operator = searchPattern[1];
 
-			if(propValue !== undefined){
-				sum += propValue;
-			}
-		}
+        if(supportedProperties.indexOf(property) === -1){
+            console.error('you can\'t use \'min\', \'max\' or \'avg\'', 'on the property', property);
+            return -1;
+        }
 
-		avg = sum/maxi;
-
-		if(useNoteName){
-			avg = round(avg);
-			avg = createNote(avg).name;
-			min = minNoteName;
-			max = maxNoteName;
-		}
-
-		if(operator === 'max'){
-			return max;
-		}
-		
-		if(operator === 'min'){
-			return min;
-		}
-		
-		if(operator === 'avg'){
-			return avg;
-		}
-		
-		if(operator === 'all'){
-			return {
-				min:min,
-				max:max,
-				avg:avg
-			};
-		}
-	};
+        if(supportedOperators.indexOf(operator) === -1){
+            console.error(operator, 'is not a valid operator');
+            return -1;
+        }
 
 
-	sequencer.getStats = getStats;
-	
-	sequencer.protectedScope.addInitMethod(function(){
-		createNote = sequencer.createNote;
-		findEvent = sequencer.findEvent;
-		round = sequencer.protectedScope.round;
-		getEvents = sequencer.protectedScope.getEvents;
-		typeString = sequencer.protectedScope.typeString;		
-	});
+        if(patternLength > 2){
+
+            //if(patternLength !== 5 && !(patternLength >= 7)){
+            if(patternLength === 6){
+                console.warn('ignoring cruft found in search string, please consult documentation');
+            }
+
+            searchPattern.shift(); // remove property
+            searchPattern.shift(); // remove operator
+
+            //filter events
+            events = findEvent(events, searchPattern.join(' '));
+        }
+
+        //console.log(events);
+
+        if(property === 'noteName'){
+            property = 'noteNumber';
+            useNoteName = true;
+        }
+
+        for(i = 0, maxi = events.length; i < maxi; i++){
+            event = events[i];
+            propValue = event[property];
+
+            if(propValue > max){
+                //console.log('max', propValue, max);
+                max = propValue;
+                maxNoteName = event.noteName;
+            }
+            if(propValue < min){
+                //console.log('min', propValue, min);
+                min = propValue;
+                minNoteName = event.noteName;
+            }
+
+            if(propValue !== undefined){
+                sum += propValue;
+            }
+        }
+
+        avg = sum/maxi;
+
+        if(useNoteName){
+            avg = round(avg);
+            avg = createNote(avg).name;
+            min = minNoteName;
+            max = maxNoteName;
+        }
+
+        if(operator === 'max'){
+            return max;
+        }
+
+        if(operator === 'min'){
+            return min;
+        }
+
+        if(operator === 'avg'){
+            return avg;
+        }
+
+        if(operator === 'all'){
+            return {
+                min:min,
+                max:max,
+                avg:avg
+            };
+        }
+    };
+
+
+    sequencer.getStats = getStats;
+
+    sequencer.protectedScope.addInitMethod(function(){
+        createNote = sequencer.createNote;
+        findEvent = sequencer.findEvent;
+        round = sequencer.protectedScope.round;
+        getEvents = sequencer.protectedScope.getEvents;
+        typeString = sequencer.protectedScope.typeString;
+    });
 
 }());(function(){
 
@@ -4620,7 +4641,9 @@ if (typeof module !== "undefined" && module !== null) {
     KeyEditor.prototype.getPlayheadPosition = function(compensateForScroll){
         //return (sequencer.percentage * this.width);// - this.scrollX;
         //return ((sequencer.millis/song.durationMillis) * this.width);// - this.scrollX;
-        var x = ((this.song.millis/this.song.durationMillis) * this.width);
+        //var x = ((this.song.millis/this.song.durationMillis) * this.width);
+        // change to ticks to make tempo changes visible by a faster moving playhead
+        var x = ((this.song.ticks/this.song.durationTicks) * this.width);
         x = compensateForScroll === true ? x - this.scrollX : x;
         return x;
     };
@@ -5997,6 +6020,27 @@ if (typeof module !== "undefined" && module !== null) {
     });
 }());(function(){
 
+    /**
+        @public
+        @class MidiEvent
+        @param time {int} the time that the event is scheduled
+        @param type {int} type of MidiEvent, e.g. NOTE_ON, NOTE_OFF or, 144, 128, etc.
+        @param data1 {int} if type is 144 or 128: note number
+        @param [data2] {int} if type is 144 or 128: velocity
+
+
+        @example
+        // plays the central c at velocity 100
+        var event = sequencer.createMidiEvent(120, sequencer.NOTE_ON, 60, 100);
+
+        // pass arguments as array
+        var event = sequencer.createMidiEvent([120, sequencer.NOTE_ON, 60, 100]);
+
+        // if you pass a MidiEvent instance a copy/clone will be returned
+        var copy = sequencer.createMidiEvent(event);
+    */
+
+
     'use strict';
 
     var
@@ -6015,14 +6059,12 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     /*
-        arguments:
-        - [ticks, type, data1, data2]
-        - ticks, type, data1, data2
+       arguments:
+       - [ticks, type, data1, data2]
+       - ticks, type, data1, data2
 
-        data1 and data2 are optional but must be numbers if provided
-
+       data1 and data2 are optional but must be numbers if provided
     */
-
     MidiEvent = function(args){
         var data, note;
 
@@ -6146,7 +6188,12 @@ if (typeof module !== "undefined" && module !== null) {
         }
     };
 
-
+    /**
+        Creates a copy of the MidiEvent
+        @memberof MidiEvent
+        @function clone
+        @instance
+    */
     MidiEvent.prototype.clone = MidiEvent.prototype.copy = function(){
         var event = new MidiEvent(),
             property;
@@ -6168,6 +6215,10 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
+    /**
+    *  Transposes the MidiEvent by the provided number of semitones
+    *  @param {int} semi
+    */
     MidiEvent.prototype.transpose = function(semi){
         if(this.type !== 0x80 && this.type !== 0x90){
             if(sequencer.debug >= 1){
@@ -6319,8 +6370,15 @@ if (typeof module !== "undefined" && module !== null) {
         }
     };
 
-
+    /**@exports sequencer*/
     sequencer.createMidiEvent = function(){
+        /**
+            @function createMidiEvent
+            @param time {int}
+            @param type {int}
+            @param data1 {int}
+            @param data2 {int}
+        */
         var args = slice.call(arguments),
             className = args[0].className;
 
@@ -6339,8 +6397,14 @@ if (typeof module !== "undefined" && module !== null) {
 
 }());(function(){
 
+    /**
+        @public
+    */
     'use strict';
 
+    /**
+        @var
+    */
     var
         lowerCaseToNumber = {
             'note off': 0x80,
@@ -6446,6 +6510,10 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     //heartbeat
+    /**
+        @memberof sequencer
+        @instance
+    */
     Object.defineProperty(sequencer, 'DUMMY_EVENT', {value: 0x0}); //0
     Object.defineProperty(sequencer, 'MIDI_NOTE', {value: 0x70}); //112
     //standard MIDI
@@ -6474,6 +6542,11 @@ if (typeof module !== "undefined" && module !== null) {
     Object.defineProperty(sequencer, 'END_OF_TRACK', {value: 0x2F});
 
     // public
+    /**
+        @memberof sequencer
+        @instance
+        @function checkEventType
+    */
     sequencer.checkEventType = checkEventType;
     sequencer.midiEventNameByNumber = nameByNumber;
     sequencer.midiEventNumberByName = numberByName;
@@ -10825,6 +10898,7 @@ if (typeof module !== "undefined" && module !== null) {
                 positionData.millisPerTick = millisPerTick;
                 positionData.secondsPerTick = secondsPerTick;
 
+                // use ticks to make tempo changes visible by a faster moving playhead
                 positionData.percentage = ticks / song.durationTicks;
                 //positionData.percentage = millis / song.durationMillis;
                 break;
@@ -14236,6 +14310,9 @@ if (typeof module !== "undefined" && module !== null) {
         }else{
             this.setPlayhead('ticks', newPos.ticks);
         }
+
+
+        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
 /*
         console.log(percentage);
         newPos = this.getPosition('percentage', percentage);

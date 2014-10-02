@@ -2,6 +2,7 @@
 
     'use strict';
 
+
     var
         // satisfy jslint
         //alert = window.alert,
@@ -165,13 +166,27 @@
 
 
 
-    window.sequencer = {
-
+    /**
+        @namespace sequencer
+    */
+     window.sequencer = {
         protectedScope: protectedScope,
         ui: {},
         ua: ua,
+        /**
+            The operating system
+            @alias sequencer#os
+        */
         os: os,
+        /**
+            The name of thebrowser in lowercase, e.g. firefox, opera, safari, chromium, etc.
+            @alias sequencer#browser
+        */
         browser: browser,
+        /**
+            Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
+            @alias sequencer#legacy
+        */
         legacy: legacy,
         webmidi: false,
         webaudio: true,

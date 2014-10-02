@@ -1279,6 +1279,9 @@
         }else{
             this.setPlayhead('ticks', newPos.ticks);
         }
+
+
+        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
 /*
         console.log(percentage);
         newPos = this.getPosition('percentage', percentage);

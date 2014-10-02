@@ -831,7 +831,9 @@
     KeyEditor.prototype.getPlayheadPosition = function(compensateForScroll){
         //return (sequencer.percentage * this.width);// - this.scrollX;
         //return ((sequencer.millis/song.durationMillis) * this.width);// - this.scrollX;
-        var x = ((this.song.millis/this.song.durationMillis) * this.width);
+        //var x = ((this.song.millis/this.song.durationMillis) * this.width);
+        // change to ticks to make tempo changes visible by a faster moving playhead
+        var x = ((this.song.ticks/this.song.durationTicks) * this.width);
         x = compensateForScroll === true ? x - this.scrollX : x;
         return x;
     };

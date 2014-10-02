@@ -1,5 +1,26 @@
 (function(){
 
+    /**
+        @public
+        @class MidiEvent
+        @param time {int} the time that the event is scheduled
+        @param type {int} type of MidiEvent, e.g. NOTE_ON, NOTE_OFF or, 144, 128, etc.
+        @param data1 {int} if type is 144 or 128: note number
+        @param [data2] {int} if type is 144 or 128: velocity
+
+
+        @example
+        // plays the central c at velocity 100
+        var event = sequencer.createMidiEvent(120, sequencer.NOTE_ON, 60, 100);
+
+        // pass arguments as array
+        var event = sequencer.createMidiEvent([120, sequencer.NOTE_ON, 60, 100]);
+
+        // if you pass a MidiEvent instance a copy/clone will be returned
+        var copy = sequencer.createMidiEvent(event);
+    */
+
+
     'use strict';
 
     var
@@ -18,14 +39,12 @@
 
 
     /*
-        arguments:
-        - [ticks, type, data1, data2]
-        - ticks, type, data1, data2
+       arguments:
+       - [ticks, type, data1, data2]
+       - ticks, type, data1, data2
 
-        data1 and data2 are optional but must be numbers if provided
-
+       data1 and data2 are optional but must be numbers if provided
     */
-
     MidiEvent = function(args){
         var data, note;
 
@@ -149,7 +168,12 @@
         }
     };
 
-
+    /**
+        Creates a copy of the MidiEvent
+        @memberof MidiEvent
+        @function clone
+        @instance
+    */
     MidiEvent.prototype.clone = MidiEvent.prototype.copy = function(){
         var event = new MidiEvent(),
             property;
@@ -171,6 +195,10 @@
     };
 
 
+    /**
+    *  Transposes the MidiEvent by the provided number of semitones
+    *  @param {int} semi
+    */
     MidiEvent.prototype.transpose = function(semi){
         if(this.type !== 0x80 && this.type !== 0x90){
             if(sequencer.debug >= 1){
@@ -322,8 +350,15 @@
         }
     };
 
-
+    /**@exports sequencer*/
     sequencer.createMidiEvent = function(){
+        /**
+            @function createMidiEvent
+            @param time {int}
+            @param type {int}
+            @param data1 {int}
+            @param data2 {int}
+        */
         var args = slice.call(arguments),
             className = args[0].className;
 

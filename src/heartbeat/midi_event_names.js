@@ -1,7 +1,13 @@
 (function(){
 
+    /**
+        @public
+    */
     'use strict';
 
+    /**
+        @var
+    */
     var
         lowerCaseToNumber = {
             'note off': 0x80,
@@ -107,6 +113,10 @@
 
 
     //heartbeat
+    /**
+        @memberof sequencer
+        @instance
+    */
     Object.defineProperty(sequencer, 'DUMMY_EVENT', {value: 0x0}); //0
     Object.defineProperty(sequencer, 'MIDI_NOTE', {value: 0x70}); //112
     //standard MIDI
@@ -135,6 +145,11 @@
     Object.defineProperty(sequencer, 'END_OF_TRACK', {value: 0x2F});
 
     // public
+    /**
+        @memberof sequencer
+        @instance
+        @function checkEventType
+    */
     sequencer.checkEventType = checkEventType;
     sequencer.midiEventNameByNumber = nameByNumber;
     sequencer.midiEventNumberByName = numberByName;
