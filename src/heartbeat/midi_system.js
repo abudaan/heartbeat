@@ -39,6 +39,10 @@
             navigator.requestMIDIAccess().then(
                 // on success
                 function midiAccessOnSuccess(midi){
+                    if(midi._jazzInstances !== undefined){
+                        sequencer.jazz = midi._jazzInstances[0].version;
+                    }
+                    //console.log(midi)
                     //console.time('parse ports');
                     ports = midi.inputs();
                     doubleNames = {};
@@ -65,7 +69,7 @@
                             for(i = 0; i < numPorts; i++){
                                 port = obj[i];
                                 port.label = name + ' ' + (i + 1);
-                                //console.log(port.id, port.label, name);
+                                console.log(port.id, port.label, name);
                                 midiInputsOrder.push({label: port.label, id: port.id});
                                 sequencer.midiInputs[port.id] = port;
                             }
@@ -134,7 +138,7 @@
                     //console.log(sequencer.midiInputs, sequencer.midiOutputs);
                     //console.log(midiInputsOrder, midiOutputsOrder);
                     //console.timeEnd('parse ports');
-
+/*
                     // onconnect and ondisconnect are not yet implemented in Chrome and Chromium
                     midi.addEventListener('onconnect', function(e){
                         console.log('device connected', e);
@@ -143,7 +147,7 @@
                     midi.addEventListener('ondisconnect', function(e){
                         console.log('device disconnected', e);
                     }, false);
-
+*/
                     sequencer.webmidi = true;
                     cb();
                 },

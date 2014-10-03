@@ -22,4 +22,15 @@ The code in midi_write.js is based on Sergi Mansilla's code:
 https://github.com/sergi/jsmidi
 https://github.com/sergi/jsmidi/blob/master/README.md
 
+
+If a browser doesn't support WebMIDI, heartbeat will try to fallback to Sema's Jazz plugin:
+
+http://jazz-soft.net/
+
+For this fallback, a slightly adapted version of Chris Wilson's WebMIDIAPIShim is used:
+
+https://github.com/cwilso/WebMIDIAPIShim
+
+
 */
+

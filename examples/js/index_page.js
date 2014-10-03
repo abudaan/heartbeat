@@ -68,13 +68,13 @@ window.onload = function(){
         if(os === 'ios'){
             message = 'Although heartbeat supports iOS, the examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
             message += 'Web MIDI API is not supported on iOS so you can not connect your MIDI devices to heartbeat.\n\n';
-            message += 'Some examples require MIDI in or out, these examples won\'t work on this device';
+            message += 'Some examples require MIDI in/out, these examples won\'t work on this device';
         }else if(os === 'android'){
             message = 'Although heartbeat supports Android, the examples are optimized for tablets. Therefor some examples might not work properly.\n\n';
         }
 
-        if(sequencer.webmidi === false && os !== 'ios'){
-            if(browser === 'Chrome'){
+        if(sequencer.webmidi === false){
+            if(browser === 'Chrome' && os !== 'ios'){
                 message += 'Web MIDI API supported!\n\n';
                 message += 'To enable it:\n\n';
                 message += ' - point your browser to chrome://flags\n';
@@ -83,8 +83,23 @@ window.onload = function(){
                 message += ' - restart your browser\n\n';
                 message += 'Now all your MIDI devices are connected to heartbeat.';
             }else{
-                message += 'The Web MIDI API is not supported in ' + browser + ' so you can not connect your MIDI devices to heartbeat.\n\n';
+                message += 'The Web MIDI API is not supported in ' + browser + ' / ' + os + ' so you can not connect your MIDI devices to heartbeat.\n\n';
                 message += 'Some examples require MIDI in or out, please use Google Chrome or Chromium for these examples.';
+            }
+        }
+
+        if(sequencer.jazz !== false){
+            if(browser === 'Chrome' && os !== 'ios'){
+                message = 'Jazz plugin version ' + sequencer.jazz + ' found.\n\n';
+                message += 'However the Web MIDI API is also supported on Chrome which is more stable and performs better than the Jazz plugin.\n\n';
+                message += 'To enable it:\n\n';
+                message += ' - point your browser to chrome://flags\n';
+                message += ' - search for "MIDI" and click "enable"\n';
+                message += ' - connect your MIDI devices (if you haven\'t already)\n';
+                message += ' - restart your browser\n\n';
+                message += 'Now all your MIDI devices are connected to heartbeat.';
+            }else{
+                message = 'Using Jazz plugin version ' + sequencer.jazz + ' and Chris Wilson\'s WebMIDIAPIShim for MIDI in/out';
             }
         }
 

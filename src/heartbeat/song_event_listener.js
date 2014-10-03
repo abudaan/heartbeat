@@ -8,7 +8,7 @@
         console = window.console,
         AP = Array.prototype,
 
-        supportedEvents = 'play stop pause end record_start record_stop sustain_pedal',
+        supportedEvents = 'play stop pause end loop record_start record_stop sustain_pedal',
         listenerIndex = 0,
 
         addEventListener,
@@ -65,6 +65,7 @@
             case 'record_preroll':
             case 'loop_off':
             case 'loop_on':
+            case 'loop': // the playhead jumps from the loop end position to the loop start position
             case 'sustain_pedal':
                 if (this.listeners[type] === undefined) {
                     this.listeners[type] = [];
@@ -117,6 +118,7 @@
             case 'record_preroll':
             case 'loop_off':
             case 'loop_on':
+            case 'loop': // the playhead jumps from the loop end position to the loop start position
             case 'sustain_pedal':
                 tmp = this.listeners[type];
                 for(i = tmp.length - 1; i >= 0; i--){

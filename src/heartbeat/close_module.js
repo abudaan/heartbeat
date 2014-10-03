@@ -96,7 +96,15 @@
         },
         params: []
     });
-
+/*
+    sequencer.addTask({
+        type: 'delay',
+        method: function(cb){
+            setTimeout(cb, 3000);
+        },
+        params: []
+    });
+*/
     sequencer.addTask({
         type: 'init midi',
         method: initMidi,

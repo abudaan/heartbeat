@@ -199,6 +199,7 @@
         legacy: false,
         webmidi: false,
         webaudio: true,
+        jazz: false,
         ogg: false,
         mp3: false,
         util: {},

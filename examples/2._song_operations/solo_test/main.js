@@ -75,6 +75,9 @@ window.onload = function(){
 
         song.setLeftLocator('barsbeats', 1);
         song.setRightLocator('barsbeats', 3);
+        song.addEventListener('loop', function(){
+            console.log('loop', song.elapsedLoops);
+        });
 
         btnStart.addEventListener('click', function(){
             song.play();

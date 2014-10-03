@@ -10,14 +10,15 @@ window.onload = function(){
         pMessage = document.getElementById('message'),
 
         // relative path to assets
-        path = '../../../assets';
+        path = '../../../assets',
+        url = sequencer.ogg === true ? path + '/sso/strings/violin.ogg.4.json' : path + '/sso/strings/violin.mp3.128.json';
+
 
 
     // load asset pack; this pack contains a violin
-    sequencer.addAssetPack({url: path + '/sso/strings/violin.ogg.3.json'}, init);
+    sequencer.addAssetPack({url: url}, init);
 
     function init(){
-        console.log(sequencer.storage);
         var track, song;
 
         track = sequencer.createTrack();

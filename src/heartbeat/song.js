@@ -125,6 +125,7 @@
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
+        this.elapsedLoops = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -491,6 +492,8 @@
             song.followEvent.update();
             //console.log('-->', song.millis);
             song.scheduler.update();
+            song.elapsedLoops++;
+            dispatchEvent(song, 'loop');
             //song.startTime += (song.loopEnd - song.loopStart);
         }else if(millis >= song.durationMillis){
             song.playhead.update('millis', song.durationMillis - song.millis);
@@ -529,6 +532,7 @@
         }
         // only loop when the loop is legal and this.loop is set to true
         this.doLoop = (this.illegalLoop === false && this.loop === true);
+        this.elapsedLoops = 0;
         //console.log('play', this.doLoop, this.illegalLoop, this.loop);
         // or should I move to loopStart here if loop is enabled?
         if(this.endOfSong){
