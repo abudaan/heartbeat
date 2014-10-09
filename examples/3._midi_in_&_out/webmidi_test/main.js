@@ -19,6 +19,7 @@ window.onload = function(){
                     outputs = midi.outputs();
 
                     // onconnect and ondisconnect are not yet implemented in Chrome and Chromium
+                    /*
                     midi.addEventListener('onconnect', function(e){
                         console.log('device connected', e);
                     }, false);
@@ -26,21 +27,23 @@ window.onload = function(){
                     midi.addEventListener('ondisconnect', function(e){
                         console.log('device disconnected', e);
                     }, false);
-
+                    */
                     cb();
                 },
 
                 // on error
                 function midiAccessOnError(e){
-                    console.log('MIDI could not be initialized:', e);
+                    divInputs.innerHTML = 'MIDI could not be initialized:' + e;
+                    divOutputs.innerHTML = '';
                     cb();
                 }
             );
         }
 
-        // browsers without WebMIDI API
+        // browsers without WebMIDI API or Jazz plugin
         else{
-            console.log('No MIDI support; use Google Chrome or Chromium');
+            divInputs.innerHTML = 'No MIDI I/O';
+            divOutputs.innerHTML = '';
             cb();
         }
     }

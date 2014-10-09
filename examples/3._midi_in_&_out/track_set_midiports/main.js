@@ -18,6 +18,10 @@ window.onload = function(){
     function init(){
         var song, track, checkbox, label;
 
+        if(sequencer.midi === false){
+            form.innerHTML = 'No MIDI I/O';
+            return;
+        }
         // replace the loading message
         form.innerHTML = '<div>Deselect one of the following midi inputs to stop receiving events from that input in the track:<div>';
 

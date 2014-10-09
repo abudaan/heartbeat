@@ -201,6 +201,7 @@
             @alias sequencer#legacy
         */
         legacy: false,
+        midi: false,
         webmidi: false,
         webaudio: true,
         jazz: false,

@@ -9,7 +9,12 @@ window.onload = function(){
 
 
     sequencer.ready(function init(){
-        var track, song, output;
+        var track, song, output = document.getElementById('console');
+
+        if(sequencer.midi === false){
+            output.innerHTML = 'No MIDI I/O';
+            return;
+        }
 
         // create a track that receives the incoming midi events
         track = sequencer.createTrack();
@@ -22,7 +27,6 @@ window.onload = function(){
         });
 
 
-        output = document.getElementById('console');
         output.innerHTML = 'move your pitch bend wheel';
 
 

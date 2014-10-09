@@ -16,8 +16,7 @@ window.onload = function(){
 
 
     // load asset pack; this pack contains a violin
-    //sequencer.addAssetPack({url: url}, init);
-    sequencer.ready(init);
+    sequencer.addAssetPack({url: url}, init);
 
     function init(){
         var track, song;
@@ -43,6 +42,10 @@ window.onload = function(){
             }
         }, false);
 
-        pMessage.innerHTML = 'Play some note on your midi keyboard';
+        if(sequencer.midi === false){
+            pMessage.innerHTML = 'No MIDI I/O';
+        }else{
+            pMessage.innerHTML = 'Play some note on your midi keyboard';
+        }
     }
 };

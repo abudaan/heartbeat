@@ -15,7 +15,18 @@ window.onload = function(){
         var song,
             ticks = 0,
             events = [],
-            midiEvent;
+            midiEvent,
+            warning;
+
+        if(sequencer.midi === false){
+            btnStop.disabled = true;
+            btnPlay.disabled = true;
+            warning = document.createElement('div');
+            warning.innerHTML = 'No MIDI I/O';
+            document.body.insertBefore(warning, document.getElementsByTagName('pre')[0]);
+            return;
+        }
+
 
         // sustain pedal down
         midiEvent = sequencer.createMidiEvent(ticks, sequencer.CONTROL_CHANGE, 64, 127);

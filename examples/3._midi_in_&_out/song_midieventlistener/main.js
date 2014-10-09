@@ -12,6 +12,11 @@ window.onload = function(){
     sequencer.ready(function init(){
         var song = sequencer.createSong();
 
+        if(sequencer.midi === false){
+            output.innerHTML = 'No MIDI I/O';
+            return;
+        }
+
         output.innerHTML = 'move pitch bend or other controllers';
 
         // a song receives midi events from all available midi inputs by default, so we can add an event listener right away

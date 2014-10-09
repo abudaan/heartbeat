@@ -44,6 +44,11 @@ window.onload = function(){
     function init(){
         var track, song;
 
+        if(sequencer.midi === false){
+            document.querySelectorAll('p')[0].innerHTML = 'No MIDI I/O';
+            return;
+        }
+
         track = sequencer.createTrack();
         // set monitor to true to route the incoming midi events to the track
         track.monitor = true;

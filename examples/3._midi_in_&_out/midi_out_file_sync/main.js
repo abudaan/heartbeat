@@ -41,7 +41,14 @@ window.onload = function(){
 
 
     function init(){
-        var song, midiOutputsMenu, midiFile;
+        var song, midiOutputsMenu, midiFile, warning;
+
+        if(sequencer.midi === false){
+            warning = document.createElement('div');
+            warning.innerHTML = 'No MIDI I/O';
+            document.body.insertBefore(warning, document.getElementsByTagName('pre')[0]);
+            return;
+        }
 
         // get the available midi outputs as dropdown menu
         midiOutputsMenu = sequencer.getMidiOutputsAsDropdown();

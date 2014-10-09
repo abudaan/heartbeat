@@ -10,6 +10,12 @@ window.onload = function(){
 
 
     sequencer.ready(function(){
+
+        if(sequencer.midi === false){
+            output.innerHTML = 'No MIDI I/O';
+            return;
+        }
+
         // print all available midi inputs and outputs
         output.innerHTML = 'MIDI in:<br/>';
         sequencer.getMidiInputs(function(port){

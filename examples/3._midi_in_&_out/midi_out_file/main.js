@@ -42,6 +42,10 @@ window.onload = function(){
         midiFile.useMetronome = true;
         song = sequencer.createSong(midiFile);
 
+        if(sequencer.midi === false){
+            form.innerHTML = '<div>No MIDI I/O<div>';
+            return;
+        }
 
         // replace the loading message
         form.innerHTML = '<div>Route the events of the tracks of the song to one (or more) midi output(s) by selecting the checkbox:<div>';

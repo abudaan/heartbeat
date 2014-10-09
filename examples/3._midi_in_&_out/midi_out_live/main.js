@@ -23,6 +23,12 @@ window.onload = function(){
     sequencer.ready(function(){
         var track, song, checkbox, label;
 
+        if(sequencer.midi === false){
+            document.querySelectorAll('p')[0].innerHTML = '';
+            formInputs.innerHTML = '<div>No MIDI I/O</div>';
+            return;
+        }
+
         // create a track to connect the midi input to
         track = sequencer.createTrack();
         // set monitor to true to route the incoming midi events to the track
@@ -32,7 +38,6 @@ window.onload = function(){
         song = sequencer.createSong({
             tracks: track
         });
-
 
 
         formInputs.innerHTML = '<div><em>Select one ore more inputs:</em></div>';

@@ -41,6 +41,10 @@
                 function midiAccessOnSuccess(midi){
                     if(midi._jazzInstances !== undefined){
                         sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
+                        sequencer.midi = true;
+                    }else{
+                        sequencer.webmidi = true;
+                        sequencer.midi = true;
                     }
                     ports = midi.inputs();
                     //console.time('parse ports');
@@ -149,7 +153,6 @@
                         console.log('device disconnected', e);
                     }, false);
 */
-                    sequencer.webmidi = true;
                     cb();
                 },
                 // on error
