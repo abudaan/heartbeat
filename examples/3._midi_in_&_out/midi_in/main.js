@@ -16,7 +16,8 @@ window.onload = function(){
 
 
     // load asset pack; this pack contains a violin
-    sequencer.addAssetPack({url: url}, init);
+    //sequencer.addAssetPack({url: url}, init);
+    sequencer.ready(init);
 
     function init(){
         var track, song;

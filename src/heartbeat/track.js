@@ -1236,7 +1236,7 @@ return;
                     delete midiInputs[key];
                 }
             });
-            //console.log(this.midiInputs, midiInputs);
+            //console.log(sequencer.midiInputs, this.midiInputs, midiInputs);
             return;
         }
 

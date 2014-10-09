@@ -40,11 +40,11 @@
                 // on success
                 function midiAccessOnSuccess(midi){
                     if(midi._jazzInstances !== undefined){
-                        sequencer.jazz = midi._jazzInstances[0].version;
+                        sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
                     }
-                    //console.log(midi)
-                    //console.time('parse ports');
                     ports = midi.inputs();
+                    //console.time('parse ports');
+                    //console.log(ports);
                     doubleNames = {};
                     //midiInputsOrder = [];
 
@@ -88,6 +88,7 @@
                     });
 
                     sequencer.numMidiInputs = midiInputsOrder.length;
+
 
 
                     ports = midi.outputs();

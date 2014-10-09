@@ -16,7 +16,7 @@
 // Initialize the MIDI library.
 (function (global) {
     'use strict';
-    var midiIO, _requestMIDIAccess, _delayedInit, MIDIAccess, _onReady, _onNotReady, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
+    var midiIO, _requestMIDIAccess, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
     var inNodeJs = ( typeof __dirname !== 'undefined' && window.jazzMidi );
     var allMidiIns = [];
 
@@ -100,7 +100,6 @@
             this._Jazz._jazzTimeZero = this._Jazz.Time();
             this._Jazz._perfTimeZero = window.performance.now();
         }
-        this.version = this._Jazz.version;
     };
 
     _JazzInstance.prototype._delayedInit = function(then) {
@@ -119,16 +118,55 @@
     // API Methods
 
     MIDIAccess = function() {
+        var numInputs,
+            numOutputs,
+            numInstances,
+            instance;
+
         this._jazzInstances = new Array();
-        var instance = new _JazzInstance();
+        instance = new _JazzInstance();
         this._jazzInstances.push( instance );
-        this._promise = new Promise();
+        this._promise = new Promise;
+
         instance._delayedInit(function() {
-            if (instance._Jazz) {
+            if(instance._Jazz){
                 this._Jazz = instance._Jazz;
-                window.setTimeout( _onReady.bind(this), 3 );
+                numInputs = this._Jazz.MidiInList().length;
+                numOutputs = this._Jazz.MidiOutList().length;
+                /*
+                    Get the number of _JazzInstances that is needed, because 1 input
+                    and 1 output can share a _JazzInstance, we check how much inputs
+                    and outputs are available and the largest number is the number
+                    of _JazzInstances that we need. Then we deduct one because we have
+                    already created a _JazzInstance.
+                */
+                numInstances = Math.max(numInputs, numOutputs) - 1;
+                if(numInstances > 0){
+                    _createJazzInstance.bind(this)(0, numInstances);
+                }else{
+                    // no need to create additional instances
+                    window.setTimeout(_onReady.bind(this), 3);
+                }
             } else {
-                window.setTimeout( _onNotReady.bind(this), 3 );
+                window.setTimeout(_onNotReady.bind(this), 3);
+            }
+        }.bind(this));
+    };
+
+    _createJazzInstance = function(i, max){
+        var instance = new _JazzInstance();
+        this._jazzInstances.push(instance);
+
+        instance._delayedInit(function() {
+            i++;
+            if(i < max) {
+                _createJazzInstance.bind(this)(i, max);
+            } else {
+                /*
+                    All necessary _JazzInstances have been created and
+                    initialized, now call _onReady
+                */
+                window.setTimeout(_onReady.bind(this), 3);
             }
         }.bind(this));
     };
@@ -139,8 +177,9 @@
     };
 
     _onNotReady = function() {
-        if (this._promise)
+        if (this._promise){
             this._promise.fail( { code: 1 } );
+        }
     };
 
     MIDIAccess.prototype.inputs = function(  ) {
@@ -187,10 +226,8 @@
             if (inNodeJs) allMidiIns.push(this._jazzInstance);
         };
         for (var i=0; (i<midiAccess._jazzInstances.length)&&(!inputInstance); i++) {
-            var j = midiAccess._jazzInstances[i];
-            if (j.inputInUse !== true && j.MidiInOpen !== undefined){
-                inputInstance = j;
-            }
+            if (!midiAccess._jazzInstances[i].inputInUse)
+                inputInstance=midiAccess._jazzInstances[i];
         }
         if (!inputInstance) {
             inputInstance = new _JazzInstance();
@@ -361,14 +398,10 @@
             this._jazzInstance = outputInstance._Jazz;
             this._jazzInstance.MidiOutOpen(this.name);
         };
-
-        for(var i = 0; (i < midiAccess._jazzInstances.length) && (!outputInstance); i++) {
-            var j = midiAccess._jazzInstances[i];
-            if (j.outputInUse !== true && j.MidiOutOpen !== undefined){
-                outputInstance = j;
-            }
+        for (var i=0; (i<midiAccess._jazzInstances.length)&&(!outputInstance); i++) {
+            if (!midiAccess._jazzInstances[i].outputInUse)
+                outputInstance=midiAccess._jazzInstances[i];
         }
-
         if (!outputInstance) {
             outputInstance = new _JazzInstance();
             midiAccess._jazzInstances.push( outputInstance );

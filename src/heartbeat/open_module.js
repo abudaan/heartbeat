@@ -2,7 +2,6 @@
 
     'use strict';
 
-
     var
         // satisfy jslint
         alert = window.alert,
@@ -42,6 +41,8 @@
 
         if(ua.indexOf('OPR') !== -1){
             browser = 'opera';
+        }else if(ua.indexOf('Chromium') !== -1){
+            browser = 'chromium';
         }
 
         /*
@@ -55,6 +56,8 @@
         browser = 'safari';
     }else if(ua.indexOf('Firefox') !== -1){
         browser = 'firefox';
+    }else if(ua.indexOf('Trident') !== -1){
+        browser = 'Internet Explorer';
     }
 
     if(os === 'ios'){
@@ -82,7 +85,7 @@
             browser: browser,
             os: os
         };
-        alert('heartbeat requires the Web Audio API which is not yet implemented in ' + browser + '; please use another browser');
+        alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
         window.sequencer.ready = function(cb){
             cb();
         };
@@ -179,6 +182,7 @@
         @namespace sequencer
     */
      window.sequencer = {
+        name: 'qambi',
         protectedScope: protectedScope,
         ui: {},
         ua: ua,

@@ -75,7 +75,9 @@ li.active:hover{
     text-decoration: underline;
     color: #1BB2E0;
 }
-li.selected{
+li.disabled{
+    color: #bbb;
+    cursor: default;
 }
 li.selected span{
     padding: 0px 2px;
