@@ -38,9 +38,26 @@
     }
 
 
-    function removeSong(song){
+    sequencer.deleteSong = function(song){
+        // clean up
+        song.stop();
+        song.listeners = null;
+
+        song.midiEventListeners = null;
+        var i, track;
+        for(i = song.tracks - 1; i >= 0; i--){
+            track = song.tracks[i];
+            track.midiEventListeners = null;
+        }
+
+        song.followEvent.allListenersById = null;
+        song.followEvent.allListenersByType = null;
+
+        // remove reference
         delete activeSongs[song.id];
-    }
+
+        song = null;
+    };
 
 
     sequencer.getSnapshot = function(song, id){
@@ -144,7 +161,7 @@
             }
         }
 
-        // skip the first 10 frames because they tend to have weird values
+        // skip the first 10 frames because they tend to have weird intervals
         if(r >= 10){
             diff = (timestamp - lastTimeStamp)/1000;
             sequencer.diff = diff;
@@ -381,6 +398,7 @@
     };
 */
 
+
     sequencer.setAnimationFrameType = function(type, interval) {
         type = type || 'default';
         type = type.toLowerCase();
@@ -471,7 +489,6 @@
 
 
     sequencer.protectedScope.addSong = addSong;
-    sequencer.protectedScope.removeSong = removeSong;
 
     sequencer.protectedScope.addInitMethod(function() {
         objectToArray = sequencer.protectedScope.objectToArray;

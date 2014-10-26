@@ -63,7 +63,7 @@
 
 
     Playhead.prototype.updateSong = function(){
-        this.events = this.song.songAndTimeEvents;
+        this.events = this.song.eventsMidiTime;
         this.numEvents = this.events.length;
         this.notes = this.song.notes;
         this.numNotes = this.song.numNotes;
@@ -145,6 +145,9 @@
         this.data.ticks = position.ticks;
 
         //console.log('millis:', position.millis, 'ticks:', position.ticks, this.unit, ':', this.currentValue);
+        // if(this.name === 'iterators'){
+        //     console.log('nominator:', position.nominator, 'ticks:', position.ticks, this.unit, ':', this.currentValue);
+        // }
 
         if(this.type.indexOf('all') !== -1){
             var data = this.data;

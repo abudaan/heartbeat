@@ -62,16 +62,15 @@
 
         objectForEach, // → defined in util.js
         addSong, // → defined in sequencer.js
-        removeSong, // → defined in sequencer.js
 
         //private
+        _removeTracks,
         pulse,
         getArguments,
         getTrack,
         addTracks,
         getPart,
         getParts,
-        removeTracks,
         getTimeEvents,
 
         songIndex = 0,
@@ -125,7 +124,6 @@
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
-        this.elapsedLoops = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -156,8 +154,9 @@
                 this.nominator = this.timeSignatureEvent.nominator;
                 this.denominator = this.timeSignatureEvent.denominator;
             }
+            //console.log(1, this.nominator, this.denominator, this.bpm);
         }else{
-            // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated
+            // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated, and moreover, it is dictated by the MIDI standard
             this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
             this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
             this.timeEvents = [
@@ -165,6 +164,8 @@
                 this.timeSignatureEvent
             ];
         }
+
+        // TODO: A value for bpm, nominator and denominator in the config overrules the time events specified in the config -> maybe this should be the other way round
 
         // if a value for bpm is set in the config, and this value is different from the bpm value of the first
         // tempo event, all tempo events will be updated to the bpm value in the config.
@@ -182,6 +183,8 @@
                 this.setTimeSignature(config.nominator || this.nominator, config.denominator || this.denominator, false);
             }
         }
+
+        //console.log(2, this.nominator, this.denominator, this.bpm);
 
         this.tracks = [];
         this.parts = [];
@@ -364,7 +367,7 @@
     };
 
 
-    removeTracks = function(tobeRemoved, song){
+    _removeTracks = function(tobeRemoved){
         var i, track, removed = [];
 
         for(i = tobeRemoved.length - 1; i >= 0; i--){
@@ -373,13 +376,15 @@
                 continue;
             }
             //console.log(track);
-            if(track.song !== undefined && track.song !== song){
+            if(track.song !== undefined && track.song !== this){
                 console.warn('can\'t remove: this track belongs to song', track.song.id);
                 continue;
             }
             track.state = 'removed';
-            track.disconnect(song.gainNode);
+            track.disconnect(this.gainNode);
             track.reset();
+            delete this.tracksById[track.id];
+            delete this.tracksByName[track.name];
             removed.push(track);
         }
         return removed;
@@ -485,14 +490,14 @@
         // song.scheduler.update();
         //console.log(song.millis, diff, song.loopEnd);
         //console.log(song.doLoop, song.scheduler.looped, song.millis > song.loopEnd);
-        if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){
+        //console.log(song.scheduler.prevMaxtime, song.loopEnd);
+        if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){// && song.jump !== true){
             //console.log(song.prevMillis, song.millis);
             //song.scheduler.looped = false;
             song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
             song.followEvent.update();
             //console.log('-->', song.millis);
             song.scheduler.update();
-            song.elapsedLoops++;
             dispatchEvent(song, 'loop');
             //song.startTime += (song.loopEnd - song.loopStart);
         }else if(millis >= song.durationMillis){
@@ -507,6 +512,8 @@
             song.scheduler.update();
         }
 
+        song.jump = false;
+
         //console.log(now, sequencer.getTime());
         //console.log(song.barsAsString);
         //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
@@ -517,8 +524,8 @@
 
 
     Song.prototype.remove = function() {
-        // @TODO: perform cleanup, remove eventlisteners and so on
-        removeSong(this);
+        console.warn('Song.remove() is deprecated, please use sequencer.deleteSong()');
+        sequencer.deleteSong(this);
     };
 
 
@@ -530,9 +537,11 @@
             this.pause();
             return;
         }
+        // tell the scheduler to schedule the audio events that start before the current position of the playhead
+        this.scheduler.firstRun = true;
+
         // only loop when the loop is legal and this.loop is set to true
         this.doLoop = (this.illegalLoop === false && this.loop === true);
-        this.elapsedLoops = 0;
         //console.log('play', this.doLoop, this.illegalLoop, this.loop);
         // or should I move to loopStart here if loop is enabled?
         if(this.endOfSong){
@@ -896,7 +905,10 @@
 
 
     Song.prototype.setPlayhead = function(){
+        //console.log('setPlayhead');
+        this.jump = true;
         this.scheduler.looped = false;
+        this.scheduler.firstRun = true;
         this.timeStamp = sequencer.getTime() * 1000;
         this.startTime = this.timeStamp;
         try{
@@ -989,10 +1001,6 @@
     };
 
 
-    Song.prototype.addSong = Song.prototype.addSongs = function(){
-    };
-
-
     Song.prototype.getTrack = function(arg){
         return getTrack(arg, this);
     };
@@ -1036,12 +1044,13 @@
         if(args.length > 1){
             console.warn('please use removeTracks() if you want to remove more that one tracks');
         }
-        return removeTracks(args, this)[0];
+        //return _removeTracks(args, this)[0];
+        return _removeTracks.call(this, args)[0];
     };
 
 
     Song.prototype.removeTracks = function(){
-        return removeTracks(getArguments(arguments), this);
+        return _removeTracks.call(this, getArguments(arguments));
     };
 
 
@@ -1159,11 +1168,6 @@
     Song.prototype.update = function(updateTimeEvents){
         //console.log('Song.update()');
         update(this, updateTimeEvents);
-        this.playhead.updateSong();
-        this.playheadRecording.updateSong();
-        this.scheduler.updateSong();
-        this.scheduler.reschedule();
-        this.followEvent.updateSong();
     };
 
 
@@ -1704,6 +1708,7 @@
         }
         */
         objectForEach(this.tracks, function(track){
+            track.audio.allNotesOff();
             track.instrument.allNotesOff();
         });
         this.metronome.allNotesOff();
@@ -1839,7 +1844,6 @@
         removeEventListener = sequencer.protectedScope.songRemoveEventListener;
         dispatchEvent = sequencer.protectedScope.songDispatchEvent;
         addSong = sequencer.protectedScope.addSong;
-        removeSong = sequencer.protectedScope.removeSong;
     });
 
 }());

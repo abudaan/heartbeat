@@ -10,7 +10,7 @@
         // import
         getPosition, // -> defined in position.js
         parseTimeEvents, // -> defined in parse_time_events.js
-        parseMidiEvents, // -> defined in parse_midi_events.js
+        parseEvents, // -> defined in parse_events.js
         getInstrument, // -> defined in instrument_manager.js
         scheduledTasks, // -> defined in open_module.js
 
@@ -61,9 +61,11 @@
             changedTracks = [],
             removedTracks = [],
 
-            songAndMetronomeEvents = [],
-            songAndTimeEvents = [],
+            eventsMidiAudioMetronome = [],
+            eventsMidiTime = [],
             events = [],
+            midiEvents = [],
+            audioEvents = [],
             notes = [],
             parts = [],
             tracks = [],
@@ -237,11 +239,6 @@
             parseRecordedEvents(song, recordedEvents);
         }
 
-        songAndTimeEvents = [].concat(events, song.timeEvents);
-        songAndTimeEvents.sort(function(a, b){
-            return a.ticks - b.ticks;
-        });
-
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
@@ -257,6 +254,11 @@
         for(i = events.length - 1; i >= 0; i--){
             event = events[i];
             eventsById[event.id] = event;
+            if(event.type === 'audio'){
+                audioEvents.push(event);
+            }else{
+                midiEvents.push(event);
+            }
         }
 
         for(i = notes.length - 1; i >= 0; i--){
@@ -271,7 +273,7 @@
             //console.log(tmp.length, events.length, newEvents.length, changedEvents.length, song.timeEvents.length, song.metronome.events.length);
 
             tmp = song.timeEvents.concat(newEvents, changedEvents);
-            parseMidiEvents(song, tmp);
+            parseEvents(song, tmp);
 
             tmp = [].concat(newNotes, changedNotes);
             parseMidiNotes(song, tmp);
@@ -281,7 +283,7 @@
         } else {
             // if time events have changed we need to update everything!
             tmp = song.timeEvents.concat(events);
-            parseMidiEvents(song, tmp);
+            parseEvents(song, tmp);
             parseMidiNotes(song, notes);
             parseParts(song, parts);
         }
@@ -322,14 +324,21 @@
             song.metronome.update();
         }
 
-        songAndMetronomeEvents = [].concat(events, song.metronome.events);
-        songAndMetronomeEvents.sort(function(a, b){
+        eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
+        eventsMidiAudioMetronome.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        song.songAndMetronomeEvents = songAndMetronomeEvents; // all events plus metronome ticks
-        song.songAndTimeEvents = songAndTimeEvents; // all events plus time events
+        eventsMidiTime = [].concat(events, song.timeEvents);
+        eventsMidiTime.sort(function(a, b){
+            return a.ticks - b.ticks;
+        });
+
+        song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
+        song.eventsMidiTime = eventsMidiTime; // all midi events plus time events
         song.events = events; // all events excluding tempo and time signature events and metronome ticks
+        song.midiEvents = midiEvents; // all midi events excluding metronome events
+        song.audioEvents = audioEvents;
         song.notes = notes;
         song.parts = parts;
         song.tracks = tracks;
@@ -355,6 +364,14 @@
         song.changedParts = changedParts;
         song.removedParts = removedParts;
 
+
+        // update all dependent objects
+
+        song.playhead.updateSong();
+        song.playheadRecording.updateSong();
+        song.scheduler.updateSong();
+        song.scheduler.reschedule();
+        song.followEvent.updateSong();
 
         if(song.grid !== undefined){
             song.grid.update();
@@ -425,14 +442,14 @@
     function parseMetronomeEvents(song, events){
         //console.log('parseMetronomeEvents', events.length);
         var tmp = events.concat(song.timeEvents);
-        parseMidiEvents(song, tmp);
+        parseEvents(song, tmp);
 
         events = events.concat(song.events);
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
         //console.log(1,song.allEvents.length);
-        song.songAndMetronomeEvents = [].concat(events);
+        song.eventsMidiAudioMetronome = [].concat(events);
         //console.log(2,song.allEvents.length);
         //console.log(song.allEvents);
 
@@ -635,7 +652,7 @@
 
     sequencer.protectedScope.addInitMethod(function(){
         getPosition = sequencer.protectedScope.getPosition;
-        parseMidiEvents = sequencer.protectedScope.parseMidiEvents;
+        parseEvents = sequencer.protectedScope.parseEvents;
         parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         getInstrument = sequencer.protectedScope.getInstrument;
         scheduledTasks = sequencer.protectedScope.scheduledTasks;

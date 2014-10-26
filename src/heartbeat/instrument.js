@@ -588,21 +588,24 @@
 
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
-    Instrument.prototype.processEvent = function(midiEvent, seconds){
+    Instrument.prototype.processEvent = function(midiEvent){
         //console.log(midiEvent.type, midiEvent.velocity);
         var type = midiEvent.type,
             data1, data2, track, output;
 
-        seconds = seconds === undefined ? 0 : seconds;
+        //seconds = seconds === undefined ? 0 : seconds;
+        if(midiEvent.time === undefined){
+            midiEvent.time = 0;
+        }
 
         if(type === 128 || type === 144){
             if(type === 128){
                 if(this.sustainPedalDown === true){
                     midiEvent.sustainPedalDown = true;
                 }
-                this.stopNote(midiEvent, seconds);
+                this.stopNote(midiEvent);
             }else{
-                this.playNote(midiEvent, seconds);
+                this.playNote(midiEvent);
             }
         }else if(midiEvent.type === 176){
             //return;
@@ -618,7 +621,7 @@
                     this.sustainPedalDown = false;
                     //console.log('sustain pedal up');
                     dispatchEvent(this.track.song, 'sustain_pedal', 'up');
-                    this.stopSustain(seconds);
+                    this.stopSustain(midiEvent.time);
                 }
             }else if(data1 === 10){ // panning
                 // panning is *not* exactly timed -> not possible (yet) with WebAudio
@@ -628,7 +631,7 @@
             }else if(data1 === 7){ // volume
                 track = this.track;
                 output = track.output;
-                output.gain.setValueAtTime(data2/127, seconds);
+                output.gain.setValueAtTime(data2/127, midiEvent.time);
                 /*
                 //@TODO: this should be done by a plugin
                 if(track.volumeChangeMethod === 'linear'){
@@ -675,7 +678,7 @@
     };
 
 
-    Instrument.prototype.playNote = function(midiEvent, seconds){
+    Instrument.prototype.playNote = function(midiEvent){
         var
             sample,
             sourceId;
@@ -704,11 +707,11 @@
             sourceId: sourceId
         });
         this.scheduledSamples[sourceId] = sample;
-        sample.start(seconds, midiEvent.velocity);
+        sample.start(midiEvent);
     };
 
 
-    Instrument.prototype.stopNote = function(midiEvent, seconds){
+    Instrument.prototype.stopNote = function(midiEvent){
         if(midiEvent.midiNote === undefined){
             if(sequencer.debug){
                 console.warn('stopNote() no midi note');
@@ -740,7 +743,7 @@
             return;
         }
 
-        sample.stop(seconds, function(){
+        sample.stop(midiEvent.time, function(){
             scheduledSamples[sourceId] = null;
             delete scheduledSamples[sourceId];
         });

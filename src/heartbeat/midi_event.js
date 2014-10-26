@@ -32,7 +32,6 @@
         //import
         createNote, // → defined in note.js
         typeString, // → defined in utils.js
-        copyName, // → defined in util.js
 
         MidiEvent,
         midiEventId = 0;
@@ -52,6 +51,8 @@
         this.id = 'M' + midiEventId + new Date().getTime();
         this.eventNumber = midiEventId;
         this.channel = 'any';
+        this.time = 0;
+        //this.offset = 0;
         //console.log(midiEventId, this.type, this.id);
         this.muted = false;
         //console.log(midiEventId, this.type);
@@ -207,7 +208,7 @@
             return;
         }
 
-        //console.log('transpose',semi,this);
+        //console.log('transpose', semi);
         if(typeString(semi) === 'array'){
             var type = semi[0];
             if(type === 'hertz'){
@@ -235,6 +236,10 @@
         this.noteNumber = note.number;
         this.octave = note.octave;
         this.frequency = note.frequency;
+
+        if(this.midiNote !== undefined){
+            this.midiNote.pitch = this.data1;
+        }
 
         if(this.state !== 'new'){
             this.state = 'changed';
@@ -274,6 +279,9 @@
         this.octave = note.octave;
         this.frequency = note.frequency;
 
+        if(this.midiNote !== undefined){
+            this.midiNote.pitch = this.data1;
+        }
         if(this.state !== 'new'){
             this.state = 'changed';
         }
@@ -350,6 +358,12 @@
         }
     };
 
+
+    // implemented because of the common interface of midi and audio events
+    MidiEvent.prototype.update = function(){
+    };
+
+
     /**@exports sequencer*/
     sequencer.createMidiEvent = function(){
         /**
@@ -372,7 +386,6 @@
     sequencer.protectedScope.addInitMethod(function(){
         createNote = sequencer.createNote;
         typeString = sequencer.protectedScope.typeString;
-        copyName = sequencer.protectedScope.copyName;
     });
 
 }());

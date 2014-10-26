@@ -94,6 +94,7 @@
         this.note = on.note;
         this.number = on.noteNumber;
         this.ticks = on.ticks;
+        this.pitch = on.data1;
         this.velocity = on.velocity;
         this.id = 'N' + midiNoteId + new Date().getTime();
         this.name = on.noteName;
@@ -162,8 +163,17 @@
         }
         this.number = this.noteOn.noteNumber;
         this.name = this.noteOn.noteName;
+        this.pitch = pitch;
     };
 
+
+    MidiNote.prototype.mute = function(flag){
+        if(flag !== undefined){
+            this.mute = flag;
+        }else{
+            this.mute = !this.mute;
+        }
+    };
 
     sequencer.protectedScope.addInitMethod(function(){
         createMidiEvent = sequencer.createMidiEvent;

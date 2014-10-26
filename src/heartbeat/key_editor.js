@@ -17,7 +17,8 @@
         tickWidth = 0.1,
         pitchHeight = 10,
         barsPerPage = 4,
-        snapValueX = 32,
+        snapValueX = 0, // means snaps is off -> ticks value do not get rounded
+        //snapValueX = 1, // means snaps to all ticks
         snapValueY = 'chromatic',
         eventWidth = 2,
 
@@ -204,8 +205,8 @@
         this.currentPage = 1;
         this.numPages = ceil(this.width/this.viewportWidth);
 
-        this.snapValueX = config.snapX || snapValueX;
-        this.snapValueY = config.snapY || snapValueY;
+        this.snapValueX = config.snapX === undefined ? snapValueX : config.snapX;
+        this.snapValueY = config.snapY === undefined ? snapValueY : config.snapY;
         this.setSnapX(this.snapValueX);
         this.setSnapY(this.snapValueY);
 
@@ -495,7 +496,7 @@
     KeyEditor.prototype.getEventRect = function(event){
         //console.log(note.number);
         var
-            x = this.ticksToX(event.ticks - this.startTicks),
+            x = this.ticksToX(event.ticks - this.startTicks, false),
             y = this.pitchToY(event.number),
             w = eventWidth * this.tickWidth,
             h = this.pitchHeight;
@@ -516,7 +517,7 @@
     KeyEditor.prototype.getNoteRect = function(note){
         //console.log(note.number);
         var
-            x = this.ticksToX(note.ticks - this.startTicks),//(note.ticks - this.startTicks) * this.tickWidth,
+            x = this.ticksToX(note.ticks - this.startTicks, false),//(note.ticks - this.startTicks) * this.tickWidth,
             y = this.pitchToY(note.number),
             w = note.durationTicks * this.tickWidth,
             h = this.pitchHeight,
@@ -570,8 +571,8 @@
                 // bottom: this.height - ((stats.min - this.lowestNote + 1) * this.pitchHeight) + this.pitchHeight,
                 top: this.pitchToY(stats.max),// - this.pitchHeight,
                 bottom: this.pitchToY(stats.min) + this.pitchHeight,
-                left: this.ticksToX(part.start.ticks - this.startTicks, true),
-                right: this.ticksToX(part.end.ticks - this.startTicks, true),
+                left: this.ticksToX(part.start.ticks - this.startTicks, false),
+                right: this.ticksToX(part.end.ticks - this.startTicks, false),
                 //left: this.ticksToX(part.events[0].ticks, false),
                 //right: this.ticksToX(part.events[part.events.length - 1].ticks, false)
             };
@@ -651,25 +652,20 @@
 
 
     KeyEditor.prototype.startMoveNote = function(note, x, y){
-        if(note.className !== 'MidiEvent'){
-            note = note.note;
+        if(note.className !== 'MidiNote'){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn(note, 'is not a MidiNote');
+            }
+            return;
         }
         //sequencer.unscheduleEvent(note);
         this.selectedNote = note;
-        this.selectedNote.moved = 0;
-        this.selectedNote.transposed = 0;
-        this.startMoveX = x;
-        this.startMoveY = y;
-        this.startMoveTicks = this.xToTicks(x, true);
-        this.startMovePitch = this.yToPitch(y).number;
-        //console.log(song.keyEditor.selectedNote);
+        this.gripX = x - this.selectedNote.bbox.x;
     };
 
 
     KeyEditor.prototype.stopMoveNote = function(){
-        //console.log(this.selectedNote.part.track);
         this.selectedNote = undefined;
-        //song.update(false, false, true);
     };
 
 
@@ -678,91 +674,76 @@
             return;
         }
 
-        var pitch = this.yToPitch(y).number,
-            ticks = this.xToTicks(x),
-            transpose = pitch - this.startMovePitch,
-            move = ticks - this.startMoveTicks,
-            notes = [], bbox,
+        var
+            newPitch = this.yToPitch(y).number,
+            oldPitch = this.selectedNote.pitch,
+            newTicks = this.xToTicks(x - this.gripX),
+            oldTicks = this.selectedNote.ticks,
             part = this.selectedNote.part,
-            me = this;
+            update = false;
 
-        if(this.selectedNote.transposed !== transpose){
-            part.transposeNote(this.selectedNote, transpose - this.selectedNote.transposed);
-            this.selectedNote.transposed = transpose;
-            //console.log('transpose',transpose,this.selectedNote.endEvent);
+        //console.log(newTicks, oldTicks, this.gripX, x);
+
+        if(newPitch !== oldPitch){
+            part.transposeNote(this.selectedNote, newPitch - oldPitch);
+            update = true;
         }
 
-        if(this.selectedNote.moved !== move){
-            this.selectedNote.part.moveNote(this.selectedNote, move - this.selectedNote.moved);
-            this.selectedNote.moved = move;
-            //console.log('move note',move);
+        if(newTicks !== oldTicks){
+            part.moveNote(this.selectedNote, newTicks - oldTicks);
+            update = true;
         }
 
-        this.song.update(false, true, true);
+        if(update === true){
+            this.song.update();
+        }
     };
 
 
     KeyEditor.prototype.startMovePart = function(part, x, y){
         if(part.className !== 'Part'){
-            part = part.part;
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn(part, 'is not a Part');
+            }
+            return;
         }
         this.selectedPart = part;
-        this.selectedPart.moved = 0;
-        this.selectedPart.transposed = 0;
-        this.startMoveX = x;
-        this.startMoveY = y;
-        this.startMoveTicks = this.xToTicks(x, true);
-        this.startMovePitch = this.yToPitch(y).number;
+        this.selectedPart.pitch = this.yToPitch(y).number;
+        this.gripX = x - this.selectedPart.bbox.x;
     };
 
 
     KeyEditor.prototype.stopMovePart = function(){
         this.selectedPart = undefined;
-        //song.update(false, false, true);
     };
 
 
     KeyEditor.prototype.movePart = function(x, y){
-        //console.log(this.selectedPart);
         if(this.selectedPart === undefined){
             return;
         }
 
-        var pitch = this.yToPitch(y).number,
-            ticks = this.xToTicks(x),
-            transpose = pitch - this.startMovePitch,
-            move = ticks - this.startMoveTicks,
-            notes = [], bbox,
-            me = this,
+        var
+            newPitch = this.yToPitch(y).number,
+            oldPitch = this.selectedPart.pitch,
+            newTicks = this.xToTicks(x - this.gripX),
+            oldTicks = this.selectedPart.ticks,
             update = false;
 
-        //console.log(move, this.selectedPart.moved);
-
-        if(this.selectedPart.transposed !== transpose){
-            //console.log('transpose', transpose);
-
-            //this.selectedPart.transposeAllEvents(transpose - this.selectedPart.transposed);
-            this.selectedPart.track.transposePart(this.selectedPart, transpose - this.selectedPart.transposed);
-
-            this.selectedPart.transposed = transpose;
+        if(newPitch !== oldPitch){
+            this.selectedPart.track.transposePart(this.selectedPart, newPitch - oldPitch);
+            this.selectedPart.pitch = newPitch;
             update = true;
-        // }else{
-        //     console.log('no transpose', transpose);
         }
 
-        if(this.selectedPart.moved !== move){
-            //this.selectedPart.ticks += move - this.selectedPart.moved;
-            //this.selectedPart.moveAllEvents(move - this.selectedPart.moved);
-            //console.log('move', move);
-            this.selectedPart.track.movePart(this.selectedPart, move - this.selectedPart.moved);
-            this.selectedPart.moved = move;
+
+        if(newTicks !== oldTicks){
+            this.selectedPart.track.movePart(this.selectedPart, newTicks - oldTicks);
             update = true;
-        // }else{
-        //     console.log('no move', move);
         }
 
         if(update === true){
-            this.song.update(false, true, true);
+            this.song.update();
         }
     };
 
@@ -770,9 +751,10 @@
     KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function(x, snap){
         var ticks = ((x + this.scrollX)/this.width) * this.numTicks;
         //console.log(this.scrollX,this.width,this.numTicks,ticks);
-        if(snap !== false){
+        if(snap !== false && this.snapTicks !== 0){
             ticks = floor(ticks/this.snapTicks) * this.snapTicks;
         }
+        //console.log(ticks, this.snapTicks);
         return ticks;
     };
 
@@ -788,7 +770,7 @@
         // var p = ticks/this.numTicks,
         //     x = (p * this.width) - this.scrollX;
         var x = (ticks - this.startTicks) * this.tickWidth;
-        if(snap !== false){
+        if(snap !== false && this.snapWidth !== 0){
             x = (floor(x/this.snapWidth) * this.snapWidth);
         }
         return x;
@@ -916,22 +898,39 @@
         if(snapX === undefined){
             return;
         }
+        //console.log('in', snapX);
+        // 4 -> 1, 8 -> 0.5 16 -> 0.25
+        var beatLength = 4/this.song.denominator;
 
-        if(isNaN(snapX) && snapX.indexOf('ticks') !== -1){
-            snapX = snapX.replace(/ticks/,'');
-            if(isNaN(snapX)){
-                snapX = this.song.ppq/4;// sixteenth note
+        if(snapX === 'off'){
+            this.snapTicks = 0;
+        }else if(snapX === 'tick'){
+            this.snapTicks = 1;
+        }else if(snapX === 'beat'){
+            // TODO: dependent on current time signature!
+            this.snapTicks = this.song.ppq * beatLength;
+        }else if(snapX === 'bar'){
+            // TODO: dependent on current time signature!
+            this.snapTicks = (this.song.ppq * this.song.nominator) * beatLength;
+        }else if(isNaN(snapX) && snapX.indexOf('ticks') !== -1){
+            this.snapTicks = snapX.replace(/ticks/,'');
+            if(isNaN(this.snapTicks)){
+                this.snapTicks = this.song.ppq/4;// sixteenth note
+            }else{
+                this.snapTicks = parseInt(this.snapTicks);
             }
-            //snapX = snapX.replace(/\s/g,'');
-            this.snapTicks = parseInt(snapX);
         }else{
-            if(isNaN(snapX)){
-                snapX = 16;
+            if(isNaN(snapX) || snapX === 0){
+                // by default snap is off
+                snapX = 0;
+                this.snapTicks = 0;
+            }else{
+                snapX = parseInt(snapX);
+                this.snapTicks = (4/snapX) * this.song.ppq;
             }
-            snapX = parseInt(snapX);
-            this.snapTicks = (4/snapX) * this.song.ppq;
         }
 
+        //console.log(snapX,this.snapTicks, beatLength);
         this.snapValueX = snapX;
         this.snapWidth = this.tickWidth * this.snapTicks;
     };
@@ -1259,6 +1258,7 @@
             this.song.update();
         }
 */
+
         return s;
     };
 

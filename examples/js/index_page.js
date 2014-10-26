@@ -128,19 +128,7 @@ window.onload = function(){
         }else if(browser === 'Internet Explorer'){
             message = 'The WebAudio API hasn\'t been implemented in Internet Explorer: the examples won\'t run, please use any other browser';
         }else{
-            if(webmidi === false && jazz === false){
-                if(browser === 'Chrome' || browser === 'Chromium'){
-                    message += 'The Web MIDI API is not enabled, to enable it:\n\n';
-                    message += ' - point your browser to chrome://flags\n';
-                    message += ' - search for "MIDI" and click "enable"\n';
-                    message += ' - connect your MIDI devices (if you haven\'t already)\n';
-                    message += ' - restart your browser\n\n';
-                    message += 'Now all your MIDI devices are automatically connected to heartbeat.';
-                }else{
-                    //message += 'The Web MIDI API is not implemented in ' + browser + ' / ' + os + '.\n\n';
-                    message += 'Some examples require MIDI in or out, please use Chrome or Chromium for these examples, or install the Jazz plugin from http://jazz-soft.net';
-                }
-            }else if(jazz === true){
+            if(jazz === true && webmidi === false){
                 if(browser === 'Chrome' || browser === 'Chromium'){
                     message = 'Using Jazz plugin and Chris Wilson\'s WebMIDIAPIShim for MIDI in/out\n\n';
                     message += 'However, you can also use the Web MIDI API which is more stable and performs better than the Jazz plugin.\n\n';
@@ -153,6 +141,18 @@ window.onload = function(){
                     message += 'Note: you don\'t need to de-install your Jazz plugin, it will be bypassed automatically.';
                 }else{
                     message = 'Using Jazz plugin and Chris Wilson\'s WebMIDIAPIShim for MIDI in/out.';
+                }
+            }else if(webmidi === false){
+                if(browser === 'Chrome' || browser === 'Chromium'){
+                    message += 'The Web MIDI API is not enabled, to enable it:\n\n';
+                    message += ' - point your browser to chrome://flags\n';
+                    message += ' - search for "MIDI" and click "enable"\n';
+                    message += ' - connect your MIDI devices (if you haven\'t already)\n';
+                    message += ' - restart your browser\n\n';
+                    message += 'Now all your MIDI devices are automatically connected to heartbeat.';
+                }else{
+                    //message += 'The Web MIDI API is not implemented in ' + browser + ' / ' + os + '.\n\n';
+                    message += 'Some examples require MIDI in or out, please use Chrome or Chromium for these examples, or install the Jazz plugin from http://jazz-soft.net';
                 }
             }
         }

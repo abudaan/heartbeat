@@ -51,9 +51,6 @@
         this.dirtyEvents = {};
         this.dirtyNotes = {};
 
-        this.transposed = 0;
-        this.moved = 0;
-
         this.song = undefined;
         this.autoSize = 'right'; // 'right' or 'both'
 
@@ -229,6 +226,8 @@
         var i, e,
             events = args.events,
             semi = args.config[0];
+
+        //console.log(semi, args);
 
         for(i = events.length - 1; i >= 0; i--){
             e = events[i];
@@ -406,11 +405,13 @@
 
 
     Part.prototype.transposeAllEvents = function(semi){
+        //console.log('transposeAllEvents', semi);
         transposeEvents({events:this.events, config:[semi]}, this);
     };
 
 
     Part.prototype.transposeNote = function(note, semi){
+        //console.log('transposeNote', semi);
         transposeEvents({events:[note.noteOn, note.noteOff], config:[semi]}, this);
     };
 /*

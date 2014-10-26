@@ -13,7 +13,7 @@
         getPosition, //defined in position.js
         objectForEach, //defined in util.js
         createMidiNote, //defined in midi_note.js
-        parseMidiEvents, //defined in parse_midi_events.js
+        parseEvents, //defined in parse_events.js
         parseMetronomeEvents, //defined in song_update.js
 
         methodMap = {
@@ -281,7 +281,7 @@
         this.startMillis = this.song.millis;
         this.precountDurationInMillis = endPos.millis - this.startMillis;
         this.precountEvents = createEvents(this, this.song.bar, endPos.bar - 1, 'precount');
-        parseMidiEvents(this.song, this.precountEvents);
+        parseEvents(this.song, this.precountEvents);
         //console.log(this.song.bar, endPos.bar, precount, this.precountEvents.length);
         //console.log(this.precountEvents, this.precountDurationInMillis, startTicks, endTicks);
     };
@@ -325,7 +325,7 @@
         getPosition = sequencer.protectedScope.getPosition;
         createMidiNote = sequencer.createMidiNote;
         objectForEach = sequencer.util.objectForEach;
-        parseMidiEvents = sequencer.protectedScope.parseMidiEvents;
+        parseEvents = sequencer.protectedScope.parseEvents;
         parseMetronomeEvents = sequencer.protectedScope.parseMetronomeEvents;
     });
 }());

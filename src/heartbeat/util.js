@@ -944,7 +944,8 @@
             setLabel: function(value){
                 label.innerHTML = message.replace('{value}', value);
             },
-            elem: slider
+            elem: slider,
+            element: slider,
         };
 
         sliderWrapper.set = function(value){
@@ -1072,6 +1073,8 @@
             minNoteNumber,
             maxNoteNumber,
             ppq;
+
+        //console.log(config);
 
         config = config || {};
         ppq = config.ppq || sequencer.defaultPPQ;

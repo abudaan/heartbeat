@@ -32,6 +32,9 @@
         this.output = context.createGainNode();
         this.output.connect(config.track.input);
         this.buffer = config.buffer;
+        if(this.buffer){
+            this.duration = this.buffer.duration;
+        }
         this.noteNumber = config.noteNumber;
         this.stopCallback = function(){};
         this.track = config.track;
@@ -101,14 +104,14 @@
 
 
     // called on a NOTE ON event
-    Sample.prototype.start = function(time, velocity){
+    Sample.prototype.start = function(event){
         //console.log('NOTE ON', time, velocity);
         if(this.source !== undefined){
             console.error('this should never happen');
             return;
         }
 
-        this.volume = velocity/127;
+        this.volume = event.velocity/127;
         this.output.gain.value = this.volume;
 
         this.createSource();
@@ -121,7 +124,12 @@
         }
 
         try{
-            this.source.start(time);
+            // if(event.offset !== undefined){
+            //     console.log(event.offset);
+            // }
+            this.source.start(event.time, event.offset || 0, event.duration || this.duration);
+            //this.source.start(event.time);
+            //console.log('start', event.time, event.offset, event.duration, sequencer.getTime());
             //console.log('start', time, sequencer.getTime());
         }catch(e){
             console.warn(e);
@@ -130,7 +138,7 @@
 
 
     // called on a NOTE OFF event
-    Sample.prototype.stop = function(time, cb){
+    Sample.prototype.stop = function(seconds, cb){
         //console.log('NOTE OFF', cb);
         //console.log('NOTE OFF', this.source);
         //console.log('NOTE OFF', this.release);
@@ -141,18 +149,20 @@
             return;
         }
 
-        if(time === 0 || time === undefined){
-            time = sequencer.getTime();
+        // this happens when midi events are sent live from a midi device
+        if(seconds === 0 || seconds === undefined){
+            //console.log('seconds is undefined!');
+            seconds = sequencer.getTime();
         }
-        this.stopCallback = cb;
+        this.stopCallback = cb || function(){};
 
         if(this.release){
             this.source.loop = false;
-            this.startReleasePhase = time;
-            this.stopTime = time + this.releaseDuration;
-            //console.log(this.stopTime, time, this.releaseDuration);
+            this.startReleasePhase = seconds;
+            this.stopTime = seconds + this.releaseDuration;
+            //console.log(this.stopTime, seconds, this.releaseDuration);
         }else{
-            stopSample(this, time);
+            stopSample(this, seconds);
         }
     };
 

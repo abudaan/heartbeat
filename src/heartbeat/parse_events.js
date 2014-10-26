@@ -43,7 +43,7 @@
             i;
 
         numEvents = events.length;
-        //console.log('parseMidiEvents', numEvents);
+        //console.log('parseEvents', numEvents);
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
@@ -170,11 +170,14 @@
         event.barsAsArray = [bar, beat, sixteenth, tick];
 
         event.state = 'clean';
+        event.update();
+
+        //console.log(event.nominator, event.ticks);
     }
 
 
 
-    sequencer.protectedScope.parseMidiEvents = parse;
+    sequencer.protectedScope.parseEvents = parse;
 
     sequencer.protectedScope.addInitMethod(function(){
     });

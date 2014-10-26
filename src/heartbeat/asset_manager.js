@@ -206,7 +206,7 @@
     sequencer.addTask = function(task, callback, callbackAfterAllTasksAreDone){
         task.id = 'task' + taskIndex++;
         taskQueue.push(task);
-        //console.log(task.type);
+        //console.log('task', task.type, taskQueue.length);
         if(callback !== undefined){
             if(callbackAfterAllTasksAreDone === true){
                 // call the callback only after all tasks are done
@@ -225,6 +225,7 @@
            method: callback,
            taskIds: taskIds
         });
+        //console.log('taskIds', taskIds);
     };
 
 
@@ -243,7 +244,14 @@
                     continue;
                 }
                 //console.log(i, callback.method);
-                callback.method();
+                var m = callback.method;
+                //callback = false;
+                //console.log(1,callback);
+                setTimeout(function(){
+                    //console.log(2, m);
+                    //callback.method();
+                    m();
+                }, 0);
             }
             finishedTasks = {};
             taskQueue = [];
@@ -295,8 +303,13 @@
                     //console.log('performCallback', performCallback);
                     if(performCallback){
                         //callback.method.call(null);
-                        callback.method(success);
+                        //console.log(callback);
+                        var m = callback.method;
                         callbacks[i] = false;
+                        setTimeout(function(){
+                            m(success);
+                            //console.log(callbacks);
+                        }, 0);
                     }
                 }
             }

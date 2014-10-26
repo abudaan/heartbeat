@@ -329,6 +329,12 @@
 
     };
 
+    // debug levels
+    Object.defineProperty(sequencer, 'ERROR', {value: 1});
+    Object.defineProperty(sequencer, 'WARN', {value: 2});
+    Object.defineProperty(sequencer, 'INFO', {value: 3});
+    Object.defineProperty(sequencer, 'LOG', {value: 4});
+
     //Object.defineProperty(window.sequencer, 'timedTasks', {value: {}});
     //Object.defineProperty(window.sequencer, 'scheduledTasks', {value: {}});
     //Object.defineProperty(window.sequencer, 'repetitiveTasks', {value: {}});

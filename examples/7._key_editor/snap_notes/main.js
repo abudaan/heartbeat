@@ -16,9 +16,6 @@ window.onload = function () {
         btnLast = document.getElementById('last'),
         btnFirst = document.getElementById('first'),
 
-        sliderScale = document.getElementById('scale-slider'),
-        labelSliderScale = document.getElementById('scale-label'),
-
         divControls = document.getElementById('controls'),
         divBarsBeats = document.getElementById('time-bars-beats'),
         divSeconds = document.getElementById('time-seconds'),
@@ -38,6 +35,7 @@ window.onload = function () {
         allNotes, // stores references to all midi notes
         allNoteDivs, // stores references to all divs that represent a midi note
 
+        selectSnap = document.getElementById('snap'),
         keyEditor,
         song;
 
@@ -137,8 +135,8 @@ window.onload = function () {
 
     function draw(){
 
-        allNotes = {};
         allNoteDivs = {};
+        allNotes = {};
 
         divNotes.innerHTML = '';
         divPitchLines.innerHTML = '';
@@ -252,17 +250,33 @@ window.onload = function () {
     function init(){
         var c = divControls.getBoundingClientRect().height,
             w = window.innerWidth,
-            h = window.innerHeight - c;
+            h = window.innerHeight - c,
+            events, event, part, timeEvents = [];
 
         divEditor.style.width = w + 'px';
         divEditor.style.height = h + 'px';
 
-        song = sequencer.createSong(sequencer.getMidiFile('minute_waltz'));
 
-        song.tracks.forEach(function(track){
-            track.setInstrument('piano');
-            track.monitor = true;
-            track.setMidiInput('all');
+        events = sequencer.util.getRandomNotes({
+            minNoteNumber: 60,
+            maxNoteNumber: 100,
+            minVelocity: 30,
+            maxVelocity: 80,
+            numNotes: 12,
+            noteLength: 960/2
+        });
+
+        part = sequencer.createPart();
+        part.addEvents(events);
+
+        timeEvents.push(sequencer.createMidiEvent(0, sequencer.TIME_SIGNATURE, 6, 8));
+        timeEvents.push(sequencer.createMidiEvent(960 * 3, sequencer.TIME_SIGNATURE, 4, 4));
+
+        song = sequencer.createSong({
+            bars: 4,
+            parts: part,
+            timeEvents: timeEvents,
+            useMetronome: true
         });
 
         song.addEventListener('play',function(){
@@ -281,16 +295,10 @@ window.onload = function () {
             keyListener: true,
             viewportHeight: h,
             viewportWidth: w,
-            lowestNote: 21,
-            highestNote: 108,
-            barsPerPage: 16
+            lowestNote: 58,
+            highestNote: 102,
+            barsPerPage: 4
         });
-
-
-        sliderScale.min = 1;// minimal 1 bar per page
-        sliderScale.max = 64;// maximal 64 bars per page
-        sliderScale.value = 16;// currently set to 16 bars per page
-        sliderScale.step = 1;
 
 
         // listen for scale and draw events, a scale event is fired when you change the number of bars per page
@@ -347,6 +355,10 @@ window.onload = function () {
             }
         },false);
 
+        selectSnap.addEventListener('change', function(){
+            keyEditor.setSnapX(selectSnap.options[selectSnap.selectedIndex].value);
+        }, false);
+
         btnPlay.addEventListener('click',function(){
             song.pause();
         });
@@ -371,20 +383,18 @@ window.onload = function () {
             keyEditor.scroll('>>');
         });
 
-        sliderScale.addEventListener('change',function(e){
-            var bpp =  parseFloat(e.target.value);
-            labelSliderScale.innerHTML = '#bars ' + bpp;
-            keyEditor.setBarsPerPage(bpp);
-        },false);
-
         window.addEventListener('resize', resize, false);
         enableGUI(true);
+
+        selectSnap.selectedIndex = 3;
+        event = document.createEvent('HTMLEvents');
+        event.initEvent('change', false, false);
+        selectSnap.dispatchEvent(event);
 
         draw();
         render();
     }
 
     enableGUI(false);
-    sequencer.addMidiFile({url: '../../../assets/midi/minute_waltz.mid'});
-    sequencer.addAssetPack({url: '../../../assets/examples/asset_pack_basic.json'}, init);
+    sequencer.ready(init);
 };

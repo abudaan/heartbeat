@@ -97,6 +97,11 @@
         params: []
     });
 /*
+    , function(){
+        console.log('another callback');
+    }, true);
+*/
+/*
     sequencer.addTask({
         type: 'delay',
         method: function(cb){
@@ -114,11 +119,18 @@
             cb();
         });
         if(sequencer.debug >= 4){
-            console.log('sequencer ready', 'ogg', sequencer.ogg, 'mp3', sequencer.mp3);
+            var msg = 'sequencer ready, support for:';
+            if(sequencer.ogg === true){
+                msg +=  ' ogg';
+            }
+            if(sequencer.mp3 === true){
+                msg +=  ' mp3';
+            }
+            console.log(msg);
         }
         ready = true;
-    }, true);
+    }, false); // @TODO: check this true | false
 
-    sequencer.startTaskQueue();
+    //sequencer.startTaskQueue();
 
 }());

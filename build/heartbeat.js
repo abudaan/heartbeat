@@ -34,9 +34,6 @@ https://github.com/cwilso/WebMIDIAPIShim
 
 */
 
-
-
-
 /* Copyright 2013 Chris Wilson
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -1126,6 +1123,12 @@ if (typeof module !== "undefined" && module !== null) {
 
     };
 
+    // debug levels
+    Object.defineProperty(sequencer, 'ERROR', {value: 1});
+    Object.defineProperty(sequencer, 'WARN', {value: 2});
+    Object.defineProperty(sequencer, 'INFO', {value: 3});
+    Object.defineProperty(sequencer, 'LOG', {value: 4});
+
     //Object.defineProperty(window.sequencer, 'timedTasks', {value: {}});
     //Object.defineProperty(window.sequencer, 'scheduledTasks', {value: {}});
     //Object.defineProperty(window.sequencer, 'repetitiveTasks', {value: {}});
@@ -1342,7 +1345,7 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.addTask = function(task, callback, callbackAfterAllTasksAreDone){
         task.id = 'task' + taskIndex++;
         taskQueue.push(task);
-        //console.log(task.type);
+        //console.log('task', task.type, taskQueue.length);
         if(callback !== undefined){
             if(callbackAfterAllTasksAreDone === true){
                 // call the callback only after all tasks are done
@@ -1361,6 +1364,7 @@ if (typeof module !== "undefined" && module !== null) {
            method: callback,
            taskIds: taskIds
         });
+        //console.log('taskIds', taskIds);
     };
 
 
@@ -1379,7 +1383,14 @@ if (typeof module !== "undefined" && module !== null) {
                     continue;
                 }
                 //console.log(i, callback.method);
-                callback.method();
+                var m = callback.method;
+                //callback = false;
+                //console.log(1,callback);
+                setTimeout(function(){
+                    //console.log(2, m);
+                    //callback.method();
+                    m();
+                }, 0);
             }
             finishedTasks = {};
             taskQueue = [];
@@ -1431,8 +1442,13 @@ if (typeof module !== "undefined" && module !== null) {
                     //console.log('performCallback', performCallback);
                     if(performCallback){
                         //callback.method.call(null);
-                        callback.method(success);
+                        //console.log(callback);
+                        var m = callback.method;
                         callbacks[i] = false;
+                        setTimeout(function(){
+                            m(success);
+                            //console.log(callbacks);
+                        }, 0);
                     }
                 }
             }
@@ -1778,84 +1794,398 @@ if (typeof module !== "undefined" && module !== null) {
     });
 
 
-}());
-// WORK IN PROGRESS
+}());(function(){
+
+    'use strict';
+
+    var
+        console = window.console,
+        sequencer = window.sequencer,
+        slice = Array.prototype.slice,
 
 
+        //import
+        typeString, // → defined in utils.js
+
+        AudioEvent,
+        audioEventId = 0;
+
+
+    AudioEvent = function(config){
+
+        if(config === undefined){
+            // bypass for cloning
+            return;
+        }
+
+        // use ticks like in MidiEvent
+        if(config.ticks === undefined){
+            this.ticks = 0;
+        }else{
+            this.ticks = config.ticks;
+        }
+
+
+        // provide either buffer (AudioBuffer) or path to a sample in the sequencer.storage object
+        this.buffer = config.buffer;
+        this.path = config.path;
+
+        if(this.buffer === undefined && this.path === undefined){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('please provide an AudioBuffer or a path to a sample in the sequencer.storage object');
+            }
+            return;
+        }
+
+        if(this.buffer !== undefined && typeString(this.buffer) !== 'audiobuffer'){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('buffer has to be an AudioBuffer');
+            }
+            return;
+        }
+
+        if(this.path !== undefined){
+            if(typeString(this.path) !== 'string'){
+                if(sequencer.debug >= sequencer.WARN){
+                    console.warn('path has to be a String');
+                }
+                return;
+            }else{
+
+                this.sampleId = this.path;
+                this.sampleId = this.sampleId.replace(/^\//, '');
+                this.sampleId = this.sampleId.replace(/\/$/, '');
+                this.sampleId = this.sampleId.split('/');
+                this.sampleId = this.sampleId[this.sampleId.length - 1];
+
+                this.buffer = sequencer.getSample(this.path);
+                if(this.buffer === false){
+                    if(sequencer.debug >= sequencer.WARN){
+                        console.warn('no sample found at', this.path);
+                    }
+                    return;
+                }
+                this.buffer = sequencer.getSample(this.path);
+                //console.log(this.sampleId, this.path, this.buffer);
+                //console.log(this.buffer);
+            }
+        }
+
+        // set either durationTicks of durationMillis, or both if they represent the same value
+        this.durationTicks = config.durationTicks;
+        this.durationMillis = config.durationMillis;
+
+        if(this.durationTicks === undefined && this.durationMillis === undefined){
+            this.duration = this.buffer.duration;
+            this.durationMillis = this.duration * 1000;
+        }
+        //console.log(this.durationMillis);
+
+        this.muted = false;
+
+        if(config.velocity === undefined){
+            this.velocity = 127;
+        }else{
+            this.velocity = config.velocity;
+        }
+
+        // start of audio, also the quantize point, value in ticks or millis
+        this.sampleOffsetTicks = config.sampleOffsetTicks;
+        this.sampleOffsetMillis = config.sampleOffsetMillis;
+
+        if(this.sampleOffsetMillis === undefined && this.sampleOffsetTicks === undefined){
+            this.sampleOffsetTicks = 0;
+            this.sampleOffsetMillis = 0;
+            this.sampleOffset = 0;
+        }else if(this.sampleOffsetMillis !== undefined){
+            this.sampleOffset = this.sampleOffsetMillis/1000;
+        }
+
+        // if the playhead starts somewhere in the sample, this value will be set by the scheduler
+        this.playheadOffset = 0;
+
+        this.className =  'AudioEvent';
+        this.time =  0;
+        this.type =  'audio';
+        this.id = 'event_' + audioEventId++;
+    };
+
+
+    AudioEvent.prototype.update = function(){
+        var pos;
+        if(this.duration === undefined){
+            pos = this.song.getPosition('ticks', this.ticks + this.durationTicks);
+            this.durationMillis = pos.millis - this.millis;
+            this.duration = this.durationMillis/1000;
+            //console.log(pos, this.durationMillis);
+        }else if(this.durationTicks === undefined){
+            pos = this.song.getPosition('millis', this.millis + this.durationMillis);
+            this.durationTicks = pos.ticks - this.ticks;
+        }
+
+        if(this.sampleOffset === undefined){
+            pos = this.song.getPosition('ticks', this.ticks + this.sampleOffsetTicks);
+            //console.log(pos.barsAsString);
+            this.sampleOffsetMillis = pos.millis - this.millis;
+            this.sampleOffset = this.sampleOffsetMillis/1000;
+            //console.log(this.sampleOffsetMillis);
+        }else if(this.sampleOffsetTicks === undefined){
+            pos = this.song.getPosition('millis', this.millis + this.sampleOffsetMillis);
+            this.sampleOffsetTicks = pos.ticks - this.ticks;
+        }
+
+        this.endTicks = this.ticks + this.durationTicks;
+        this.endMillis = this.millis + this.durationMillis;
+    };
+
+
+
+    AudioEvent.prototype.stopSample = function(seconds){
+        this.track.audio.stopSample(this, seconds);
+    };
+
+
+    AudioEvent.prototype.setSampleOffset = function(type, value){
+        if(type === 'millis'){
+            this.sampleOffsetMillis = value;
+            this.sampleOffset = value/1000;
+            this.durationTicks = undefined;
+            if(this.song !== undefined){
+                this.update();
+            }
+        }else if(type === 'ticks'){
+            this.sampleOffsetTicks = value;
+            this.sampleOffset = undefined;
+            this.sampleOffsetMillis = undefined;
+            if(this.song !== undefined){
+                this.update();
+            }
+        }else{
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('you have to provide a type "ticks" or "millis" and a value');
+            }
+        }
+    };
+
+
+    AudioEvent.prototype.setDuration = function(type, value){
+        if(type === 'millis'){
+            this.durationMillis = value;
+            this.duration = value/1000;
+            this.durationTicks = undefined;
+            if(this.song !== undefined){
+                this.update();
+            }
+        }else if(type === 'ticks'){
+            this.durationTicks = value;
+            this.duration = undefined;
+            this.durationMillis = undefined;
+            if(this.song !== undefined){
+                this.update();
+            }
+        }else{
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('you have to provide a type "ticks" or "millis" and a value');
+            }
+        }
+    };
+
+
+    AudioEvent.prototype.clone = AudioEvent.prototype.copy = function(){
+        var event = new AudioEvent(),
+            property;
+
+        for(property in this){
+            if(this.hasOwnProperty(property)){
+                //console.log(property);
+                if(property !== 'id' && property !== 'eventNumber'){
+                    event[property] = this[property];
+                }
+                event.song = undefined;
+                event.track = undefined;
+                event.trackId = undefined;
+                event.part = undefined;
+                event.partId = undefined;
+            }
+        }
+        return event;
+    };
+
+
+    // same as MidiEvent, could be inherited from generic Event
+    AudioEvent.prototype.reset = function(fromPart, fromTrack, fromSong){
+
+        fromPart = fromPart === undefined ? true : false;
+        fromTrack = fromTrack === undefined ? true : false;
+        fromSong = fromSong === undefined ? true : false;
+
+        if(fromPart){
+            this.part = undefined;
+            this.partId = undefined;
+        }
+        if(fromTrack){
+            this.track = undefined;
+            this.trackId = undefined;
+            this.channel = 0;
+        }
+        if(fromSong){
+            this.song = undefined;
+        }
+    };
+
+
+
+    // same as MidiEvent, could be inherited from generic Event
+    AudioEvent.prototype.move = function(ticks){
+        if(isNaN(ticks)){
+            if(sequencer.debug >= 1){
+                console.error('please provide a number');
+            }
+            return;
+        }
+        this.ticks += parseInt(ticks, 10);
+        if(this.song !== undefined){
+            this.update();
+        }
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
+    };
+
+
+    // same as MidiEvent, could be inherited from generic Event
+    AudioEvent.prototype.moveTo = function(){
+        var position = slice.call(arguments);
+        //console.log(position);
+
+        if(position[0] === 'ticks' && isNaN(position[1]) === false){
+            this.ticks = parseInt(position[1], 10);
+        }else if(this.song === undefined){
+            if(sequencer.debug >= 1){
+                console.error('The audio event has not been added to a song yet; you can only move to ticks values');
+            }
+        }else{
+            position = this.song.getPosition(position);
+            if(position === false){
+                if(sequencer.debug >= 1){
+                    console.error('wrong position data');
+                }
+            }else{
+                this.ticks = position.ticks;
+            }
+        }
+
+        if(this.song !== undefined){
+            this.update();
+        }
+        if(this.state !== 'new'){
+            this.state = 'changed';
+        }
+        if(this.part !== undefined){
+            this.part.needsUpdate = true;
+        }
+    };
+
+
+    sequencer.createAudioEvent = function(config){
+        if(config.className === 'AudioEvent'){
+            return config.clone();
+        }
+        return new AudioEvent(config);
+    };
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        typeString = sequencer.protectedScope.typeString;
+    });
+
+}());/*
+    controls the playback of the audio events in a track
+*/
 (function(){
 
-	'use strict';
+    'use strict';
 
-	var 
-		//import
-		typeString, // → defined in utils.js
-		copyName, // → defined in util.js
+    var
+        console = window.console,
+        sequencer = window.sequencer,
+        slice = Array.prototype.slice,
 
-		AudioEvent,
-		audioEventId = 0;
+        //import
+        typeString, // → defined in utils.js
 
-	/*
-		arguments:
-
-		ticks, sample, duration
-	*/
-
-	AudioEvent = function(args){
-		
-		if(!args){
-			// bypass for cloning
-			return;
-		}
-		//console.log(args);
-
-		if(args.length === 3 && typeString(args[0]) === 'number' && typeString(args[1]) === 'string' && typeString(args[3]) === 'number'){
-			this.ticks = args[0];
-			this.sample = args[1];
-			this.duration = args[2];
-		}else{
-			console.log('wrong number of arguments, please consult documentation');
-			return;
-		}
-
-		this.className =  'AudioEvent';
-		this.id = 'event_' + audioEventId++;
-	};
-
-	
-	AudioEvent.prototype = {
-		clone: function(){
-			var event = new AudioEvent(),
-				property;
-			for(property in this){
-				if(this.hasOwnProperty(property)){
-					if(property === 'id'){
-						event.id = copyName(this.id);
-					}else if(property !== 'clone'){
-						event[property] = this[property];
-					}
-				}
-			}
-			return event;
-		}	
-	};
+        AudioTrack;
 
 
-	sequencer.createAudioEvent = function(){
-		var args = Array.prototype.slice.call(arguments),
-			className = args[0].className; 
-		
-		if(className === 'AudioEvent'){
-			//return args;
-			return args[0].clone();
-		}
-		return new AudioEvent(args);
-	};
+    AudioTrack = function(){
+        this.className = 'AudioTrack';
+        this.scheduledSamples = {};
+    };
 
 
-	sequencer.protectedScope.addInitMethod(function(){
-		typeString = sequencer.protectedScope.typeString;
-		copyName = sequencer.protectedScope.copyName;
-	});
+    function unscheduleCallback(sample){
+        //console.log(sample.id, 'has been unscheduled');
+        delete this.scheduledSamples[sample.id];
+        sample = null;
+    }
+
+    AudioTrack.prototype.processEvent = function(audioEvent){
+        var sample = sequencer.createSample({buffer: audioEvent.buffer, track: audioEvent.track});
+        audioEvent.sample = sample;
+        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset;
+        // set playheadOffset to 0 after the event has been scheduled
+        audioEvent.playheadOffset = 0;
+        //sample.start(audioEvent.time/1000, 127, audioEvent.offsetMillis/1000, audioEvent.durationMillis/1000);
+
+        sample.start(audioEvent);
+        //console.log(time, time + audioEvent.durationMillis/1000);
+        //sample.stop(time + audioEvent.durationMillis/1000, function(){});
+
+        this.scheduledSamples[sample.id] = sample;
+    };
+
+/*
+    AudioTrack.prototype.playEvent = function(audioEvent, seconds){
+    };
+*/
+
+    AudioTrack.prototype.stopSample = function(audioEvent, seconds){
+        //console.log('stopping', audioEvent.id);
+        if(audioEvent.sample === undefined){
+            return;
+        }
+        audioEvent.sample.stop(seconds, unscheduleCallback.bind(this));
+    };
+
+
+    AudioTrack.prototype.allNotesOff = function(){
+        var sampleId, sample,
+            scheduledSamples = this.scheduledSamples;
+
+        for(sampleId in scheduledSamples){
+            if(scheduledSamples.hasOwnProperty(sampleId)){
+                //console.log('allNotesOff', sampleId);
+                sample = scheduledSamples[sampleId];
+                if(sample){
+                    sample.unschedule(0, unscheduleCallback.bind(this));
+                }
+            }
+        }
+        this.scheduledSamples = {};
+    };
+
+
+    sequencer.protectedScope.createAudioTrack = function(){
+        return new AudioTrack();
+    };
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        typeString = sequencer.protectedScope.typeString;
+    });
 
 }());
 // Sample.source -> gain (midiEvent.velocity) ->
@@ -3690,21 +4020,24 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
-    Instrument.prototype.processEvent = function(midiEvent, seconds){
+    Instrument.prototype.processEvent = function(midiEvent){
         //console.log(midiEvent.type, midiEvent.velocity);
         var type = midiEvent.type,
             data1, data2, track, output;
 
-        seconds = seconds === undefined ? 0 : seconds;
+        //seconds = seconds === undefined ? 0 : seconds;
+        if(midiEvent.time === undefined){
+            midiEvent.time = 0;
+        }
 
         if(type === 128 || type === 144){
             if(type === 128){
                 if(this.sustainPedalDown === true){
                     midiEvent.sustainPedalDown = true;
                 }
-                this.stopNote(midiEvent, seconds);
+                this.stopNote(midiEvent);
             }else{
-                this.playNote(midiEvent, seconds);
+                this.playNote(midiEvent);
             }
         }else if(midiEvent.type === 176){
             //return;
@@ -3720,7 +4053,7 @@ if (typeof module !== "undefined" && module !== null) {
                     this.sustainPedalDown = false;
                     //console.log('sustain pedal up');
                     dispatchEvent(this.track.song, 'sustain_pedal', 'up');
-                    this.stopSustain(seconds);
+                    this.stopSustain(midiEvent.time);
                 }
             }else if(data1 === 10){ // panning
                 // panning is *not* exactly timed -> not possible (yet) with WebAudio
@@ -3730,7 +4063,7 @@ if (typeof module !== "undefined" && module !== null) {
             }else if(data1 === 7){ // volume
                 track = this.track;
                 output = track.output;
-                output.gain.setValueAtTime(data2/127, seconds);
+                output.gain.setValueAtTime(data2/127, midiEvent.time);
                 /*
                 //@TODO: this should be done by a plugin
                 if(track.volumeChangeMethod === 'linear'){
@@ -3777,7 +4110,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    Instrument.prototype.playNote = function(midiEvent, seconds){
+    Instrument.prototype.playNote = function(midiEvent){
         var
             sample,
             sourceId;
@@ -3806,11 +4139,11 @@ if (typeof module !== "undefined" && module !== null) {
             sourceId: sourceId
         });
         this.scheduledSamples[sourceId] = sample;
-        sample.start(seconds, midiEvent.velocity);
+        sample.start(midiEvent);
     };
 
 
-    Instrument.prototype.stopNote = function(midiEvent, seconds){
+    Instrument.prototype.stopNote = function(midiEvent){
         if(midiEvent.midiNote === undefined){
             if(sequencer.debug){
                 console.warn('stopNote() no midi note');
@@ -3842,7 +4175,7 @@ if (typeof module !== "undefined" && module !== null) {
             return;
         }
 
-        sample.stop(seconds, function(){
+        sample.stop(midiEvent.time, function(){
             scheduledSamples[sourceId] = null;
             delete scheduledSamples[sourceId];
         });
@@ -4361,7 +4694,8 @@ if (typeof module !== "undefined" && module !== null) {
         tickWidth = 0.1,
         pitchHeight = 10,
         barsPerPage = 4,
-        snapValueX = 32,
+        snapValueX = 0, // means snaps is off -> ticks value do not get rounded
+        //snapValueX = 1, // means snaps to all ticks
         snapValueY = 'chromatic',
         eventWidth = 2,
 
@@ -4548,8 +4882,8 @@ if (typeof module !== "undefined" && module !== null) {
         this.currentPage = 1;
         this.numPages = ceil(this.width/this.viewportWidth);
 
-        this.snapValueX = config.snapX || snapValueX;
-        this.snapValueY = config.snapY || snapValueY;
+        this.snapValueX = config.snapX === undefined ? snapValueX : config.snapX;
+        this.snapValueY = config.snapY === undefined ? snapValueY : config.snapY;
         this.setSnapX(this.snapValueX);
         this.setSnapY(this.snapValueY);
 
@@ -4839,7 +5173,7 @@ if (typeof module !== "undefined" && module !== null) {
     KeyEditor.prototype.getEventRect = function(event){
         //console.log(note.number);
         var
-            x = this.ticksToX(event.ticks - this.startTicks),
+            x = this.ticksToX(event.ticks - this.startTicks, false),
             y = this.pitchToY(event.number),
             w = eventWidth * this.tickWidth,
             h = this.pitchHeight;
@@ -4860,7 +5194,7 @@ if (typeof module !== "undefined" && module !== null) {
     KeyEditor.prototype.getNoteRect = function(note){
         //console.log(note.number);
         var
-            x = this.ticksToX(note.ticks - this.startTicks),//(note.ticks - this.startTicks) * this.tickWidth,
+            x = this.ticksToX(note.ticks - this.startTicks, false),//(note.ticks - this.startTicks) * this.tickWidth,
             y = this.pitchToY(note.number),
             w = note.durationTicks * this.tickWidth,
             h = this.pitchHeight,
@@ -4914,8 +5248,8 @@ if (typeof module !== "undefined" && module !== null) {
                 // bottom: this.height - ((stats.min - this.lowestNote + 1) * this.pitchHeight) + this.pitchHeight,
                 top: this.pitchToY(stats.max),// - this.pitchHeight,
                 bottom: this.pitchToY(stats.min) + this.pitchHeight,
-                left: this.ticksToX(part.start.ticks - this.startTicks, true),
-                right: this.ticksToX(part.end.ticks - this.startTicks, true),
+                left: this.ticksToX(part.start.ticks - this.startTicks, false),
+                right: this.ticksToX(part.end.ticks - this.startTicks, false),
                 //left: this.ticksToX(part.events[0].ticks, false),
                 //right: this.ticksToX(part.events[part.events.length - 1].ticks, false)
             };
@@ -4995,25 +5329,20 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     KeyEditor.prototype.startMoveNote = function(note, x, y){
-        if(note.className !== 'MidiEvent'){
-            note = note.note;
+        if(note.className !== 'MidiNote'){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn(note, 'is not a MidiNote');
+            }
+            return;
         }
         //sequencer.unscheduleEvent(note);
         this.selectedNote = note;
-        this.selectedNote.moved = 0;
-        this.selectedNote.transposed = 0;
-        this.startMoveX = x;
-        this.startMoveY = y;
-        this.startMoveTicks = this.xToTicks(x, true);
-        this.startMovePitch = this.yToPitch(y).number;
-        //console.log(song.keyEditor.selectedNote);
+        this.gripX = x - this.selectedNote.bbox.x;
     };
 
 
     KeyEditor.prototype.stopMoveNote = function(){
-        //console.log(this.selectedNote.part.track);
         this.selectedNote = undefined;
-        //song.update(false, false, true);
     };
 
 
@@ -5022,91 +5351,76 @@ if (typeof module !== "undefined" && module !== null) {
             return;
         }
 
-        var pitch = this.yToPitch(y).number,
-            ticks = this.xToTicks(x),
-            transpose = pitch - this.startMovePitch,
-            move = ticks - this.startMoveTicks,
-            notes = [], bbox,
+        var
+            newPitch = this.yToPitch(y).number,
+            oldPitch = this.selectedNote.pitch,
+            newTicks = this.xToTicks(x - this.gripX),
+            oldTicks = this.selectedNote.ticks,
             part = this.selectedNote.part,
-            me = this;
+            update = false;
 
-        if(this.selectedNote.transposed !== transpose){
-            part.transposeNote(this.selectedNote, transpose - this.selectedNote.transposed);
-            this.selectedNote.transposed = transpose;
-            //console.log('transpose',transpose,this.selectedNote.endEvent);
+        //console.log(newTicks, oldTicks, this.gripX, x);
+
+        if(newPitch !== oldPitch){
+            part.transposeNote(this.selectedNote, newPitch - oldPitch);
+            update = true;
         }
 
-        if(this.selectedNote.moved !== move){
-            this.selectedNote.part.moveNote(this.selectedNote, move - this.selectedNote.moved);
-            this.selectedNote.moved = move;
-            //console.log('move note',move);
+        if(newTicks !== oldTicks){
+            part.moveNote(this.selectedNote, newTicks - oldTicks);
+            update = true;
         }
 
-        this.song.update(false, true, true);
+        if(update === true){
+            this.song.update();
+        }
     };
 
 
     KeyEditor.prototype.startMovePart = function(part, x, y){
         if(part.className !== 'Part'){
-            part = part.part;
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn(part, 'is not a Part');
+            }
+            return;
         }
         this.selectedPart = part;
-        this.selectedPart.moved = 0;
-        this.selectedPart.transposed = 0;
-        this.startMoveX = x;
-        this.startMoveY = y;
-        this.startMoveTicks = this.xToTicks(x, true);
-        this.startMovePitch = this.yToPitch(y).number;
+        this.selectedPart.pitch = this.yToPitch(y).number;
+        this.gripX = x - this.selectedPart.bbox.x;
     };
 
 
     KeyEditor.prototype.stopMovePart = function(){
         this.selectedPart = undefined;
-        //song.update(false, false, true);
     };
 
 
     KeyEditor.prototype.movePart = function(x, y){
-        //console.log(this.selectedPart);
         if(this.selectedPart === undefined){
             return;
         }
 
-        var pitch = this.yToPitch(y).number,
-            ticks = this.xToTicks(x),
-            transpose = pitch - this.startMovePitch,
-            move = ticks - this.startMoveTicks,
-            notes = [], bbox,
-            me = this,
+        var
+            newPitch = this.yToPitch(y).number,
+            oldPitch = this.selectedPart.pitch,
+            newTicks = this.xToTicks(x - this.gripX),
+            oldTicks = this.selectedPart.ticks,
             update = false;
 
-        //console.log(move, this.selectedPart.moved);
-
-        if(this.selectedPart.transposed !== transpose){
-            //console.log('transpose', transpose);
-
-            //this.selectedPart.transposeAllEvents(transpose - this.selectedPart.transposed);
-            this.selectedPart.track.transposePart(this.selectedPart, transpose - this.selectedPart.transposed);
-
-            this.selectedPart.transposed = transpose;
+        if(newPitch !== oldPitch){
+            this.selectedPart.track.transposePart(this.selectedPart, newPitch - oldPitch);
+            this.selectedPart.pitch = newPitch;
             update = true;
-        // }else{
-        //     console.log('no transpose', transpose);
         }
 
-        if(this.selectedPart.moved !== move){
-            //this.selectedPart.ticks += move - this.selectedPart.moved;
-            //this.selectedPart.moveAllEvents(move - this.selectedPart.moved);
-            //console.log('move', move);
-            this.selectedPart.track.movePart(this.selectedPart, move - this.selectedPart.moved);
-            this.selectedPart.moved = move;
+
+        if(newTicks !== oldTicks){
+            this.selectedPart.track.movePart(this.selectedPart, newTicks - oldTicks);
             update = true;
-        // }else{
-        //     console.log('no move', move);
         }
 
         if(update === true){
-            this.song.update(false, true, true);
+            this.song.update();
         }
     };
 
@@ -5114,9 +5428,10 @@ if (typeof module !== "undefined" && module !== null) {
     KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function(x, snap){
         var ticks = ((x + this.scrollX)/this.width) * this.numTicks;
         //console.log(this.scrollX,this.width,this.numTicks,ticks);
-        if(snap !== false){
+        if(snap !== false && this.snapTicks !== 0){
             ticks = floor(ticks/this.snapTicks) * this.snapTicks;
         }
+        //console.log(ticks, this.snapTicks);
         return ticks;
     };
 
@@ -5132,7 +5447,7 @@ if (typeof module !== "undefined" && module !== null) {
         // var p = ticks/this.numTicks,
         //     x = (p * this.width) - this.scrollX;
         var x = (ticks - this.startTicks) * this.tickWidth;
-        if(snap !== false){
+        if(snap !== false && this.snapWidth !== 0){
             x = (floor(x/this.snapWidth) * this.snapWidth);
         }
         return x;
@@ -5260,22 +5575,39 @@ if (typeof module !== "undefined" && module !== null) {
         if(snapX === undefined){
             return;
         }
+        //console.log('in', snapX);
+        // 4 -> 1, 8 -> 0.5 16 -> 0.25
+        var beatLength = 4/this.song.denominator;
 
-        if(isNaN(snapX) && snapX.indexOf('ticks') !== -1){
-            snapX = snapX.replace(/ticks/,'');
-            if(isNaN(snapX)){
-                snapX = this.song.ppq/4;// sixteenth note
+        if(snapX === 'off'){
+            this.snapTicks = 0;
+        }else if(snapX === 'tick'){
+            this.snapTicks = 1;
+        }else if(snapX === 'beat'){
+            // TODO: dependent on current time signature!
+            this.snapTicks = this.song.ppq * beatLength;
+        }else if(snapX === 'bar'){
+            // TODO: dependent on current time signature!
+            this.snapTicks = (this.song.ppq * this.song.nominator) * beatLength;
+        }else if(isNaN(snapX) && snapX.indexOf('ticks') !== -1){
+            this.snapTicks = snapX.replace(/ticks/,'');
+            if(isNaN(this.snapTicks)){
+                this.snapTicks = this.song.ppq/4;// sixteenth note
+            }else{
+                this.snapTicks = parseInt(this.snapTicks);
             }
-            //snapX = snapX.replace(/\s/g,'');
-            this.snapTicks = parseInt(snapX);
         }else{
-            if(isNaN(snapX)){
-                snapX = 16;
+            if(isNaN(snapX) || snapX === 0){
+                // by default snap is off
+                snapX = 0;
+                this.snapTicks = 0;
+            }else{
+                snapX = parseInt(snapX);
+                this.snapTicks = (4/snapX) * this.song.ppq;
             }
-            snapX = parseInt(snapX);
-            this.snapTicks = (4/snapX) * this.song.ppq;
         }
 
+        //console.log(snapX,this.snapTicks, beatLength);
         this.snapValueX = snapX;
         this.snapWidth = this.tickWidth * this.snapTicks;
     };
@@ -5603,6 +5935,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.song.update();
         }
 */
+
         return s;
     };
 
@@ -5752,10 +6085,10 @@ if (typeof module !== "undefined" && module !== null) {
     function Factory(song, editor){
         this.song = song;
         this.editor = editor;
-        this.updateSong();
         //console.log(this.editor);
         //this.position = createPlayhead(this.song, 'barsbeats ticks millis', 'iterators');
         this.position = createPlayhead(this.song, 'all', 'iterators');
+        this.updateSong();
     }
 
 /*
@@ -5782,6 +6115,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.numNotes = this.notes.length;
         this.parts = this.song.parts;
         this.numParts = this.parts.length;
+        this.position.updateSong();
     };
 
 
@@ -5819,6 +6153,7 @@ if (typeof module !== "undefined" && module !== null) {
             nominator = data.nominator;
             numSixteenth = data.numSixteenth;
             //console.log(numTicks,nominator,numSixteenth);
+            //console.log(ticks, data);
         };
 
         next = function(t){
@@ -6237,7 +6572,7 @@ if (typeof module !== "undefined" && module !== null) {
         getPosition, //defined in position.js
         objectForEach, //defined in util.js
         createMidiNote, //defined in midi_note.js
-        parseMidiEvents, //defined in parse_midi_events.js
+        parseEvents, //defined in parse_events.js
         parseMetronomeEvents, //defined in song_update.js
 
         methodMap = {
@@ -6505,7 +6840,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.startMillis = this.song.millis;
         this.precountDurationInMillis = endPos.millis - this.startMillis;
         this.precountEvents = createEvents(this, this.song.bar, endPos.bar - 1, 'precount');
-        parseMidiEvents(this.song, this.precountEvents);
+        parseEvents(this.song, this.precountEvents);
         //console.log(this.song.bar, endPos.bar, precount, this.precountEvents.length);
         //console.log(this.precountEvents, this.precountDurationInMillis, startTicks, endTicks);
     };
@@ -6549,7 +6884,7 @@ if (typeof module !== "undefined" && module !== null) {
         getPosition = sequencer.protectedScope.getPosition;
         createMidiNote = sequencer.createMidiNote;
         objectForEach = sequencer.util.objectForEach;
-        parseMidiEvents = sequencer.protectedScope.parseMidiEvents;
+        parseEvents = sequencer.protectedScope.parseEvents;
         parseMetronomeEvents = sequencer.protectedScope.parseMetronomeEvents;
     });
 }());(function(){
@@ -6586,7 +6921,6 @@ if (typeof module !== "undefined" && module !== null) {
         //import
         createNote, // → defined in note.js
         typeString, // → defined in utils.js
-        copyName, // → defined in util.js
 
         MidiEvent,
         midiEventId = 0;
@@ -6606,6 +6940,8 @@ if (typeof module !== "undefined" && module !== null) {
         this.id = 'M' + midiEventId + new Date().getTime();
         this.eventNumber = midiEventId;
         this.channel = 'any';
+        this.time = 0;
+        //this.offset = 0;
         //console.log(midiEventId, this.type, this.id);
         this.muted = false;
         //console.log(midiEventId, this.type);
@@ -6761,7 +7097,7 @@ if (typeof module !== "undefined" && module !== null) {
             return;
         }
 
-        //console.log('transpose',semi,this);
+        //console.log('transpose', semi);
         if(typeString(semi) === 'array'){
             var type = semi[0];
             if(type === 'hertz'){
@@ -6789,6 +7125,10 @@ if (typeof module !== "undefined" && module !== null) {
         this.noteNumber = note.number;
         this.octave = note.octave;
         this.frequency = note.frequency;
+
+        if(this.midiNote !== undefined){
+            this.midiNote.pitch = this.data1;
+        }
 
         if(this.state !== 'new'){
             this.state = 'changed';
@@ -6828,6 +7168,9 @@ if (typeof module !== "undefined" && module !== null) {
         this.octave = note.octave;
         this.frequency = note.frequency;
 
+        if(this.midiNote !== undefined){
+            this.midiNote.pitch = this.data1;
+        }
         if(this.state !== 'new'){
             this.state = 'changed';
         }
@@ -6904,6 +7247,12 @@ if (typeof module !== "undefined" && module !== null) {
         }
     };
 
+
+    // implemented because of the common interface of midi and audio events
+    MidiEvent.prototype.update = function(){
+    };
+
+
     /**@exports sequencer*/
     sequencer.createMidiEvent = function(){
         /**
@@ -6926,7 +7275,6 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.protectedScope.addInitMethod(function(){
         createNote = sequencer.createNote;
         typeString = sequencer.protectedScope.typeString;
-        copyName = sequencer.protectedScope.copyName;
     });
 
 }());(function(){
@@ -7602,6 +7950,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.note = on.note;
         this.number = on.noteNumber;
         this.ticks = on.ticks;
+        this.pitch = on.data1;
         this.velocity = on.velocity;
         this.id = 'N' + midiNoteId + new Date().getTime();
         this.name = on.noteName;
@@ -7670,8 +8019,17 @@ if (typeof module !== "undefined" && module !== null) {
         }
         this.number = this.noteOn.noteNumber;
         this.name = this.noteOn.noteName;
+        this.pitch = pitch;
     };
 
+
+    MidiNote.prototype.mute = function(flag){
+        if(flag !== undefined){
+            this.mute = flag;
+        }else{
+            this.mute = !this.mute;
+        }
+    };
 
     sequencer.protectedScope.addInitMethod(function(){
         createMidiEvent = sequencer.createMidiEvent;
@@ -9446,7 +9804,7 @@ if (typeof module !== "undefined" && module !== null) {
             i;
 
         numEvents = events.length;
-        //console.log('parseMidiEvents', numEvents);
+        //console.log('parseEvents', numEvents);
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
@@ -9573,11 +9931,14 @@ if (typeof module !== "undefined" && module !== null) {
         event.barsAsArray = [bar, beat, sixteenth, tick];
 
         event.state = 'clean';
+        event.update();
+
+        //console.log(event.nominator, event.ticks);
     }
 
 
 
-    sequencer.protectedScope.parseMidiEvents = parse;
+    sequencer.protectedScope.parseEvents = parse;
 
     sequencer.protectedScope.addInitMethod(function(){
     });
@@ -10001,9 +10362,6 @@ if (typeof module !== "undefined" && module !== null) {
         this.dirtyEvents = {};
         this.dirtyNotes = {};
 
-        this.transposed = 0;
-        this.moved = 0;
-
         this.song = undefined;
         this.autoSize = 'right'; // 'right' or 'both'
 
@@ -10179,6 +10537,8 @@ if (typeof module !== "undefined" && module !== null) {
         var i, e,
             events = args.events,
             semi = args.config[0];
+
+        //console.log(semi, args);
 
         for(i = events.length - 1; i >= 0; i--){
             e = events[i];
@@ -10356,11 +10716,13 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Part.prototype.transposeAllEvents = function(semi){
+        //console.log('transposeAllEvents', semi);
         transposeEvents({events:this.events, config:[semi]}, this);
     };
 
 
     Part.prototype.transposeNote = function(note, semi){
+        //console.log('transposeNote', semi);
         transposeEvents({events:[note.noteOn, note.noteOff], config:[semi]}, this);
     };
 /*
@@ -10742,7 +11104,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Playhead.prototype.updateSong = function(){
-        this.events = this.song.songAndTimeEvents;
+        this.events = this.song.eventsMidiTime;
         this.numEvents = this.events.length;
         this.notes = this.song.notes;
         this.numNotes = this.song.numNotes;
@@ -10824,6 +11186,9 @@ if (typeof module !== "undefined" && module !== null) {
         this.data.ticks = position.ticks;
 
         //console.log('millis:', position.millis, 'ticks:', position.ticks, this.unit, ':', this.currentValue);
+        // if(this.name === 'iterators'){
+        //     console.log('nominator:', position.nominator, 'ticks:', position.ticks, this.unit, ':', this.currentValue);
+        // }
 
         if(this.type.indexOf('all') !== -1){
             var data = this.data;
@@ -11632,170 +11997,6 @@ if (typeof module !== "undefined" && module !== null) {
         sequencer = window.sequencer,
         console = window.console,
 
-        copyObject, // defined in util.js
-
-        floor = Math.floor,
-        round = Math.round,
-
-    	noteFractions =
-    	{
-	        '1': 1 * 4, // whole note
-	        '1.': 1.5 * 4,
-	        '1..': 1.75 * 4,
-	        '1...': 1.875 * 4,
-	        '1T': 2/3 * 4,
-
-	        '2': 1 * 2, // half note
-	        '2.': 1.5 * 2,
-	        '2..': 1.75 * 2,
-	        '2...': 1.875 * 2,
-	        '2T': 2/3 * 2,
-
-	        '4': 1 * 1, // quarter note (beat)
-	        '4.': 1.5 * 1,
-	        '4..': 1.75 * 1,
-	        '4...': 1.875 * 1,
-	        '4T': 2/3 * 1,
-
-	        '8': 1 * 1/2, // eighth note
-	        '8.': 1.5 * 1/2,
-	        '8..': 1.75 * 1/2,
-	        '8...': 1.875 * 1/2,
-	        '8T':  2/3 * 1/2,
-
-	        '16': 1 * 1/4, // sixteenth note
-	        '16.': 1.5 * 1/4,
-	        '16..': 1.75 * 1/4,
-	        '16...': 1.875 * 1/4,
-	        '16T': 2/3 * 1/4,
-
-	        '32': 1 * 1/8,
-	        '32.': 1.5 * 1/8,
-	        '32..': 1.75 * 1/8,
-	        '32...': 1.875 * 1/8,
-	        '32T': 2/3 * 1/8,
-
-	        '64': 1 * 1/16,
-	        '64.': 1.5 * 1/16,
-	        '64..': 1.75 * 1/16,
-	        '64...': 1.875 * 1/16,
-	        '64T': 2/3 * 1/16,
-
-	        '128': 1 * 1/32,
-	        '128.': 1.5 * 1/32,
-	        '128..': 1.75 * 1/32,
-	        '128...': 1.875 * 1/32,
-	        '128T': 2/3 * 1/32
-	    };
-
-
-
-
-    function quantize(events, value, ppq, history){
-        var track;
-
-        value = '' + value;
-        value = value.toUpperCase();
-        ppq = ppq || sequencer.defaultPPQ;
-        //console.log('quantize', value);
-        if(value === 0){// pass by
-            return {};
-        }
-        var i, event, ticks, quantized, diff, quantizeTicks,
-           quantizeHistory = history || {};
-
-        if(quantizeHistory.events === undefined){
-            quantizeHistory.events = {};
-        }
-
-        if(quantizeHistory.tracks === undefined){
-            quantizeHistory.tracks = {};
-        }
-
-        //console.log(events, value, ppq, history);
-
-        if(value.indexOf('TICKS') !== -1){
-            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
-        }else{
-            quantizeTicks = noteFractions[value] * ppq;
-        }
-
-        //console.log('quantize', quantizeTicks);
-
-        if(quantizeTicks === undefined){
-            if(sequencer.debug){
-                console.warn('invalid quantize value');
-            }
-            return;
-        }
-
-        for(i = events.length - 1; i >= 0; i--){
-            event = events[i];
-
-            quantizeHistory.events[event.id] = {
-                event: event,
-                ticks: event.ticks
-            };
-
-            if(event.type !== 128){
-                ticks = event.ticks;
-                quantized = round(ticks/quantizeTicks) * quantizeTicks;
-                //console.log(ticks, quantized, '[', ppq, ']');
-                diff = quantized - ticks;
-                event.ticks = quantized;
-                event.state = 'changed';
-                event.part.needsUpdate = true;
-                event.track.needsUpdate = true;
-
-                // add quantize history per track as well
-                track = event.track;
-                if(quantizeHistory.tracks[track.id] === undefined){
-                    quantizeHistory.tracks[track.id] = {
-                        track: track,
-                        quantizedEvents: []
-                    };
-                }
-                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
-
-                // quantize the note off event
-                if(event.midiNote !== undefined){
-                    event.midiNote.noteOff.ticks += diff;
-                    event.midiNote.noteOff.state = 'changed';
-                    event.midiNote.state = 'changed';
-                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
-                }
-            }
-        }
-
-        return quantizeHistory;//copyObject(quantizeHistory);
-    }
-
-
-    function fixedLength(events, value, ppq, history){
-        var fixedLengthHistory = history || {};
-
-    }
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        copyObject = sequencer.protectedScope.copyObject;
-    });
-
-    sequencer.quantize = quantize;
-    sequencer.fixedLength = fixedLength;
-
-}());
-
-
-(function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         context, // defined in open_module.js
         timedTasks, // defined in open_module.js
@@ -11821,6 +12022,9 @@ if (typeof module !== "undefined" && module !== null) {
         this.output = context.createGainNode();
         this.output.connect(config.track.input);
         this.buffer = config.buffer;
+        if(this.buffer){
+            this.duration = this.buffer.duration;
+        }
         this.noteNumber = config.noteNumber;
         this.stopCallback = function(){};
         this.track = config.track;
@@ -11890,14 +12094,14 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     // called on a NOTE ON event
-    Sample.prototype.start = function(time, velocity){
+    Sample.prototype.start = function(event){
         //console.log('NOTE ON', time, velocity);
         if(this.source !== undefined){
             console.error('this should never happen');
             return;
         }
 
-        this.volume = velocity/127;
+        this.volume = event.velocity/127;
         this.output.gain.value = this.volume;
 
         this.createSource();
@@ -11910,7 +12114,12 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         try{
-            this.source.start(time);
+            // if(event.offset !== undefined){
+            //     console.log(event.offset);
+            // }
+            this.source.start(event.time, event.offset || 0, event.duration || this.duration);
+            //this.source.start(event.time);
+            //console.log('start', event.time, event.offset, event.duration, sequencer.getTime());
             //console.log('start', time, sequencer.getTime());
         }catch(e){
             console.warn(e);
@@ -11919,7 +12128,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     // called on a NOTE OFF event
-    Sample.prototype.stop = function(time, cb){
+    Sample.prototype.stop = function(seconds, cb){
         //console.log('NOTE OFF', cb);
         //console.log('NOTE OFF', this.source);
         //console.log('NOTE OFF', this.release);
@@ -11930,18 +12139,20 @@ if (typeof module !== "undefined" && module !== null) {
             return;
         }
 
-        if(time === 0 || time === undefined){
-            time = sequencer.getTime();
+        // this happens when midi events are sent live from a midi device
+        if(seconds === 0 || seconds === undefined){
+            //console.log('seconds is undefined!');
+            seconds = sequencer.getTime();
         }
-        this.stopCallback = cb;
+        this.stopCallback = cb || function(){};
 
         if(this.release){
             this.source.loop = false;
-            this.startReleasePhase = time;
-            this.stopTime = time + this.releaseDuration;
-            //console.log(this.stopTime, time, this.releaseDuration);
+            this.startReleasePhase = seconds;
+            this.stopTime = seconds + this.releaseDuration;
+            //console.log(this.stopTime, seconds, this.releaseDuration);
         }else{
-            stopSample(this, time);
+            stopSample(this, seconds);
         }
     };
 
@@ -12669,9 +12880,7 @@ if (typeof module !== "undefined" && module !== null) {
         objectForEach, // defined in util.js
 
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
-        bufferTime = sequencer.bufferTime * 1000,
-
-        called,
+        //bufferTime = sequencer.bufferTime * 1000,
 
         Scheduler;
 
@@ -12680,17 +12889,22 @@ if (typeof module !== "undefined" && module !== null) {
         this.song = song;
         this.looped = false;
         this.notes = {};
+        this.audioEvents = {};
     };
 
 
     Scheduler.prototype.updateSong = function(){
-        this.events = this.song.songAndMetronomeEvents;
+        this.events = this.song.eventsMidiAudioMetronome;
         this.numEvents = this.events.length;
         this.index = 0;
+        this.maxtime = 0;
         this.notes = {};
-        this.setIndex(this.song.millis);
+        this.audioEvents = this.song.audioEvents;
+        this.numAudioEvents = this.audioEvents.length;
+        this.scheduledAudioEvents = {};
         this.looped = false;
-        //console.log('Scheduler.setIndex', this.index, this.numEvents, this.instruments);
+        this.setIndex(this.song.millis);
+        //console.log('Scheduler.setIndex', this.index, this.numEvents);
     };
 
 
@@ -12702,25 +12916,49 @@ if (typeof module !== "undefined" && module !== null) {
                 break;
             }
         }
-        called = 0;
+        //console.log(millis);
+        this.beyondLoop = false;
+        if(millis > this.song.loopEnd){
+            this.beyondLoop = true;
+        }
+
+        this.scheduledAudioEvents = {};
+    };
+
+    /*
+        A dangling audio event start before, and ends after the current position of the playhead. We have to calculate the difference between
+        the start of the sample (event.millis) and the position of the playhead (song.millis). This value is the playheadOffset, and the sample
+        starts the number of seconds of the playheadOffset into the sample.
+
+        Also the audio event is scheduled the number of milliseconds of the playhead later to keep it in sync with the rest of the song.
+
+        The playheadOffset is applied to the audio sample in audio_track.js
+    */
+    Scheduler.prototype.getDanglingAudioEvents = function(millis, events){
+        var i, event, num = 0;
+
+        for(i = 0; i < this.numAudioEvents; i++){
+            event = this.audioEvents[i];
+            if(event.millis < millis && event.endMillis > millis){
+                event.playheadOffset = (millis - event.millis);
+                event.time = this.startTime + event.millis - this.songStartMillis + event.playheadOffset;
+                event.playheadOffset /= 1000;
+                this.scheduledAudioEvents[event.id] = event;
+                //console.log('getDanglingAudioEvents', event.id);
+                events.push(event);
+                num++;
+            }else{
+                event.playheadOffset = 0;
+            }
+            //console.log('playheadOffset', event.playheadOffset);
+        }
+        //console.log('getDanglingAudioEvents', num);
+        return events;
     };
 
 
     Scheduler.prototype.getEvents = function(){
-        var i, event, events = [], note, noteOn, noteOff, endMillis, endTicks, diff, buffertime;
-
-        // if we approach the loop point, we schedule a whole buffer of events at the start of the loop and then start
-        // to schedule again after the song position has reached the loop end point. at that time, the value of this.looped
-        // will be set to false again so the scheduler can continue to schedule events
-/*
-        if(this.looped === true){
-            //console.log('bypass');
-            return events;
-        }
-*/
-        //console.log(this.song.millis, maxtime, this.index);
-        //console.log(this.song.millis < this.song.loopEnd);
-        //console.log(this.song.millis, maxtime);
+        var i, event, events = [], note, noteOn, noteOff, endMillis, endTicks, diff, buffertime, audioEvent;
 
         buffertime = sequencer.bufferTime * 1000;
         if(this.song.doLoop === true && this.song.loopDuration < buffertime){
@@ -12730,22 +12968,22 @@ if (typeof module !== "undefined" && module !== null) {
 
         if(this.song.doLoop === true){
 
-            if(this.maxtime >= this.song.loopEnd){
+            if(this.maxtime >= this.song.loopEnd && this.beyondLoop === false){
+            //if(this.maxtime >= this.song.loopEnd && this.prevMaxtime < this.song.loopEnd){
+            //if(this.maxtime >= this.song.loopEnd && this.song.jump !== true){
 
                 diff = this.maxtime - this.song.loopEnd;
                 this.maxtime = this.song.loopStart + diff;
 
                 //console.log(maxtime, this.song.loopEnd, diff);
-
                 if(this.looped === false){
                     //console.log(this.song.millis, maxtime, diff);
                     this.looped = true;
-                    //console.log('LOOP', this.song.loopEnd, maxtime);
+                    //console.log('LOOP', this.song.loopEnd, this.maxtime);
                     for(i = this.index; i < this.numEvents; i++){
                         event = this.events[i];
                         if(event.millis < this.song.loopEnd){
                             //console.log('  ', event.track.name, maxtime, this.index, this.numEvents);
-                            event.elapsedLoops = this.song.elapsedLoops;
                             event.time = this.startTime + event.millis - this.songStartMillis;
                             events.push(event);
                             this.index++;
@@ -12770,43 +13008,79 @@ if (typeof module !== "undefined" && module !== null) {
                             event.part = noteOn.part;
                             event.track = noteOn.track;
                             event.midiNote = noteOn.midiNote;
-                            event.elapsedLoops = this.song.elapsedLoops;
                             event.time = this.startTime + event.millis - this.songStartMillis;
                             events.push(event);
+                        }
+                    }
+                    // stop overflowing audio samples
+                    for(i in this.scheduledAudioEvents){
+                        if(this.scheduledAudioEvents.hasOwnProperty(i)){
+                            audioEvent = this.scheduledAudioEvents[i];
+                            if(audioEvent.endMillis > this.song.loopEnd){
+                                audioEvent.stopSample(this.song.loopEnd/1000);
+                                delete this.scheduledAudioEvents[i];
+                                //console.log('stopping audio event', i);
+                            }
                         }
                     }
                     this.notes = {};
                     this.setIndex(this.song.loopStart);
                     this.song.startTime += this.song.loopDuration;
                     this.startTime = this.song.startTime;
+                    // get the audio events that start before song.loopStart
+                    this.getDanglingAudioEvents(this.song.loopStart, events);
                 }
             }else{
                 this.looped = false;
             }
         }
 
+        if(this.firstRun === true){
+            this.getDanglingAudioEvents(this.song.millis, events);
+            this.firstRun = false;
+        }
 
         for(i = this.index; i < this.numEvents; i++){
             event = this.events[i];
+
             if(event.millis < this.maxtime){
                 // if(this.song.bar >= 6 && event.track.name === 'Sonata # 3'){
                 //     console.log('  song:', this.song.millis, 'event:', event.millis, ('(' + event.type + ')'), 'max:', maxtime, 'id:', event.midiNote.id);
                 // }
-                event.elapsedLoops = this.song.elapsedLoops;
                 event.time = this.startTime + event.millis - this.songStartMillis;
-                events.push(event);
+
                 if(event.midiNote !== undefined){
                     if(event.type === 144){
                         this.notes[event.midiNote.id] = event.midiNote;
                     }else if(event.type === 128){
                         delete this.notes[event.midiNote.id];
                     }
+                }else if(event.type === 'audio'){
+                    if(this.scheduledAudioEvents[event.id] !== undefined){
+                        // @TODO: delete the entry in this.scheduledAudioEvents after the sample has finished
+                        // -> this happens when you move the playhead outside a loop if doLoop is true
+                        //console.log('this shouldn\'t happen!');
+                        //continue;
+                        audioEvent = this.scheduledAudioEvents[event.id];
+                        if(audioEvent.sample.source !== undefined){
+                            audioEvent.stopSample(0);
+                        // }else{
+                        //     continue;
+                        }
+                    }
+                    this.scheduledAudioEvents[event.id] = event;
+                    //console.log('scheduling', event.id);
+                    // the scheduling time has to be compensated with the playheadOffset (in millis)
+                    event.time = event.time + (event.playheadOffset * 1000);
                 }
+
+                events.push(event);
                 this.index++;
             }else{
                 break;
             }
         }
+
         return events;
     };
 
@@ -12814,15 +13088,17 @@ if (typeof module !== "undefined" && module !== null) {
     Scheduler.prototype.update = function(){
         var i,
             event,
-            events,
             numEvents,
+            events,
             track,
             channel;
+
+        this.prevMaxtime = this.maxtime;
 
         if(this.song.precounting === true){
             this.songMillis = this.song.metronome.millis;
             this.maxtime = this.songMillis + (sequencer.bufferTime * 1000);
-            events = this.song.metronome.getPrecountEvents(this.maxtime);
+            events = [].concat(this.song.metronome.getPrecountEvents(this.maxtime));
 
             if(this.maxtime > this.song.metronome.endMillis){
                 // start scheduling events of the song -> add the first events of the song
@@ -12831,7 +13107,7 @@ if (typeof module !== "undefined" && module !== null) {
                 this.startTime = this.song.startTime;
                 this.startTime2 = this.song.startTime2;
                 this.songStartMillis = this.song.startMillis;
-                events = events.concat(this.getEvents());
+                events = this.getEvents();
             }
         }else{
             this.songMillis = this.song.millis;
@@ -12844,6 +13120,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         numEvents = events.length;
 
+        //for(i = events.length - 1; i >= 0; i--){
         for(i = 0; i < numEvents; i++){
             event = events[i];
             track = event.track;
@@ -12858,30 +13135,37 @@ if (typeof module !== "undefined" && module !== null) {
                 continue;
             }
 
-
-            if(track.routeToMidiOut === false){
-                // if(event.type === 144){
-                //     console.log(event.time/1000, sequencer.getTime(), event.time/1000 - sequencer.getTime());
-                // }
-                track.instrument.processEvent(event, event.time/1000);
+            if(event.type === 'audio'){
+                event.time /= 1000;
+                track.audio.processEvent(event);
             }else{
-                channel = track.channel;
-                if(channel === 'any' || channel === undefined || isNaN(channel) === true){
-                    channel = 0;
-                }
-                objectForEach(track.midiOutputs, function(midiOutput){
-                    if(event.type === 128 || event.type === 144 || event.type === 176){
-                        //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                        midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
-                    }else if(event.type === 192 || event.type === 224){
-                        midiOutput.send([event.type + channel, event.data1], event.time);
+
+                if(track.routeToMidiOut === false){
+                    // if(event.type === 144){
+                    //     console.log(event.time/1000, sequencer.getTime(), event.time/1000 - sequencer.getTime());
+                    // }
+                    event.time /= 1000;
+                    //console.log('scheduled', event.type, event.time, event.midiNote.id);
+                    track.instrument.processEvent(event);
+                }else{
+                    channel = track.channel;
+                    if(channel === 'any' || channel === undefined || isNaN(channel) === true){
+                        channel = 0;
                     }
-                });
-                // needed for Song.resetExternalMidiDevices()
-                this.lastEventTime = event.time;
+                    objectForEach(track.midiOutputs, function(midiOutput){
+                        if(event.type === 128 || event.type === 144 || event.type === 176){
+                            //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
+                        }else if(event.type === 192 || event.type === 224){
+                            midiOutput.send([event.type + channel, event.data1], event.time);
+                        }
+                    });
+                    // needed for Song.resetExternalMidiDevices()
+                    this.lastEventTime = event.time;
+                }
             }
         }
-    };
+   };
 
 
     function loop(data, i, maxi, events){
@@ -12980,9 +13264,26 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function removeSong(song){
+    sequencer.deleteSong = function(song){
+        // clean up
+        song.stop();
+        song.listeners = null;
+
+        song.midiEventListeners = null;
+        var i, track;
+        for(i = song.tracks - 1; i >= 0; i--){
+            track = song.tracks[i];
+            track.midiEventListeners = null;
+        }
+
+        song.followEvent.allListenersById = null;
+        song.followEvent.allListenersByType = null;
+
+        // remove reference
         delete activeSongs[song.id];
-    }
+
+        song = null;
+    };
 
 
     sequencer.getSnapshot = function(song, id){
@@ -13086,7 +13387,7 @@ if (typeof module !== "undefined" && module !== null) {
             }
         }
 
-        // skip the first 10 frames because they tend to have weird values
+        // skip the first 10 frames because they tend to have weird intervals
         if(r >= 10){
             diff = (timestamp - lastTimeStamp)/1000;
             sequencer.diff = diff;
@@ -13323,6 +13624,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 */
 
+
     sequencer.setAnimationFrameType = function(type, interval) {
         type = type || 'default';
         type = type.toLowerCase();
@@ -13413,7 +13715,6 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     sequencer.protectedScope.addSong = addSong;
-    sequencer.protectedScope.removeSong = removeSong;
 
     sequencer.protectedScope.addInitMethod(function() {
         objectToArray = sequencer.protectedScope.objectToArray;
@@ -13635,16 +13936,15 @@ if (typeof module !== "undefined" && module !== null) {
 
         objectForEach, // → defined in util.js
         addSong, // → defined in sequencer.js
-        removeSong, // → defined in sequencer.js
 
         //private
+        _removeTracks,
         pulse,
         getArguments,
         getTrack,
         addTracks,
         getPart,
         getParts,
-        removeTracks,
         getTimeEvents,
 
         songIndex = 0,
@@ -13698,7 +13998,6 @@ if (typeof module !== "undefined" && module !== null) {
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
-        this.elapsedLoops = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -13729,8 +14028,9 @@ if (typeof module !== "undefined" && module !== null) {
                 this.nominator = this.timeSignatureEvent.nominator;
                 this.denominator = this.timeSignatureEvent.denominator;
             }
+            //console.log(1, this.nominator, this.denominator, this.bpm);
         }else{
-            // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated
+            // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated, and moreover, it is dictated by the MIDI standard
             this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
             this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
             this.timeEvents = [
@@ -13738,6 +14038,8 @@ if (typeof module !== "undefined" && module !== null) {
                 this.timeSignatureEvent
             ];
         }
+
+        // TODO: A value for bpm, nominator and denominator in the config overrules the time events specified in the config -> maybe this should be the other way round
 
         // if a value for bpm is set in the config, and this value is different from the bpm value of the first
         // tempo event, all tempo events will be updated to the bpm value in the config.
@@ -13755,6 +14057,8 @@ if (typeof module !== "undefined" && module !== null) {
                 this.setTimeSignature(config.nominator || this.nominator, config.denominator || this.denominator, false);
             }
         }
+
+        //console.log(2, this.nominator, this.denominator, this.bpm);
 
         this.tracks = [];
         this.parts = [];
@@ -13937,7 +14241,7 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    removeTracks = function(tobeRemoved, song){
+    _removeTracks = function(tobeRemoved){
         var i, track, removed = [];
 
         for(i = tobeRemoved.length - 1; i >= 0; i--){
@@ -13946,13 +14250,15 @@ if (typeof module !== "undefined" && module !== null) {
                 continue;
             }
             //console.log(track);
-            if(track.song !== undefined && track.song !== song){
+            if(track.song !== undefined && track.song !== this){
                 console.warn('can\'t remove: this track belongs to song', track.song.id);
                 continue;
             }
             track.state = 'removed';
-            track.disconnect(song.gainNode);
+            track.disconnect(this.gainNode);
             track.reset();
+            delete this.tracksById[track.id];
+            delete this.tracksByName[track.name];
             removed.push(track);
         }
         return removed;
@@ -14058,14 +14364,14 @@ if (typeof module !== "undefined" && module !== null) {
         // song.scheduler.update();
         //console.log(song.millis, diff, song.loopEnd);
         //console.log(song.doLoop, song.scheduler.looped, song.millis > song.loopEnd);
-        if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){
+        //console.log(song.scheduler.prevMaxtime, song.loopEnd);
+        if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){// && song.jump !== true){
             //console.log(song.prevMillis, song.millis);
             //song.scheduler.looped = false;
             song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
             song.followEvent.update();
             //console.log('-->', song.millis);
             song.scheduler.update();
-            song.elapsedLoops++;
             dispatchEvent(song, 'loop');
             //song.startTime += (song.loopEnd - song.loopStart);
         }else if(millis >= song.durationMillis){
@@ -14080,6 +14386,8 @@ if (typeof module !== "undefined" && module !== null) {
             song.scheduler.update();
         }
 
+        song.jump = false;
+
         //console.log(now, sequencer.getTime());
         //console.log(song.barsAsString);
         //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
@@ -14090,8 +14398,8 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Song.prototype.remove = function() {
-        // @TODO: perform cleanup, remove eventlisteners and so on
-        removeSong(this);
+        console.warn('Song.remove() is deprecated, please use sequencer.deleteSong()');
+        sequencer.deleteSong(this);
     };
 
 
@@ -14103,9 +14411,11 @@ if (typeof module !== "undefined" && module !== null) {
             this.pause();
             return;
         }
+        // tell the scheduler to schedule the audio events that start before the current position of the playhead
+        this.scheduler.firstRun = true;
+
         // only loop when the loop is legal and this.loop is set to true
         this.doLoop = (this.illegalLoop === false && this.loop === true);
-        this.elapsedLoops = 0;
         //console.log('play', this.doLoop, this.illegalLoop, this.loop);
         // or should I move to loopStart here if loop is enabled?
         if(this.endOfSong){
@@ -14469,7 +14779,10 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Song.prototype.setPlayhead = function(){
+        //console.log('setPlayhead');
+        this.jump = true;
         this.scheduler.looped = false;
+        this.scheduler.firstRun = true;
         this.timeStamp = sequencer.getTime() * 1000;
         this.startTime = this.timeStamp;
         try{
@@ -14562,10 +14875,6 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    Song.prototype.addSong = Song.prototype.addSongs = function(){
-    };
-
-
     Song.prototype.getTrack = function(arg){
         return getTrack(arg, this);
     };
@@ -14609,12 +14918,13 @@ if (typeof module !== "undefined" && module !== null) {
         if(args.length > 1){
             console.warn('please use removeTracks() if you want to remove more that one tracks');
         }
-        return removeTracks(args, this)[0];
+        //return _removeTracks(args, this)[0];
+        return _removeTracks.call(this, args)[0];
     };
 
 
     Song.prototype.removeTracks = function(){
-        return removeTracks(getArguments(arguments), this);
+        return _removeTracks.call(this, getArguments(arguments));
     };
 
 
@@ -14732,11 +15042,6 @@ if (typeof module !== "undefined" && module !== null) {
     Song.prototype.update = function(updateTimeEvents){
         //console.log('Song.update()');
         update(this, updateTimeEvents);
-        this.playhead.updateSong();
-        this.playheadRecording.updateSong();
-        this.scheduler.updateSong();
-        this.scheduler.reschedule();
-        this.followEvent.updateSong();
     };
 
 
@@ -15277,6 +15582,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
         */
         objectForEach(this.tracks, function(track){
+            track.audio.allNotesOff();
             track.instrument.allNotesOff();
         });
         this.metronome.allNotesOff();
@@ -15412,7 +15718,6 @@ if (typeof module !== "undefined" && module !== null) {
         removeEventListener = sequencer.protectedScope.songRemoveEventListener;
         dispatchEvent = sequencer.protectedScope.songDispatchEvent;
         addSong = sequencer.protectedScope.addSong;
-        removeSong = sequencer.protectedScope.removeSong;
     });
 
 }());(function(){
@@ -15540,10 +15845,12 @@ if (typeof module !== "undefined" && module !== null) {
                 tmp = this.listeners[type];
                 for(i = tmp.length - 1; i >= 0; i--){
                     listener = tmp[i];
+                    // remove by id
                     if(id !== undefined){
                         if(listener.id !== id){
                             filteredListeners.push(listener);
                         }
+                    // remove by callback
                     }else if(callback !== undefined && listener.callback !== callback){
                         filteredListeners.push(listener);
                     }
@@ -15554,6 +15861,7 @@ if (typeof module !== "undefined" && module !== null) {
                 console.error('unsupported event');
         }
     };
+
 
     sequencer.protectedScope.songAddEventListener = addEventListener;
     sequencer.protectedScope.songRemoveEventListener = removeEventListener;
@@ -16932,7 +17240,7 @@ if (typeof module !== "undefined" && module !== null) {
         // import
         getPosition, // -> defined in position.js
         parseTimeEvents, // -> defined in parse_time_events.js
-        parseMidiEvents, // -> defined in parse_midi_events.js
+        parseEvents, // -> defined in parse_events.js
         getInstrument, // -> defined in instrument_manager.js
         scheduledTasks, // -> defined in open_module.js
 
@@ -16983,9 +17291,11 @@ if (typeof module !== "undefined" && module !== null) {
             changedTracks = [],
             removedTracks = [],
 
-            songAndMetronomeEvents = [],
-            songAndTimeEvents = [],
+            eventsMidiAudioMetronome = [],
+            eventsMidiTime = [],
             events = [],
+            midiEvents = [],
+            audioEvents = [],
             notes = [],
             parts = [],
             tracks = [],
@@ -17159,11 +17469,6 @@ if (typeof module !== "undefined" && module !== null) {
             parseRecordedEvents(song, recordedEvents);
         }
 
-        songAndTimeEvents = [].concat(events, song.timeEvents);
-        songAndTimeEvents.sort(function(a, b){
-            return a.ticks - b.ticks;
-        });
-
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
@@ -17179,6 +17484,11 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = events.length - 1; i >= 0; i--){
             event = events[i];
             eventsById[event.id] = event;
+            if(event.type === 'audio'){
+                audioEvents.push(event);
+            }else{
+                midiEvents.push(event);
+            }
         }
 
         for(i = notes.length - 1; i >= 0; i--){
@@ -17193,7 +17503,7 @@ if (typeof module !== "undefined" && module !== null) {
             //console.log(tmp.length, events.length, newEvents.length, changedEvents.length, song.timeEvents.length, song.metronome.events.length);
 
             tmp = song.timeEvents.concat(newEvents, changedEvents);
-            parseMidiEvents(song, tmp);
+            parseEvents(song, tmp);
 
             tmp = [].concat(newNotes, changedNotes);
             parseMidiNotes(song, tmp);
@@ -17203,7 +17513,7 @@ if (typeof module !== "undefined" && module !== null) {
         } else {
             // if time events have changed we need to update everything!
             tmp = song.timeEvents.concat(events);
-            parseMidiEvents(song, tmp);
+            parseEvents(song, tmp);
             parseMidiNotes(song, notes);
             parseParts(song, parts);
         }
@@ -17244,14 +17554,21 @@ if (typeof module !== "undefined" && module !== null) {
             song.metronome.update();
         }
 
-        songAndMetronomeEvents = [].concat(events, song.metronome.events);
-        songAndMetronomeEvents.sort(function(a, b){
+        eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
+        eventsMidiAudioMetronome.sort(function(a, b){
             return a.ticks - b.ticks;
         });
 
-        song.songAndMetronomeEvents = songAndMetronomeEvents; // all events plus metronome ticks
-        song.songAndTimeEvents = songAndTimeEvents; // all events plus time events
+        eventsMidiTime = [].concat(events, song.timeEvents);
+        eventsMidiTime.sort(function(a, b){
+            return a.ticks - b.ticks;
+        });
+
+        song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
+        song.eventsMidiTime = eventsMidiTime; // all midi events plus time events
         song.events = events; // all events excluding tempo and time signature events and metronome ticks
+        song.midiEvents = midiEvents; // all midi events excluding metronome events
+        song.audioEvents = audioEvents;
         song.notes = notes;
         song.parts = parts;
         song.tracks = tracks;
@@ -17277,6 +17594,14 @@ if (typeof module !== "undefined" && module !== null) {
         song.changedParts = changedParts;
         song.removedParts = removedParts;
 
+
+        // update all dependent objects
+
+        song.playhead.updateSong();
+        song.playheadRecording.updateSong();
+        song.scheduler.updateSong();
+        song.scheduler.reschedule();
+        song.followEvent.updateSong();
 
         if(song.grid !== undefined){
             song.grid.update();
@@ -17347,14 +17672,14 @@ if (typeof module !== "undefined" && module !== null) {
     function parseMetronomeEvents(song, events){
         //console.log('parseMetronomeEvents', events.length);
         var tmp = events.concat(song.timeEvents);
-        parseMidiEvents(song, tmp);
+        parseEvents(song, tmp);
 
         events = events.concat(song.events);
         events.sort(function(a, b){
             return a.ticks - b.ticks;
         });
         //console.log(1,song.allEvents.length);
-        song.songAndMetronomeEvents = [].concat(events);
+        song.eventsMidiAudioMetronome = [].concat(events);
         //console.log(2,song.allEvents.length);
         //console.log(song.allEvents);
 
@@ -17557,7 +17882,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     sequencer.protectedScope.addInitMethod(function(){
         getPosition = sequencer.protectedScope.getPosition;
-        parseMidiEvents = sequencer.protectedScope.parseMidiEvents;
+        parseEvents = sequencer.protectedScope.parseEvents;
         parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         getInstrument = sequencer.protectedScope.getInstrument;
         scheduledTasks = sequencer.protectedScope.scheduledTasks;
@@ -17597,6 +17922,7 @@ if (typeof module !== "undefined" && module !== null) {
         createMidiNote, // → defined in midi_note.js
         context, // -> defined in open_module.js
         createInstrument, // defined in instrument.js
+        createAudioTrack, // defined in audio_track.js
         createPanner, // defined in channel_effects.js
         addMidiEventListener, // defined in midi_system.js
         removeMidiEventListener, // defined in midi_system.js
@@ -17672,6 +17998,7 @@ if (typeof module !== "undefined" && module !== null) {
             //console.log(this.instrumentName, this.id);
             this.setInstrument(this.instrumentName);
         }
+        this.audio = createAudioTrack();
     };
 
 
@@ -18364,6 +18691,7 @@ if (typeof module !== "undefined" && module !== null) {
     Track.prototype.transposePart = function(part, semi){
         var stats = part.getStats('noteNumber all'),
             min = 0, max = 127, semi2;
+        //console.log('transposePart', semi);
         if(this.song){
             min = this.song.lowestNote;
             max = this.song.highestNote;
@@ -19019,84 +19347,11 @@ return;
         findItem = protectedScope.findItem;
         addMidiEventListener = protectedScope.addMidiEventListener;
         removeMidiEventListener = protectedScope.removeMidiEventListener;
+        createAudioTrack = sequencer.protectedScope.createAudioTrack;
         checkPosition = protectedScope.checkPosition;
         objectForEach = protectedScope.objectForEach;
         typeString = protectedScope.typeString;
         copyName = protectedScope.copyName;
-    });
-
-}());(function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        Pitchshift = window.Pitchshift,
-        console = window.console,
-
-        context,
-        fftFrameSize = 2048,
-        shifter;
-
-    function init(){
-        if(window.Pitchshift){
-            shifter = new Pitchshift(fftFrameSize, context.sampleRate, 'FFT');
-        }
-    }
-
-
-    function transpose(inputBuffer, semitones, cb){
-        if(shifter === undefined){
-            console.log('include Kiev II');
-            return;
-        }
-        if(semitones === 0){
-            if(cb){
-                //console.log(inputBuffer, semitones)
-                cb(inputBuffer);
-                return;
-            }
-        }
-
-        var numChannels = inputBuffer.numberOfChannels,
-            c, input, length, output, outputs = [], shiftValue, i,
-            outputBuffer;
-
-        //console.log(inputBuffer);
-
-        for(c = 0; c < numChannels; c++){
-            input =  inputBuffer.getChannelData(c);
-            length = input.length;
-            output = new Float32Array(length);
-            shiftValue = Math.pow(1.0595, semitones);
-            //shiftValue = 1.01;
-            shifter.process(shiftValue, input.length, 4, input);
-            //shifter.process(shiftValue, input.length, 8, input);
-            for(i = 0; i < length; i++){
-                output[i] = shifter.outdata[i];
-            }
-            outputs[c] = output;
-        }
-
-        outputBuffer = context.createBuffer(
-            numChannels,
-            length,
-            inputBuffer.sampleRate
-        );
-
-        for(c = 0; c < numChannels; c++){
-            outputBuffer.getChannelData(c).set(outputs[c]);
-        }
-
-        cb(outputBuffer);
-    }
-
-    sequencer.protectedScope.transpose = transpose;
-
-    sequencer.protectedScope.addInitMethod(function(){
-        context = sequencer.protectedScope.context;
-        init();
     });
 
 }());(function(){
@@ -20045,7 +20300,8 @@ return;
             setLabel: function(value){
                 label.innerHTML = message.replace('{value}', value);
             },
-            elem: slider
+            elem: slider,
+            element: slider,
         };
 
         sliderWrapper.set = function(value){
@@ -20173,6 +20429,8 @@ return;
             minNoteNumber,
             maxNoteNumber,
             ppq;
+
+        //console.log(config);
 
         config = config || {};
         ppq = config.ppq || sequencer.defaultPPQ;
@@ -20354,6 +20612,170 @@ return;
     'use strict';
 
     var
+        // satisfy jslint
+        sequencer = window.sequencer,
+        console = window.console,
+
+        copyObject, // defined in util.js
+
+        floor = Math.floor,
+        round = Math.round,
+
+    	noteFractions =
+    	{
+	        '1': 1 * 4, // whole note
+	        '1.': 1.5 * 4,
+	        '1..': 1.75 * 4,
+	        '1...': 1.875 * 4,
+	        '1T': 2/3 * 4,
+
+	        '2': 1 * 2, // half note
+	        '2.': 1.5 * 2,
+	        '2..': 1.75 * 2,
+	        '2...': 1.875 * 2,
+	        '2T': 2/3 * 2,
+
+	        '4': 1 * 1, // quarter note (beat)
+	        '4.': 1.5 * 1,
+	        '4..': 1.75 * 1,
+	        '4...': 1.875 * 1,
+	        '4T': 2/3 * 1,
+
+	        '8': 1 * 1/2, // eighth note
+	        '8.': 1.5 * 1/2,
+	        '8..': 1.75 * 1/2,
+	        '8...': 1.875 * 1/2,
+	        '8T':  2/3 * 1/2,
+
+	        '16': 1 * 1/4, // sixteenth note
+	        '16.': 1.5 * 1/4,
+	        '16..': 1.75 * 1/4,
+	        '16...': 1.875 * 1/4,
+	        '16T': 2/3 * 1/4,
+
+	        '32': 1 * 1/8,
+	        '32.': 1.5 * 1/8,
+	        '32..': 1.75 * 1/8,
+	        '32...': 1.875 * 1/8,
+	        '32T': 2/3 * 1/8,
+
+	        '64': 1 * 1/16,
+	        '64.': 1.5 * 1/16,
+	        '64..': 1.75 * 1/16,
+	        '64...': 1.875 * 1/16,
+	        '64T': 2/3 * 1/16,
+
+	        '128': 1 * 1/32,
+	        '128.': 1.5 * 1/32,
+	        '128..': 1.75 * 1/32,
+	        '128...': 1.875 * 1/32,
+	        '128T': 2/3 * 1/32
+	    };
+
+
+
+
+    function quantize(events, value, ppq, history){
+        var track;
+
+        value = '' + value;
+        value = value.toUpperCase();
+        ppq = ppq || sequencer.defaultPPQ;
+        //console.log('quantize', value);
+        if(value === 0){// pass by
+            return {};
+        }
+        var i, event, ticks, quantized, diff, quantizeTicks,
+           quantizeHistory = history || {};
+
+        if(quantizeHistory.events === undefined){
+            quantizeHistory.events = {};
+        }
+
+        if(quantizeHistory.tracks === undefined){
+            quantizeHistory.tracks = {};
+        }
+
+        //console.log(events, value, ppq, history);
+
+        if(value.indexOf('TICKS') !== -1){
+            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
+        }else{
+            quantizeTicks = noteFractions[value] * ppq;
+        }
+
+        //console.log('quantize', quantizeTicks);
+
+        if(quantizeTicks === undefined){
+            if(sequencer.debug){
+                console.warn('invalid quantize value');
+            }
+            return;
+        }
+
+        for(i = events.length - 1; i >= 0; i--){
+            event = events[i];
+
+            quantizeHistory.events[event.id] = {
+                event: event,
+                ticks: event.ticks
+            };
+
+            if(event.type !== 128){
+                ticks = event.ticks;
+                quantized = round(ticks/quantizeTicks) * quantizeTicks;
+                //console.log(ticks, quantized, '[', ppq, ']');
+                diff = quantized - ticks;
+                event.ticks = quantized;
+                event.state = 'changed';
+                event.part.needsUpdate = true;
+                event.track.needsUpdate = true;
+
+                // add quantize history per track as well
+                track = event.track;
+                if(quantizeHistory.tracks[track.id] === undefined){
+                    quantizeHistory.tracks[track.id] = {
+                        track: track,
+                        quantizedEvents: []
+                    };
+                }
+                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
+
+                // quantize the note off event
+                if(event.midiNote !== undefined){
+                    event.midiNote.noteOff.ticks += diff;
+                    event.midiNote.noteOff.state = 'changed';
+                    event.midiNote.state = 'changed';
+                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
+                }
+            }
+        }
+
+        return quantizeHistory;//copyObject(quantizeHistory);
+    }
+
+
+    function fixedLength(events, value, ppq, history){
+        var fixedLengthHistory = history || {};
+
+    }
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        copyObject = sequencer.protectedScope.copyObject;
+    });
+
+    sequencer.quantize = quantize;
+    sequencer.fixedLength = fixedLength;
+
+}());
+
+
+(function(){
+
+    'use strict';
+
+    var
         sequencer = window.sequencer,
         context,
         initMidi,
@@ -20448,6 +20870,11 @@ return;
         params: []
     });
 /*
+    , function(){
+        console.log('another callback');
+    }, true);
+*/
+/*
     sequencer.addTask({
         type: 'delay',
         method: function(cb){
@@ -20465,11 +20892,18 @@ return;
             cb();
         });
         if(sequencer.debug >= 4){
-            console.log('sequencer ready', 'ogg', sequencer.ogg, 'mp3', sequencer.mp3);
+            var msg = 'sequencer ready, support for:';
+            if(sequencer.ogg === true){
+                msg +=  ' ogg';
+            }
+            if(sequencer.mp3 === true){
+                msg +=  ' mp3';
+            }
+            console.log(msg);
         }
         ready = true;
-    }, true);
+    }, false); // @TODO: check this true | false
 
-    sequencer.startTaskQueue();
+    //sequencer.startTaskQueue();
 
 }());

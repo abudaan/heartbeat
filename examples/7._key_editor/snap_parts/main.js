@@ -15,9 +15,7 @@ window.onload = function () {
         btnNext = document.getElementById('next'),
         btnLast = document.getElementById('last'),
         btnFirst = document.getElementById('first'),
-
-        sliderScale = document.getElementById('scale-slider'),
-        labelSliderScale = document.getElementById('scale-label'),
+        btnAddPart = document.getElementById('add_part'),
 
         divControls = document.getElementById('controls'),
         divBarsBeats = document.getElementById('time-bars-beats'),
@@ -33,13 +31,18 @@ window.onload = function () {
         divSixteenthLines = document.getElementById('sixteenth-lines'),
         divPitchLines = document.getElementById('pitch-lines'),
         divNotes = document.getElementById('notes'),
+        divParts = document.getElementById('parts'),
         divPlayhead = document.getElementById('playhead'),
 
         allNotes, // stores references to all midi notes
+        allParts, // stores references to all midi parts
         allNoteDivs, // stores references to all divs that represent a midi note
+        allPartDivs, // stores references to all divs that represent a midi part
 
+        selectSnap = document.getElementById('snap'),
         keyEditor,
-        song;
+        song,
+        track;
 
 
     function enableGUI(flag){
@@ -55,7 +58,7 @@ window.onload = function () {
 
     function render(){
         var snapshot = keyEditor.getSnapshot('key-editor'),
-            divNote;
+            divNote, divPart;
 
         divPlayhead.style.left = keyEditor.getPlayheadX() - 10 + 'px';
         divPageNumbers.innerHTML = 'page ' + keyEditor.currentPage + ' of ' + keyEditor.numPages;
@@ -90,10 +93,39 @@ window.onload = function () {
         snapshot.notes.stateChanged.forEach(function(note){
             divNote = document.getElementById(note.id);
             if(note.part.mute === false){
-                if(note.active){
-                    divNote.className = 'note note-active';
-                }else if(note.active === false){
-                    divNote.className = 'note';
+                if(note.mute !== true){
+                    if(note.active){
+                        divNote.className = 'note note-active';
+                    }else if(note.active === false){
+                        divNote.className = 'note';
+                    }
+                }
+            }
+        });
+
+        snapshot.parts.removed.forEach(function(part){
+            allPartDivs[part.id].removeEventListener('mousedown', partMouseDown);
+            divParts.removeChild(document.getElementById(part.id));
+        });
+
+        snapshot.parts.new.forEach(function(part){
+            drawPart(part);
+        });
+
+        // events.changed, notes.changed, parts.changed contain elements that have been moved or transposed
+        snapshot.parts.changed.forEach(function(part){
+            updateElement(allPartDivs[part.id], part.bbox, 0);
+        });
+
+
+        // stateChanged arrays contain elements that have become active or inactive
+        snapshot.parts.stateChanged.forEach(function(part){
+            divPart = document.getElementById(part.id);
+            if(part.mute !== true){
+                if(part.active){
+                    divPart.className = 'part part-active';
+                }else if(part.active === false){
+                    divPart.className = 'part';
                 }
             }
         });
@@ -138,8 +170,11 @@ window.onload = function () {
     function draw(){
 
         allNotes = {};
+        allParts = {};
         allNoteDivs = {};
+        allPartDivs = {};
 
+        divParts.innerHTML = '';
         divNotes.innerHTML = '';
         divPitchLines.innerHTML = '';
         divBarLines.innerHTML = '';
@@ -149,6 +184,7 @@ window.onload = function () {
         keyEditor.horizontalLine.reset();
         keyEditor.verticalLine.reset();
         keyEditor.noteIterator.reset();
+
 
         divScore.style.width = keyEditor.width + 'px';
 
@@ -162,6 +198,10 @@ window.onload = function () {
 
         while(keyEditor.noteIterator.hasNext()){
             drawNote(keyEditor.noteIterator.next());
+        }
+
+        while(keyEditor.partIterator.hasNext()){
+            drawPart(keyEditor.partIterator.next());
         }
     }
 
@@ -224,11 +264,47 @@ window.onload = function () {
     }
 
 
+    function drawPart(part){
+        var bbox = part.bbox,
+            divPart = document.createElement('div');
+
+        divPart.id = part.id;
+        divPart.className = 'part';
+        divPart.style.left = bbox.left  + 'px';
+        divPart.style.top = bbox.top + 'px';
+        divPart.style.width = bbox.width - 1 + 'px';
+        divPart.style.height = bbox.height - 1 + 'px';
+
+        // store part and div
+        allParts[part.id] = part;
+        allPartDivs[part.id] = divPart;
+        divPart.addEventListener('mousedown', partMouseDown, false);
+        divParts.appendChild(divPart);
+    }
+
+
     function updateElement(element, bbox){
         element.style.left = bbox.x + 'px';
         element.style.top = bbox.y + 'px';
         element.style.width = bbox.width + 'px';
         element.style.height = bbox.height + 'px';
+    }
+
+
+    function partMouseDown(e){
+        var part = allParts[e.target.id];
+        if(e.ctrlKey){
+            keyEditor.removePart(part);
+        }else{
+            keyEditor.startMovePart(part, e.pageX, e.pageY);
+            document.addEventListener('mouseup', partMouseUp, false);
+        }
+    }
+
+
+    function partMouseUp(){
+        keyEditor.stopMovePart();
+        document.removeEventListener('mouseup', partMouseUp);
     }
 
 
@@ -249,20 +325,65 @@ window.onload = function () {
     }
 
 
+    function getRandom(min, max, round){
+        var r = Math.random() * (max - min) + min;
+        if(round === true){
+            return Math.round(r);
+        }else{
+            return r;
+        }
+    }
+
+
+    function addPart(){
+        var i,
+            startPositions = [0, 60, 90, 120, 180],
+            ticks = 0, //startPositions[getRandom(0, 4, true)],
+            numNotes = getRandom(4, 8, true),
+            spread = 5,
+            basePitch = getRandom(keyEditor.lowestNote + spread, keyEditor.highestNote - spread, true),
+            part = sequencer.createPart(),
+            events = [],
+            noteLength = song.ppq/2,
+            pitch, velocity;
+
+        for(i = 0; i < numNotes; i++){
+            pitch = basePitch + getRandom(-spread, spread, true);
+            velocity = getRandom(50, 127, true);
+            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, pitch, velocity));
+            ticks += noteLength;
+            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, pitch, 0));
+            ticks += noteLength;
+        }
+
+
+        ticks = getRandom(0, song.durationTicks/2, true);
+        part.addEvents(events);
+        track.addPartAt(part, ['ticks', ticks]);
+        song.update();
+    }
+
+
     function init(){
         var c = divControls.getBoundingClientRect().height,
             w = window.innerWidth,
-            h = window.innerHeight - c;
+            h = window.innerHeight - c,
+            timeEvents = [],
+            event;
 
         divEditor.style.width = w + 'px';
         divEditor.style.height = h + 'px';
 
-        song = sequencer.createSong(sequencer.getMidiFile('minute_waltz'));
+        track = sequencer.createTrack();
 
-        song.tracks.forEach(function(track){
-            track.setInstrument('piano');
-            track.monitor = true;
-            track.setMidiInput('all');
+        timeEvents.push(sequencer.createMidiEvent(0, sequencer.TIME_SIGNATURE, 6, 8));
+        timeEvents.push(sequencer.createMidiEvent(960 * 3, sequencer.TIME_SIGNATURE, 4, 4));
+
+        song = sequencer.createSong({
+            bars: 4,
+            tracks: track,
+            timeEvents: timeEvents,
+            useMetronome: true
         });
 
         song.addEventListener('play',function(){
@@ -281,16 +402,10 @@ window.onload = function () {
             keyListener: true,
             viewportHeight: h,
             viewportWidth: w,
-            lowestNote: 21,
-            highestNote: 108,
-            barsPerPage: 16
+            lowestNote: 58,
+            highestNote: 102,
+            barsPerPage: 4
         });
-
-
-        sliderScale.min = 1;// minimal 1 bar per page
-        sliderScale.max = 64;// maximal 64 bars per page
-        sliderScale.value = 16;// currently set to 16 bars per page
-        sliderScale.step = 1;
 
 
         // listen for scale and draw events, a scale event is fired when you change the number of bars per page
@@ -347,6 +462,10 @@ window.onload = function () {
             }
         },false);
 
+        selectSnap.addEventListener('change', function(){
+            keyEditor.setSnapX(selectSnap.options[selectSnap.selectedIndex].value);
+        }, false);
+
         btnPlay.addEventListener('click',function(){
             song.pause();
         });
@@ -371,20 +490,26 @@ window.onload = function () {
             keyEditor.scroll('>>');
         });
 
-        sliderScale.addEventListener('change',function(e){
-            var bpp =  parseFloat(e.target.value);
-            labelSliderScale.innerHTML = '#bars ' + bpp;
-            keyEditor.setBarsPerPage(bpp);
-        },false);
+        btnAddPart.addEventListener('click',function(){
+            addPart();
+        });
 
         window.addEventListener('resize', resize, false);
         enableGUI(true);
+
+        selectSnap.selectedIndex = 3;
+        event = document.createEvent('HTMLEvents');
+        event.initEvent('change', false, false);
+        selectSnap.dispatchEvent(event);
+
+        event = document.createEvent('HTMLEvents');
+        event.initEvent('click', false, false);
+        btnAddPart.dispatchEvent(event);
 
         draw();
         render();
     }
 
     enableGUI(false);
-    sequencer.addMidiFile({url: '../../../assets/midi/minute_waltz.mid'});
-    sequencer.addAssetPack({url: '../../../assets/examples/asset_pack_basic.json'}, init);
+    sequencer.ready(init);
 };

@@ -31,6 +31,7 @@
         createMidiNote, // → defined in midi_note.js
         context, // -> defined in open_module.js
         createInstrument, // defined in instrument.js
+        createAudioTrack, // defined in audio_track.js
         createPanner, // defined in channel_effects.js
         addMidiEventListener, // defined in midi_system.js
         removeMidiEventListener, // defined in midi_system.js
@@ -106,6 +107,7 @@
             //console.log(this.instrumentName, this.id);
             this.setInstrument(this.instrumentName);
         }
+        this.audio = createAudioTrack();
     };
 
 
@@ -798,6 +800,7 @@
     Track.prototype.transposePart = function(part, semi){
         var stats = part.getStats('noteNumber all'),
             min = 0, max = 127, semi2;
+        //console.log('transposePart', semi);
         if(this.song){
             min = this.song.lowestNote;
             max = this.song.highestNote;
@@ -1453,6 +1456,7 @@ return;
         findItem = protectedScope.findItem;
         addMidiEventListener = protectedScope.addMidiEventListener;
         removeMidiEventListener = protectedScope.removeMidiEventListener;
+        createAudioTrack = sequencer.protectedScope.createAudioTrack;
         checkPosition = protectedScope.checkPosition;
         objectForEach = protectedScope.objectForEach;
         typeString = protectedScope.typeString;

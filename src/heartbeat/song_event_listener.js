@@ -123,10 +123,12 @@
                 tmp = this.listeners[type];
                 for(i = tmp.length - 1; i >= 0; i--){
                     listener = tmp[i];
+                    // remove by id
                     if(id !== undefined){
                         if(listener.id !== id){
                             filteredListeners.push(listener);
                         }
+                    // remove by callback
                     }else if(callback !== undefined && listener.callback !== callback){
                         filteredListeners.push(listener);
                     }
@@ -137,6 +139,7 @@
                 console.error('unsupported event');
         }
     };
+
 
     sequencer.protectedScope.songAddEventListener = addEventListener;
     sequencer.protectedScope.songRemoveEventListener = removeEventListener;

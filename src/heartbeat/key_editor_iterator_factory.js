@@ -37,10 +37,10 @@
     function Factory(song, editor){
         this.song = song;
         this.editor = editor;
-        this.updateSong();
         //console.log(this.editor);
         //this.position = createPlayhead(this.song, 'barsbeats ticks millis', 'iterators');
         this.position = createPlayhead(this.song, 'all', 'iterators');
+        this.updateSong();
     }
 
 /*
@@ -67,6 +67,7 @@
         this.numNotes = this.notes.length;
         this.parts = this.song.parts;
         this.numParts = this.parts.length;
+        this.position.updateSong();
     };
 
 
@@ -104,6 +105,7 @@
             nominator = data.nominator;
             numSixteenth = data.numSixteenth;
             //console.log(numTicks,nominator,numSixteenth);
+            //console.log(ticks, data);
         };
 
         next = function(t){

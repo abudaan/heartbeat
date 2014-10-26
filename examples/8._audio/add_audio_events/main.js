@@ -9,7 +9,6 @@ window.onload = function(){
         createSlider = sequencer.util.createSlider,
         slice = Array.prototype.slice,
 
-        song,
         snapValue,
         userInteraction = false,
 
@@ -21,30 +20,60 @@ window.onload = function(){
         sliderPlayhead,
         sliderLeftLocator,
         sliderRightLocator,
-        path = '../../assets';
+        samplePackUrl = '../../../assets/looperman/kaynine/loops';
 
 
     enableUI(false);
 
-    // load asset pack, this pack contains a piano and a midi file called "Sonata Facile"
-    sequencer.addAssetPack({url: path + '/examples/asset_pack_basic.json'}, init);
+    // load sample pack, the sample pack contains a drum loop @ 120 bpm
+    sequencer.ready(function(){
+        samplePackUrl = sequencer.ogg === false ? samplePackUrl + '.mp3.json' : samplePackUrl + '.ogg.json';
+        sequencer.addSamplePack({url: samplePackUrl}, init);
+    });
 
 
     function init(){
-        var midiFile;
+        var track, part, song, event, events = [];
 
-        // get the midi file from sequencer.storage
-        midiFile = sequencer.getMidiFile('Sonata Facile');
+        track = sequencer.createTrack();
+        part = sequencer.createPart();
 
-        midiFile.useMetronome = true;
-        song = sequencer.createSong(midiFile);
-
-        // set all tracks of the song to use 'piano'
-        song.tracks.forEach(function(track){
-            //console.log(track);
-            track.setInstrument('piano');
+        // create audio event at ticks 0
+        event = sequencer.createAudioEvent({
+            ticks: 0,
+            velocity: 70,
+            sampleOffsetTicks: 0,
+            sampleOffsetMillis: 0,
+            path: 'looperman/kaynine/electro-drum-120'
         });
+        events.push(event);
 
+        // create audio event at 4 bars; the duration of the loop is 4 bars
+        event = sequencer.createAudioEvent({
+            ticks: 960 * 16, // 4 x 4 x ppq
+            velocity: 70,
+            sampleOffsetTicks: 0,
+            path: '/looperman/kaynine/electro-drum-120',
+            /*
+                with durationTicks you can easily trim the length of an audio event,
+                in this case we set the length to the length of the sample which is
+                the same as omitting this key altogether
+            */
+            durationTicks: 960 * 16
+        });
+        events.push(event);
+
+        part.addEvents(events);
+        track.addPart(part);
+
+        // set the song to match the bpm of the sample
+        song = sequencer.createSong({
+            bpm: 120,
+            useMetronome: true,
+            tracks: track,
+            loop: true,
+            bars: 8 // 2 audio events containing loops of 4 bars
+        });
 
         btnPlay.addEventListener('click', function(){
             if(song.playing){
@@ -155,7 +184,6 @@ window.onload = function(){
                 message: 'song bar: {value}',
                 onMouseDown: handle,
                 onMouseMove: handle,
-                //onChange: handle,
                 onMouseUp: function(){
                     userInteraction = false;
                 }
@@ -171,33 +199,28 @@ window.onload = function(){
             }
         }());
 
-        sliderLeftLocator.set('barsbeats', 2,1,1,0);
-        sliderRightLocator.set('barsbeats', 5,1,1,0);
+        sliderLeftLocator.set('barsbeats', 1,1,1,0);
+        sliderRightLocator.set('barsbeats', 9,1,1,0);
 
-        (function(){
-            selectSnap.selectedIndex = 5;
-            var e = document.createEvent('HTMLEvents');
-            e.initEvent('change', false, false);
-            selectSnap.dispatchEvent(e);
+        function checkLocators(){
+            sliderLeftLocator.elem.className = song.illegalLoop ? 'illegal' : 'legal';
+            sliderRightLocator.elem.className = song.illegalLoop ? 'illegal' : 'legal';
+        }
+
+
+        (function render(){
+            if(userInteraction === false){
+                sliderPlayhead.setValue(song.percentage);
+                sliderPlayhead.setLabel(song.barsAsString);
+            }
+            window.requestAnimationFrame(render);
         }());
 
+        selectSnap.selectedIndex = 0;
+        event = document.createEvent('HTMLEvents');
+        event.initEvent('change', false, false);
+        selectSnap.dispatchEvent(event);
         enableUI(true);
-        render();
-    }
-
-
-    function checkLocators(){
-        sliderLeftLocator.elem.className = song.illegalLoop ? 'illegal' : 'legal';
-        sliderRightLocator.elem.className = song.illegalLoop ? 'illegal' : 'legal';
-    }
-
-
-    function render(){
-        if(userInteraction === false){
-            sliderPlayhead.setValue(song.percentage);
-            sliderPlayhead.setLabel(song.barsAsString);
-        }
-        window.requestAnimationFrame(render);
     }
 
 
