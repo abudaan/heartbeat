@@ -34,10 +34,10 @@ window.onload = function () {
         divParts = document.getElementById('parts'),
         divPlayhead = document.getElementById('playhead'),
 
-        allNotes, // stores references to all midi notes
-        allParts, // stores references to all midi parts
-        allNoteDivs, // stores references to all divs that represent a midi note
-        allPartDivs, // stores references to all divs that represent a midi part
+        allNotes = {}, // stores references to all midi notes
+        allParts = {}, // stores references to all midi parts
+        allNoteDivs = {}, // stores references to all divs that represent a midi note
+        allPartDivs = {}, // stores references to all divs that represent a midi part
 
         selectSnap = document.getElementById('snap'),
         keyEditor,
@@ -184,6 +184,7 @@ window.onload = function () {
         keyEditor.horizontalLine.reset();
         keyEditor.verticalLine.reset();
         keyEditor.noteIterator.reset();
+        keyEditor.partIterator.reset();
 
 
         divScore.style.width = keyEditor.width + 'px';
@@ -356,7 +357,6 @@ window.onload = function () {
             ticks += noteLength;
         }
 
-
         ticks = getRandom(0, song.durationTicks/2, true);
         part.addEvents(events);
         track.addPartAt(part, ['ticks', ticks]);
@@ -502,11 +502,8 @@ window.onload = function () {
         event.initEvent('change', false, false);
         selectSnap.dispatchEvent(event);
 
-        event = document.createEvent('HTMLEvents');
-        event.initEvent('click', false, false);
-        btnAddPart.dispatchEvent(event);
-
         draw();
+        addPart();
         render();
     }
 

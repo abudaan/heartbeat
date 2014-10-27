@@ -381,6 +381,7 @@
             newNote,
             nextNote,
             editor = this.editor,
+            song = this.song,
             notes = this.notes,
             numNotes = this.numNotes,
             types = '',
@@ -444,21 +445,22 @@
             var note;
             startTicks = editor.startTicks;
             endTicks = editor.endTicks;
+            notes = song.notes;
+            numNotes = song.numNotes;
             //console.log(startTicks, endTicks);
             hasNextCalled = false;
             if(editor.paginate === true && sequencer.isPlaying() === true){
                 return;
             }
 
-            for(index = 0; index < this.numNotes; index++){
-                note = this.notes[index];
+            for(index = 0; index < numNotes; index++){
+                note = notes[index];
                 //console.log(note, note.ticks, startTicks);
                 if(note.ticks >= startTicks){
                     break;
                 }
             }
             index--;
-            //console.log('noteIterator',index,numNotes)
         };
 
         return{
@@ -474,11 +476,14 @@
             max,
             part,
             data = {},
+            editor = this.editor,
+            song = this.song,
+            parts = this.parts,
             next, hasNext, reset;
 
         next = function(type){
-            part = this.parts[index++];
-            part.bbox = this.editor.getPartRect(part);
+            part = parts[index++];
+            part.bbox = editor.getPartRect(part);
             return part;
         };
 
@@ -487,8 +492,9 @@
         };
 
         reset = function(){
+            parts = song.parts;
+            max = song.numParts;
             index = 0;
-            max = this.numParts;
         };
 
         return{

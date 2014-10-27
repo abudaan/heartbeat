@@ -232,6 +232,7 @@
         }
 
         midifile.timeEvents = timeEvents;
+        midifile.autoSize = true;
         //console.timeEnd('parse midi');
         midifile.loaded = true;
         callback();

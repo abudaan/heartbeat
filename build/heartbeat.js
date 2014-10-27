@@ -34,6 +34,9 @@ https://github.com/cwilso/WebMIDIAPIShim
 
 */
 
+
+
+
 /* Copyright 2013 Chris Wilson
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -4699,7 +4702,6 @@ if (typeof module !== "undefined" && module !== null) {
         snapValueY = 'chromatic',
         eventWidth = 2,
 
-        floor = Math.floor,
         ceil = Math.ceil,
 
         //import
@@ -4710,8 +4712,9 @@ if (typeof module !== "undefined" && module !== null) {
         typeString,
         objectToArray,
         arrayToObject,
-        round,
         debug,
+        round,
+        floor,
         createNote,
 
         //public
@@ -4830,7 +4833,7 @@ if (typeof module !== "undefined" && module !== null) {
                 this.scrollX = 0;
                 this.scrollPosition = 0;
                 this.viewportTicks = this.viewportWidth / this.tickWidth;
-                this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+                this.maxScrollPosition = ceil(this.width/this.viewportWidth);
                 this.scrollLimit = this.viewportWidth/this.tickWidth;
                 checkScrollPosition(this);
                 this.exactFitHorizontal = false;
@@ -4904,7 +4907,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.eventIterator.reset();
         this.partIterator.reset();
         this.scrollLimit = this.viewportWidth/this.tickWidth;
-        this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+        this.maxScrollPosition = ceil(this.width/this.viewportWidth);
         this.snapWidth = this.tickWidth * this.snapTicks;
 
         this.numPages = ceil(this.numBars/this.barsPerPage);
@@ -5429,7 +5432,8 @@ if (typeof module !== "undefined" && module !== null) {
         var ticks = ((x + this.scrollX)/this.width) * this.numTicks;
         //console.log(this.scrollX,this.width,this.numTicks,ticks);
         if(snap !== false && this.snapTicks !== 0){
-            ticks = floor(ticks/this.snapTicks) * this.snapTicks;
+            //ticks = floor(ticks/this.snapTicks) * this.snapTicks;
+            ticks = round(ticks/this.snapTicks) * this.snapTicks;
         }
         //console.log(ticks, this.snapTicks);
         return ticks;
@@ -5437,7 +5441,8 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function(y){
-        var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
+        //var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
+        var note = this.highestNote - round(((y + this.scrollY)/this.height) * this.pitchRange);
         note = createNote(note);
         return note;
     };
@@ -5448,7 +5453,8 @@ if (typeof module !== "undefined" && module !== null) {
         //     x = (p * this.width) - this.scrollX;
         var x = (ticks - this.startTicks) * this.tickWidth;
         if(snap !== false && this.snapWidth !== 0){
-            x = (floor(x/this.snapWidth) * this.snapWidth);
+            //x = (floor(x/this.snapWidth) * this.snapWidth);
+            x = (round(x/this.snapWidth) * this.snapWidth);
         }
         return x;
     };
@@ -5560,14 +5566,16 @@ if (typeof module !== "undefined" && module !== null) {
 
     // takes x returns snapped x
     KeyEditor.prototype.snapX = function(x){
-        return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+        //return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+        return round((x + this.scrollX)/this.snapWidth) * this.snapWidth;
 
     };
 
 
     // takes y returns snapped y
     KeyEditor.prototype.snapY = function(y){
-        return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+        //return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+        return round((y + this.scrollY)/this.snapHeight) * this.snapHeight;
     };
 
 
@@ -5696,7 +5704,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.width = this.numTicks * this.tickWidth;
             //console.log('new width', this.width, this.numTicks, this.tickWidth);
             //console.log('song has gotten longer boy!', this.song.bars, this.newNumBars, this.numBars, this.width);
-            this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+            this.maxScrollPosition = ceil(this.width/this.viewportWidth);
             //this.numPages = ceil(this.width/this.viewportWidth);
             this.numPages = ceil(this.numBars/this.barsPerPage);
         }
@@ -6429,6 +6437,7 @@ if (typeof module !== "undefined" && module !== null) {
             newNote,
             nextNote,
             editor = this.editor,
+            song = this.song,
             notes = this.notes,
             numNotes = this.numNotes,
             types = '',
@@ -6492,21 +6501,22 @@ if (typeof module !== "undefined" && module !== null) {
             var note;
             startTicks = editor.startTicks;
             endTicks = editor.endTicks;
+            notes = song.notes;
+            numNotes = song.numNotes;
             //console.log(startTicks, endTicks);
             hasNextCalled = false;
             if(editor.paginate === true && sequencer.isPlaying() === true){
                 return;
             }
 
-            for(index = 0; index < this.numNotes; index++){
-                note = this.notes[index];
+            for(index = 0; index < numNotes; index++){
+                note = notes[index];
                 //console.log(note, note.ticks, startTicks);
                 if(note.ticks >= startTicks){
                     break;
                 }
             }
             index--;
-            //console.log('noteIterator',index,numNotes)
         };
 
         return{
@@ -6522,11 +6532,14 @@ if (typeof module !== "undefined" && module !== null) {
             max,
             part,
             data = {},
+            editor = this.editor,
+            song = this.song,
+            parts = this.parts,
             next, hasNext, reset;
 
         next = function(type){
-            part = this.parts[index++];
-            part.bbox = this.editor.getPartRect(part);
+            part = parts[index++];
+            part.bbox = editor.getPartRect(part);
             return part;
         };
 
@@ -6535,8 +6548,9 @@ if (typeof module !== "undefined" && module !== null) {
         };
 
         reset = function(){
+            parts = song.parts;
+            max = song.numParts;
             index = 0;
-            max = this.numParts;
         };
 
         return{
@@ -7667,6 +7681,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         midifile.timeEvents = timeEvents;
+        midifile.autoSize = true;
         //console.timeEnd('parse midi');
         midifile.loaded = true;
         callback();
@@ -11997,6 +12012,170 @@ if (typeof module !== "undefined" && module !== null) {
         sequencer = window.sequencer,
         console = window.console,
 
+        copyObject, // defined in util.js
+
+        floor = Math.floor,
+        round = Math.round,
+
+    	noteFractions =
+    	{
+	        '1': 1 * 4, // whole note
+	        '1.': 1.5 * 4,
+	        '1..': 1.75 * 4,
+	        '1...': 1.875 * 4,
+	        '1T': 2/3 * 4,
+
+	        '2': 1 * 2, // half note
+	        '2.': 1.5 * 2,
+	        '2..': 1.75 * 2,
+	        '2...': 1.875 * 2,
+	        '2T': 2/3 * 2,
+
+	        '4': 1 * 1, // quarter note (beat)
+	        '4.': 1.5 * 1,
+	        '4..': 1.75 * 1,
+	        '4...': 1.875 * 1,
+	        '4T': 2/3 * 1,
+
+	        '8': 1 * 1/2, // eighth note
+	        '8.': 1.5 * 1/2,
+	        '8..': 1.75 * 1/2,
+	        '8...': 1.875 * 1/2,
+	        '8T':  2/3 * 1/2,
+
+	        '16': 1 * 1/4, // sixteenth note
+	        '16.': 1.5 * 1/4,
+	        '16..': 1.75 * 1/4,
+	        '16...': 1.875 * 1/4,
+	        '16T': 2/3 * 1/4,
+
+	        '32': 1 * 1/8,
+	        '32.': 1.5 * 1/8,
+	        '32..': 1.75 * 1/8,
+	        '32...': 1.875 * 1/8,
+	        '32T': 2/3 * 1/8,
+
+	        '64': 1 * 1/16,
+	        '64.': 1.5 * 1/16,
+	        '64..': 1.75 * 1/16,
+	        '64...': 1.875 * 1/16,
+	        '64T': 2/3 * 1/16,
+
+	        '128': 1 * 1/32,
+	        '128.': 1.5 * 1/32,
+	        '128..': 1.75 * 1/32,
+	        '128...': 1.875 * 1/32,
+	        '128T': 2/3 * 1/32
+	    };
+
+
+
+
+    function quantize(events, value, ppq, history){
+        var track;
+
+        value = '' + value;
+        value = value.toUpperCase();
+        ppq = ppq || sequencer.defaultPPQ;
+        //console.log('quantize', value);
+        if(value === 0){// pass by
+            return {};
+        }
+        var i, event, ticks, quantized, diff, quantizeTicks,
+           quantizeHistory = history || {};
+
+        if(quantizeHistory.events === undefined){
+            quantizeHistory.events = {};
+        }
+
+        if(quantizeHistory.tracks === undefined){
+            quantizeHistory.tracks = {};
+        }
+
+        //console.log(events, value, ppq, history);
+
+        if(value.indexOf('TICKS') !== -1){
+            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
+        }else{
+            quantizeTicks = noteFractions[value] * ppq;
+        }
+
+        //console.log('quantize', quantizeTicks);
+
+        if(quantizeTicks === undefined){
+            if(sequencer.debug){
+                console.warn('invalid quantize value');
+            }
+            return;
+        }
+
+        for(i = events.length - 1; i >= 0; i--){
+            event = events[i];
+
+            quantizeHistory.events[event.id] = {
+                event: event,
+                ticks: event.ticks
+            };
+
+            if(event.type !== 128){
+                ticks = event.ticks;
+                quantized = round(ticks/quantizeTicks) * quantizeTicks;
+                //console.log(ticks, quantized, '[', ppq, ']');
+                diff = quantized - ticks;
+                event.ticks = quantized;
+                event.state = 'changed';
+                event.part.needsUpdate = true;
+                event.track.needsUpdate = true;
+
+                // add quantize history per track as well
+                track = event.track;
+                if(quantizeHistory.tracks[track.id] === undefined){
+                    quantizeHistory.tracks[track.id] = {
+                        track: track,
+                        quantizedEvents: []
+                    };
+                }
+                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
+
+                // quantize the note off event
+                if(event.midiNote !== undefined){
+                    event.midiNote.noteOff.ticks += diff;
+                    event.midiNote.noteOff.state = 'changed';
+                    event.midiNote.state = 'changed';
+                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
+                }
+            }
+        }
+
+        return quantizeHistory;//copyObject(quantizeHistory);
+    }
+
+
+    function fixedLength(events, value, ppq, history){
+        var fixedLengthHistory = history || {};
+
+    }
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        copyObject = sequencer.protectedScope.copyObject;
+    });
+
+    sequencer.quantize = quantize;
+    sequencer.fixedLength = fixedLength;
+
+}());
+
+
+(function(){
+
+    'use strict';
+
+    var
+        // satisfy jslint
+        sequencer = window.sequencer,
+        console = window.console,
+
         //import
         context, // defined in open_module.js
         timedTasks, // defined in open_module.js
@@ -13987,7 +14166,7 @@ if (typeof module !== "undefined" && module !== null) {
         this.fixedLengthValue = config.fixedLengthValue || false;
         this.positionType = config.positionType || 'all';
         this.useMetronome = config.useMetronome;
-        this.autoSize = config.autoSize === true;
+        this.autoSize = config.autoSize === undefined ? true : config.autoSize === true;
         this.playbackSpeed = 1;
         this.defaultInstrument = config.defaultInstrument || sequencer.defaultInstrument;
         this.recordId = -1;
@@ -17665,7 +17844,7 @@ if (typeof module !== "undefined" && module !== null) {
                 song.lastEvent[key] = position[key];
             }
         }
-        //console.log(song.name, song.durationTicks, song.durationMillis);
+        console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
     }
 
 
@@ -19361,6 +19540,80 @@ return;
     var
         // satisfy jslint
         sequencer = window.sequencer,
+        Pitchshift = window.Pitchshift,
+        console = window.console,
+
+        context,
+        fftFrameSize = 2048,
+        shifter;
+
+    function init(){
+        if(window.Pitchshift){
+            shifter = new Pitchshift(fftFrameSize, context.sampleRate, 'FFT');
+        }
+    }
+
+
+    function transpose(inputBuffer, semitones, cb){
+        if(shifter === undefined){
+            console.log('include Kiev II');
+            return;
+        }
+        if(semitones === 0){
+            if(cb){
+                //console.log(inputBuffer, semitones)
+                cb(inputBuffer);
+                return;
+            }
+        }
+
+        var numChannels = inputBuffer.numberOfChannels,
+            c, input, length, output, outputs = [], shiftValue, i,
+            outputBuffer;
+
+        //console.log(inputBuffer);
+
+        for(c = 0; c < numChannels; c++){
+            input =  inputBuffer.getChannelData(c);
+            length = input.length;
+            output = new Float32Array(length);
+            shiftValue = Math.pow(1.0595, semitones);
+            //shiftValue = 1.01;
+            shifter.process(shiftValue, input.length, 4, input);
+            //shifter.process(shiftValue, input.length, 8, input);
+            for(i = 0; i < length; i++){
+                output[i] = shifter.outdata[i];
+            }
+            outputs[c] = output;
+        }
+
+        outputBuffer = context.createBuffer(
+            numChannels,
+            length,
+            inputBuffer.sampleRate
+        );
+
+        for(c = 0; c < numChannels; c++){
+            outputBuffer.getChannelData(c).set(outputs[c]);
+        }
+
+        cb(outputBuffer);
+    }
+
+    sequencer.protectedScope.transpose = transpose;
+
+    sequencer.protectedScope.addInitMethod(function(){
+        context = sequencer.protectedScope.context;
+        init();
+    });
+
+}());(function(){
+
+    'use strict';
+
+    var
+        // satisfy jslint
+        sequencer = window.sequencer,
         console = window.console,
 
         slice = Array.prototype.slice,
@@ -20608,170 +20861,6 @@ return;
 
     sequencer.getMicrosecondsFromBPM = getMicrosecondsFromBPM;
 }());(function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        copyObject, // defined in util.js
-
-        floor = Math.floor,
-        round = Math.round,
-
-    	noteFractions =
-    	{
-	        '1': 1 * 4, // whole note
-	        '1.': 1.5 * 4,
-	        '1..': 1.75 * 4,
-	        '1...': 1.875 * 4,
-	        '1T': 2/3 * 4,
-
-	        '2': 1 * 2, // half note
-	        '2.': 1.5 * 2,
-	        '2..': 1.75 * 2,
-	        '2...': 1.875 * 2,
-	        '2T': 2/3 * 2,
-
-	        '4': 1 * 1, // quarter note (beat)
-	        '4.': 1.5 * 1,
-	        '4..': 1.75 * 1,
-	        '4...': 1.875 * 1,
-	        '4T': 2/3 * 1,
-
-	        '8': 1 * 1/2, // eighth note
-	        '8.': 1.5 * 1/2,
-	        '8..': 1.75 * 1/2,
-	        '8...': 1.875 * 1/2,
-	        '8T':  2/3 * 1/2,
-
-	        '16': 1 * 1/4, // sixteenth note
-	        '16.': 1.5 * 1/4,
-	        '16..': 1.75 * 1/4,
-	        '16...': 1.875 * 1/4,
-	        '16T': 2/3 * 1/4,
-
-	        '32': 1 * 1/8,
-	        '32.': 1.5 * 1/8,
-	        '32..': 1.75 * 1/8,
-	        '32...': 1.875 * 1/8,
-	        '32T': 2/3 * 1/8,
-
-	        '64': 1 * 1/16,
-	        '64.': 1.5 * 1/16,
-	        '64..': 1.75 * 1/16,
-	        '64...': 1.875 * 1/16,
-	        '64T': 2/3 * 1/16,
-
-	        '128': 1 * 1/32,
-	        '128.': 1.5 * 1/32,
-	        '128..': 1.75 * 1/32,
-	        '128...': 1.875 * 1/32,
-	        '128T': 2/3 * 1/32
-	    };
-
-
-
-
-    function quantize(events, value, ppq, history){
-        var track;
-
-        value = '' + value;
-        value = value.toUpperCase();
-        ppq = ppq || sequencer.defaultPPQ;
-        //console.log('quantize', value);
-        if(value === 0){// pass by
-            return {};
-        }
-        var i, event, ticks, quantized, diff, quantizeTicks,
-           quantizeHistory = history || {};
-
-        if(quantizeHistory.events === undefined){
-            quantizeHistory.events = {};
-        }
-
-        if(quantizeHistory.tracks === undefined){
-            quantizeHistory.tracks = {};
-        }
-
-        //console.log(events, value, ppq, history);
-
-        if(value.indexOf('TICKS') !== -1){
-            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
-        }else{
-            quantizeTicks = noteFractions[value] * ppq;
-        }
-
-        //console.log('quantize', quantizeTicks);
-
-        if(quantizeTicks === undefined){
-            if(sequencer.debug){
-                console.warn('invalid quantize value');
-            }
-            return;
-        }
-
-        for(i = events.length - 1; i >= 0; i--){
-            event = events[i];
-
-            quantizeHistory.events[event.id] = {
-                event: event,
-                ticks: event.ticks
-            };
-
-            if(event.type !== 128){
-                ticks = event.ticks;
-                quantized = round(ticks/quantizeTicks) * quantizeTicks;
-                //console.log(ticks, quantized, '[', ppq, ']');
-                diff = quantized - ticks;
-                event.ticks = quantized;
-                event.state = 'changed';
-                event.part.needsUpdate = true;
-                event.track.needsUpdate = true;
-
-                // add quantize history per track as well
-                track = event.track;
-                if(quantizeHistory.tracks[track.id] === undefined){
-                    quantizeHistory.tracks[track.id] = {
-                        track: track,
-                        quantizedEvents: []
-                    };
-                }
-                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
-
-                // quantize the note off event
-                if(event.midiNote !== undefined){
-                    event.midiNote.noteOff.ticks += diff;
-                    event.midiNote.noteOff.state = 'changed';
-                    event.midiNote.state = 'changed';
-                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
-                }
-            }
-        }
-
-        return quantizeHistory;//copyObject(quantizeHistory);
-    }
-
-
-    function fixedLength(events, value, ppq, history){
-        var fixedLengthHistory = history || {};
-
-    }
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        copyObject = sequencer.protectedScope.copyObject;
-    });
-
-    sequencer.quantize = quantize;
-    sequencer.fixedLength = fixedLength;
-
-}());
-
-
-(function(){
 
     'use strict';
 

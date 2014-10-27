@@ -22,7 +22,6 @@
         snapValueY = 'chromatic',
         eventWidth = 2,
 
-        floor = Math.floor,
         ceil = Math.ceil,
 
         //import
@@ -33,8 +32,9 @@
         typeString,
         objectToArray,
         arrayToObject,
-        round,
         debug,
+        round,
+        floor,
         createNote,
 
         //public
@@ -153,7 +153,7 @@
                 this.scrollX = 0;
                 this.scrollPosition = 0;
                 this.viewportTicks = this.viewportWidth / this.tickWidth;
-                this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+                this.maxScrollPosition = ceil(this.width/this.viewportWidth);
                 this.scrollLimit = this.viewportWidth/this.tickWidth;
                 checkScrollPosition(this);
                 this.exactFitHorizontal = false;
@@ -227,7 +227,7 @@
         this.eventIterator.reset();
         this.partIterator.reset();
         this.scrollLimit = this.viewportWidth/this.tickWidth;
-        this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+        this.maxScrollPosition = ceil(this.width/this.viewportWidth);
         this.snapWidth = this.tickWidth * this.snapTicks;
 
         this.numPages = ceil(this.numBars/this.barsPerPage);
@@ -752,7 +752,8 @@
         var ticks = ((x + this.scrollX)/this.width) * this.numTicks;
         //console.log(this.scrollX,this.width,this.numTicks,ticks);
         if(snap !== false && this.snapTicks !== 0){
-            ticks = floor(ticks/this.snapTicks) * this.snapTicks;
+            //ticks = floor(ticks/this.snapTicks) * this.snapTicks;
+            ticks = round(ticks/this.snapTicks) * this.snapTicks;
         }
         //console.log(ticks, this.snapTicks);
         return ticks;
@@ -760,7 +761,8 @@
 
 
     KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function(y){
-        var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
+        //var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
+        var note = this.highestNote - round(((y + this.scrollY)/this.height) * this.pitchRange);
         note = createNote(note);
         return note;
     };
@@ -771,7 +773,8 @@
         //     x = (p * this.width) - this.scrollX;
         var x = (ticks - this.startTicks) * this.tickWidth;
         if(snap !== false && this.snapWidth !== 0){
-            x = (floor(x/this.snapWidth) * this.snapWidth);
+            //x = (floor(x/this.snapWidth) * this.snapWidth);
+            x = (round(x/this.snapWidth) * this.snapWidth);
         }
         return x;
     };
@@ -883,14 +886,16 @@
 
     // takes x returns snapped x
     KeyEditor.prototype.snapX = function(x){
-        return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+        //return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+        return round((x + this.scrollX)/this.snapWidth) * this.snapWidth;
 
     };
 
 
     // takes y returns snapped y
     KeyEditor.prototype.snapY = function(y){
-        return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+        //return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+        return round((y + this.scrollY)/this.snapHeight) * this.snapHeight;
     };
 
 
@@ -1019,7 +1024,7 @@
             this.width = this.numTicks * this.tickWidth;
             //console.log('new width', this.width, this.numTicks, this.tickWidth);
             //console.log('song has gotten longer boy!', this.song.bars, this.newNumBars, this.numBars, this.width);
-            this.maxScrollPosition = Math.ceil(this.width/this.viewportWidth);
+            this.maxScrollPosition = ceil(this.width/this.viewportWidth);
             //this.numPages = ceil(this.width/this.viewportWidth);
             this.numPages = ceil(this.numBars/this.barsPerPage);
         }

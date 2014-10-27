@@ -435,7 +435,7 @@
                 song.lastEvent[key] = position[key];
             }
         }
-        //console.log(song.name, song.durationTicks, song.durationMillis);
+        console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
     }
 
 

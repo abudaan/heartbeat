@@ -113,7 +113,7 @@
         this.fixedLengthValue = config.fixedLengthValue || false;
         this.positionType = config.positionType || 'all';
         this.useMetronome = config.useMetronome;
-        this.autoSize = config.autoSize === true;
+        this.autoSize = config.autoSize === undefined ? true : config.autoSize === true;
         this.playbackSpeed = 1;
         this.defaultInstrument = config.defaultInstrument || sequencer.defaultInstrument;
         this.recordId = -1;
