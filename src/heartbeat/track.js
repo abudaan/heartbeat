@@ -107,7 +107,7 @@
             //console.log(this.instrumentName, this.id);
             this.setInstrument(this.instrumentName);
         }
-        this.audio = createAudioTrack();
+        this.audio = createAudioTrack(this);
     };
 
 
@@ -130,7 +130,7 @@
         var event = false;
         if(!data){
             event = false;
-        }else if(data.className === 'MidiEvent'){
+        }else if(data.className === 'MidiEvent' || data.className === 'AudioEvent'){
             event = data;
         }else if(typeString(data) === 'array' && data.length === 4){
             // new event as array
@@ -221,6 +221,7 @@
             for(i = arg0.length - 1; i >= 0; i--){
                 arg = arg0[i];
                 //@TODO: this can be dangerous!
+                //console.log(arg);
                 event = getEvent(arg, track);
                 //console.log(event);
                 if(event){
@@ -895,6 +896,7 @@
     Track.prototype.reset = function(){
         var id, part;
         this.song = null;
+        this.audio.setSong(null);
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
@@ -1296,20 +1298,25 @@ return;
     };
 
 
-    Track.prototype.prepareForRecording = function(recordId){
+    Track.prototype.prepareForRecording = function(recordId, callback){
         //console.log('prepare', this.recordEnabled);
-        if(this.recordEnabled === false){
+        if(this.recordEnabled !== 'midi' && this.recordEnabled !== 'audio'){
             return;
         }
-        this.recordId = recordId;
         this.recordPart = sequencer.createPart();
         this.addPart(this.recordPart);
         //console.log(this.recordPart.needsUpdate);
         this.recordingNotes = {};
+        this.recordId = recordId;
+
+        if(this.recordEnabled === 'audio'){
+            this.audio.prepareForRecording(recordId, callback);
+        }
+        //console.log(this.recordEnabled);
     };
 
 
-    Track.prototype.stopRecording = function(recordId){
+    Track.prototype.stopRecording = function(recordId, callback){
         //console.log(recordId, this.recordId);
         if(this.recordId !== recordId){
             return;
@@ -1322,8 +1329,18 @@ return;
             }
             this.quantizeRecording();
         }
-        this.recordPart.update();
-        return this.recordPart.events;
+
+        if(this.recordEnabled === 'midi'){
+            this.recordPart.update();
+            callback(this.recordPart.events);
+        }else if(this.recordEnabled === 'audio'){
+            var scope = this;
+            this.audio.stopRecording(function(event){
+                scope.recordPart.addEvent(event);
+                scope.recordPart.update();
+                callback([event]);
+            });
+        }
     };
 
 /*
@@ -1342,6 +1359,7 @@ return;
                 this.removePart(this.recordPart);
             }
         }else if(type === 'array'){
+            //console.log(data);
             this.removeEvents(data);
         }
     };

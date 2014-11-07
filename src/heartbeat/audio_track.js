@@ -12,26 +12,32 @@
 
         //import
         typeString, // → defined in utils.js
+        createAudioRecorder, // → defined in audio_recorder.js
 
+        unscheduleCallback,
         AudioTrack;
 
 
-    AudioTrack = function(){
+    AudioTrack = function(track){
+        this.track = track;
         this.className = 'AudioTrack';
         this.scheduledSamples = {};
+        this.recorder = createAudioRecorder(track);
     };
 
 
-    function unscheduleCallback(sample){
+    unscheduleCallback = function(sample){
         //console.log(sample.id, 'has been unscheduled');
         delete this.scheduledSamples[sample.id];
         sample = null;
-    }
+    };
+
 
     AudioTrack.prototype.processEvent = function(audioEvent){
         var sample = sequencer.createSample({buffer: audioEvent.buffer, track: audioEvent.track});
         audioEvent.sample = sample;
-        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset;
+        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset + audioEvent.latencyCompensation;
+        //audioEvent.time -= audioEvent.latencyCompensation;
         // set playheadOffset to 0 after the event has been scheduled
         audioEvent.playheadOffset = 0;
         //sample.start(audioEvent.time/1000, 127, audioEvent.offsetMillis/1000, audioEvent.durationMillis/1000);
@@ -74,13 +80,28 @@
     };
 
 
-    sequencer.protectedScope.createAudioTrack = function(){
-        return new AudioTrack();
+    AudioTrack.prototype.prepareForRecording = function(recordId, callback){
+        if(this.recorder === false){
+            return false;
+        }
+        this.recorder.prepare(recordId, callback);
+    };
+
+
+    AudioTrack.prototype.stopRecording = function(callback){
+        this.recorder.stop(function(event){
+            callback(event);
+        });
+    };
+
+    sequencer.protectedScope.createAudioTrack = function(track){
+        return new AudioTrack(track);
     };
 
 
     sequencer.protectedScope.addInitMethod(function(){
         typeString = sequencer.protectedScope.typeString;
+        createAudioRecorder = sequencer.protectedScope.createAudioRecorder;
     });
 
 }());

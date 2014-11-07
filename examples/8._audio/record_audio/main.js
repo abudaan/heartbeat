@@ -15,10 +15,7 @@ window.onload = function(){
         btnStartRecording = document.getElementById('record-start'),
         btnDeleteRecording = document.getElementById('record-delete'),
         btnUndoRecording = document.getElementById('record-undo'),
-        btnPreRoll = document.getElementById('preroll'),
-        btnSave = document.getElementById('save'),
         selectRecordings = document.getElementById('recordings'),
-        divEvents = document.getElementById('song_events'),
         divRecorded = document.getElementById('recorded_events'),
 
         recordingIndex = 1,
@@ -30,32 +27,18 @@ window.onload = function(){
         sliderNumPrecountBars,
 
         userInteraction = false,
-        numPrecountBars = 0,
-
-        path = '../../../assets';
+        numPrecountBars = 0;
 
 
     enableUI(false);
 
-    // load an asset pack, this pack contains a basic piano
-    sequencer.addAssetPack({url: path + '/examples/asset_pack_basic.json'}, init);
+    sequencer.ready(function init(){
 
-
-    function init(){
         var track, song;
 
-        if(sequencer.midi === false){
-            document.querySelectorAll('p')[0].innerHTML = 'No MIDI I/O';
-            return;
-        }
-
         track = sequencer.createTrack();
-        // set monitor to true to route the incoming midi events to the track
-        track.monitor = true;
-        track.setMidiInput('all');
-        // enable the track for recording midi
-        track.recordEnabled = 'midi';
-        track.setInstrument('piano');
+        // enable the track for recording audio
+        track.recordEnabled = 'audio';
 
         song = sequencer.createSong({
             useMetronome: true,
@@ -67,31 +50,23 @@ window.onload = function(){
 
         song.addEventListener('play', function(){
             btnPlay.value = 'pause';
-            divEvents.innerHTML = 'play<br/>' + divEvents.innerHTML;
         });
 
         song.addEventListener('pause', function(){
             btnPlay.value = 'play';
-            divEvents.innerHTML = 'pause<br/>' + divEvents.innerHTML;
         });
 
         song.addEventListener('stop', function(){
             btnPlay.value = 'play';
-            divEvents.innerHTML = 'stop<br/>' + divEvents.innerHTML;
         });
 
-        song.addEventListener('record_precount', function(){
-            divEvents.innerHTML = 'record_precount<br/>' + divEvents.innerHTML;
-        });
 
         song.addEventListener('record_preroll', function(){
             sliderPosition.elem.className = 'recording';
-            divEvents.innerHTML = 'record_preroll<br/>' + divEvents.innerHTML;
         });
 
         song.addEventListener('record_start', function(){
             sliderPosition.elem.className = 'recording';
-            divEvents.innerHTML = 'record_start<br/>' + divEvents.innerHTML;
         });
 
         song.addEventListener('record_stop', function(){
@@ -99,8 +74,6 @@ window.onload = function(){
             sliderPosition.elem.className = '';
             btnStartRecording.value = 'start recording';
             btnUndoRecording.disabled = false;
-            divEvents.innerHTML = 'record_stop<br/>' + divEvents.innerHTML;
-
         });
 
 
@@ -113,6 +86,7 @@ window.onload = function(){
             lastRecordingId = 'recording #' + recordingIndex++;
             recordingHistory[lastRecordingId] = recording;
             handleRecordedEvents();
+            //console.log(song.getLastAudioRecording());
         });
 
 
@@ -130,14 +104,6 @@ window.onload = function(){
             song.stop();
         });
 
-        btnPreRoll.addEventListener('click', function(){
-            song.preroll = !song.preroll;
-            if(song.preroll){
-                btnPreRoll.value = 'preroll off';
-            }else{
-                btnPreRoll.value = 'preroll on';
-            }
-        });
 
         btnStartRecording.addEventListener('click', function(){
             if(song.recording === true || song.precounting === true){
@@ -166,11 +132,6 @@ window.onload = function(){
             song.update();
             delete recordingHistory[selectedRecordingId];
             handleRecordedEvents();
-        });
-
-
-        btnSave.addEventListener('click', function(){
-            sequencer.saveSongAsMidiFile(song);
         });
 
 
@@ -230,7 +191,7 @@ window.onload = function(){
         btnUndoRecording.disabled = true;
         btnDeleteRecording.disabled = true;
         render();
-    }
+    });
 
 
     function handleRecordedEvents(){
@@ -245,7 +206,7 @@ window.onload = function(){
                 recording = recordingHistory[recId];
                 print += '<em>' + recId + '</em></br>';
                 print += '<table>';
-                print += '<tr><td>ticks</td><td>type</td><td>data1</td><td>data2</td><td>position</td></tr>';
+                print += '<tr><td>ticks</td><td>position</td><td>waveform</td></tr>';
                 for(trackName in recording){
                     if(recording.hasOwnProperty(trackName)){
                         events = recording[trackName];
@@ -255,10 +216,8 @@ window.onload = function(){
                             event = events[i];
                             print += '<tr>';
                             print += '<td>' + event.ticks + '</td>';
-                            print += '<td>' + event.type + '</td>';
-                            print += '<td>' + event.data1 + '</td>';
-                            print += '<td>' + event.data2 + '</td>';
                             print += '<td>' + event.barsAsString + '</td>';
+                            print += '<td><img src="' + event.waveformSmallImageDataUrl + '" width="400" height="100"></td>';
                             print += '</tr>';
                         }
                     }

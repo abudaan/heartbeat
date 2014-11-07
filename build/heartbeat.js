@@ -905,6 +905,15 @@ if (typeof module !== "undefined" && module !== null) {
     audioTest = null;
 */
 
+
+    navigator.getUserMedia = (
+        navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia
+    );
+
+
     window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
     window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
 
@@ -1004,6 +1013,7 @@ if (typeof module !== "undefined" && module !== null) {
         jazz: false,
         ogg: false,
         mp3: false,
+        record_audio: navigator.getUserMedia !== undefined,
         util: {},
         debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',
@@ -1831,6 +1841,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         // provide either buffer (AudioBuffer) or path to a sample in the sequencer.storage object
         this.buffer = config.buffer;
+        this.sampleId = config.sampleId;
         this.path = config.path;
 
         if(this.buffer === undefined && this.path === undefined){
@@ -1904,13 +1915,18 @@ if (typeof module !== "undefined" && module !== null) {
             this.sampleOffset = this.sampleOffsetMillis/1000;
         }
 
+        this.latencyCompensation = config.latencyCompensation;
+        if(this.latencyCompensation === undefined){
+            this.latencyCompensation = 0;
+        }
+
         // if the playhead starts somewhere in the sample, this value will be set by the scheduler
         this.playheadOffset = 0;
 
         this.className =  'AudioEvent';
         this.time =  0;
         this.type =  'audio';
-        this.id = 'event_' + audioEventId++;
+        this.id = 'A' + audioEventId + new Date().getTime();
     };
 
 
@@ -2105,7 +2121,522 @@ if (typeof module !== "undefined" && module !== null) {
         typeString = sequencer.protectedScope.typeString;
     });
 
-}());/*
+}());
+(function(){
+
+    'use strict';
+
+    var
+        sequencer = window.sequencer,
+        console = window.console,
+
+        // import
+        context, // defined in open_module.js
+        storeItem, //defined in util.js
+        typeString, // defined in util.js
+        getWaveformImageUrlFromBuffer, //defined in util.js
+        repetitiveTasks, // defined in open_module.js
+
+        sampleSize = 8192,
+        latency = null,
+        microphoneAccessGranted = null,
+        localMediaStream,
+
+        _record;
+
+
+    function AudioRecorder(track){
+        this.track = track;
+        this.recBuffersL = [];
+        this.recBuffersR = [];
+        this.audioEvents = {};
+        this.callback = null;
+        this.worker = createWorker();
+
+        var scope = this;
+
+        this.worker.onmessage = function(e){
+            var
+                song = track.song,
+                event,
+                recordId = scope.recordId;
+
+            context.decodeAudioData(e.data, function(buffer){
+
+/*
+
+                event = sequencer.createAudioEvent({
+                    ticks: song.recordTimestampTicks,
+                    latencyCompensation: latency/1000,
+                    //latencyCompensation: 0,
+                    //sampleOffsetMillis: latency,
+                    buffer: buffer,
+                    sampleId: scope.recordId
+                });
+
+                song.addAudioRecording(new AudioRecording(recordId, buffer, latency));
+
+*/
+
+                storeItem(buffer, 'recordings/' + recordId, sequencer.storage.audio);
+
+                event = sequencer.createAudioEvent({
+                    ticks: song.recordTimestampTicks,
+                    //latencyCompensation: latency/1000,
+                    latencyCompensation: 0,
+                    path: 'recordings/' + recordId
+                });
+
+                getWaveformImageUrlFromBuffer(
+                    buffer,
+
+                    {
+                        height: 200,
+                        //density: 0.0001,
+                        width: 800,
+                        sampleStep: 1,
+                        // density: 0.5,
+                        color: '#71DE71',
+                        bgcolor: '#000'
+                    },
+
+                    function(urls){
+                        var image, images = [],
+                            i, maxi = urls.length;
+
+                        for(i = 0; i < maxi; i++){
+                            image = document.createElement('img');
+                            image.src = urls[i];
+                            image.origWidth = image.width;
+                            image.height = 100;
+                            images.push(image);
+                        }
+
+                        event.waveformImage = images[0];
+                        event.waveformImages = images;
+                        event.waveformSmallImageDataUrl = urls[0];
+                        event.waveformImageDataUrls = urls;
+                        //console.log(event);
+
+                        // return the recording as a audio event
+                        if(scope.callback !== null){
+                            scope.callback(event);
+                            scope.callback = null;
+                        }
+                    }
+                );
+
+            }, function(){
+                if(sequencer.debug >= sequencer.WARN){
+                    console.warn('no valid audiodata');
+                }
+            });
+        };
+    }
+
+
+    _record = function(callback){
+
+        navigator.getUserMedia({audio: true},
+
+            // successCallback
+            function(stream) {
+                microphoneAccessGranted = true;
+                localMediaStream = stream;
+                callback();
+            },
+
+            // errorCallback
+            function(error) {
+                if(sequencer.debug >= sequencer.WARN){
+                    console.log(error);
+                }
+                microphoneAccessGranted = false;
+                callback();
+            }
+        );
+    };
+
+
+
+    AudioRecorder.prototype.prepare = function(recordId, callback){
+        var self = this;
+        this.recordId = recordId;
+
+        if(microphoneAccessGranted === null){
+            _record(function(){
+                callback(microphoneAccessGranted);
+                if(localMediaStream !== undefined){
+                    self.start();
+                }
+            });
+        }else{
+            callback(microphoneAccessGranted);
+            if(localMediaStream !== undefined){
+                this.start();
+            }
+        }
+    };
+
+
+    AudioRecorder.prototype.start = function(){
+        var scope = this,
+            song = this.track.song,
+            timestamp;
+
+        this.sourceNode = context.createMediaStreamSource(localMediaStream);
+        this.javascriptNode = context.createScriptProcessor(sampleSize, 1, 1);
+/*
+        this.analyserNode = context.createAnalyser();
+        this.sourceNode.connect(this.analyserNode);
+        this.analyserNode.connect(this.javascriptNode);
+        this.amplitudeArray = [];
+        this.numAmplitudes = 0;
+*/
+        this.sourceNode.connect(this.javascriptNode);
+
+        repetitiveTasks.startAudioRecording = null;
+        delete repetitiveTasks.startAudioRecording;
+
+        scope.worker.postMessage({
+            command: 'init',
+            sampleRate: context.sampleRate
+        });
+
+
+        if(song.recording !== true){
+            repetitiveTasks.startAudioRecording = function(){
+                if(song.recording === true){
+                    scope.start();
+                }
+            };
+            return;
+        }
+
+
+        this.javascriptNode.onaudioprocess = function(e){
+
+            // TODO: fix latency issue
+/*
+            if(timestamp !== null){
+                //console.log((context.currentTime * 1000) - timestamp);
+                //timestamp = context.currentTime * 1000;
+                latency = (context.currentTime * 1000) - timestamp;
+                timestamp = null;
+            }
+*/
+            if(e.inputBuffer.numberOfChannels === 1){
+                scope.recBuffersL.push(e.inputBuffer.getChannelData(0));
+
+                scope.worker.postMessage({
+                    command: 'record_mono',
+                    buffer: e.inputBuffer.getChannelData(0)
+                });
+
+            }else{
+                scope.recBuffersL.push(e.inputBuffer.getChannelData(0));
+                scope.recBuffersR.push(e.inputBuffer.getChannelData(1));
+
+                scope.worker.postMessage({
+                    command: 'record_stereo',
+                    buffer:[
+                        e.inputBuffer.getChannelData(0),
+                        e.inputBuffer.getChannelData(1)
+                    ]
+                });
+            }
+
+/*
+            var tmp = new Uint8Array(scope.analyserNode.frequencyBinCount);
+            scope.analyserNode.getByteTimeDomainData(tmp);
+            scope.amplitudeArray.push(tmp);
+            scope.numAmplitudes += tmp.length;
+*/
+        };
+
+        //latency = sampleSize * (1/context.sampleRate) * 1000 ;
+        //latency = latency + (context.currentTime * 1000) - song.recordTimestamp - song.metronome.precountDurationInMillis;
+        latency = (context.currentTime * 1000) - song.recordTimestamp - song.metronome.precountDurationInMillis;
+        //console.log(context.currentTime * 1000, song.recordTimestamp, latency);
+        timestamp = (context.currentTime * 1000);
+        this.javascriptNode.connect(context.destination);
+    };
+
+
+    AudioRecorder.prototype.stop = function(callback){
+        if(this.sourceNode === undefined){
+            callback();
+            return;
+        }
+        this.callback = callback;
+        this.sourceNode.disconnect(this.javascriptNode);
+        this.javascriptNode.onaudioprocess = null;
+
+        repetitiveTasks.startAudioRecorder = undefined;
+        delete repetitiveTasks.startAudioRecorder;
+
+        this.worker.postMessage({
+            command: 'get_arraybuffer'
+        });
+    };
+
+
+    AudioRecorder.prototype.cleanup = function(){
+        if(localMediaStream === undefined){
+            this.worker.terminate();
+            return;
+        }
+        //localMediaStream.stop(); -> better not to stop the microphone stream
+        this.analyserNode.disconnect();
+        this.sourceNode.disconnect();
+        this.worker.terminate();
+    };
+
+
+    AudioRecorder.prototype.drawCanvas = function(amplitudeArray, column){
+        var minValue = 9999999;
+        var maxValue = 0;
+        var canvasHeight = 100;
+        var canvasWidth = 1000;
+
+        for (var i = 0; i < amplitudeArray.length; i++) {
+            var value = amplitudeArray[i] / 256;
+            if(value > maxValue) {
+                maxValue = value;
+            } else if(value < minValue) {
+                minValue = value;
+            }
+        }
+
+        var y_lo = canvasHeight - (canvasHeight * minValue) - 1;
+        var y_hi = canvasHeight - (canvasHeight * maxValue) - 1;
+
+        this.context2d.fillStyle = '#ffffff';
+        this.context2d.fillRect(column, y_lo, 1, y_hi - y_lo);
+    };
+
+
+    function createWorker(){
+        var blobURL = URL.createObjectURL(new Blob(['(',
+
+            function(){
+                var
+                    recLength,
+                    recBuffersL,
+                    recBuffersR,
+                    sampleRate,
+                    numberOfChannels;
+
+                this.onmessage = function(e){
+                    switch(e.data.command){
+                        case 'init':
+                            sampleRate = e.data.sampleRate;
+                            recLength = 0;
+                            recBuffersL = [];
+                            recBuffersR = [];
+                            break;
+                        case 'record_mono':
+                            numberOfChannels = 1;
+                            recBuffersL.push(e.data.buffer);
+                            recLength += e.data.buffer.length;
+                            break;
+                        case 'record_stereo':
+                            numberOfChannels = 2;
+                            recBuffersL.push(e.data.buffer[0]);
+                            recBuffersR.push(e.data.buffer[1]);
+                            recLength += e.data.buffer[0].length;
+                            break;
+                        case 'export_wav':
+                            this.postMessage(exportWAV());
+                            break;
+                        case 'export_mp3':
+                            this.postMessage(exportMp3());
+                            break;
+                        case 'get_arraybuffer':
+                            var ab = getArrayBuffer();
+                            this.postMessage(ab, [ab]);
+                            break;
+                    }
+                };
+
+
+                // TODO: add code to handle mono recordings
+                function getArrayBuffer(){
+                    var index,
+                        length,
+                        bufferL,
+                        bufferR,
+                        result,
+                        dataview;
+/*
+                    if(numberOfChannels === 2){
+                        bufferL = mergeBuffers(recBuffersL, recLength);
+                        bufferR = mergeBuffers(recBuffersR, recLength);
+                        result = interleave(bufferL, bufferR);
+                    }else if(numberOfChannels === 1){
+                        length = recBuffersL.length;
+                        result = new Float32Array(length);
+                        index = 0;
+
+                        while(index < length){
+                            result[index] = recBuffersL[index];
+                            index++;
+                        }
+                    }
+*/
+                    bufferL = mergeBuffers(recBuffersL, recLength);
+                    bufferR = mergeBuffers(recBuffersR, recLength);
+                    result = interleave(bufferL, bufferR);
+                    dataview = encodeWAV(result);
+
+                    return dataview.buffer;
+                }
+
+
+                function exportWAV(){
+                    var bufferL = mergeBuffers(recBuffersL, recLength),
+                        bufferR = mergeBuffers(recBuffersR, recLength),
+                        interleaved = interleave(bufferL, bufferR),
+                        dataview = encodeWAV(interleaved),
+                        audioBlob = new Blob([dataview], {type: 'audio/wav'});
+
+                    return audioBlob;
+                }
+
+
+                // TODO: implement this
+                function exportMp3(){
+                    var wav = exportWAV();
+                }
+
+                function mergeBuffers(recBuffers, recLength){
+                    var result = new Float32Array(recLength);
+                    var offset = 0;
+                    for (var i = 0; i < recBuffers.length; i++){
+                        result.set(recBuffers[i], offset);
+                        offset += recBuffers[i].length;
+                    }
+                    return result;
+                }
+
+
+                function interleave(inputL, inputR){
+                    var length = inputL.length + inputR.length,
+                        result = new Float32Array(length),
+                        index = 0,
+                        inputIndex = 0;
+
+                    while(index < length){
+                        result[index++] = inputL[inputIndex];
+                        result[index++] = inputR[inputIndex];
+                        inputIndex++;
+                    }
+                    return result;
+                }
+
+
+                function floatTo16BitPCM(output, offset, input){
+                    for (var i = 0; i < input.length; i++, offset+=2){
+                        var s = Math.max(-1, Math.min(1, input[i]));
+                        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    }
+                }
+
+
+                function writeString(view, offset, string){
+                    for (var i = 0; i < string.length; i++){
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                }
+
+
+                // TODO: change header for mono files
+                function encodeWAV(samples){
+                    var buffer = new ArrayBuffer(44 + samples.length * 2),
+                        view = new DataView(buffer);
+
+                    /* RIFF identifier */
+                    writeString(view, 0, 'RIFF');
+                    /* RIFF chunk length */
+                    view.setUint32(4, 36 + samples.length * 2, true);
+                    /* RIFF type */
+                    writeString(view, 8, 'WAVE');
+                    /* format chunk identifier */
+                    writeString(view, 12, 'fmt ');
+                    /* format chunk length */
+                    view.setUint32(16, 16, true);
+                    /* sample format (raw) */
+                    view.setUint16(20, 1, true);
+                    /* channel count */
+                    view.setUint16(22, 2, true);
+                    /* sample rate */
+                    view.setUint32(24, sampleRate, true);
+                    /* byte rate (sample rate * block align) */
+                    view.setUint32(28, sampleRate * 4, true);
+                    /* block align (channel count * bytes per sample) */
+                    view.setUint16(32, 4, true);
+                    /* bits per sample */
+                    view.setUint16(34, 16, true);
+                    /* data chunk identifier */
+                    writeString(view, 36, 'data');
+                    /* data chunk length */
+                    view.setUint32(40, samples.length * 2, true);
+
+                    floatTo16BitPCM(view, 44, samples);
+
+                    return view;
+                }
+
+
+            }.toString(),
+
+        ')()' ], {type: 'application/javascript'}));
+
+        return new Worker(blobURL);
+    }
+
+
+/*
+    function AudioRecording(id, buffer, latency, name){
+        this.className = 'AudioRecording';
+        this.id = id;
+        this.name = name === undefined ? id : name;
+        this.buffer = buffer;
+        this.latency = latency;
+        //console.log(buffer.duration, latency);
+    }
+
+
+    AudioRecording.prototype.setName = function(name){
+        this.name = name;
+    };
+*/
+
+
+    sequencer.protectedScope.createAudioRecorder = function(track){
+        if(sequencer.record_audio === false){
+            return false;
+        }
+        return new AudioRecorder(track);
+    };
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        context = sequencer.protectedScope.context;
+        storeItem = sequencer.protectedScope.storeItem;
+        typeString = sequencer.protectedScope.typeString;
+        repetitiveTasks = sequencer.protectedScope.repetitiveTasks;
+        getWaveformImageUrlFromBuffer = sequencer.getWaveformImageUrlFromBuffer;
+        //latency = sampleSize * (1/context.sampleRate) * 1000;
+        //console.log(latency, context.sampleRate);
+        //_record();
+    });
+}());
+
+
+
+
+/*
     controls the playback of the audio events in a track
 */
 (function(){
@@ -2119,26 +2650,32 @@ if (typeof module !== "undefined" && module !== null) {
 
         //import
         typeString, // → defined in utils.js
+        createAudioRecorder, // → defined in audio_recorder.js
 
+        unscheduleCallback,
         AudioTrack;
 
 
-    AudioTrack = function(){
+    AudioTrack = function(track){
+        this.track = track;
         this.className = 'AudioTrack';
         this.scheduledSamples = {};
+        this.recorder = createAudioRecorder(track);
     };
 
 
-    function unscheduleCallback(sample){
+    unscheduleCallback = function(sample){
         //console.log(sample.id, 'has been unscheduled');
         delete this.scheduledSamples[sample.id];
         sample = null;
-    }
+    };
+
 
     AudioTrack.prototype.processEvent = function(audioEvent){
         var sample = sequencer.createSample({buffer: audioEvent.buffer, track: audioEvent.track});
         audioEvent.sample = sample;
-        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset;
+        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset + audioEvent.latencyCompensation;
+        //audioEvent.time -= audioEvent.latencyCompensation;
         // set playheadOffset to 0 after the event has been scheduled
         audioEvent.playheadOffset = 0;
         //sample.start(audioEvent.time/1000, 127, audioEvent.offsetMillis/1000, audioEvent.durationMillis/1000);
@@ -2181,13 +2718,28 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-    sequencer.protectedScope.createAudioTrack = function(){
-        return new AudioTrack();
+    AudioTrack.prototype.prepareForRecording = function(recordId, callback){
+        if(this.recorder === false){
+            return false;
+        }
+        this.recorder.prepare(recordId, callback);
+    };
+
+
+    AudioTrack.prototype.stopRecording = function(callback){
+        this.recorder.stop(function(event){
+            callback(event);
+        });
+    };
+
+    sequencer.protectedScope.createAudioTrack = function(track){
+        return new AudioTrack(track);
     };
 
 
     sequencer.protectedScope.addInitMethod(function(){
         typeString = sequencer.protectedScope.typeString;
+        createAudioRecorder = sequencer.protectedScope.createAudioRecorder;
     });
 
 }());
@@ -8822,7 +9374,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         //console.log(song.preroll, song.recording, track.recordEnabled);
 
-        if((song.prerolling || song.recording) && track.recordEnabled){
+        if((song.prerolling || song.recording) && track.recordEnabled === 'midi'){
             if(midiEvent.type === 144){
                 track.song.recordedNotes.push(note);
             }
@@ -12889,7 +13441,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     // private
     function parseAudioData(audiodata, callback){
-        //console.log(audiodata);
+        //console.log(audiodata, typeString(audiodata), audiodata.byteLength, ArrayBuffer.isView(audiodata));
         var ts = sequencer.getTime();
         //console.log(ts);
         if(audiodata !== null){
@@ -13241,7 +13793,7 @@ if (typeof module !== "undefined" && module !== null) {
                         //console.log('this shouldn\'t happen!');
                         //continue;
                         audioEvent = this.scheduledAudioEvents[event.id];
-                        if(audioEvent.sample.source !== undefined){
+                        if(audioEvent.sample !== undefined && audioEvent.sample.source !== undefined){
                             audioEvent.stopSample(0);
                         // }else{
                         //     continue;
@@ -13424,6 +13976,7 @@ if (typeof module !== "undefined" && module !== null) {
         timedTasks, // defined in open_module.js
         scheduledTasks, // defined in open_module.js
         repetitiveTasks, // defined in open_module.js
+        masterGainNode, // defined in open_module.js
 
         r = 0,
 
@@ -13446,12 +13999,19 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.deleteSong = function(song){
         // clean up
         song.stop();
+        song.disconnect(masterGainNode);
+
         song.listeners = null;
+        //song.audioRecordings = null;
+        //song.audioRecordingsById = null;
+        //song.audioRecordingsByName = null;
 
         song.midiEventListeners = null;
         var i, track;
-        for(i = song.tracks - 1; i >= 0; i--){
+
+        for(i = song.numTracks - 1; i >= 0; i--){
             track = song.tracks[i];
+            track.audio.recorder.cleanup();
             track.midiEventListeners = null;
         }
 
@@ -13906,6 +14466,7 @@ if (typeof module !== "undefined" && module !== null) {
         typeString = sequencer.protectedScope.typeString;
         context = sequencer.protectedScope.context;
         createMidiEvent = sequencer.createMidiEvent;
+        masterGainNode = sequencer.protectedScope.masterGainNode;
         heartbeat();
     });
 
@@ -14125,6 +14686,8 @@ if (typeof module !== "undefined" && module !== null) {
         getPart,
         getParts,
         getTimeEvents,
+        setRecordingStatus,
+        _getRecordingPerTrack,
 
         songIndex = 0,
 
@@ -14177,6 +14740,10 @@ if (typeof module !== "undefined" && module !== null) {
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
+        //this.audioRecordings = [];
+        //this.audioRecordingsById = {};
+        //this.audioRecordingsByName = {};
+        //this.numAudioRecordings = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -14251,9 +14818,9 @@ if (typeof module !== "undefined" && module !== null) {
         this.notesById = {};
         this.eventsById = {};
 
-        this.activeEvents;
-        this.activeNotes;
-        this.activeParts;
+        this.activeEvents = null;
+        this.activeNotes = null;
+        this.activeParts = null;
 
         this.recordedNotes = [];
         this.recordedEvents = [];
@@ -14373,7 +14940,7 @@ if (typeof module !== "undefined" && module !== null) {
         var tracksById = song.tracksById,
             tracksByName = song.tracksByName,
             addedIds = [],
-            i, j, part, track;
+            i, part, track;
 
         for(i = newTracks.length - 1; i >= 0; i--){
             track = getTrack(newTracks[i]);
@@ -14474,7 +15041,7 @@ if (typeof module !== "undefined" && module !== null) {
         var result = [];
 
         args = slice.call(args);
-        console.log(args);
+        //console.log(args);
 
         function loop(data, i, maxi){
             var arg, type, event;
@@ -14715,6 +15282,12 @@ if (typeof module !== "undefined" && module !== null) {
             return;
         }
 
+        var userFeedback = false,
+            audioRecording = false,
+            i, track, self = this;
+
+        this.metronome.precountDurationInMillis = 0;
+
         // allow to start a recording while playing
         if(this.playing){
             this.precount = 0;
@@ -14729,6 +15302,7 @@ if (typeof module !== "undefined" && module !== null) {
                 this.metronome.createPrecountEvents(precount);
                 this.precount = precount;
                 this.recordStartMillis = this.millis - this.metronome.precountDurationInMillis;
+                //console.log(this.metronome.precountDurationInMillis);
             }
 /*
             if(this.preroll === true){
@@ -14744,23 +15318,44 @@ if (typeof module !== "undefined" && module !== null) {
 
 
         this.recordTimestamp = context.currentTime * 1000; // millis
+        this.recordTimestampTicks = this.ticks;
         this.recordId = 'REC' + new Date().getTime();
         this.recordedNotes = [];
         this.recordedEvents = [];
         this.recordingNotes = {};
-
-        var i, track;
-        for(i = this.numTracks - 1; i >= 0; i--){
-            track = this.tracks[i];
-            //console.log(track.name, track.index);
-            track.prepareForRecording(this.recordId);
-        }
+        this.recordingAudio = false;
 
         if(this.keyEditor !== undefined){
             this.keyEditor.prepareForRecording(this.recordId);
         }
 
+        for(i = this.numTracks - 1; i >= 0; i--){
+            track = this.tracks[i];
+            if(track.recordEnabled === 'audio'){
+                this.recordingAudio = true;
+            }
+            //console.log(track.name, track.index);
+            if(track.recordEnabled === 'audio'){
+                audioRecording = true;
+                track.prepareForRecording(this.recordId, function(){
+                    if(userFeedback === false){
+                        userFeedback = true;
+                        self.recordTimestamp = context.currentTime * 1000;
+                        setRecordingStatus.call(self);
+                    }
+                });
+            }else{
+                track.prepareForRecording(this.recordId);
+            }
+        }
 
+        if(audioRecording === false){
+            setRecordingStatus.call(this);
+        }
+    };
+
+
+    setRecordingStatus = function(){
         if(this.playing === false){
             if(this.precount > 0){
                 // recording with precount always starts at the beginning of a bar
@@ -14785,30 +15380,51 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
+    _getRecordingPerTrack = function(index, recordingHistory, callback){
+        var track, scope = this;
+
+        if(index < this.numTracks){
+            track = this.tracks[index];
+            track.stopRecording(this.recordId, function(events){
+                if(events !== undefined){
+                    recordingHistory[track.name] = events;
+                }
+                index++;
+                _getRecordingPerTrack.call(scope, index, recordingHistory, callback);
+            });
+        }else{
+            callback(recordingHistory);
+        }
+    };
+
+
     Song.prototype.stopRecording = function(){
+        if(this.recording === false){
+            return;
+        }
         this.recording = false;
         this.prerolling = false;
         this.precounting = false;
 
         //repetitiveTasks.playAfterPrecount = undefined;
         delete repetitiveTasks.playAfterPrecount;
+        var scope = this;
 
-        var i, track, events, recordingHistory = {};
-        for(i = this.numTracks - 1; i >= 0; i--){
-            track = this.tracks[i];
-            events = track.stopRecording(this.recordId);
-            if(events !== undefined){
-                recordingHistory[track.name] = events;
-            }
-        }
+        _getRecordingPerTrack.call(this, 0, {}, function(history){
+            scope.update();
+            dispatchEvent(scope, 'recorded_events', history);
+        });
+
+        // preform update immediately for midi recordings
+        this.update();
+
         // should I call update here or should I leave it to the user code?
         // var me = this;
         // setTimeout(function(){
         //     me.update();
         // }, 0);
-        this.update();
-        dispatchEvent(this, 'record_stop', recordingHistory);
-        return recordingHistory;
+
+        dispatchEvent(this, 'record_stop');
     };
 
 
@@ -14827,6 +15443,113 @@ if (typeof module !== "undefined" && module !== null) {
             });
         }
         //this.update();
+    };
+
+/*
+    Song.prototype.addAudioRecording = function(recording){
+        if(recording.className !== 'AudioRecording'){
+            if(sequencer.debug > sequencer.WARN){
+                console.warn('this is not an audio recording');
+            }
+            return;
+        }
+        this.audioRecordingsById[recording.id] = recording;
+        this.audioRecordingsByName[recording.name] = recording;
+        this.audioRecordings.push(recording);
+        this.numAudioRecordings = this.audioRecordings.length;
+    };
+
+
+    Song.prototype.getAudioRecording = function(value){
+        var recording;
+        if(isNaN(value) === false){
+            recording = this.audioRecordings[parseInt(value, 10)];
+        }else{
+            recording = this.audioRecordingsById[value];
+            if(recording === undefined){
+                recording = this.audioRecordingsByName[value];
+            }
+        }
+        return recording;
+    };
+
+
+    Song.prototype.getLastAudioRecording = function(){
+        if(this.numAudioRecordings === 0){
+            return false;
+        }
+        return this.audioRecordings[this.numAudioRecordings - 1];
+    };
+
+    Song.prototype.purgeAudioRecordings = function(){
+        var recordingsInUse = [],
+            i, j, recording, event, sampleId;
+
+        for(i = this.audioEvents.length - 1; i >= 0; i--){
+            event = this.audioEvents[i];
+            sampleId = event.sampleId;
+            if(sampleId === undefined){
+                continue;
+            }
+            for(j = this.audioRecordings.length - 1; j >= 0; j--){
+                recording = this.audioRecordings[j];
+                if(recording.id === sampleId){
+                    recordingsInUse.push(recording);
+                }
+            }
+        }
+
+        this.audioRecordings = [];
+        this.audioRecordingsById = {};
+        this.audioRecordingsByName = {};
+        this.numAudioRecordings = recordingsInUse.length;
+
+        for(i = this.numAudioRecordings - 1; i >= 0; i--){
+            recording = recordingsInUse[i];
+            this.audioRecordings.push(recording);
+            this.audioRecordingsById[recording.id] = recording;
+            this.audioRecordingsByName[recording.name] = recording;
+        }
+    };
+
+*/
+
+    Song.prototype.purgeAudioRecordings = function(){
+        var recordingsInUse = [],
+            i, j, recording, event, sampleId;
+
+        for(i = this.audioEvents.length - 1; i >= 0; i--){
+            event = this.audioEvents[i];
+            sampleId = event.sampleId;
+            if(sampleId === undefined){
+                continue;
+            }
+            for(j = this.audioRecordings.length - 1; j >= 0; j--){
+                recording = this.audioRecordings[j];
+                if(recording.id === sampleId){
+                    recordingsInUse.push(recording);
+                }
+            }
+        }
+
+        this.audioRecordings = [];
+        this.audioRecordingsById = {};
+        this.audioRecordingsByName = {};
+        this.numAudioRecordings = recordingsInUse.length;
+
+        for(i = this.numAudioRecordings - 1; i >= 0; i--){
+            recording = recordingsInUse[i];
+            this.audioRecordings.push(recording);
+            this.audioRecordingsById[recording.id] = recording;
+            this.audioRecordingsByName[recording.name] = recording;
+        }
+    };
+
+    // @param name: name of sample pack
+    // @param compression: compress wav file to mp3 or ogg
+    Song.prototype.getAudioRecordingsAsSamplePack = function(name, compression){
+        var samplePack = {}; // json data
+        return samplePack;
     };
 
 
@@ -15690,13 +16413,13 @@ if (typeof module !== "undefined" && module !== null) {
         //this.gainNode.disconnect(context.destination);
     };
 
-
+/*
     Song.prototype.cleanUp = function(){
         // add other references that need to be removed
         this.disconnect(masterGainNode);
         //this.disconnect(context.destination);
     };
-
+*/
 
     Song.prototype.getMidiInputs = function(cb){
         getMidiInputs(cb, this);
@@ -15909,7 +16632,7 @@ if (typeof module !== "undefined" && module !== null) {
         console = window.console,
         AP = Array.prototype,
 
-        supportedEvents = 'play stop pause end loop record_start record_stop sustain_pedal',
+        supportedEvents = 'play stop pause end loop record_start record_stop recorded_events, sustain_pedal',
         listenerIndex = 0,
 
         addEventListener,
@@ -15964,6 +16687,7 @@ if (typeof module !== "undefined" && module !== null) {
             case 'record_stop':
             case 'record_precount':
             case 'record_preroll':
+            case 'recorded_events':
             case 'loop_off':
             case 'loop_on':
             case 'loop': // the playhead jumps from the loop end position to the loop start position
@@ -16017,6 +16741,7 @@ if (typeof module !== "undefined" && module !== null) {
             case 'record_stop':
             case 'record_precount':
             case 'record_preroll':
+            case 'recorded_events':
             case 'loop_off':
             case 'loop_on':
             case 'loop': // the playhead jumps from the loop end position to the loop start position
@@ -17844,7 +18569,7 @@ if (typeof module !== "undefined" && module !== null) {
                 song.lastEvent[key] = position[key];
             }
         }
-        console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
+        //console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
     }
 
 
@@ -17934,7 +18659,7 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = 0; i < maxi; i++){
             event = events[i];
 
-            time =(event.recordMillis - timestamp) + startMillis;
+            time = (event.recordMillis - timestamp) + startMillis;
             position = playhead.update('millis', time - totalTime); // update by supplying the diff in millis
             totalTime = time;
 
@@ -18177,7 +18902,7 @@ if (typeof module !== "undefined" && module !== null) {
             //console.log(this.instrumentName, this.id);
             this.setInstrument(this.instrumentName);
         }
-        this.audio = createAudioTrack();
+        this.audio = createAudioTrack(this);
     };
 
 
@@ -18200,7 +18925,7 @@ if (typeof module !== "undefined" && module !== null) {
         var event = false;
         if(!data){
             event = false;
-        }else if(data.className === 'MidiEvent'){
+        }else if(data.className === 'MidiEvent' || data.className === 'AudioEvent'){
             event = data;
         }else if(typeString(data) === 'array' && data.length === 4){
             // new event as array
@@ -18291,6 +19016,7 @@ if (typeof module !== "undefined" && module !== null) {
             for(i = arg0.length - 1; i >= 0; i--){
                 arg = arg0[i];
                 //@TODO: this can be dangerous!
+                //console.log(arg);
                 event = getEvent(arg, track);
                 //console.log(event);
                 if(event){
@@ -18965,6 +19691,7 @@ if (typeof module !== "undefined" && module !== null) {
     Track.prototype.reset = function(){
         var id, part;
         this.song = null;
+        this.audio.setSong(null);
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
@@ -19366,20 +20093,25 @@ return;
     };
 
 
-    Track.prototype.prepareForRecording = function(recordId){
+    Track.prototype.prepareForRecording = function(recordId, callback){
         //console.log('prepare', this.recordEnabled);
-        if(this.recordEnabled === false){
+        if(this.recordEnabled !== 'midi' && this.recordEnabled !== 'audio'){
             return;
         }
-        this.recordId = recordId;
         this.recordPart = sequencer.createPart();
         this.addPart(this.recordPart);
         //console.log(this.recordPart.needsUpdate);
         this.recordingNotes = {};
+        this.recordId = recordId;
+
+        if(this.recordEnabled === 'audio'){
+            this.audio.prepareForRecording(recordId, callback);
+        }
+        //console.log(this.recordEnabled);
     };
 
 
-    Track.prototype.stopRecording = function(recordId){
+    Track.prototype.stopRecording = function(recordId, callback){
         //console.log(recordId, this.recordId);
         if(this.recordId !== recordId){
             return;
@@ -19392,8 +20124,18 @@ return;
             }
             this.quantizeRecording();
         }
-        this.recordPart.update();
-        return this.recordPart.events;
+
+        if(this.recordEnabled === 'midi'){
+            this.recordPart.update();
+            callback(this.recordPart.events);
+        }else if(this.recordEnabled === 'audio'){
+            var scope = this;
+            this.audio.stopRecording(function(event){
+                scope.recordPart.addEvent(event);
+                scope.recordPart.update();
+                callback([event]);
+            });
+        }
     };
 
 /*
@@ -19412,6 +20154,7 @@ return;
                 this.removePart(this.recordPart);
             }
         }else if(type === 'array'){
+            //console.log(data);
             this.removeEvents(data);
         }
     };
@@ -20808,6 +21551,86 @@ return;
         return '<a href="' + href + '"></a>';
     }
 
+
+    function getWaveformImageUrlFromBuffer(buffer, data, callback){
+        var i,
+            canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d'),
+            pcmRight = buffer.getChannelData(0),
+            pcmLeft = buffer.getChannelData(0),
+            numSamples = pcmRight.length,
+            width, // max width of a canvas on chrome/chromium is 32000
+            height = data.height || 100,
+            color = data.color || '#fff',
+            bgcolor = data.bgcolor || '#000',
+            density,
+            scale = height / 2,
+            sampleStep = data.sampleStep || 50,
+            height,
+            lastWidth,
+            numImages,
+            currentImage,
+            xPos = 0,
+            offset = 0,
+            urls = [];
+
+        if(data.width !== undefined){
+            width = data.width;
+            density = width / numSamples;
+        }else {
+            density = data.density || 1;
+            width = 1000;
+            lastWidth = (numSamples * data.density) % width;
+            numImages = Math.ceil((numSamples * data.density)/width);
+            currentImage = 0;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.fillStyle = bgcolor;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, scale);
+
+
+        for(i = 0; i < numSamples; i += sampleStep){
+            xPos = (i - offset) * density;
+            if(xPos >= width){
+                //console.log(width, height)
+                //ctx.closePath();
+                ctx.stroke();
+                urls.push(canvas.toDataURL('image/png'));
+                currentImage++;
+                if(currentImage === numImages - 1){
+                    canvas.width = lastWidth;
+                }else{
+                    canvas.width = width;
+                }
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                offset = i;
+                xPos = 0;
+                ctx.moveTo(xPos, scale - (pcmRight[i] * scale));
+            }else{
+                ctx.lineTo(xPos, scale - (pcmRight[i] * scale));
+                //console.log(scale - (pcmRight[i] * scale));
+            }
+        }
+
+        if(xPos < width){
+            //ctx.closePath();
+            ctx.stroke();
+            urls.push(canvas.toDataURL('image/png'));
+        }
+
+        callback(urls);
+    }
+
+
     //sequencer.findItem = findItem;
     //sequencer.storeItem = storeItem;
 
@@ -20860,6 +21683,7 @@ return;
     sequencer.protectedScope.filterItemsByClassName = filterItemsByClassName;
 
     sequencer.getMicrosecondsFromBPM = getMicrosecondsFromBPM;
+    sequencer.getWaveformImageUrlFromBuffer = getWaveformImageUrlFromBuffer;
 }());(function(){
 
     'use strict';

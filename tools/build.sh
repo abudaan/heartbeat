@@ -1,10 +1,13 @@
 #!/bin/bash
 files="../src/license.js
+    ../src/chris-wilson/WebMIDIAPIShim.js
     ../src/w3c-polyfill/saveAs.js
     ../src/heartbeat/open_module.js
     ../src/heartbeat/asset_manager.js
     ../src/heartbeat/assetpack.js
     ../src/heartbeat/audio_event.js
+    ../src/heartbeat/audio_recorder.js
+    ../src/heartbeat/audio_track.js
     ../src/heartbeat/channel_effects.js
     ../src/heartbeat/event_statistics.js
     ../src/heartbeat/find_event.js
@@ -22,7 +25,7 @@ files="../src/license.js
     ../src/heartbeat/midi_system.js
     ../src/heartbeat/midi_write.js
     ../src/heartbeat/note.js
-    ../src/heartbeat/parse_midi_events.js
+    ../src/heartbeat/parse_events.js
     ../src/heartbeat/parse_time_events.js
     ../src/heartbeat/part.js
     ../src/heartbeat/playhead.js

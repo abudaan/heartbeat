@@ -338,7 +338,7 @@
 
         //console.log(song.preroll, song.recording, track.recordEnabled);
 
-        if((song.prerolling || song.recording) && track.recordEnabled){
+        if((song.prerolling || song.recording) && track.recordEnabled === 'midi'){
             if(midiEvent.type === 144){
                 track.song.recordedNotes.push(note);
             }

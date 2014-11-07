@@ -72,6 +72,8 @@
         getPart,
         getParts,
         getTimeEvents,
+        setRecordingStatus,
+        _getRecordingPerTrack,
 
         songIndex = 0,
 
@@ -124,6 +126,10 @@
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
+        //this.audioRecordings = [];
+        //this.audioRecordingsById = {};
+        //this.audioRecordingsByName = {};
+        //this.numAudioRecordings = 0;
 
 
         //console.log('PPQ song', this.ppq)
@@ -198,9 +204,9 @@
         this.notesById = {};
         this.eventsById = {};
 
-        this.activeEvents;
-        this.activeNotes;
-        this.activeParts;
+        this.activeEvents = null;
+        this.activeNotes = null;
+        this.activeParts = null;
 
         this.recordedNotes = [];
         this.recordedEvents = [];
@@ -320,7 +326,7 @@
         var tracksById = song.tracksById,
             tracksByName = song.tracksByName,
             addedIds = [],
-            i, j, part, track;
+            i, part, track;
 
         for(i = newTracks.length - 1; i >= 0; i--){
             track = getTrack(newTracks[i]);
@@ -421,7 +427,7 @@
         var result = [];
 
         args = slice.call(args);
-        console.log(args);
+        //console.log(args);
 
         function loop(data, i, maxi){
             var arg, type, event;
@@ -662,6 +668,12 @@
             return;
         }
 
+        var userFeedback = false,
+            audioRecording = false,
+            i, track, self = this;
+
+        this.metronome.precountDurationInMillis = 0;
+
         // allow to start a recording while playing
         if(this.playing){
             this.precount = 0;
@@ -676,6 +688,7 @@
                 this.metronome.createPrecountEvents(precount);
                 this.precount = precount;
                 this.recordStartMillis = this.millis - this.metronome.precountDurationInMillis;
+                //console.log(this.metronome.precountDurationInMillis);
             }
 /*
             if(this.preroll === true){
@@ -691,23 +704,44 @@
 
 
         this.recordTimestamp = context.currentTime * 1000; // millis
+        this.recordTimestampTicks = this.ticks;
         this.recordId = 'REC' + new Date().getTime();
         this.recordedNotes = [];
         this.recordedEvents = [];
         this.recordingNotes = {};
-
-        var i, track;
-        for(i = this.numTracks - 1; i >= 0; i--){
-            track = this.tracks[i];
-            //console.log(track.name, track.index);
-            track.prepareForRecording(this.recordId);
-        }
+        this.recordingAudio = false;
 
         if(this.keyEditor !== undefined){
             this.keyEditor.prepareForRecording(this.recordId);
         }
 
+        for(i = this.numTracks - 1; i >= 0; i--){
+            track = this.tracks[i];
+            if(track.recordEnabled === 'audio'){
+                this.recordingAudio = true;
+            }
+            //console.log(track.name, track.index);
+            if(track.recordEnabled === 'audio'){
+                audioRecording = true;
+                track.prepareForRecording(this.recordId, function(){
+                    if(userFeedback === false){
+                        userFeedback = true;
+                        self.recordTimestamp = context.currentTime * 1000;
+                        setRecordingStatus.call(self);
+                    }
+                });
+            }else{
+                track.prepareForRecording(this.recordId);
+            }
+        }
 
+        if(audioRecording === false){
+            setRecordingStatus.call(this);
+        }
+    };
+
+
+    setRecordingStatus = function(){
         if(this.playing === false){
             if(this.precount > 0){
                 // recording with precount always starts at the beginning of a bar
@@ -732,30 +766,51 @@
     };
 
 
+    _getRecordingPerTrack = function(index, recordingHistory, callback){
+        var track, scope = this;
+
+        if(index < this.numTracks){
+            track = this.tracks[index];
+            track.stopRecording(this.recordId, function(events){
+                if(events !== undefined){
+                    recordingHistory[track.name] = events;
+                }
+                index++;
+                _getRecordingPerTrack.call(scope, index, recordingHistory, callback);
+            });
+        }else{
+            callback(recordingHistory);
+        }
+    };
+
+
     Song.prototype.stopRecording = function(){
+        if(this.recording === false){
+            return;
+        }
         this.recording = false;
         this.prerolling = false;
         this.precounting = false;
 
         //repetitiveTasks.playAfterPrecount = undefined;
         delete repetitiveTasks.playAfterPrecount;
+        var scope = this;
 
-        var i, track, events, recordingHistory = {};
-        for(i = this.numTracks - 1; i >= 0; i--){
-            track = this.tracks[i];
-            events = track.stopRecording(this.recordId);
-            if(events !== undefined){
-                recordingHistory[track.name] = events;
-            }
-        }
+        _getRecordingPerTrack.call(this, 0, {}, function(history){
+            scope.update();
+            dispatchEvent(scope, 'recorded_events', history);
+        });
+
+        // preform update immediately for midi recordings
+        this.update();
+
         // should I call update here or should I leave it to the user code?
         // var me = this;
         // setTimeout(function(){
         //     me.update();
         // }, 0);
-        this.update();
-        dispatchEvent(this, 'record_stop', recordingHistory);
-        return recordingHistory;
+
+        dispatchEvent(this, 'record_stop');
     };
 
 
@@ -774,6 +829,113 @@
             });
         }
         //this.update();
+    };
+
+/*
+    Song.prototype.addAudioRecording = function(recording){
+        if(recording.className !== 'AudioRecording'){
+            if(sequencer.debug > sequencer.WARN){
+                console.warn('this is not an audio recording');
+            }
+            return;
+        }
+        this.audioRecordingsById[recording.id] = recording;
+        this.audioRecordingsByName[recording.name] = recording;
+        this.audioRecordings.push(recording);
+        this.numAudioRecordings = this.audioRecordings.length;
+    };
+
+
+    Song.prototype.getAudioRecording = function(value){
+        var recording;
+        if(isNaN(value) === false){
+            recording = this.audioRecordings[parseInt(value, 10)];
+        }else{
+            recording = this.audioRecordingsById[value];
+            if(recording === undefined){
+                recording = this.audioRecordingsByName[value];
+            }
+        }
+        return recording;
+    };
+
+
+    Song.prototype.getLastAudioRecording = function(){
+        if(this.numAudioRecordings === 0){
+            return false;
+        }
+        return this.audioRecordings[this.numAudioRecordings - 1];
+    };
+
+    Song.prototype.purgeAudioRecordings = function(){
+        var recordingsInUse = [],
+            i, j, recording, event, sampleId;
+
+        for(i = this.audioEvents.length - 1; i >= 0; i--){
+            event = this.audioEvents[i];
+            sampleId = event.sampleId;
+            if(sampleId === undefined){
+                continue;
+            }
+            for(j = this.audioRecordings.length - 1; j >= 0; j--){
+                recording = this.audioRecordings[j];
+                if(recording.id === sampleId){
+                    recordingsInUse.push(recording);
+                }
+            }
+        }
+
+        this.audioRecordings = [];
+        this.audioRecordingsById = {};
+        this.audioRecordingsByName = {};
+        this.numAudioRecordings = recordingsInUse.length;
+
+        for(i = this.numAudioRecordings - 1; i >= 0; i--){
+            recording = recordingsInUse[i];
+            this.audioRecordings.push(recording);
+            this.audioRecordingsById[recording.id] = recording;
+            this.audioRecordingsByName[recording.name] = recording;
+        }
+    };
+
+*/
+
+    Song.prototype.purgeAudioRecordings = function(){
+        var recordingsInUse = [],
+            i, j, recording, event, sampleId;
+
+        for(i = this.audioEvents.length - 1; i >= 0; i--){
+            event = this.audioEvents[i];
+            sampleId = event.sampleId;
+            if(sampleId === undefined){
+                continue;
+            }
+            for(j = this.audioRecordings.length - 1; j >= 0; j--){
+                recording = this.audioRecordings[j];
+                if(recording.id === sampleId){
+                    recordingsInUse.push(recording);
+                }
+            }
+        }
+
+        this.audioRecordings = [];
+        this.audioRecordingsById = {};
+        this.audioRecordingsByName = {};
+        this.numAudioRecordings = recordingsInUse.length;
+
+        for(i = this.numAudioRecordings - 1; i >= 0; i--){
+            recording = recordingsInUse[i];
+            this.audioRecordings.push(recording);
+            this.audioRecordingsById[recording.id] = recording;
+            this.audioRecordingsByName[recording.name] = recording;
+        }
+    };
+
+    // @param name: name of sample pack
+    // @param compression: compress wav file to mp3 or ogg
+    Song.prototype.getAudioRecordingsAsSamplePack = function(name, compression){
+        var samplePack = {}; // json data
+        return samplePack;
     };
 
 
@@ -1637,13 +1799,13 @@
         //this.gainNode.disconnect(context.destination);
     };
 
-
+/*
     Song.prototype.cleanUp = function(){
         // add other references that need to be removed
         this.disconnect(masterGainNode);
         //this.disconnect(context.destination);
     };
-
+*/
 
     Song.prototype.getMidiInputs = function(cb){
         getMidiInputs(cb, this);

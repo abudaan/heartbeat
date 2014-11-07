@@ -1,5 +1,6 @@
 /*
     depends on uglifyjs, see: https://github.com/mishoo/UglifyJS
+
 */
 
 'use strict';
@@ -7,16 +8,19 @@
 var
     fs = require('fs'),
     path = require('path'),
-    jsp = require('uglify-js').parser,
-    pro = require('uglify-js').uglify,
+    jsp,// = require('uglify-js').parser,
+    pro, // = require('uglify-js').uglify,
     args = process.argv,
 
     files = [
+        'chris-wilson/WebMIDIAPIShim.js',
         'w3c-polyfill/saveAs.js',
         'heartbeat/open_module.js',
         'heartbeat/asset_manager.js',
         'heartbeat/assetpack.js',
         'heartbeat/audio_event.js',
+        'heartbeat/audio_recorder.js',
+        'heartbeat/audio_track.js',
         'heartbeat/channel_effects.js',
         'heartbeat/event_statistics.js',
         'heartbeat/find_event.js',
@@ -34,7 +38,7 @@ var
         'heartbeat/midi_system.js',
         'heartbeat/midi_write.js',
         'heartbeat/note.js',
-        'heartbeat/parse_midi_events.js',
+        'heartbeat/parse_events.js',
         'heartbeat/parse_time_events.js',
         'heartbeat/part.js',
         'heartbeat/playhead.js',
@@ -81,6 +85,9 @@ p = path.resolve('../build/heartbeat.js');
 fs.writeFileSync(p, license + '\n\n\n' + concatenated);
 
 if(quickBuild === false){
+    jsp = require('uglify-js').parser,
+    pro = require('uglify-js').uglify,
+
     ast = jsp.parse(concatenated); // parse code and get the initial AST
     ast = pro.ast_mangle(ast); // get a new AST with mangled names
     ast = pro.ast_squeeze(ast); // get an AST with compression optimizations

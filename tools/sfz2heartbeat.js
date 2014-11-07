@@ -51,6 +51,7 @@ var
         'release_envelope': 'equal power',
         'key_scaling_release': false,
         'key_scaling_panning': false,
+        'limit_keyrange': false,
         'sustain': true,
         'compression_type': 'ogg',
         'compression_level': 4,
@@ -239,7 +240,6 @@ function parseConfigFile(data){
         config.samplepack_folder = config.samplepack_folder + '/' + config.compression_level;
     }
 
-
     config.tmp_dir = tmpDir;
     //console.log(config);
     return config;
@@ -328,10 +328,12 @@ function loopSfzFiles(index, callback){
         name = sfzFile.name;
         json = sfzToJson(sfzFile.path);
         console.time(index + ' ' + name + '.sfz');
+        //console.log(defaultConfig);
         parseSfzFile(soxPath, json, defaultConfig, function(instrument, samplepack){
+            //console.log(samplepack);
             saveAssets(instrument, samplepack, defaultConfig, function(){
                 console.timeEnd(index + ' ' + name + '.sfz');
-                console.log(samplepack.filesize);
+                //console.log(samplepack.filesize);
                 setTimeout(function(){
                     loopSfzFiles(++index, callback);
                 }, 0);
@@ -584,7 +586,7 @@ function init(){
             fs.mkdirSync(runDir);
         }
     }
-    console.log(runDir);
+    //console.log(runDir);
     parseArguments();
 
     // get all the .sfz and .cfg files in the supplied folders

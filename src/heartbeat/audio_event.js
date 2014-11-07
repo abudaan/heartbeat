@@ -32,6 +32,7 @@
 
         // provide either buffer (AudioBuffer) or path to a sample in the sequencer.storage object
         this.buffer = config.buffer;
+        this.sampleId = config.sampleId;
         this.path = config.path;
 
         if(this.buffer === undefined && this.path === undefined){
@@ -105,13 +106,18 @@
             this.sampleOffset = this.sampleOffsetMillis/1000;
         }
 
+        this.latencyCompensation = config.latencyCompensation;
+        if(this.latencyCompensation === undefined){
+            this.latencyCompensation = 0;
+        }
+
         // if the playhead starts somewhere in the sample, this value will be set by the scheduler
         this.playheadOffset = 0;
 
         this.className =  'AudioEvent';
         this.time =  0;
         this.type =  'audio';
-        this.id = 'event_' + audioEventId++;
+        this.id = 'A' + audioEventId + new Date().getTime();
     };
 
 

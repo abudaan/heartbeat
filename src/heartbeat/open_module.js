@@ -108,6 +108,15 @@
     audioTest = null;
 */
 
+
+    navigator.getUserMedia = (
+        navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia
+    );
+
+
     window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
     window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
 
@@ -207,6 +216,7 @@
         jazz: false,
         ogg: false,
         mp3: false,
+        record_audio: navigator.getUserMedia !== undefined,
         util: {},
         debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',

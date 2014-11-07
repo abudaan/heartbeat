@@ -193,7 +193,7 @@
                         //console.log('this shouldn\'t happen!');
                         //continue;
                         audioEvent = this.scheduledAudioEvents[event.id];
-                        if(audioEvent.sample.source !== undefined){
+                        if(audioEvent.sample !== undefined && audioEvent.sample.source !== undefined){
                             audioEvent.stopSample(0);
                         // }else{
                         //     continue;

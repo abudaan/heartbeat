@@ -53,6 +53,9 @@ var
     keyscalingRelease,
     releaseEnvelope,
     releaseDuration,
+    limitKeyRange,
+    limitLoKey,
+    limitHiKey,
     config,
 
     soxPath,
@@ -88,6 +91,7 @@ function parse(sox, sfz, cfg, callback){
 
     keyscalingPanning = config.key_scaling_panning !== false;
     keyscalingRelease = config.key_scaling_release !== false;
+    limitKeyRange = config.limit_keyrange !== false;
     releaseEnvelope = config.release_envelope;
 
     instrumentName = config.instrument_name || sfz.file_name;
@@ -182,6 +186,12 @@ function parse(sox, sfz, cfg, callback){
         instrument.keyscaling_panning = keyscalingPanning;
     }
 
+    if(limitKeyRange !== false){
+        limitKeyRange = config.limit_keyrange.replace(/\s/, '').split(',');
+        limitLoKey = parseInt(limitKeyRange[0], 10);
+        limitHiKey = parseInt(limitKeyRange[1], 10);
+    }
+
     // add other keys
     for(i in config){
         if(config.hasOwnProperty(i)){
@@ -206,6 +216,16 @@ function parse(sox, sfz, cfg, callback){
     groupIndex = -1;
 
     loopElements(0, function(){
+
+        if(limitKeyRange !== false){
+            if(lowestNote < limitLoKey){
+                lowestNote = limitLoKey;
+            }
+            if(highestNote > limitHiKey){
+                highestNote = limitHiKey;
+            }
+        }
+
         noteRange = highestNote - lowestNote;
         //console.log('lowest', lowestNote, 'highest', highestNote, 'range', noteRange);
         setKeyScalingPanning();
@@ -329,7 +349,6 @@ function parseRegion(region, callback){
     regionHivel = region.hivel;
     regionTune = region.tune;
 
-
     if(regionLokey !== undefined && regionHikey !== undefined){
         regionLokey = parseInt(regionLokey, 10);
         regionHikey = parseInt(regionHikey, 10);
@@ -449,6 +468,10 @@ function parseRegion(region, callback){
         lowestNote = pitch < lowestNote ? pitch : lowestNote;
         highestNote = pitch > highestNote ? pitch : highestNote;
 
+        if(pitch < limitLoKey || pitch > limitHiKey){
+            callback();
+            return;
+        }
         //console.log(pitch, groupLovel, groupHivel);
         processSample(sample, 0, function(result){
             if(result !== false){

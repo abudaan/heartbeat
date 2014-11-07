@@ -19,6 +19,7 @@
         timedTasks, // defined in open_module.js
         scheduledTasks, // defined in open_module.js
         repetitiveTasks, // defined in open_module.js
+        masterGainNode, // defined in open_module.js
 
         r = 0,
 
@@ -41,12 +42,19 @@
     sequencer.deleteSong = function(song){
         // clean up
         song.stop();
+        song.disconnect(masterGainNode);
+
         song.listeners = null;
+        //song.audioRecordings = null;
+        //song.audioRecordingsById = null;
+        //song.audioRecordingsByName = null;
 
         song.midiEventListeners = null;
         var i, track;
-        for(i = song.tracks - 1; i >= 0; i--){
+
+        for(i = song.numTracks - 1; i >= 0; i--){
             track = song.tracks[i];
+            track.audio.recorder.cleanup();
             track.midiEventListeners = null;
         }
 
@@ -501,6 +509,7 @@
         typeString = sequencer.protectedScope.typeString;
         context = sequencer.protectedScope.context;
         createMidiEvent = sequencer.createMidiEvent;
+        masterGainNode = sequencer.protectedScope.masterGainNode;
         heartbeat();
     });
 

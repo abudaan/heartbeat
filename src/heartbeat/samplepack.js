@@ -292,7 +292,7 @@
 
     // private
     function parseAudioData(audiodata, callback){
-        //console.log(audiodata);
+        //console.log(audiodata, typeString(audiodata), audiodata.byteLength, ArrayBuffer.isView(audiodata));
         var ts = sequencer.getTime();
         //console.log(ts);
         if(audiodata !== null){

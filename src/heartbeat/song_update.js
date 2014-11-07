@@ -435,7 +435,7 @@
                 song.lastEvent[key] = position[key];
             }
         }
-        console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
+        //console.log(song.name, song.durationTicks, song.durationMillis, song.bars);
     }
 
 
@@ -525,7 +525,7 @@
         for(i = 0; i < maxi; i++){
             event = events[i];
 
-            time =(event.recordMillis - timestamp) + startMillis;
+            time = (event.recordMillis - timestamp) + startMillis;
             position = playhead.update('millis', time - totalTime); // update by supplying the diff in millis
             totalTime = time;
 

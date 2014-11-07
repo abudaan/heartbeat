@@ -1,0 +1,46 @@
+#log{
+    margin-top: 10px;
+    /*max-height: 250px;*/
+}
+#log>div{
+    float: left;
+    margin-right: 20px;
+}
+#song_events{
+    /*width: 200px;*/
+}
+#recorded_events{
+    /*width: 400px;*/
+    width: 100%;
+}
+#playhead{
+    width: 90%;
+}
+.output{
+    /*max-height: 220px;*/
+    overflow: auto;
+    margin-top: 3px;
+}
+.position{
+    text-align: right;
+}
+table{
+    width: 100%;
+}
+table, th, td{
+    border: none;
+}
+td{
+    padding: 1px 5px 1px 5px;
+    vertical-align: middle;
+}
+td:first-child{
+    color: inherit;
+}
+tr:first-child{
+    border: 1px solid #444;
+    color: blue;
+}
+em{
+    font-weight: bolder;
+}

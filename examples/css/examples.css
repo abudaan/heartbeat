@@ -44,6 +44,7 @@ input[type="range"].legal::-webkit-slider-thumb{
 }
 input[type="range"].illegal::-webkit-slider-thumb{
     background-color: #ff0f0f;
+    /*background-color: #FF1CAE;*/
 }
 label div{
     font-family: monospace;
@@ -85,6 +86,7 @@ p{
 .warn{
     font-weight: bolder;
     font-size: 14px;
+    /*color: #FF1CAE;*/
     color: #ff0f0f;
     margin-bottom: 10px;
 }

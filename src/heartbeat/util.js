@@ -1199,6 +1199,86 @@
         return '<a href="' + href + '"></a>';
     }
 
+
+    function getWaveformImageUrlFromBuffer(buffer, data, callback){
+        var i,
+            canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d'),
+            pcmRight = buffer.getChannelData(0),
+            pcmLeft = buffer.getChannelData(0),
+            numSamples = pcmRight.length,
+            width, // max width of a canvas on chrome/chromium is 32000
+            height = data.height || 100,
+            color = data.color || '#fff',
+            bgcolor = data.bgcolor || '#000',
+            density,
+            scale = height / 2,
+            sampleStep = data.sampleStep || 50,
+            height,
+            lastWidth,
+            numImages,
+            currentImage,
+            xPos = 0,
+            offset = 0,
+            urls = [];
+
+        if(data.width !== undefined){
+            width = data.width;
+            density = width / numSamples;
+        }else {
+            density = data.density || 1;
+            width = 1000;
+            lastWidth = (numSamples * data.density) % width;
+            numImages = Math.ceil((numSamples * data.density)/width);
+            currentImage = 0;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.fillStyle = bgcolor;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, scale);
+
+
+        for(i = 0; i < numSamples; i += sampleStep){
+            xPos = (i - offset) * density;
+            if(xPos >= width){
+                //console.log(width, height)
+                //ctx.closePath();
+                ctx.stroke();
+                urls.push(canvas.toDataURL('image/png'));
+                currentImage++;
+                if(currentImage === numImages - 1){
+                    canvas.width = lastWidth;
+                }else{
+                    canvas.width = width;
+                }
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                offset = i;
+                xPos = 0;
+                ctx.moveTo(xPos, scale - (pcmRight[i] * scale));
+            }else{
+                ctx.lineTo(xPos, scale - (pcmRight[i] * scale));
+                //console.log(scale - (pcmRight[i] * scale));
+            }
+        }
+
+        if(xPos < width){
+            //ctx.closePath();
+            ctx.stroke();
+            urls.push(canvas.toDataURL('image/png'));
+        }
+
+        callback(urls);
+    }
+
+
     //sequencer.findItem = findItem;
     //sequencer.storeItem = storeItem;
 
@@ -1251,4 +1331,5 @@
     sequencer.protectedScope.filterItemsByClassName = filterItemsByClassName;
 
     sequencer.getMicrosecondsFromBPM = getMicrosecondsFromBPM;
+    sequencer.getWaveformImageUrlFromBuffer = getWaveformImageUrlFromBuffer;
 }());
