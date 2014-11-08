@@ -13,6 +13,7 @@
         console = window.console,
 
         lastEventTypeByte,
+        trackName,
 
         //import
         createStream; // defined in midi_stream.js
@@ -30,7 +31,6 @@
     }
 
 
-        var trackName;
     function readEvent(stream) {
         var event = {};
         //var lastEventTypeByte; // for running status

@@ -15,7 +15,6 @@
         createFollowEvent, // → defined in song_follow_event.js
         createScheduler, // → defined in scheduler.js
         createMetronome, // → defined in metronome.js
-        parseTimeEvents, // → defined in parse_time_event.js
         followEvent, // → defined in follow_event_song.js
         masterGainNode, // -> defined in open_module.js
         context, // -> defined in open_module.js
@@ -333,7 +332,7 @@
             if(track === false){
                 continue;
             }
-            if(track.song !== undefined){
+            if(track.song !== undefined && track.song !== null){
                 track = track.copy();
             }
             track.song = song;
@@ -1956,7 +1955,6 @@
         masterGainNode = sequencer.protectedScope.masterGainNode;
 
         createMidiEvent = sequencer.createMidiEvent;
-        parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         createGrid = sequencer.protectedScope.createGrid;
 
         initMidi = sequencer.protectedScope.initMidiSong;

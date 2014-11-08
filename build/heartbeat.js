@@ -1556,6 +1556,7 @@ if (typeof module !== "undefined" && module !== null) {
         typeString, // defined in utils.js
         objectForEach, // defined in utils.js
         removeMidiFile, // defined in asset_manager.js
+        removeAssetPack, // defined in asset_manager.js
         removeInstrument, // defined in asset_manager.js
         removeSamplePack, // defined in asset_manager.js
 
@@ -1588,13 +1589,15 @@ if (typeof module !== "undefined" && module !== null) {
         var occupied = findItem(assetpack.localPath, sequencer.storage.assetpacks, true),
             action = assetpack.action;
 
-        //console.log(occupied);
+        //console.log('occ', occupied);
         if(occupied && occupied.className === 'AssetPack' && action !== 'overwrite'){
             if(sequencer.debug >= 2){
                 console.warn('there is already an AssetPack at', assetpack.localPath);
             }
+            return true;
         }else{
             storeItem(assetpack, assetpack.localPath, sequencer.storage.assetpacks);
+            return false;
         }
     }
 
@@ -1654,35 +1657,73 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-    function loadLoop(pack, callback){
-        var i, assets, asset;
+    function loadLoop(assetpack, callback){
+        var i, assets, asset,
+            loaded = store(assetpack),
+            localPath = assetpack.localPath;
 
-        assets = pack.midifiles;
+
+        if(loaded === true){
+            assetpack = findItem(localPath, sequencer.storage.assetpacks, true);
+            callback(assetpack);
+            return;
+        }
+
+        if(assetpack.url !== undefined){
+            var packs = sequencer.storage.assetpacks,
+                tmp, p, double = null;
+
+            for(p in packs){
+                tmp = packs[p];
+                if(tmp.className !== 'AssetPack'){
+                    continue;
+                }
+                //console.log('loop', p, assetpack.id);
+                if(tmp.id !== assetpack.id && tmp.url === assetpack.url){
+                    double = tmp;
+                    break;
+                }
+            }
+            if(double !== null){
+                //console.log(double.id, assetpack.id);
+                localPath = assetpack.localPath;
+                removeAssetPack(localPath);
+
+                assetpack = null;
+                assetpack = findItem(double.localPath, sequencer.storage.assetpacks, true);
+                //console.log(assetpack.id, double.id);
+                callback(assetpack);
+                return;
+            }
+        }
+
+
+        assets = assetpack.midifiles;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('midifile', assets[i]);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             sequencer.addMidiFile(asset);
         }
 
-        assets = pack.instruments;
+        assets = assetpack.instruments;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('instrument', assets[i]);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             sequencer.addInstrument(asset);
         }
 
-        assets = pack.samplepacks;
+        assets = assetpack.samplepacks;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('samplepack', assets[i], pack);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             //console.log(asset.folder, pack.fileSize);
             sequencer.addSamplePack(asset);
         }
 
-        callback();
+        callback(assetpack);
     }
 
 
@@ -1722,6 +1763,10 @@ if (typeof module !== "undefined" && module !== null) {
             return false;
         }
 
+        if(callback === undefined){
+            callback = function(){};
+        }
+
         if(config.json){
             json = config.json;
             name = config.name;
@@ -1753,25 +1798,19 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
 
-        assetpack = new AssetPack(config);
+        //assetpack = new AssetPack(config);
+        //console.log(assetpack.id);
 
         sequencer.addTask({
             type: 'load asset pack',
             method: load,
-            params: assetpack
-        }, function(success){
-            //console.log('success', assetpack);
-            //if(success === false){
-            if(assetpack.loaded === false){
-                callback(false);
-                return;
-            }
-            //console.log('loaded', assetpack);
-            store(assetpack);
-            if(callback){
-                callback(assetpack);
-            }
-        }, true);
+            params: new AssetPack(config)
+        }, function(assetpack){
+            config = null;
+            //console.log(assetpack.id);
+            callback(assetpack);
+            //console.log('assetpack', assetpack);
+        }, false);
 
         sequencer.startTaskQueue();
 /*
@@ -1804,6 +1843,7 @@ if (typeof module !== "undefined" && module !== null) {
         removeMidiFile = sequencer.removeMidiFile;
         removeInstrument = sequencer.removeInstrument;
         removeSamplePack = sequencer.removeSamplePack;
+        removeAssetPack = sequencer.removeAssetPack;
     });
 
 
@@ -2315,7 +2355,6 @@ if (typeof module !== "undefined" && module !== null) {
 
 
         this.javascriptNode.onaudioprocess = function(e){
-
             // TODO: fix latency issue
 /*
             if(timestamp !== null){
@@ -5042,6 +5081,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         sequencer.createSimpleSynth = function(config){
             config = config || {};
+            //console.log('creating sinewave');
             return new SimpleSynth(config);
         };
     });
@@ -5197,7 +5237,7 @@ if (typeof module !== "undefined" && module !== null) {
             type: 'load instrument config',
             method: load,
             params: instrument
-        }, function(){
+        }, function(value){
             //console.log(instrument, callback);
             store(instrument);
             if(callback){
@@ -7249,6 +7289,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.part.removeEvents(this.part.events);
         }
         this.events = createEvents(this, startBar, endBar, id);
+        this.numEvents = this.events.length;
         this.part.addEvents(this.events);
         this.bars = this.song.bars;
         parseMetronomeEvents(this.song, this.events);
@@ -8018,6 +8059,7 @@ if (typeof module !== "undefined" && module !== null) {
         base64ToBinary, // defined in util.js
         typeString, // defined in util.js
         ajax, // defined in util.js
+        copyName, // defined in util.js
         findItem, // defined in util.js
         storeItem, // defined in util.js
         deleteItem, // defined in util.js
@@ -8025,6 +8067,7 @@ if (typeof module !== "undefined" && module !== null) {
         createTrack, // defined in track.js
         createPart, // defined in part.js
         createMidiEvent, // defined in midi_event.js
+        removeMidiFile, // defined in asset_manager.js
 
         index = 0,
         MidiFile;
@@ -8033,14 +8076,40 @@ if (typeof module !== "undefined" && module !== null) {
     function cleanup(midifile, callback){
         midifile = undefined;
         if(callback){
-            callback(false);
+            callback();
         }
     }
 
 
     function parse(midifile, buffer, callback){
+
+        var localPath = midifile.localPath,
+            loaded = findItem(localPath, sequencer.storage.midi, true),
+            files = sequencer.storage.midi,
+            tmp, i;
+
+
+        if(loaded !== false){
+            midifile = null;
+            midifile = loaded;
+            //console.log(loaded.id, midifile.id);
+            callback(midifile);
+            return;
+        }
+
+        for(i in files){
+            tmp = files[i];
+            if(tmp !== midifile && tmp.url === midifile.url){
+                midifile = findItem(tmp.localPath, sequencer.storage.midi, true);
+                callback(midifile);
+                return;
+            }
+        }
+
+        store(midifile);
+
         //console.time('parse midi');
-        var data, i, j, numEvents, part, track, numTracks,
+        var data, j, numEvents, part, track, numTracks,
             events, event, ticks, tmpTicks, channel,
             parsed, timeEvents, noteNumber, bpm,
             lastNoteOn, lastNoteOff, ppqFactor,
@@ -8236,7 +8305,7 @@ if (typeof module !== "undefined" && module !== null) {
         midifile.autoSize = true;
         //console.timeEnd('parse midi');
         midifile.loaded = true;
-        callback();
+        callback(midifile);
     }
 
 
@@ -8306,10 +8375,12 @@ if (typeof module !== "undefined" && module !== null) {
         if(occupied && occupied.className === 'MidiFile' && action !== 'overwrite'){
             if(sequencer.debug >= 2){
                 console.warn('there is already a midifile at', midifile.localPath);
-                cleanup(midifile);
+                //cleanup(midifile);
+                return true;
             }
         }else{
             storeItem(midifile, midifile.localPath, sequencer.storage.midi);
+            return false;
         }
     }
 
@@ -8317,6 +8388,11 @@ if (typeof module !== "undefined" && module !== null) {
     MidiFile = function(config){
         this.id = 'MF' + index++ + new Date().getTime();
         this.className = 'MidiFile';
+
+        // copy MidiFile
+        if(config === undefined){
+            return;
+        }
 
         this.url = config.url;
         this.json = config.json;
@@ -8336,6 +8412,28 @@ if (typeof module !== "undefined" && module !== null) {
                 this.localPath = this.folder !== undefined ? this.folder + '/' + this.name : this.name;
             }
         }
+    };
+
+
+    MidiFile.prototype.copy = function(){
+        var mf = new MidiFile();
+        mf.name = copyName(this.name);
+        mf.bpm = this.bpm;
+        mf.ppq = this.ppq;
+        mf.nominator = this.numerator;
+        mf.denominator = this.denominator;
+        mf.timeEvents = [].concat(this.timeEvents);
+        mf.tracks = [];
+        mf.numTracks = this.numTracks;
+        mf.song = null;
+
+
+        this.tracks.forEach(function(track){
+            track.update();
+            //console.log(track.parts);
+            mf.tracks.push(track.copy());
+        });
+        return mf;
     };
 
 
@@ -8378,19 +8476,19 @@ if (typeof module !== "undefined" && module !== null) {
             //console.log('config', name, folder, json.name, json.folder);
         }
 
-        midifile = new MidiFile(config);
+        //midifile = new MidiFile(config);
+        //console.log(midifile.id);
 
         sequencer.addTask({
             type: 'load midifile',
             method: load,
-            params: midifile
-        }, function(){
+            params: new MidiFile(config)
+        }, function(midifile){
+            //console.log(midifile.id);
             //console.log(midifile);
-            store(midifile);
-            if(callback){
-                callback(midifile);
-            }
-        });
+            config = null;
+            callback(midifile);
+        },false);
 
         sequencer.startTaskQueue();
 
@@ -8419,6 +8517,8 @@ if (typeof module !== "undefined" && module !== null) {
         createPart = sequencer.createPart;
         createTrack = sequencer.createTrack;
         createMidiEvent = sequencer.createMidiEvent;
+        removeMidiFile = sequencer.removeMidiFile;
+        copyName = sequencer.protectedScope.copyName;
     });
 
 }());(function(){
@@ -8623,6 +8723,7 @@ if (typeof module !== "undefined" && module !== null) {
         console = window.console,
 
         lastEventTypeByte,
+        trackName,
 
         //import
         createStream; // defined in midi_stream.js
@@ -8640,7 +8741,6 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
-        var trackName;
     function readEvent(stream) {
         var event = {};
         //var lastEventTypeByte; // for running status
@@ -10576,7 +10676,14 @@ if (typeof module !== "undefined" && module !== null) {
             type,
             i = 0;
 
+        if(song === undefined){
+            timeEvents = [];
+            console.log('reset', timeEvents);
+            return;
+        }
+
         reset(song);
+
         //console.log('parse time events', numTimeEvents);
         setTickDuration();
         setTicksPerBeat();
@@ -10638,7 +10745,6 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     function reset(song){
-
         playbackSpeed = song.playbackSpeed;
         timeEvents = song.timeEvents;
         numTimeEvents = timeEvents.length;
@@ -11362,7 +11468,7 @@ if (typeof module !== "undefined" && module !== null) {
             if(eventsById.hasOwnProperty(id)){
                 event = eventsById[id];
                 copy = event.copy();
-                //console.log(clone.ticks, partTicks);
+                //console.log(copy.ticks, partTicks);
                 copy.ticks = copy.ticks - partTicks;
                 copies.push(copy);
             }
@@ -13263,7 +13369,7 @@ if (typeof module !== "undefined" && module !== null) {
             }
             //console.log(pack.localPath, pack.loaded);
             if(callback){
-                callback();
+                callback(true);
             }
         });
     }
@@ -13359,6 +13465,7 @@ if (typeof module !== "undefined" && module !== null) {
             if(store(pack) === true){
                 loadLoop(pack, callback);
             }else{
+                //console.log(callback);
                 callback(false);
             }
         }
@@ -13566,10 +13673,15 @@ if (typeof module !== "undefined" && module !== null) {
             type: 'load sample pack',
             method: load,
             params: samplepack
-        }, function(){
-            //console.log(samplepack);
+        }, function(value){
+            //console.log(samplepack, value);
             if(callback){
-                callback(samplepack);
+                if(value === false){
+                    samplepack = null;
+                    callback(null);
+                }else{
+                    callback(samplepack);
+                }
             }
         }, callbackAfterAllTasksAreDone);
 
@@ -13977,6 +14089,7 @@ if (typeof module !== "undefined" && module !== null) {
         scheduledTasks, // defined in open_module.js
         repetitiveTasks, // defined in open_module.js
         masterGainNode, // defined in open_module.js
+        parseTimeEvents, // defined in parse_time_events.js
 
         r = 0,
 
@@ -13996,32 +14109,78 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
+    sequencer.getSongs = function(){
+        return activeSongs;
+    };
+
+
+    function removeProperties(obj){
+        var i;
+        for(i in obj){
+            if(obj.hasOwnProperty(i)){
+                //console.log(i);
+                obj[i] = null;
+            }
+        }
+    }
+
     sequencer.deleteSong = function(song){
+        if(song === undefined || song === null || song.className !== 'Song'){
+            return;
+        }
+
         // clean up
         song.stop();
         song.disconnect(masterGainNode);
-
-        song.listeners = null;
-        //song.audioRecordings = null;
-        //song.audioRecordingsById = null;
-        //song.audioRecordingsByName = null;
-
-        song.midiEventListeners = null;
-        var i, track;
-
-        for(i = song.numTracks - 1; i >= 0; i--){
-            track = song.tracks[i];
-            track.audio.recorder.cleanup();
-            track.midiEventListeners = null;
-        }
-
-        song.followEvent.allListenersById = null;
-        song.followEvent.allListenersByType = null;
+        //parseTimeEvents();
 
         // remove reference
         delete activeSongs[song.id];
 
+        var i, track,
+            j, part,
+            k, note, event;
+
+        //console.log(allEvents.length, song.events.length, metronome.events.length);
+///*
+        for(i = song.eventsMidiAudioMetronome.length - 1; i >= 0; i--){
+            event = song.eventsMidiAudioMetronome[i];
+            removeProperties(event);
+        }
+
+        for(i = song.timeEvents.length - 1; i >= 0; i--){
+            event = song.timeEvents[i];
+            //removeProperties(event);
+        }
+//*/
+
+        for(i = song.numTracks - 1; i >= 0; i--){
+
+            track = song.tracks[i];
+            track.audio.recorder.cleanup();
+
+            for(j = track.numParts - 1; j >= 0; j--){
+                part = track.parts[j];
+
+                for(k = part.numNotes - 1; k >= 0; k--){
+                    note = part.notes[k];
+                    removeProperties(note);
+                }
+
+                // for(k = part.numEvents - 1; k >= 0; k--){
+                //     event = part.events[k];
+                //     removeProperties(event);
+                // }
+
+                removeProperties(part);
+                part = null;
+            }
+            removeProperties(track);
+            track = null;
+        }
+        removeProperties(song);
         song = null;
+        return null;
     };
 
 
@@ -14467,6 +14626,7 @@ if (typeof module !== "undefined" && module !== null) {
         context = sequencer.protectedScope.context;
         createMidiEvent = sequencer.createMidiEvent;
         masterGainNode = sequencer.protectedScope.masterGainNode;
+        parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         heartbeat();
     });
 
@@ -14629,7 +14789,6 @@ if (typeof module !== "undefined" && module !== null) {
         createFollowEvent, // → defined in song_follow_event.js
         createScheduler, // → defined in scheduler.js
         createMetronome, // → defined in metronome.js
-        parseTimeEvents, // → defined in parse_time_event.js
         followEvent, // → defined in follow_event_song.js
         masterGainNode, // -> defined in open_module.js
         context, // -> defined in open_module.js
@@ -14947,7 +15106,7 @@ if (typeof module !== "undefined" && module !== null) {
             if(track === false){
                 continue;
             }
-            if(track.song !== undefined){
+            if(track.song !== undefined && track.song !== null){
                 track = track.copy();
             }
             track.song = song;
@@ -16570,7 +16729,6 @@ if (typeof module !== "undefined" && module !== null) {
         masterGainNode = sequencer.protectedScope.masterGainNode;
 
         createMidiEvent = sequencer.createMidiEvent;
-        parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         createGrid = sequencer.protectedScope.createGrid;
 
         initMidi = sequencer.protectedScope.initMidiSong;
@@ -19564,7 +19722,7 @@ if (typeof module !== "undefined" && module !== null) {
             part = parts[i];
             copiedParts.push(part.copy());
         }
-
+        //console.log(parts.length);
         track.addParts(copiedParts);
         return track;
     };
@@ -19994,7 +20152,7 @@ return;
 
 
     Track.prototype.setInstrument = function(arg){
-        //console.log('Track.setInstrument()', arg, this.id);
+        //console.log('Track.setInstrument()', arg, this.name);
         if(arg === '' || arg === undefined || arg === false){
             arg = getDefaultInstrumentConfig(this);
             //console.log('default', arg);
@@ -20005,6 +20163,16 @@ return;
             instrument = createInstrument(getDefaultInstrumentConfig(this));
         }
 
+/*
+        var instrument;
+
+        if(arg === '' || arg === undefined || arg === false){
+            getDefaultInstrumentConfig(this);
+        }else{
+            instrument = createInstrument(arg);
+        }
+
+*/
         instrument.track = this;
         // stop possible scheduled notes by the previous instrument
         if(this.instrument){

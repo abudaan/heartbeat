@@ -17,6 +17,7 @@
         base64ToBinary, // defined in util.js
         typeString, // defined in util.js
         ajax, // defined in util.js
+        copyName, // defined in util.js
         findItem, // defined in util.js
         storeItem, // defined in util.js
         deleteItem, // defined in util.js
@@ -24,6 +25,7 @@
         createTrack, // defined in track.js
         createPart, // defined in part.js
         createMidiEvent, // defined in midi_event.js
+        removeMidiFile, // defined in asset_manager.js
 
         index = 0,
         MidiFile;
@@ -32,14 +34,40 @@
     function cleanup(midifile, callback){
         midifile = undefined;
         if(callback){
-            callback(false);
+            callback();
         }
     }
 
 
     function parse(midifile, buffer, callback){
+
+        var localPath = midifile.localPath,
+            loaded = findItem(localPath, sequencer.storage.midi, true),
+            files = sequencer.storage.midi,
+            tmp, i;
+
+
+        if(loaded !== false){
+            midifile = null;
+            midifile = loaded;
+            //console.log(loaded.id, midifile.id);
+            callback(midifile);
+            return;
+        }
+
+        for(i in files){
+            tmp = files[i];
+            if(tmp !== midifile && tmp.url === midifile.url){
+                midifile = findItem(tmp.localPath, sequencer.storage.midi, true);
+                callback(midifile);
+                return;
+            }
+        }
+
+        store(midifile);
+
         //console.time('parse midi');
-        var data, i, j, numEvents, part, track, numTracks,
+        var data, j, numEvents, part, track, numTracks,
             events, event, ticks, tmpTicks, channel,
             parsed, timeEvents, noteNumber, bpm,
             lastNoteOn, lastNoteOff, ppqFactor,
@@ -235,7 +263,7 @@
         midifile.autoSize = true;
         //console.timeEnd('parse midi');
         midifile.loaded = true;
-        callback();
+        callback(midifile);
     }
 
 
@@ -305,10 +333,12 @@
         if(occupied && occupied.className === 'MidiFile' && action !== 'overwrite'){
             if(sequencer.debug >= 2){
                 console.warn('there is already a midifile at', midifile.localPath);
-                cleanup(midifile);
+                //cleanup(midifile);
+                return true;
             }
         }else{
             storeItem(midifile, midifile.localPath, sequencer.storage.midi);
+            return false;
         }
     }
 
@@ -316,6 +346,11 @@
     MidiFile = function(config){
         this.id = 'MF' + index++ + new Date().getTime();
         this.className = 'MidiFile';
+
+        // copy MidiFile
+        if(config === undefined){
+            return;
+        }
 
         this.url = config.url;
         this.json = config.json;
@@ -335,6 +370,28 @@
                 this.localPath = this.folder !== undefined ? this.folder + '/' + this.name : this.name;
             }
         }
+    };
+
+
+    MidiFile.prototype.copy = function(){
+        var mf = new MidiFile();
+        mf.name = copyName(this.name);
+        mf.bpm = this.bpm;
+        mf.ppq = this.ppq;
+        mf.nominator = this.numerator;
+        mf.denominator = this.denominator;
+        mf.timeEvents = [].concat(this.timeEvents);
+        mf.tracks = [];
+        mf.numTracks = this.numTracks;
+        mf.song = null;
+
+
+        this.tracks.forEach(function(track){
+            track.update();
+            //console.log(track.parts);
+            mf.tracks.push(track.copy());
+        });
+        return mf;
     };
 
 
@@ -377,19 +434,19 @@
             //console.log('config', name, folder, json.name, json.folder);
         }
 
-        midifile = new MidiFile(config);
+        //midifile = new MidiFile(config);
+        //console.log(midifile.id);
 
         sequencer.addTask({
             type: 'load midifile',
             method: load,
-            params: midifile
-        }, function(){
+            params: new MidiFile(config)
+        }, function(midifile){
+            //console.log(midifile.id);
             //console.log(midifile);
-            store(midifile);
-            if(callback){
-                callback(midifile);
-            }
-        });
+            config = null;
+            callback(midifile);
+        },false);
 
         sequencer.startTaskQueue();
 
@@ -418,6 +475,8 @@
         createPart = sequencer.createPart;
         createTrack = sequencer.createTrack;
         createMidiEvent = sequencer.createMidiEvent;
+        removeMidiFile = sequencer.removeMidiFile;
+        copyName = sequencer.protectedScope.copyName;
     });
 
 }());

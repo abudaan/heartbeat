@@ -149,7 +149,7 @@
             type: 'load instrument config',
             method: load,
             params: instrument
-        }, function(){
+        }, function(value){
             //console.log(instrument, callback);
             store(instrument);
             if(callback){

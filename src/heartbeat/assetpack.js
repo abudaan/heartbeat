@@ -17,6 +17,7 @@
         typeString, // defined in utils.js
         objectForEach, // defined in utils.js
         removeMidiFile, // defined in asset_manager.js
+        removeAssetPack, // defined in asset_manager.js
         removeInstrument, // defined in asset_manager.js
         removeSamplePack, // defined in asset_manager.js
 
@@ -49,13 +50,15 @@
         var occupied = findItem(assetpack.localPath, sequencer.storage.assetpacks, true),
             action = assetpack.action;
 
-        //console.log(occupied);
+        //console.log('occ', occupied);
         if(occupied && occupied.className === 'AssetPack' && action !== 'overwrite'){
             if(sequencer.debug >= 2){
                 console.warn('there is already an AssetPack at', assetpack.localPath);
             }
+            return true;
         }else{
             storeItem(assetpack, assetpack.localPath, sequencer.storage.assetpacks);
+            return false;
         }
     }
 
@@ -115,35 +118,73 @@
     }
 
 
-    function loadLoop(pack, callback){
-        var i, assets, asset;
+    function loadLoop(assetpack, callback){
+        var i, assets, asset,
+            loaded = store(assetpack),
+            localPath = assetpack.localPath;
 
-        assets = pack.midifiles;
+
+        if(loaded === true){
+            assetpack = findItem(localPath, sequencer.storage.assetpacks, true);
+            callback(assetpack);
+            return;
+        }
+
+        if(assetpack.url !== undefined){
+            var packs = sequencer.storage.assetpacks,
+                tmp, p, double = null;
+
+            for(p in packs){
+                tmp = packs[p];
+                if(tmp.className !== 'AssetPack'){
+                    continue;
+                }
+                //console.log('loop', p, assetpack.id);
+                if(tmp.id !== assetpack.id && tmp.url === assetpack.url){
+                    double = tmp;
+                    break;
+                }
+            }
+            if(double !== null){
+                //console.log(double.id, assetpack.id);
+                localPath = assetpack.localPath;
+                removeAssetPack(localPath);
+
+                assetpack = null;
+                assetpack = findItem(double.localPath, sequencer.storage.assetpacks, true);
+                //console.log(assetpack.id, double.id);
+                callback(assetpack);
+                return;
+            }
+        }
+
+
+        assets = assetpack.midifiles;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('midifile', assets[i]);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             sequencer.addMidiFile(asset);
         }
 
-        assets = pack.instruments;
+        assets = assetpack.instruments;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('instrument', assets[i]);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             sequencer.addInstrument(asset);
         }
 
-        assets = pack.samplepacks;
+        assets = assetpack.samplepacks;
         for(i = assets.length - 1; i >= 0; i--){
             //console.log('samplepack', assets[i], pack);
             asset = assets[i];
-            asset.pack = pack;
+            asset.pack = assetpack;
             //console.log(asset.folder, pack.fileSize);
             sequencer.addSamplePack(asset);
         }
 
-        callback();
+        callback(assetpack);
     }
 
 
@@ -183,6 +224,10 @@
             return false;
         }
 
+        if(callback === undefined){
+            callback = function(){};
+        }
+
         if(config.json){
             json = config.json;
             name = config.name;
@@ -214,25 +259,19 @@
         }
 
 
-        assetpack = new AssetPack(config);
+        //assetpack = new AssetPack(config);
+        //console.log(assetpack.id);
 
         sequencer.addTask({
             type: 'load asset pack',
             method: load,
-            params: assetpack
-        }, function(success){
-            //console.log('success', assetpack);
-            //if(success === false){
-            if(assetpack.loaded === false){
-                callback(false);
-                return;
-            }
-            //console.log('loaded', assetpack);
-            store(assetpack);
-            if(callback){
-                callback(assetpack);
-            }
-        }, true);
+            params: new AssetPack(config)
+        }, function(assetpack){
+            config = null;
+            //console.log(assetpack.id);
+            callback(assetpack);
+            //console.log('assetpack', assetpack);
+        }, false);
 
         sequencer.startTaskQueue();
 /*
@@ -265,6 +304,7 @@
         removeMidiFile = sequencer.removeMidiFile;
         removeInstrument = sequencer.removeInstrument;
         removeSamplePack = sequencer.removeSamplePack;
+        removeAssetPack = sequencer.removeAssetPack;
     });
 
 

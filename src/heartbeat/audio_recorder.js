@@ -192,7 +192,6 @@
 
 
         this.javascriptNode.onaudioprocess = function(e){
-
             // TODO: fix latency issue
 /*
             if(timestamp !== null){

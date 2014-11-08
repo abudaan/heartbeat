@@ -124,6 +124,7 @@
             this.part.removeEvents(this.part.events);
         }
         this.events = createEvents(this, startBar, endBar, id);
+        this.numEvents = this.events.length;
         this.part.addEvents(this.events);
         this.bars = this.song.bars;
         parseMetronomeEvents(this.song, this.events);

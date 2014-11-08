@@ -114,7 +114,7 @@
             }
             //console.log(pack.localPath, pack.loaded);
             if(callback){
-                callback();
+                callback(true);
             }
         });
     }
@@ -210,6 +210,7 @@
             if(store(pack) === true){
                 loadLoop(pack, callback);
             }else{
+                //console.log(callback);
                 callback(false);
             }
         }
@@ -417,10 +418,15 @@
             type: 'load sample pack',
             method: load,
             params: samplepack
-        }, function(){
-            //console.log(samplepack);
+        }, function(value){
+            //console.log(samplepack, value);
             if(callback){
-                callback(samplepack);
+                if(value === false){
+                    samplepack = null;
+                    callback(null);
+                }else{
+                    callback(samplepack);
+                }
             }
         }, callbackAfterAllTasksAreDone);
 

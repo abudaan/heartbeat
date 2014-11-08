@@ -484,7 +484,7 @@
             if(eventsById.hasOwnProperty(id)){
                 event = eventsById[id];
                 copy = event.copy();
-                //console.log(clone.ticks, partTicks);
+                //console.log(copy.ticks, partTicks);
                 copy.ticks = copy.ticks - partTicks;
                 copies.push(copy);
             }

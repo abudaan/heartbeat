@@ -1055,6 +1055,7 @@
 
         sequencer.createSimpleSynth = function(config){
             config = config || {};
+            //console.log('creating sinewave');
             return new SimpleSynth(config);
         };
     });

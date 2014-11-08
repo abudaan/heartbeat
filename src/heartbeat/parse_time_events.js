@@ -63,7 +63,14 @@
             type,
             i = 0;
 
+        if(song === undefined){
+            timeEvents = [];
+            console.log('reset', timeEvents);
+            return;
+        }
+
         reset(song);
+
         //console.log('parse time events', numTimeEvents);
         setTickDuration();
         setTicksPerBeat();
@@ -125,7 +132,6 @@
 
 
     function reset(song){
-
         playbackSpeed = song.playbackSpeed;
         timeEvents = song.timeEvents;
         numTimeEvents = timeEvents.length;

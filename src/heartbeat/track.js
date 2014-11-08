@@ -769,7 +769,7 @@
             part = parts[i];
             copiedParts.push(part.copy());
         }
-
+        //console.log(parts.length);
         track.addParts(copiedParts);
         return track;
     };
@@ -1199,7 +1199,7 @@ return;
 
 
     Track.prototype.setInstrument = function(arg){
-        //console.log('Track.setInstrument()', arg, this.id);
+        //console.log('Track.setInstrument()', arg, this.name);
         if(arg === '' || arg === undefined || arg === false){
             arg = getDefaultInstrumentConfig(this);
             //console.log('default', arg);
@@ -1210,6 +1210,16 @@ return;
             instrument = createInstrument(getDefaultInstrumentConfig(this));
         }
 
+/*
+        var instrument;
+
+        if(arg === '' || arg === undefined || arg === false){
+            getDefaultInstrumentConfig(this);
+        }else{
+            instrument = createInstrument(arg);
+        }
+
+*/
         instrument.track = this;
         // stop possible scheduled notes by the previous instrument
         if(this.instrument){
