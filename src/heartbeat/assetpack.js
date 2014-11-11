@@ -271,7 +271,7 @@
             //console.log(assetpack.id);
             callback(assetpack);
             //console.log('assetpack', assetpack);
-        }, false);
+        }, true);
 
         sequencer.startTaskQueue();
 /*

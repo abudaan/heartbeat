@@ -969,7 +969,7 @@
         if(type === 'string'){
             //@TODO what happens if we have 2 instruments with the same name?
             config = findItem(arg, storage.instruments);
-            //console.log(arg, config);
+            //console.log('string', arg, config, storage.instruments);
         }
 
         if(config === false || config.className !== 'InstrumentConfig'){
