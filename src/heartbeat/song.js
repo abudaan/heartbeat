@@ -125,6 +125,7 @@
         this.loopStart = 0;
         this.loopEnd = 0;
         this.loopDuration = 0;
+        this.audioRecordingLatency = 0;
         //this.audioRecordings = [];
         //this.audioRecordingsById = {};
         //this.audioRecordingsByName = {};
@@ -477,6 +478,7 @@
 
         song.diff = diff;
         //console.log(diff);
+        //console.log(now, song.recordTimestamp, song.eventsMidiAudioMetronome[0].time);
 
         song.timeStamp = now;
 
@@ -597,7 +599,7 @@
         //console.log(this.startMillis);
 
         // make first call right after setting a time stamp to avoid delay
-        pulse(this);
+        //pulse(this);
         song = this;
         repetitiveTasks[this.id] = function(){
             pulse(song);
@@ -661,6 +663,16 @@
     };
 
 
+    Song.prototype.setAudioRecordingLatency = function(value){
+        this.audioRecordingLatency = value;
+        this.tracks.forEach(function(track){
+            if(track.audio !== undefined){
+                track.audio.setAudioRecordingLatency(value);
+            }
+        });
+    };
+
+
     Song.prototype.startRecording = Song.prototype.record = function(precount){
         if(this.recording === true || this.precounting === true){
             this.stop();
@@ -702,7 +714,6 @@
         //console.log('recordStartMillis', this.recordStartMillis);
 
 
-        this.recordTimestamp = context.currentTime * 1000; // millis
         this.recordTimestampTicks = this.ticks;
         this.recordId = 'REC' + new Date().getTime();
         this.recordedNotes = [];
@@ -725,7 +736,6 @@
                 track.prepareForRecording(this.recordId, function(){
                     if(userFeedback === false){
                         userFeedback = true;
-                        self.recordTimestamp = context.currentTime * 1000;
                         setRecordingStatus.call(self);
                     }
                 });
@@ -741,6 +751,9 @@
 
 
     setRecordingStatus = function(){
+
+        this.recordTimestamp = context.currentTime * 1000; // millis
+
         if(this.playing === false){
             if(this.precount > 0){
                 // recording with precount always starts at the beginning of a bar
@@ -1869,8 +1882,9 @@
         }
         */
         objectForEach(this.tracks, function(track){
-            track.audio.allNotesOff();
-            track.instrument.allNotesOff();
+            track.allNotesOff();
+            // track.audio.allNotesOff();
+            // track.instrument.allNotesOff();
         });
         this.metronome.allNotesOff();
         this.resetExternalMidiDevices();

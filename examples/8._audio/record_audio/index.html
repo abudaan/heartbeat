@@ -14,7 +14,19 @@
     <link rel="stylesheet" type="text/css" href="main.css">
 </head>
 <body>
-    <div class="warn">audio recording is still experimental</div>
+    <!-- <div class="warn">audio recording is still experimental</div> -->
+    <ul>
+        <li>Click the 'start record' button.</li>
+        <li>Click 'allow' in the bar that appears on top of this window.</li>
+        <li>Record something with your microphone.</li>
+        <li>Now your recording might not be aligned with the MIDI tick; this caused by the latency of your browser, your operating system and your computer hardware and drivers.</li>
+        <li>Move the latency compensation slider till you are satisfied.</li>
+        <li>If a subsequent recording is not in sync with the MIDI tick, move the latency slider again till you are satisfied; earlier recordings are not affected.</li>
+        <li>Usually the latency compensation of the first or second recording is a value that you can use for all consecutive recordings.</li>
+        <li>By using the latency slider you control the global audio recording latency of the song, this can also be done by setting the parameter "song.latencyCompensation".</li>
+        <li>You can also set the parameter "latencyCompensation" directly on an individual audio event.</li>
+        <li>Note that getUserMedia() is not supported in Safari (both OSX and iOS), therefor you can not record audio if you're using Safari.</li>
+    </ul>
 
     <input type="button" id="play" value="play">
     <input type="button" id="stop" value="stop">
@@ -24,8 +36,11 @@
         <option>No recordings yet</option>
     </select>
     <input type="button" id="record-delete" value="delete recording">
+    <input type="button" id="metronome" value="metronome off">
     <label for="playhead"><div>song position: 1</div><input type="range" id="playhead" value="0" min="0" max="1" step="any"></label>
     <label for="precount"><div>precount bars: 0</div><input type="range" id="precount" value="0" min="0" max="4" step="1"></label>
+    <br>
+    <label for="label-latency"><div>latency compensation: <em>0 ms</em></div><input type="range" id="latency" min="0" max="800" step="1" value="0"/></label>
 
     <div id="log" class="cf">
         <div>

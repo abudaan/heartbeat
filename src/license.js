@@ -22,6 +22,10 @@ The code in midi_write.js is based on Sergi Mansilla's code:
 https://github.com/sergi/jsmidi
 https://github.com/sergi/jsmidi/blob/master/README.md
 
+Audio recording:
+https://github.com/akrennmair/libmp3lame-js
+https://github.com/nusofthq/Recordmp3js
+
 
 If a browser doesn't support WebMIDI, heartbeat will try to fallback to Sema's Jazz plugin:
 

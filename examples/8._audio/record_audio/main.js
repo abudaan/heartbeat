@@ -15,8 +15,10 @@ window.onload = function(){
         btnStartRecording = document.getElementById('record-start'),
         btnDeleteRecording = document.getElementById('record-delete'),
         btnUndoRecording = document.getElementById('record-undo'),
+        btnMetronome = document.getElementById('metronome'),
         selectRecordings = document.getElementById('recordings'),
         divRecorded = document.getElementById('recorded_events'),
+        sliderLatency,
 
         recordingIndex = 1,
         recordingHistory = {},
@@ -90,6 +92,11 @@ window.onload = function(){
         });
 
 
+        song.addEventListener('latency_adjusted', function(){
+            handleRecordedEvents();
+        });
+
+
         btnPlay.addEventListener('click', function(){
             // if you press the play/pause button during a recording, it will act like a stop button and stop the recording
             if(song.playing){
@@ -97,6 +104,7 @@ window.onload = function(){
             }else{
                 song.play();
             }
+            //console.log(song.events.length);
         });
 
         btnStop.addEventListener('click', function(){
@@ -134,6 +142,15 @@ window.onload = function(){
             handleRecordedEvents();
         });
 
+
+        btnMetronome.addEventListener('click', function(){
+            song.useMetronome = !song.useMetronome;
+            if(song.useMetronome === true){
+                btnMetronome.value = 'metronome off';
+            }else{
+                btnMetronome.value = 'metronome on';
+            }
+        });
 
         selectRecordings.addEventListener('change', function(){
             // every time you make a recording, an extra option will be adde to the dropdown menu, see handleRecordedEvents() below
@@ -179,6 +196,38 @@ window.onload = function(){
         }());
 
 
+        (function(){
+            var slider = document.getElementById('latency'),
+                currentValue;
+
+            sliderLatency = createSlider({
+                slider: slider,
+                label: slider.previousSibling,
+                message: 'latency compensation: <em>{value} millis</em>',
+                onMouseMove: handle,
+                onMouseDown: handle,
+                onMouseUp: process
+            });
+
+
+            function handle(value){
+                currentValue = value;
+                sliderLatency.setLabel(value);
+            }
+
+            function process(){
+                song.setAudioRecordingLatency(currentValue);
+            }
+
+            sliderLatency.set = function(value){
+                currentValue = value;
+                this.setLabel(value);
+                this.setValue(value);
+                process(value);
+            };
+        }());
+
+
         function render(){
             if(userInteraction === false){
                 sliderPosition.setValue(song.percentage);
@@ -217,7 +266,7 @@ window.onload = function(){
                             print += '<tr>';
                             print += '<td>' + event.ticks + '</td>';
                             print += '<td>' + event.barsAsString + '</td>';
-                            print += '<td><img src="' + event.waveformSmallImageDataUrl + '" width="400" height="100"></td>';
+                            print += '<td><img src="' + event.waveformSmallImageDataUrl + '" width="800" height="200"></td>';
                             print += '</tr>';
                         }
                     }

@@ -33,10 +33,16 @@
     };
 
 
+    AudioTrack.prototype.setAudioRecordingLatency = function(value){
+        this.recorder.setAudioRecordingLatency(value);
+    };
+
+
     AudioTrack.prototype.processEvent = function(audioEvent){
         var sample = sequencer.createSample({buffer: audioEvent.buffer, track: audioEvent.track});
         audioEvent.sample = sample;
-        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset + audioEvent.latencyCompensation;
+        //console.log(audioEvent.sampleOffset, audioEvent.playheadOffset, audioEvent.latencyCompensation);
+        audioEvent.offset = audioEvent.sampleOffset + audioEvent.playheadOffset;// + audioEvent.latencyCompensation;
         //audioEvent.time -= audioEvent.latencyCompensation;
         // set playheadOffset to 0 after the event has been scheduled
         audioEvent.playheadOffset = 0;

@@ -24,6 +24,19 @@
 .position{
     text-align: right;
 }
+#latency{
+    width: 90%;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+#label-latency{
+    display: inline-block;
+    width: 220px;
+    margin-bottom: 10px;
+}
+em{
+    font-weight: bolder;
+}
 table{
     width: 100%;
 }
@@ -43,4 +56,12 @@ tr:first-child{
 }
 em{
     font-weight: bolder;
+}
+ul{
+    list-style: disc;
+    list-style-position: inside;
+    margin-bottom: 22px;
+}
+li{
+    margin: 4px 0;
 }

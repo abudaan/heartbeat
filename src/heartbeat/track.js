@@ -107,7 +107,7 @@
             //console.log(this.instrumentName, this.id);
             this.setInstrument(this.instrumentName);
         }
-        this.audio = createAudioTrack(this);
+        //this.audio = createAudioTrack(this);
     };
 
 
@@ -1320,6 +1320,9 @@ return;
         this.recordId = recordId;
 
         if(this.recordEnabled === 'audio'){
+            if(this.audio === undefined){
+                this.audio = createAudioTrack(this);
+            }
             this.audio.prepareForRecording(recordId, callback);
         }
         //console.log(this.recordEnabled);
@@ -1440,6 +1443,16 @@ return;
 
     Track.prototype.removeMidiEventListener = function(id){
         removeMidiEventListener(id, this);
+    };
+
+
+    Track.prototype.allNotesOff = function(id){
+        if(this.audio){
+            this.audio.allNotesOff();
+        }
+        if(this.instrument){
+            this.instrument.allNotesOff();
+        }
     };
 
 /*

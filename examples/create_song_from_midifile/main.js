@@ -33,8 +33,7 @@ window.onload = function(){
 
         // get the midi file from sequencer.storage
         midiFile = sequencer.getMidiFile('Sonata Facile');
-        console.log(sequencer.storage);
-        //midiFile = sequencer.getMidiFile('mozk545a');
+        //console.log(sequencer.storage);
 
         switch(testMethod){
 

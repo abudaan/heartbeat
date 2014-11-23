@@ -13,56 +13,49 @@
         typeString, // defined in util.js
         getWaveformImageUrlFromBuffer, //defined in util.js
         repetitiveTasks, // defined in open_module.js
+        dispatchEvent, // defined in song_event_listener.js
 
-        sampleSize = 8192,
-        latency = null,
         microphoneAccessGranted = null,
         localMediaStream,
+
+        bufferSize = 8192 * 2,
+        millisPerSample,
+        bufferMillis,
 
         _record;
 
 
     function AudioRecorder(track){
         this.track = track;
-        this.recBuffersL = [];
-        this.recBuffersR = [];
+        this.song = track.song;
         this.audioEvents = {};
         this.callback = null;
+        this.bufferOffset = 0;
         this.worker = createWorker();
+
+        this.latency = this.song.audioRecordingLatency;
 
         var scope = this;
 
         this.worker.onmessage = function(e){
             var
                 song = track.song,
-                event,
-                recordId = scope.recordId;
+                recordId = scope.recordId,
+                id = e.data.id;
 
-            context.decodeAudioData(e.data, function(buffer){
-
-/*
-
-                event = sequencer.createAudioEvent({
-                    ticks: song.recordTimestampTicks,
-                    latencyCompensation: latency/1000,
-                    //latencyCompensation: 0,
-                    //sampleOffsetMillis: latency,
-                    buffer: buffer,
-                    sampleId: scope.recordId
-                });
-
-                song.addAudioRecording(new AudioRecording(recordId, buffer, latency));
-
-*/
+            context.decodeAudioData(e.data.ab, function(buffer){
 
                 storeItem(buffer, 'recordings/' + recordId, sequencer.storage.audio);
 
-                event = sequencer.createAudioEvent({
-                    ticks: song.recordTimestampTicks,
-                    //latencyCompensation: latency/1000,
-                    latencyCompensation: 0,
-                    path: 'recordings/' + recordId
-                });
+                if(id === 'new'){
+                    scope.event = sequencer.createAudioEvent({
+                        ticks: song.recordTimestampTicks,
+                        path: 'recordings/' + recordId
+                    });
+                }else{
+                    scope.event.buffer = buffer;
+                }
+
 
                 getWaveformImageUrlFromBuffer(
                     buffer,
@@ -89,16 +82,21 @@
                             images.push(image);
                         }
 
-                        event.waveformImage = images[0];
-                        event.waveformImages = images;
-                        event.waveformSmallImageDataUrl = urls[0];
-                        event.waveformImageDataUrls = urls;
-                        //console.log(event);
+                        scope.event.waveformImage = images[0];
+                        scope.event.waveformImages = images;
+                        scope.event.waveformSmallImageDataUrl = urls[0];
+                        scope.event.waveformImageDataUrls = urls;
 
-                        // return the recording as a audio event
-                        if(scope.callback !== null){
-                            scope.callback(event);
-                            scope.callback = null;
+                        //console.log(e.data.id, scope.event);
+
+                        if(id === 'new'){
+                            // return the recording as a audio event
+                            if(scope.callback !== null){
+                                scope.callback(scope.event);
+                                scope.callback = null;
+                            }
+                        }else if(id === 'update'){
+                            dispatchEvent(song, 'latency_adjusted');
                         }
                     }
                 );
@@ -119,7 +117,10 @@
             // successCallback
             function(stream) {
                 microphoneAccessGranted = true;
+                // localMediaStream is type of MediaStream that comes from microphone
                 localMediaStream = stream;
+                //console.log(localMediaStream.getAudioTracks());
+                //console.log(localMediaStream.getVideoTracks());
                 callback();
             },
 
@@ -135,21 +136,38 @@
     };
 
 
+    AudioRecorder.prototype.setAudioRecordingLatency = function(value){
+        this.latency = value;
+        this.bufferIndexStart = parseInt((this.song.metronome.precountDurationInMillis + this.latency)/millisPerSample);
+
+        //console.log('2 ' +  this.bufferIndexStart + ' - ' + this.bufferIndexEnd + ' latency:' + this.latency);
+
+        // update last recorded audio data
+        this.worker.postMessage({
+            command: 'update_arraybuffer',
+            bufferIndexStart: this.bufferIndexStart,
+            bufferIndexEnd: this.bufferIndexEnd
+        });
+    };
+
 
     AudioRecorder.prototype.prepare = function(recordId, callback){
-        var self = this;
+        var scope = this;
+
         this.recordId = recordId;
 
         if(microphoneAccessGranted === null){
             _record(function(){
                 callback(microphoneAccessGranted);
                 if(localMediaStream !== undefined){
-                    self.start();
+                    //scope.localMediaStream = localMediaStream.clone(); -> not implemented yet
+                    scope.start();
                 }
             });
         }else{
             callback(microphoneAccessGranted);
             if(localMediaStream !== undefined){
+                //this.localMediaStream = localMediaStream.clone(); -> not implemented yet
                 this.start();
             }
         }
@@ -158,60 +176,26 @@
 
     AudioRecorder.prototype.start = function(){
         var scope = this,
-            song = this.track.song,
-            timestamp;
-
-        this.sourceNode = context.createMediaStreamSource(localMediaStream);
-        this.javascriptNode = context.createScriptProcessor(sampleSize, 1, 1);
-/*
-        this.analyserNode = context.createAnalyser();
-        this.sourceNode.connect(this.analyserNode);
-        this.analyserNode.connect(this.javascriptNode);
-        this.amplitudeArray = [];
-        this.numAmplitudes = 0;
-*/
-        this.sourceNode.connect(this.javascriptNode);
-
-        repetitiveTasks.startAudioRecording = null;
-        delete repetitiveTasks.startAudioRecording;
+            song = this.track.song;
 
         scope.worker.postMessage({
             command: 'init',
             sampleRate: context.sampleRate
         });
 
+        this.scriptProcessor = context.createScriptProcessor(bufferSize, 1, 1);
 
-        if(song.recording !== true){
-            repetitiveTasks.startAudioRecording = function(){
-                if(song.recording === true){
-                    scope.start();
-                }
-            };
-            return;
-        }
+        this.scriptProcessor.onaudioprocess = function(e){
 
-
-        this.javascriptNode.onaudioprocess = function(e){
-            // TODO: fix latency issue
-/*
-            if(timestamp !== null){
-                //console.log((context.currentTime * 1000) - timestamp);
-                //timestamp = context.currentTime * 1000;
-                latency = (context.currentTime * 1000) - timestamp;
-                timestamp = null;
-            }
-*/
             if(e.inputBuffer.numberOfChannels === 1){
-                scope.recBuffersL.push(e.inputBuffer.getChannelData(0));
 
                 scope.worker.postMessage({
                     command: 'record_mono',
                     buffer: e.inputBuffer.getChannelData(0)
                 });
 
+
             }else{
-                scope.recBuffersL.push(e.inputBuffer.getChannelData(0));
-                scope.recBuffersR.push(e.inputBuffer.getChannelData(1));
 
                 scope.worker.postMessage({
                     command: 'record_stereo',
@@ -222,37 +206,44 @@
                 });
             }
 
-/*
-            var tmp = new Uint8Array(scope.analyserNode.frequencyBinCount);
-            scope.analyserNode.getByteTimeDomainData(tmp);
-            scope.amplitudeArray.push(tmp);
-            scope.numAmplitudes += tmp.length;
-*/
+            if(song.recording === false && song.precounting === false){
+                scope.createAudio();
+            }
         };
 
-        //latency = sampleSize * (1/context.sampleRate) * 1000 ;
-        //latency = latency + (context.currentTime * 1000) - song.recordTimestamp - song.metronome.precountDurationInMillis;
-        latency = (context.currentTime * 1000) - song.recordTimestamp - song.metronome.precountDurationInMillis;
-        //console.log(context.currentTime * 1000, song.recordTimestamp, latency);
-        timestamp = (context.currentTime * 1000);
-        this.javascriptNode.connect(context.destination);
+        this.sourceNode = context.createMediaStreamSource(localMediaStream);
+        this.sourceNode.connect(this.scriptProcessor);
+        this.scriptProcessor.connect(context.destination);
     };
 
 
     AudioRecorder.prototype.stop = function(callback){
+        this.stopRecordingTimestamp = context.currentTime * 1000;
         if(this.sourceNode === undefined){
             callback();
             return;
         }
         this.callback = callback;
-        this.sourceNode.disconnect(this.javascriptNode);
-        this.javascriptNode.onaudioprocess = null;
+    };
 
-        repetitiveTasks.startAudioRecorder = undefined;
-        delete repetitiveTasks.startAudioRecorder;
+
+    AudioRecorder.prototype.createAudio = function(){
+        this.sourceNode.disconnect(this.scriptProcessor);
+        this.scriptProcessor.disconnect(context.destination);
+        this.scriptProcessor.onaudioprocess = null;
+        this.sourceNode = null;
+        this.scriptProcessors = null;
+
+        // remove precount bars and latency
+        this.bufferIndexStart = parseInt((this.song.metronome.precountDurationInMillis + this.latency)/millisPerSample);
+        this.bufferIndexEnd = -1;
+
+        //console.log('1 ' +  this.bufferIndexStart + ' - ' + this.bufferIndexEnd + ' latency:' + this.latency);
 
         this.worker.postMessage({
-            command: 'get_arraybuffer'
+            command: 'get_arraybuffer',
+            bufferIndexStart: this.bufferIndexStart,
+            bufferIndexEnd: this.bufferIndexEnd
         });
     };
 
@@ -262,33 +253,13 @@
             this.worker.terminate();
             return;
         }
-        //localMediaStream.stop(); -> better not to stop the microphone stream
-        this.analyserNode.disconnect();
+        //this.localMediaStream.stop();
+        this.scriptProcessor.disconnect();
+        this.scriptProcessor.onaudioprocess = null;
         this.sourceNode.disconnect();
+        this.scriptProcessor = null;
+        this.sourceNode = null;
         this.worker.terminate();
-    };
-
-
-    AudioRecorder.prototype.drawCanvas = function(amplitudeArray, column){
-        var minValue = 9999999;
-        var maxValue = 0;
-        var canvasHeight = 100;
-        var canvasWidth = 1000;
-
-        for (var i = 0; i < amplitudeArray.length; i++) {
-            var value = amplitudeArray[i] / 256;
-            if(value > maxValue) {
-                maxValue = value;
-            } else if(value < minValue) {
-                minValue = value;
-            }
-        }
-
-        var y_lo = canvasHeight - (canvasHeight * minValue) - 1;
-        var y_hi = canvasHeight - (canvasHeight * maxValue) - 1;
-
-        this.context2d.fillStyle = '#ffffff';
-        this.context2d.fillRect(column, y_lo, 1, y_hi - y_lo);
     };
 
 
@@ -297,13 +268,17 @@
 
             function(){
                 var
+                    data,
+                    bufferIndexStart,
+                    bufferIndexEnd,
+                    mergedBuffer,
                     recLength,
                     recBuffersL,
                     recBuffersR,
                     sampleRate,
                     numberOfChannels;
 
-                this.onmessage = function(e){
+                self.onmessage = function(e){
                     switch(e.data.command){
                         case 'init':
                             sampleRate = e.data.sampleRate;
@@ -329,53 +304,97 @@
                             this.postMessage(exportMp3());
                             break;
                         case 'get_arraybuffer':
-                            var ab = getArrayBuffer();
-                            this.postMessage(ab, [ab]);
+                            bufferIndexStart = e.data.bufferIndexStart;
+                            bufferIndexEnd = e.data.bufferIndexEnd;
+                            data = {};
+                            data.ab = getArrayBuffer();
+                            data.id = 'new';
+                            this.postMessage(data, [data.ab]);
+                            break;
+                        case 'update_arraybuffer':
+                            bufferIndexStart = e.data.bufferIndexStart;
+                            bufferIndexEnd = e.data.bufferIndexEnd;
+                            data = {};
+                            data.ab = updateArrayBuffer();
+                            data.id = 'update';
+                            this.postMessage(data, [data.ab]);
                             break;
                     }
                 };
 
 
-                // TODO: add code to handle mono recordings
                 function getArrayBuffer(){
-                    var index,
-                        length,
-                        bufferL,
-                        bufferR,
+                    var index = 0, i,
                         result,
+                        //marker,
                         dataview;
-/*
-                    if(numberOfChannels === 2){
-                        bufferL = mergeBuffers(recBuffersL, recLength);
-                        bufferR = mergeBuffers(recBuffersR, recLength);
-                        result = interleave(bufferL, bufferR);
-                    }else if(numberOfChannels === 1){
-                        length = recBuffersL.length;
-                        result = new Float32Array(length);
-                        index = 0;
 
-                        while(index < length){
-                            result[index] = recBuffersL[index];
-                            index++;
-                        }
+                    if(numberOfChannels === 1){
+                        mergedBuffer = mergeBuffers(recBuffersL, recLength);
+                    }else if(numberOfChannels === 2){
+                        mergedBuffer = interleave(
+                            mergeBuffers(recBuffersL, recLength),
+                            mergeBuffers(recBuffersR, recLength)
+                        );
                     }
-*/
-                    bufferL = mergeBuffers(recBuffersL, recLength);
-                    bufferR = mergeBuffers(recBuffersR, recLength);
-                    result = interleave(bufferL, bufferR);
-                    dataview = encodeWAV(result);
+
+                    if(bufferIndexEnd > 0 || bufferIndexStart > 0){
+                        if(bufferIndexEnd === -1){
+                            bufferIndexEnd = mergedBuffer.length;
+                        }
+                        result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
+                        //marker = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+                        //result.set(marker, 0);
+                        for(i = bufferIndexStart; i < bufferIndexEnd; i++){
+                            result[index++] = mergedBuffer[i];
+                        }
+                        dataview = encodeWAV(result);
+                    }else{
+                        dataview = encodeWAV(mergedBuffer);
+                    }
 
                     return dataview.buffer;
                 }
 
 
-                function exportWAV(){
-                    var bufferL = mergeBuffers(recBuffersL, recLength),
-                        bufferR = mergeBuffers(recBuffersR, recLength),
-                        interleaved = interleave(bufferL, bufferR),
-                        dataview = encodeWAV(interleaved),
-                        audioBlob = new Blob([dataview], {type: 'audio/wav'});
+                function updateArrayBuffer(){
+                    var index = 0, i,
+                        result,
+                        dataview;
 
+                    if(bufferIndexEnd === -1){
+                        bufferIndexEnd = mergedBuffer.length;
+                    }
+
+                    result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
+
+                    for(i = bufferIndexStart; i < bufferIndexEnd; i++){
+                        result[index++] = mergedBuffer[i];
+                    }
+
+                    dataview = encodeWAV(result);
+                    return dataview.buffer;
+                }
+
+
+                function exportWAV(){
+                    var bufferL,
+                        bufferR,
+                        interleaved,
+                        dataview,
+                        audioBlob;
+
+                    if(numberOfChannels === 1){
+                        bufferL = mergeBuffers(recBuffersL, recLength);
+                        dataview = encodeWAV(bufferL);
+                    }else if(numberOfChannels === 2){
+                        bufferL = mergeBuffers(recBuffersL, recLength);
+                        bufferR = mergeBuffers(recBuffersR, recLength);
+                        interleaved = interleave(bufferL, bufferR);
+                        dataview = encodeWAV(interleaved);
+                    }
+
+                    audioBlob = new Blob([dataview], {type: 'audio/wav'});
                     return audioBlob;
                 }
 
@@ -444,13 +463,13 @@
                     /* sample format (raw) */
                     view.setUint16(20, 1, true);
                     /* channel count */
-                    view.setUint16(22, 2, true);
+                    view.setUint16(22, numberOfChannels, true);
                     /* sample rate */
                     view.setUint32(24, sampleRate, true);
                     /* byte rate (sample rate * block align) */
-                    view.setUint32(28, sampleRate * 4, true);
+                    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
                     /* block align (channel count * bytes per sample) */
-                    view.setUint16(32, 4, true);
+                    view.setUint16(32, numberOfChannels * 2, true);
                     /* bits per sample */
                     view.setUint16(34, 16, true);
                     /* data chunk identifier */
@@ -488,6 +507,30 @@
     };
 */
 
+/*
+    // real-time waveform rendering, not implemented
+    AudioRecorder.prototype.drawCanvas = function(amplitudeArray, column){
+        var minValue = 9999999;
+        var maxValue = 0;
+        var canvasHeight = 100;
+        var canvasWidth = 1000;
+
+        for (var i = 0; i < amplitudeArray.length; i++) {
+            var value = amplitudeArray[i] / 256;
+            if(value > maxValue) {
+                maxValue = value;
+            } else if(value < minValue) {
+                minValue = value;
+            }
+        }
+
+        var y_lo = canvasHeight - (canvasHeight * minValue) - 1;
+        var y_hi = canvasHeight - (canvasHeight * maxValue) - 1;
+
+        this.context2d.fillStyle = '#ffffff';
+        this.context2d.fillRect(column, y_lo, 1, y_hi - y_lo);
+    };
+*/
 
     sequencer.protectedScope.createAudioRecorder = function(track){
         if(sequencer.record_audio === false){
@@ -503,9 +546,9 @@
         typeString = sequencer.protectedScope.typeString;
         repetitiveTasks = sequencer.protectedScope.repetitiveTasks;
         getWaveformImageUrlFromBuffer = sequencer.getWaveformImageUrlFromBuffer;
-        //latency = sampleSize * (1/context.sampleRate) * 1000;
-        //console.log(latency, context.sampleRate);
-        //_record();
+        millisPerSample = (1/context.sampleRate) * 1000;
+        dispatchEvent = sequencer.protectedScope.songDispatchEvent;
+        bufferMillis = bufferSize * millisPerSample;
     });
 }());
 

@@ -8,7 +8,7 @@
         console = window.console,
         AP = Array.prototype,
 
-        supportedEvents = 'play stop pause end loop record_start record_stop recorded_events, sustain_pedal',
+        supportedEvents = 'play stop pause end loop record_start record_stop recorded_events, latency_adjusted, sustain_pedal',
         listenerIndex = 0,
 
         addEventListener,
@@ -64,6 +64,7 @@
             case 'record_precount':
             case 'record_preroll':
             case 'recorded_events':
+            case 'latency_adjusted':
             case 'loop_off':
             case 'loop_on':
             case 'loop': // the playhead jumps from the loop end position to the loop start position
@@ -118,6 +119,7 @@
             case 'record_precount':
             case 'record_preroll':
             case 'recorded_events':
+            case 'latency_adjusted':
             case 'loop_off':
             case 'loop_on':
             case 'loop': // the playhead jumps from the loop end position to the loop start position

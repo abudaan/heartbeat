@@ -235,6 +235,8 @@
         }
         lastTimeStamp = timestamp;
         scheduledTasks = {};
+
+        //setTimeout(heartbeat, 100);
         window.requestAnimationFrame(heartbeat);
     };
 
@@ -295,9 +297,11 @@
         secondsPerTick = 60/bpm/sequencer.defaultPPQ;
         for(i = 0; i < maxi; i++){
             event = events[i];
-            time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
+            event.time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
+            //time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
             //console.log(event.ticks, time, contextTime);
-            track.instrument.processEvent(event, time);
+            //track.instrument.processEvent(event, time);
+            track.instrument.processEvent(event);
         }
     };
 
