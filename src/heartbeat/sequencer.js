@@ -88,7 +88,10 @@
         for(i = song.numTracks - 1; i >= 0; i--){
 
             track = song.tracks[i];
-            track.audio.recorder.cleanup();
+
+            if(track.audio !== undefined){
+                track.audio.recorder.cleanup();
+            }
 
             for(j = track.numParts - 1; j >= 0; j--){
                 part = track.parts[j];

@@ -2210,7 +2210,6 @@ if (typeof module !== "undefined" && module !== null) {
             context.decodeAudioData(e.data.ab, function(buffer){
 
                 storeItem(buffer, 'recordings/' + recordId, sequencer.storage.audio);
-                //console.log(scope.latency);
 
                 if(id === 'new'){
                     scope.event = sequencer.createAudioEvent({
@@ -13985,7 +13984,10 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = song.numTracks - 1; i >= 0; i--){
 
             track = song.tracks[i];
-            track.audio.recorder.cleanup();
+
+            if(track.audio !== undefined){
+                track.audio.recorder.cleanup();
+            }
 
             for(j = track.numParts - 1; j >= 0; j--){
                 part = track.parts[j];
