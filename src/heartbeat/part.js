@@ -693,6 +693,11 @@
                     this.duration.ticks = lastEvent.ticks - firstEvent.ticks;
                     break;
             }
+        }else{
+            // fixing issue #6
+            this.start.ticks = this.ticks;
+            this.end.ticks = this.ticks + 100; // give the part a minimal duration of 100 ticks
+            this.duration.ticks = 100;
         }
 
         stats = this.getStats('noteNumber all');

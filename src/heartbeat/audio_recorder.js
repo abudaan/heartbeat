@@ -53,6 +53,7 @@
                         path: 'recordings/' + recordId
                     });
                 }else{
+                    // buffer has been adjusted
                     scope.event.buffer = buffer;
                 }
 

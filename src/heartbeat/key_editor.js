@@ -1068,37 +1068,43 @@
             }
         }
 
+        // fixing issue #4
         recordedEventsSong = this.song.recordedEvents;
-        length = recordedEventsSong.length;
-        for(i = 0; i < length; i++){
-            tmp = recordedEventsSong[i];
-            if(this.recordedEventsObj[tmp.id] === undefined){
-                tmp.bbox = this.getEventRect(tmp);
-                recordedEvents.push(tmp);
-                this.recordedEventsObj[tmp.id] = tmp;
+        if(recordedEventsSong){
+            length = recordedEventsSong.length;
+            for(i = 0; i < length; i++){
+                tmp = recordedEventsSong[i];
+                if(this.recordedEventsObj[tmp.id] === undefined){
+                    tmp.bbox = this.getEventRect(tmp);
+                    recordedEvents.push(tmp);
+                    this.recordedEventsObj[tmp.id] = tmp;
+                }
             }
         }
 
+        // fixing issue #4
         recordedNotesSong = this.song.recordedNotes;
-        length = recordedNotesSong.length;
-        for(i = 0; i < length; i++){
-            tmp = recordedNotesSong[i];
-            if(this.recordedNotesObj[tmp.id] === undefined){
-                this.recordedNotesObj[tmp.id] = tmp;
-                tmp.bbox = this.getNoteRect(tmp);
-                recordedNotes.push(tmp);
-                //console.log('recordedNotes', tmp);
-            }else if(tmp.endless === true){
-                tmp.bbox = this.getNoteRect(tmp);
-                recordingNotes.push(tmp);
-                //console.log('endless1', tmp);
-            }else if(tmp.endless === false){
-                tmp.bbox = this.getNoteRect(tmp);
-                recordingNotes.push(tmp);
-                //console.log('endless2', tmp);
-                tmp.endless = undefined;
+        if(recordedNotesSong){
+            length = recordedNotesSong.length;
+            for(i = 0; i < length; i++){
+                tmp = recordedNotesSong[i];
+                if(this.recordedNotesObj[tmp.id] === undefined){
+                    this.recordedNotesObj[tmp.id] = tmp;
+                    tmp.bbox = this.getNoteRect(tmp);
+                    recordedNotes.push(tmp);
+                    //console.log('recordedNotes', tmp);
+                }else if(tmp.endless === true){
+                    tmp.bbox = this.getNoteRect(tmp);
+                    recordingNotes.push(tmp);
+                    //console.log('endless1', tmp);
+                }else if(tmp.endless === false){
+                    tmp.bbox = this.getNoteRect(tmp);
+                    recordingNotes.push(tmp);
+                    //console.log('endless2', tmp);
+                    tmp.endless = undefined;
+                }
+                //console.log(tmp.bbox.width);
             }
-            //console.log(tmp.bbox.width);
         }
 /*
         recordingNotesObj = this.song.recordingNotes;

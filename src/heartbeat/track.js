@@ -896,7 +896,10 @@
     Track.prototype.reset = function(){
         var id, part;
         this.song = null;
-        this.audio.setSong(null);
+        // fixing issue #5
+        if(this.audio){
+            this.audio.setSong(null);
+        }
         for(id in this.partsById){
             if(this.partsById.hasOwnProperty(id)){
                 part = this.partsById[id];
