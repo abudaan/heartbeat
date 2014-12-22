@@ -20,10 +20,14 @@ window.onload = function(){
         divRecorded = document.getElementById('recorded_events'),
         sliderLatency,
 
+        song,
+        track,
+
         recordingIndex = 1,
         recordingHistory = {},
         selectedRecordingId,
         lastRecordingId,
+        lastRecording,
 
         sliderPosition,
         sliderNumPrecountBars,
@@ -35,8 +39,6 @@ window.onload = function(){
     enableUI(false);
 
     sequencer.ready(function init(){
-
-        var track, song;
 
         track = sequencer.createTrack();
         // enable the track for recording audio
@@ -93,7 +95,8 @@ window.onload = function(){
 
 
         song.addEventListener('latency_adjusted', function(){
-            handleRecordedEvents();
+            console.log('latency_adjusted');
+            //handleRecordedEvents();
         });
 
 
@@ -216,7 +219,11 @@ window.onload = function(){
             }
 
             function process(){
-                song.setAudioRecordingLatency(currentValue);
+                if(lastRecording !== undefined){
+                    track.setAudioRecordingLatency(lastRecording.id, currentValue, function(){
+                        handleRecordedEvents();
+                    });
+                }
             }
 
             sliderLatency.set = function(value){
@@ -247,8 +254,9 @@ window.onload = function(){
         // prints out the recorded events per session and populutes the dropdown menu
         var print = '',
             options = '<option>select a recording</option>',
-            recId, trackName, i, maxi,
-            recording, events, event, numEvents;
+            recId, track, trackName, i, maxi,
+            recording, events, event, numEvents,
+            downloadLinks, link;
 
         for(recId in recordingHistory){
             if(recordingHistory.hasOwnProperty(recId)){
@@ -263,10 +271,14 @@ window.onload = function(){
                         numEvents = maxi;
                         for(i = 0; i < maxi; i++){
                             event = events[i];
+                            track = event.track;
+                            recording = track.getAudioRecordingData(event.sampleId);
                             print += '<tr>';
                             print += '<td>' + event.ticks + '</td>';
                             print += '<td>' + event.barsAsString + '</td>';
-                            print += '<td><img src="' + event.waveformSmallImageDataUrl + '" width="800" height="200"></td>';
+                            print += '<td><img src="' + recording.waveformSmallImageDataUrl + '" width="800" height="200"></td>';
+                            print += '<td><span class="download_link" data:type="wav" data:recording_id="' + recording.id + '">save wav file</span></td>';
+                            print += '<td><span class="download_link" data:type="mp3" data:recording_id="' + recording.id + '">save mp3 file</span></td>';
                             print += '</tr>';
                         }
                     }
@@ -279,6 +291,29 @@ window.onload = function(){
         divRecorded.innerHTML = print;
         selectRecordings.innerHTML = options;
 
+        downloadLinks = document.querySelectorAll('.download_link');
+
+        for(i = downloadLinks.length - 1; i >= 0; i--){
+            link = downloadLinks[i];
+            link.addEventListener('click', function(){
+
+                var id = this.getAttribute('data:recording_id'),
+                    type = this.getAttribute('data:type');
+
+                recording = song.getAudioRecordingData(id);
+
+                if(type === 'mp3'){
+                    track.encodeAudioRecording(id, 'mp3', 128, function(recording){
+                        saveAs(recording.mp3.blob, id + '.mp3');
+                    });
+                }else if(type === 'wav'){
+                    saveAs(recording.wav.blob, id + '.wav');
+                }
+
+            }, false);
+        }
+
+        lastRecording = recording;
         selectedRecordingId = undefined;
         btnDeleteRecording.disabled = true;
     }

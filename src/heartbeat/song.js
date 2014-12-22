@@ -126,11 +126,6 @@
         this.loopEnd = 0;
         this.loopDuration = 0;
         this.audioRecordingLatency = 0;
-        //this.audioRecordings = [];
-        //this.audioRecordingsById = {};
-        //this.audioRecordingsByName = {};
-        //this.numAudioRecordings = 0;
-
 
         //console.log('PPQ song', this.ppq)
 
@@ -525,8 +520,6 @@
         //console.log(song.barsAsString);
         //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
         //console.log(song.millis);
-
-
     };
 
 
@@ -663,13 +656,30 @@
     };
 
 
-    Song.prototype.setAudioRecordingLatency = function(value){
+    Song.prototype.adjustLatencyForAllRecordings = function(value){
+        // @todo: add callback here!
         this.audioRecordingLatency = value;
         this.tracks.forEach(function(track){
-            if(track.audio !== undefined){
-                track.audio.setAudioRecordingLatency(value);
-            }
+            track.setAudioRecordingLatency(value);
         });
+    };
+
+
+    Song.prototype.setAudioRecordingLatency = function(recordId, value, callback){
+        var i, event, sampleId;
+
+        for(i = this.audioEvents.length - 1; i >= 0; i--){
+            event = this.audioEvents[i];
+            sampleId = event.sampleId;
+            if(sampleId === undefined){
+                continue;
+            }
+            if(recordId === sampleId){
+                break;
+            }
+        }
+        //console.log(recordId, value, callback);
+        event.track.setAudioRecordingLatency(recordId, value, callback);
     };
 
 
@@ -813,14 +823,8 @@
             dispatchEvent(scope, 'recorded_events', history);
         });
 
-        // preform update immediately for midi recordings
+        // perform update immediately for midi recordings
         this.update();
-
-        // should I call update here or should I leave it to the user code?
-        // var me = this;
-        // setTimeout(function(){
-        //     me.update();
-        // }, 0);
 
         dispatchEvent(this, 'record_stop');
     };
@@ -843,45 +847,9 @@
         //this.update();
     };
 
-/*
-    Song.prototype.addAudioRecording = function(recording){
-        if(recording.className !== 'AudioRecording'){
-            if(sequencer.debug > sequencer.WARN){
-                console.warn('this is not an audio recording');
-            }
-            return;
-        }
-        this.audioRecordingsById[recording.id] = recording;
-        this.audioRecordingsByName[recording.name] = recording;
-        this.audioRecordings.push(recording);
-        this.numAudioRecordings = this.audioRecordings.length;
-    };
 
-
-    Song.prototype.getAudioRecording = function(value){
-        var recording;
-        if(isNaN(value) === false){
-            recording = this.audioRecordings[parseInt(value, 10)];
-        }else{
-            recording = this.audioRecordingsById[value];
-            if(recording === undefined){
-                recording = this.audioRecordingsByName[value];
-            }
-        }
-        return recording;
-    };
-
-
-    Song.prototype.getLastAudioRecording = function(){
-        if(this.numAudioRecordings === 0){
-            return false;
-        }
-        return this.audioRecordings[this.numAudioRecordings - 1];
-    };
-
-    Song.prototype.purgeAudioRecordings = function(){
-        var recordingsInUse = [],
-            i, j, recording, event, sampleId;
+    Song.prototype.getAudioRecordingData = function(recordId){
+        var i, event, sampleId;
 
         for(i = this.audioEvents.length - 1; i >= 0; i--){
             event = this.audioEvents[i];
@@ -889,65 +857,12 @@
             if(sampleId === undefined){
                 continue;
             }
-            for(j = this.audioRecordings.length - 1; j >= 0; j--){
-                recording = this.audioRecordings[j];
-                if(recording.id === sampleId){
-                    recordingsInUse.push(recording);
-                }
+            if(recordId === sampleId){
+                break;
             }
         }
 
-        this.audioRecordings = [];
-        this.audioRecordingsById = {};
-        this.audioRecordingsByName = {};
-        this.numAudioRecordings = recordingsInUse.length;
-
-        for(i = this.numAudioRecordings - 1; i >= 0; i--){
-            recording = recordingsInUse[i];
-            this.audioRecordings.push(recording);
-            this.audioRecordingsById[recording.id] = recording;
-            this.audioRecordingsByName[recording.name] = recording;
-        }
-    };
-
-*/
-
-    Song.prototype.purgeAudioRecordings = function(){
-        var recordingsInUse = [],
-            i, j, recording, event, sampleId;
-
-        for(i = this.audioEvents.length - 1; i >= 0; i--){
-            event = this.audioEvents[i];
-            sampleId = event.sampleId;
-            if(sampleId === undefined){
-                continue;
-            }
-            for(j = this.audioRecordings.length - 1; j >= 0; j--){
-                recording = this.audioRecordings[j];
-                if(recording.id === sampleId){
-                    recordingsInUse.push(recording);
-                }
-            }
-        }
-
-        this.audioRecordings = [];
-        this.audioRecordingsById = {};
-        this.audioRecordingsByName = {};
-        this.numAudioRecordings = recordingsInUse.length;
-
-        for(i = this.numAudioRecordings - 1; i >= 0; i--){
-            recording = recordingsInUse[i];
-            this.audioRecordings.push(recording);
-            this.audioRecordingsById[recording.id] = recording;
-            this.audioRecordingsByName[recording.name] = recording;
-        }
-    };
-
-    // @param name: name of sample pack
-    // @param compression: compress wav file to mp3 or ogg
-    Song.prototype.getAudioRecordingsAsSamplePack = function(name, compression){
-        var samplePack = {}; // json data
-        return samplePack;
+        return event.track.getAudioRecordingData(recordId);
     };
 
 

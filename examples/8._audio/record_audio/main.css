@@ -65,3 +65,8 @@ ul{
 li{
     margin: 4px 0;
 }
+.download_link{
+    text-decoration: underline;
+    cursor: pointer;
+    color: blue;
+}

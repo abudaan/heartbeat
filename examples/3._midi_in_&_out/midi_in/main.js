@@ -11,41 +11,46 @@ window.onload = function(){
 
         // relative path to assets
         path = '../../../assets',
+        url;
+
+
+
+    sequencer.ready(function(){
+        // as soon as the sequencer is ready we know if the browser supports ogg and/or mp3
         url = sequencer.ogg === true ? path + '/sso/strings/violin.ogg.4.json' : path + '/sso/strings/violin.mp3.128.json';
 
+        // load asset pack; this pack contains a violin
+        sequencer.addAssetPack({url: url}, init);
 
+        function init(){
+            var track, song;
 
-    // load asset pack; this pack contains a violin
-    sequencer.addAssetPack({url: url}, init);
+            track = sequencer.createTrack();
+            track.setInstrument('Violin');
+            // set monitor to true to route the incoming midi events to the track
+            track.monitor = true;
+            track.setMidiInput('all');
 
-    function init(){
-        var track, song;
+            song = sequencer.createSong({
+                tracks: track
+            });
 
-        track = sequencer.createTrack();
-        track.setInstrument('Violin');
-        // set monitor to true to route the incoming midi events to the track
-        track.monitor = true;
-        track.setMidiInput('all');
+            // use button to toggle monitor on and off
+            btnMonitor.addEventListener('click', function(){
+                if(track.monitor === true){
+                    btnMonitor.value = 'monitor on';
+                    track.monitor = false;
+                }else{
+                    btnMonitor.value = 'monitor off';
+                    track.monitor = true;
+                }
+            }, false);
 
-        song = sequencer.createSong({
-            tracks: track
-        });
-
-        // use button to toggle monitor on and off
-        btnMonitor.addEventListener('click', function(){
-            if(track.monitor === true){
-                btnMonitor.value = 'monitor on';
-                track.monitor = false;
+            if(sequencer.midi === false){
+                pMessage.innerHTML = 'No MIDI I/O';
             }else{
-                btnMonitor.value = 'monitor off';
-                track.monitor = true;
+                pMessage.innerHTML = 'Play some note on your midi keyboard';
             }
-        }, false);
-
-        if(sequencer.midi === false){
-            pMessage.innerHTML = 'No MIDI I/O';
-        }else{
-            pMessage.innerHTML = 'Play some note on your midi keyboard';
         }
-    }
+    });
 };

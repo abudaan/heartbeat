@@ -80,11 +80,13 @@
         this.durationTicks = config.durationTicks;
         this.durationMillis = config.durationMillis;
 
+        //console.log(this.durationTicks, this.durationMillis);
+
         if(this.durationTicks === undefined && this.durationMillis === undefined){
             this.duration = this.buffer.duration;
             this.durationMillis = this.duration * 1000;
         }
-        //console.log(this.durationMillis);
+        //console.log(this.durationMillis, this.duration, this.buffer);
 
         this.muted = false;
 

@@ -33,8 +33,8 @@
     };
 
 
-    AudioTrack.prototype.setAudioRecordingLatency = function(value){
-        this.recorder.setAudioRecordingLatency(value);
+    AudioTrack.prototype.setAudioRecordingLatency = function(recordId, value, callback){
+        this.recorder.setAudioRecordingLatency(recordId, value, callback);
     };
 
 
@@ -95,8 +95,8 @@
 
 
     AudioTrack.prototype.stopRecording = function(callback){
-        this.recorder.stop(function(event){
-            callback(event);
+        this.recorder.stop(function(recording){
+            callback(recording);
         });
     };
 

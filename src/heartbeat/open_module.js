@@ -190,7 +190,7 @@
     /**
         @namespace sequencer
     */
-     window.sequencer = {
+    window.sequencer = {
         name: 'qambi',
         protectedScope: protectedScope,
         ui: {},
@@ -217,6 +217,7 @@
         ogg: false,
         mp3: false,
         record_audio: navigator.getUserMedia !== undefined,
+        bitrate_mp3_encoding: 128,
         util: {},
         debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',
@@ -244,7 +245,8 @@
                 id: 'midi'
             },
             audio: {
-                id: 'audio'
+                id: 'audio',
+                recordings: {}
             },
             instruments: {
                 id: 'instruments'

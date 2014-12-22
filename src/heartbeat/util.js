@@ -1279,6 +1279,19 @@
     }
 
 
+    function encode64(buffer) {
+        var binary = '',
+            bytes = new Uint8Array(buffer),
+            len = bytes.byteLength;
+
+        for (var i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+
+
     //sequencer.findItem = findItem;
     //sequencer.storeItem = storeItem;
 
@@ -1292,6 +1305,7 @@
     sequencer.util.getEqualPowerCurve = getEqualPowerCurve;
     sequencer.util.objectForEach = objectForEach;
     sequencer.util.insertLink = insertLink;
+    sequencer.util.encode64 = encode64;
 
     sequencer.protectedScope.getNoteLengthName = getNoteLengthName;
     sequencer.protectedScope.toBinaryString = toBinaryString;

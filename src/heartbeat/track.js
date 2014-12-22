@@ -35,6 +35,7 @@
         createPanner, // defined in channel_effects.js
         addMidiEventListener, // defined in midi_system.js
         removeMidiEventListener, // defined in midi_system.js
+        encodeRecording, // defined in audio_recording_encoder.js
 
 
         findEvent, // → defined in find_event.js
@@ -1351,7 +1352,14 @@ return;
             callback(this.recordPart.events);
         }else if(this.recordEnabled === 'audio'){
             var scope = this;
-            this.audio.stopRecording(function(event){
+            this.audio.stopRecording(function(recording){
+
+                var event = sequencer.createAudioEvent({
+                    ticks: scope.song.recordTimestampTicks,
+                    buffer: recording.audioBuffer,
+                    sampleId: recording.id,
+                });
+
                 scope.recordPart.addEvent(event);
                 scope.recordPart.update();
                 callback([event]);
@@ -1377,6 +1385,56 @@ return;
         }else if(type === 'array'){
             //console.log(data);
             this.removeEvents(data);
+        }
+    };
+
+
+    Track.prototype.getAudioRecordingData = function(recordId){
+        if(this.audio === undefined){
+            return;
+        }
+        if(recordId === undefined){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('please provide a recording id');
+            }
+            return false;
+        }
+        return sequencer.storage.audio.recordings[recordId];
+    };
+
+
+    Track.prototype.encodeAudioRecording = function(recordId, type, bitrate){
+        if(this.audio === undefined){
+            return;
+        }
+        return encodeRecording.apply(null, arguments);
+    };
+
+
+    Track.prototype.setAudioRecordingLatency = function(recordId, value, callback){
+        if(this.audio !== undefined){
+            //console.log(recordId, sequencer.storage.audio.recordings);
+            this.audio.setAudioRecordingLatency(recordId, value, function(recording){
+                // update all audio events in this song that use this recording
+
+                var i, event, sampleId,
+                    audioEvents = this.song.audioEvents;
+
+                for(i = audioEvents.length - 1; i >= 0; i--){
+                    event = audioEvents[i];
+                    sampleId = event.sampleId;
+                    if(sampleId === undefined){
+                        continue;
+                    }
+                    if(recordId === sampleId){
+                        event.buffer = recording.audioBuffer;
+                    }
+                }
+
+                if(callback !== undefined){
+                    callback();
+                }
+            });
         }
     };
 
@@ -1495,6 +1553,7 @@ return;
         createMidiNote = sequencer.createMidiNote;
         createInstrument = sequencer.createInstrument;
         createPanner = sequencer.createPanner;
+        encodeRecording = sequencer.protectedScope.encodeRecording;
 
         context = protectedScope.context;
         findItem = protectedScope.findItem;
