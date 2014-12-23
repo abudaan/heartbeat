@@ -20,7 +20,7 @@ window.onload = function() {
         });
 
         divLogo.addEventListener('click', function(){
-            window.location = '/heartbeatjs';
+            window.location = '/heartbeat';
         }, false);
 
         window.addEventListener('resize', resize, false);

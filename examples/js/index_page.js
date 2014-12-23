@@ -49,7 +49,7 @@ window.onload = function(){
 
 
     logo.addEventListener('click', function(){
-        window.location = '/heartbeatjs';
+        window.location = '/heartbeat';
     }, false);
 
 

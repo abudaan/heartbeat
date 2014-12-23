@@ -2,7 +2,7 @@
 
     'use strict';
 
-    var prefix = '/heartbeatjs';
+    var prefix = '/heartbeat';
 
     scope.navigation = {};
 
