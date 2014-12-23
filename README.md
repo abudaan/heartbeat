@@ -49,3 +49,4 @@ So far heartbeat has been used in 2 projects:
 
 
 
+ More documentation can be found [here](http://abudaan.github.io/heartbeat/docs).
