@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Track</h1>
+
+<p><a name="properties"></a></p>
+
+<h2>properties:</h2>
+
+<p><a name="autoQuantize"></a></p>
+
+<h3>autoQuantize</h3>
+
+<p><a name="channel"></a></p>
+
+<h3>channel</h3>
+
+<p><a name="className"></a></p>
+
+<h3>className</h3>
+
+<p><a name="effects"></a></p>
+
+<h3>effects</h3>
+
+<p><a name="enableRetrospectiveRecording"></a></p>
+
+<h3>enableRetrospectiveRecording</h3>
+
+<p><a name="events"></a></p>
+
+<h3>events</h3>
+
+<p><a name="eventsById"></a></p>
+
+<h3>eventsById</h3>
+
+<p><a name="fixedLengthValue"></a></p>
+
+<h3>fixedLengthValue</h3>
+
+<p><a name="id"></a></p>
+
+<h3>id</h3>
+
+<p><a name="input"></a></p>
+
+<h3>input</h3>
+
+<p><a name="instrument"></a></p>
+
+<h3>instrument</h3>
+
+<p><a name="instrumentId"></a></p>
+
+<h3>instrumentId</h3>
+
+<p><a name="instrumentName"></a></p>
+
+<h3>instrumentName</h3>
+
+<p><a name="lastEffect"></a></p>
+
+<h3>lastEffect</h3>
+
+<p><a name="midiEventListeners"></a></p>
+
+<h3>midiEventListeners</h3>
+
+<p><a name="midiInputs"></a></p>
+
+<h3>midiInputs</h3>
+
+<p><a name="midiOutputs"></a></p>
+
+<h3>midiOutputs</h3>
+
+<p><a name="monitor"></a></p>
+
+<h3>monitor</h3>
+
+<p><a name="mute"></a></p>
+
+<h3>mute</h3>
+
+<p><a name="name"></a></p>
+
+<h3>name</h3>
+
+<p><a name="needsUpdate"></a></p>
+
+<h3>needsUpdate</h3>
+
+<p><a name="notes"></a></p>
+
+<h3>notes</h3>
+
+<p><a name="notesById"></a></p>
+
+<h3>notesById</h3>
+
+<p><a name="numEffects"></a></p>
+
+<h3>numEffects</h3>
+
+<p><a name="numEvents"></a></p>
+
+<h3>numEvents</h3>
+
+<p><a name="numParts"></a></p>
+
+<h3>numParts</h3>
+
+<p><a name="output"></a></p>
+
+<h3>output</h3>
+
+<p><a name="panner"></a></p>
+
+<h3>panner</h3>
+
+<p><a name="parts"></a></p>
+
+<h3>parts</h3>
+
+<p><a name="partsById"></a></p>
+
+<h3>partsById</h3>
+
+<p><a name="quantizeValue"></a></p>
+
+<h3>quantizeValue</h3>
+
+<p><a name="recordEnabled"></a></p>
+
+<h3>recordEnabled</h3>
+
+<p><a name="recordingNotes"></a></p>
+
+<h3>recordingNotes</h3>
+
+<p><a name="retrospectiveRecording"></a></p>
+
+<h3>retrospectiveRecording</h3>
+
+<p><a name="routeToMidiOut"></a></p>
+
+<h3>routeToMidiOut</h3>
+
+<p><a name="solo"></a></p>
+
+<h3>solo</h3>
+
+<p><a name="song"></a></p>
+
+<h3>song</h3>
+
+<p><a name="type"></a></p>
+
+<h3>type</h3>
+
+<p><a name="volume"></a></p>
+
+<h3>volume</h3>
+
+<p><a name="methods"></a></p>
+
+<h2>methods:</h2>
+
+<p><a name="addEffect"></a></p>
+
+<h3>addEffect()</h3>
+
+<p><a name="addMidiEventListener"></a></p>
+
+<h3>addMidiEventListener()</h3>
+
+<p><a name="addPart"></a></p>
+
+<h3>addPart()</h3>
+
+<p><a name="addPartAt"></a></p>
+
+<h3>addPartAt()</h3>
+
+<p><a name="addParts"></a></p>
+
+<h3>addParts()</h3>
+
+<p><a name="addPartsAt"></a></p>
+
+<h3>addPartsAt()</h3>
+
+<p><a name="connect"></a></p>
+
+<h3>connect()</h3>
+
+<p><a name="copy"></a></p>
+
+<h3>copy()</h3>
+
+<p><a name="copyPart"></a></p>
+
+<h3>copyPart()</h3>
+
+<p><a name="copyParts"></a></p>
+
+<h3>copyParts()</h3>
+
+<p><a name="disconnect"></a></p>
+
+<h3>disconnect()</h3>
+
+<p><a name="findEvent"></a></p>
+
+<h3>findEvent()</h3>
+
+<p><a name="findNote"></a></p>
+
+<h3>findNote()</h3>
+
+<p><a name="getIndex"></a></p>
+
+<h3>getIndex()</h3>
+
+<p><a name="getPart"></a></p>
+
+<h3>getPart()</h3>
+
+<p><a name="getPartAt"></a></p>
+
+<h3>getPartAt()</h3>
+
+<p><a name="getPartBetween"></a></p>
+
+<h3>getPartBetween()</h3>
+
+<p><a name="getPartFromTo"></a></p>
+
+<h3>getPartFromTo()</h3>
+
+<p><a name="getParts"></a></p>
+
+<h3>getParts()</h3>
+
+<p><a name="getPartsAt"></a></p>
+
+<h3>getPartsAt()</h3>
+
+<p><a name="getPartsFromTo"></a></p>
+
+<h3>getPartsFromTo()</h3>
+
+<p><a name="getStats"></a></p>
+
+<h3>getStats()</h3>
+
+<p><a name="getVolume"></a></p>
+
+<h3>getVolume()</h3>
+
+<p><a name="moveAllParts"></a></p>
+
+<h3>moveAllParts()</h3>
+
+<p><a name="movePart"></a></p>
+
+<h3>movePart()</h3>
+
+<p><a name="movePartTo"></a></p>
+
+<h3>movePartTo()</h3>
+
+<p><a name="moveParts"></a></p>
+
+<h3>moveParts()</h3>
+
+<p><a name="movePartsTo"></a></p>
+
+<h3>movePartsTo()</h3>
+
+<p><a name="prepareForRecording"></a></p>
+
+<h3>prepareForRecording()</h3>
+
+<p><a name="quantize"></a></p>
+
+<h3>quantize()</h3>
+
+<p><a name="quantizeRecording"></a></p>
+
+<h3>quantizeRecording()</h3>
+
+<p><a name="removeAllEvents"></a></p>
+
+<h3>removeAllEvents()</h3>
+
+<p><a name="removeEffect"></a></p>
+
+<h3>removeEffect()</h3>
+
+<p><a name="removeEvent"></a></p>
+
+<h3>removeEvent()</h3>
+
+<p><a name="removeEventAt"></a></p>
+
+<h3>removeEventAt()</h3>
+
+<p><a name="removeEvents"></a></p>
+
+<h3>removeEvents()</h3>
+
+<p><a name="removeEventsAt"></a></p>
+
+<h3>removeEventsAt()</h3>
+
+<p><a name="removeEventsFromTo"></a></p>
+
+<h3>removeEventsFromTo()</h3>
+
+<p><a name="removeMidiEventListener"></a></p>
+
+<h3>removeMidiEventListener()</h3>
+
+<p><a name="removePart"></a></p>
+
+<h3>removePart()</h3>
+
+<p><a name="removeParts"></a></p>
+
+<h3>removeParts()</h3>
+
+<p><a name="reset"></a></p>
+
+<h3>reset()</h3>
+
+<p><a name="setEffectPosition"></a></p>
+
+<h3>setEffectPosition()</h3>
+
+<p><a name="setInstrument"></a></p>
+
+<h3>setInstrument()</h3>
+
+<p><a name="setMidiInput"></a></p>
+
+<h3>setMidiInput()</h3>
+
+<p><a name="setMidiOutput"></a></p>
+
+<h3>setMidiOutput()</h3>
+
+<p><a name="setPanning"></a></p>
+
+<h3>setPanning()</h3>
+
+<p><a name="setPartSolo"></a></p>
+
+<h3>setPartSolo()</h3>
+
+<p><a name="setSolo"></a></p>
+
+<h3>setSolo()</h3>
+
+<p><a name="setVolume"></a></p>
+
+<h3>setVolume()</h3>
+
+<p><a name="stopRecording"></a></p>
+
+<h3>stopRecording()</h3>
+
+<p><a name="transposePart"></a></p>
+
+<h3>transposePart()</h3>
+
+<p><a name="undoQuantize"></a></p>
+
+<h3>undoQuantize()</h3>
+
+<p><a name="undoRecording"></a></p>
+
+<h3>undoRecording()</h3>
+
+<p><a name="update"></a></p>
+
+<h3>update()</h3>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

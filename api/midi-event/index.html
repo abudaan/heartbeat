@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>MidiEvent</h1>
+
+<p><a name="propeties"></a></p>
+
+<h2>propeties:</h2>
+
+<p><a name="channel"></a></p>
+
+<h3>channel</h3>
+
+<p>Midi channel that the event is routed to</p>
+
+<p><a name="eventNumber"></a></p>
+
+<h3>eventNumber</h3>
+
+<p>Every time an event is created a global event counter is increased; so this number is actually the serial number.</p>
+
+<p><a name="id"></a></p>
+
+<h3>id</h3>
+
+<p>Unique id, a combination of the eventNumber and the creation time. MidiEvent ids start with the letter M.</p>
+
+<p><a name="isDirty"></a></p>
+
+<h3>isDirty</h3>
+
+<p>If true the event has changed but the song hasn't been updated yet.</p>
+
+<p><a name="muted"></a></p>
+
+<h3>muted</h3>
+
+<p>If true, the event is bypassed by the scheduler.</p>
+
+<p><a name="ticks"></a></p>
+
+<h3>ticks</h3>
+
+<p>The ticks value that this event is scheduled at.</p>
+
+<p><a name="type"></a></p>
+
+<h3>type</h3>
+
+<p>The midi event type.</p>
+
+<p><a name="status"></a></p>
+
+<h3>status</h3>
+
+<p>The status byte of the event, this is the type plus the channel. For instance if the type is NOTE_ON and the channel is 4, the status byte is 144 + 4 = 148.</p>
+
+<p><a name="methods"></a></p>
+
+<h2>methods:</h2>
+
+<p><a name="sequencer.createMidiEvent"></a></p>
+
+<h3>sequencer.createMidiEvent(time, type, data1, data2)</h3>
+
+<table>
+    <th>parameter</th>
+    <th>type</th>
+    <th>description</th>
+    <tr>
+        <td>time</td>
+        <td>int</td>
+        <td>the time that the event is scheduled</td>
+    </tr>
+    <tr>
+        <td>type</td>
+        <td>int</td>
+        <td>type of MidiEvent, see list below</td>
+    </tr>
+    <tr>
+        <td>data1</td>
+        <td>int</td>
+        <td>for instance if type is 144 or 128: note number</td>
+    </tr>
+    <tr>
+        <td>data2</td>
+        <td>int</td>
+        <td>for instance if type is 144 or 128: velocity</td>
+    </tr>
+</table>
+
+<pre><code class="language-javascript">// plays the central c at velocity 100
+var event = sequencer.createMidiEvent(120, sequencer.NOTE_ON, 60, 100);
+
+// pass arguments as array
+var event = sequencer.createMidiEvent([120, sequencer.NOTE_ON, 60, 100]);
+
+// if you pass a MidiEvent instance a copy/clone will be returned
+var copy = sequencer.createMidiEvent(event);
+</code></pre>
+
+<p><a name="copy"></a></p>
+
+<h3>copy()</h3>
+
+<p>Creates a copy of the MidiEvent. The returned MidiEvent gets an unique id.</p>
+
+<p><a name="setPitch"></a></p>
+
+<h3>setPitch()</h3>
+
+<table>
+    <th>parameter</th>
+    <th>type</th>
+    <tr>
+        <td>pitch</td>
+        <td>int</td>
+    </tr>
+</table>
+
+<p>Sets the pitch of the MidiEvent, values must be between 0 and 127.</p>
+
+<p><a name="transpose"></a></p>
+
+<h3>transpose(semitones)</h3>
+
+<table>
+    <th>parameter</th>
+    <th>type</th>
+    <tr>
+        <td>semitones</td>
+        <td>int</td>
+    </tr>
+</table>
+
+<p>Transposes the MidiEvent by the provided number of semitones, can be a positive or a negative value.</p>
+
+<p><a name="move"></a></p>
+
+<h3>move(ticks)</h3>
+
+<p>Moves the event by the provided amount of ticks, both positive and negative values are allowed.</p>
+
+<p><a name="moveTo"></a></p>
+
+<h3>moveTo(position)</h3>
+
+<p>Moves the event by the provided position.</p>
+
+<pre><code class="language-javascript">event.moveTo('ticks', 230555);
+
+event.moveTo('barsandbeats', 14,3,2,0);
+
+event.moveTo('millis', 7588);
+
+</code></pre>
+
+<p><a name="reset"></a></p>
+
+<h3>reset(fromPart, fromTrack, fromSong)</h3>
+
+<table>
+    <th>parameter</th>
+    <th>type</th>
+    <th>description</th>
+    <tr>
+        <td>fromPart</td>
+        <td>boolean</td>
+        <td>if set to true, the references to the part will be removed, default is true</td>
+    </tr>
+    <tr>
+        <td>fromTrack</td>
+        <td>boolean</td>
+        <td>if set to true, the references to the track will be removed, default is true</td>
+    </tr>
+    <tr>
+        <td>fromSong</td>
+        <td>boolean</td>
+        <td>if set to true, the references to the song will be removed, default is true</td>
+    </tr>
+</table>
+
+<p>Removes the event from the part and/or the track and/or the song.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

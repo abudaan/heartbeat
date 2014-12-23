@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Sequencer</h1>
+
+<p><!--
+cat index.md | mdown --header ../../../top.html --footer ../../../bottom.html > index.html
+--></p>
+
+<p>If you see <code class="language-javascript">...,</code> between the parentheses of a function it means that you can provide any number of arguments in any order</p>
+
+<p><a name="properties"></a></p>
+
+<h2>properties</h2>
+
+<p><a name="autoAdjustBufferTime"></a></p>
+
+<h3>autoAdjustBufferTime</h3>
+
+<p><a name="bufferTime"></a></p>
+
+<h3>bufferTime</h3>
+
+<p>The time in milliseconds that events are scheduled ahead</p>
+
+<p><a name="debug"></a></p>
+
+<h3>debug</h3>
+
+<p>Sets the level of debug output in the browser console:
+- 0 = off
+- 1 = shows errors, warnings, info and log messages
+- 2 = shows warnings, info and log messages
+- 3 = shows info and log messages
+- 4 = shows only log messages</p>
+
+<p>If an error occurs, heartbeat might not be able to function normally anymore. Warning and info messages are not 'lethal' but may give you hints to possible errors in your code. Log messages shouldn't appear very often, they print information when heartbeat enters an exceptional application state.</p>
+
+<p><a name="defaultInstrument"></a></p>
+
+<h3>defaultInstrument</h3>
+
+<p>The instrument that will be used if you assign a non-existing instrument or no instrument to a track. If you don't set any value for defaultInstrument, a simple sinewave synth will be used to generate the midi notes.</p>
+
+<p><a name="defaultPPQ"></a></p>
+
+<h3>defaultPPQ</h3>
+
+<p>ppq value 384</p>
+
+<ul>
+<li>quarter note: 384</li>
+<li>eighth note: 192</li>
+<li>16th note: 96</li>
+<li>32th note: 48</li>
+<li>64th note: 24</li>
+</ul>
+
+<p><a name="os"></a></p>
+
+<h3>os</h3>
+
+<p>Can be 'linux', 'android', 'osx', ios' or 'windows'.</p>
+
+<p><a name="browser"></a></p>
+
+<h3>browser</h3>
+
+<p>Can be 'chromium', 'chrome', 'firefox', 'safari' or 'opera'.</p>
+
+<p><a name="legacy"></a></p>
+
+<h3>legacy</h3>
+
+<p>If true the browser uses an older version of the WebAudio API with AudioBufferSourceNode.noteOn() and AudioBufferSourceNode.noteOff() instead of AudioBufferSourceNode.start() and AudioBufferSourceNode.stop().</p>
+
+<p><a name="minimalSongLength"></a></p>
+
+<h3>minimalSongLength</h3>
+
+<p><a name="noteNameMode"></a></p>
+
+<h3>noteNameMode</h3>
+
+<p>The notename mode determines how notes are named:</p>
+
+<ul>
+<li>"sharp" or Sequencer.SHARP</li>
+<li>"flat" or Seqeuncer.FLAT</li>
+<li>"enharmonic-sharp" or Sequencer.ENHARMONIC_SHARP</li>
+<li>"enharmonic-flat" or Sequencer.ENHARMONIC_FLAT</li>
+</ul>
+
+<p>Notenumber 61 is named C# in notename mode "sharp" and Db in notename mode "flat".</p>
+
+<p><a name="Notenumber-62-is-named-Cin-notename-mode-"enharmonic-sharp"-and-Ebb-in-notename-mode-"enharmonic-flat"."></a>
+Notenumber 62 is named C## in notename mode "enharmonic-sharp" and Ebb in notename mode "enharmonic-flat".</p>
+
+<p>Notenumber 62 is named D both in notename mode "sharp" and in notename mode "flat".</p>
+
+<p><a name="overrulePPQ"></a></p>
+
+<h3>overrulePPQ</h3>
+
+<p>When set to true, the PPQ value of the loaded midi file will be overruled by the PPQ value of the song that you create from the midi file.</p>
+
+<p>If set to false, the song will be set to the PPQ value of the loaded MIDI file.</p>
+
+<p><a name="pauseOnBlur"></a></p>
+
+<h3>pauseOnBlur</h3>
+
+<p>If set to <code class="language-javascript">true</code> the song pauses when the window or tab loses focus.</p>
+
+<p><a name="pitch"></a></p>
+
+<h3>pitch</h3>
+
+<p>The basic pitch that is used for generating tones. Default setting is A = 440Hz</p>
+
+<p><a name="restartOnFocus"></a></p>
+
+<h3>restartOnFocus</h3>
+
+<p>If set to <code class="language-javascript">true</code> the song resumes playing when the window or tab gain focus again after blur.</p>
+
+<p><a name="methods"></a></p>
+
+<h2>methods</h2>
+
+<p><a name="addAssetPack"></a></p>
+
+<h3>addAssetPack()</h3>
+
+<p>Adds an AssetPack instance to the storage, see <a href="/docs/adding-assets">adding assets</a>.</p>
+
+<pre><code class="language-javascript">addAssetPack({
+    url: 'url/to/file',     // mandatory, file must be json
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional, can be set to 'default' or 'overwrite'
+}, callback);               // optional
+
+addAssetPack({
+    json: {JSON},           // json can a json string, a json object and a non-strict javascript object
+    name: 'name',           // optional
+    folder: 'folder'        // optional
+    action: 'action',       // optional, can be set to 'default' or 'overwrite'
+}, callback);               // optional
+
+addAssetPack({
+    mapping: {              // mandatory
+        sampleId: sampleData,
+        ...
+    }
+    name: 'name',           // optional
+    action: 'action',       // optional, can be set to 'default' or 'overwrite'
+    folder: 'folder'        // optional
+}, callback);               // optional
+
+</code></pre>
+
+<p><a name="addInstrument"></a></p>
+
+<h3>addInstrument()</h3>
+
+<p>Adds an InstrumentConfig instance to the storage, see <a href="/docs/adding-assets">adding assets</a>.</p>
+
+<pre><code class="language-javascript">addInstrument({
+    url: url/to/file.json,      // mandatory, file must be json
+    name: 'name',               // mandatory if not specified in json data
+    folder: 'folder',           // optional
+    action: 'action',           // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+addInstrument({
+    json: {JSON},               // json can a json string, a json object and a non-strict javascript object
+    name: 'name',               // mandatory if not specified in json data
+    folder: 'folder',           // optional
+    action: 'action',           // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+addInstrument({
+    mapping: {                      // mandatory
+        note_id: {
+            n: 'sample_id'
+            ...
+        }
+    }
+    name: 'name',                   // mandatory
+    folder: 'folder',               // optional
+    action: 'action',               // optional, can be set to 'default' or 'overwrite'
+    sample_path: "path/to/samples", // optional
+}, callback);                       // optional
+
+addInstrument({
+    key_range: [min, max],          // mandatory
+    name: 'name',                   // mandatory
+    folder: 'folder',               // optional
+    action: 'action',               // optional, can be set to 'default' or 'overwrite'
+    sample_path: "path/to/samples", // optional
+}, callback);                       // optional
+
+</code></pre>
+
+<p><a name="addMidiFile"></a></p>
+
+<h3>addMidiFile()</h3>
+
+<p>Adds a MidiFile instance to the storage, see <a href="/docs/adding-assets">adding assets</a>.</p>
+
+<pre><code class="language-javascript">addMidiFile({
+    url: 'url/to/file',         // mandatory, file can be in json format or a .mid file
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action',           // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+addMidiFile({
+    json: {JSON},               // json can a json string, a json object and a non-strict javascript object
+    name: 'name',               // optional
+    folder: 'folder'            // optional
+    action: 'action',           // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+addMidiFile({
+    base64: '...',              // mandatory, the base64 encoded midi file
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action',           // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+addMidiFile({
+    arraybuffer: ArrayBuffer,   // mandatory
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional, can be set to 'default' or 'overwrite'
+}, callback);                   // optional
+
+</code></pre>
+
+<p><a name="addSamplePack"></a></p>
+
+<h3>addSamplePack()</h3>
+
+<p>Adds a SamplePack instance to the storage, see <a href="/docs/adding-assets">adding assets</a>.</p>
+
+<pre><code class="language-javascript">addSamplePack({
+    url: 'url/to/file.json',    // mandatory, file must be json
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional, can be set to 'default', overwrite' or 'append'
+}, callback);                   // optional
+
+
+addSamplePack({
+    json: {JSON},               // json can a json string, a json object or a non-strict javascript object
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional, can be set to 'default', overwrite' or 'append'
+}, callback);                   // optional
+
+addSamplePack({
+    mapping: {                  // mandatory
+        id: 'sample'
+        ...
+    },
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional, can be set to 'default', overwrite' and 'append'
+}, callback);                   // optional
+
+</code></pre>
+
+<p><a name="addTask"></a></p>
+
+<h3>addTask(task, callback, callbackAfterAllTasksAreDone)</h3>
+
+<p>Allows you to add a task to heartbeat's internal task queue. There are a few asynchronous methods that are automatically added to this queue, for instance Instrument.transpose() and all the methods that add assets to heartbeat. You can also add your own methods to the queue:</p>
+
+<pre><code class="language-javascript">// example:
+sequencer.addTask(
+    {                           // the task is a simple object with 2 keys:
+        method: yourMethod,     // mandatory
+        params: yourParams      // optional
+    },
+    function(){
+        console.log('task done!');
+    },
+    true
+});
+
+// then call:
+sequencer.startTaskQueue();
+
+</code></pre>
+
+<p>In the example above the 3rd argument is set to "true" which means that the callback is only called after all tasks in the queue are done. Another way of controlling when callbacks are called is by using the taskIds that is returned by addTask():</p>
+
+<pre><code class="language-javascript">var taskId1 = sequencer.addTask(task1),
+    taskId2 = sequencer.addTask(task2),
+    taskId3 = sequencer.addTask(task3),
+    taskId4 = sequencer.addTask(task4),
+    taskId5 = sequencer.addTask(task5);
+
+sequencer.addCallbackAfterTask(function(){
+
+    // the callback is called after task1 and task4 have been completed
+
+}, [taskId1, taskId4]);
+
+sequencer.startTaskQueue();
+
+</code></pre>
+
+<p>During initialization heartbeat adds a few tasks to the queue, for instance querying the midi system and adding samples for the metronome.</p>
+
+<p><a name="startTaskQueue"></a></p>
+
+<h3>startTaskQueue()</h3>
+
+<p>Starts the internal task queue if the queue isn't already running.</p>
+
+<p><a name="addCallbackAfterTask"></a></p>
+
+<h3>addCallbackAfterTask(callback, [taskId, ...])</h3>
+
+<p>Adds a callback to the task queue. This callback is only called after the tasks with the provided taskIds are done.</p>
+
+<p><a name="allNotesOff"></a></p>
+
+<h3>allNotesOff()</h3>
+
+<p>Sends all notes off and reset controller events to all active instruments. Also external instruments connected via midi out wil receive all notes off and reset controller events.</p>
+
+<p><a name="checkEventType"></a></p>
+
+<h3>checkEventType()</h3>
+
+<p><a name="configureMasterCompressor"></a></p>
+
+<h3>configureMasterCompressor()</h3>
+
+<p>Configures the compressor that sits between heartbeat's output and the audio context's destination (i.e. the master output).</p>
+
+<ul>
+<li>threshold</li>
+<li>knee</li>
+<li>ratio</li>
+<li>reduction</li>
+<li>attack</li>
+<li>release</li>
+</ul>
+
+<p><a name="coordinatesToPosition"></a></p>
+
+<h3>coordinatesToPosition()</h3>
+
+<p><a name="createAudioEvent"></a></p>
+
+<h3>createAudioEvent()</h3>
+
+<p><a name="createBiQuadFilter"></a></p>
+
+<h3>createBiQuadFilter()</h3>
+
+<p><a name="createCompressor"></a></p>
+
+<h3>createCompressor()</h3>
+
+<p><a name="createDelay"></a></p>
+
+<h3>createDelay()</h3>
+
+<p><a name="createKeyEditor"></a></p>
+
+<h3>createKeyEditor()</h3>
+
+<p><a name="createMidiEvent"></a></p>
+
+<h3>createMidiEvent()</h3>
+
+<p><a name="createMidiNote"></a></p>
+
+<h3>createMidiNote()</h3>
+
+<p><a name="createNote"></a></p>
+
+<h3>createNote()</h3>
+
+<p><a name="createPanner"></a></p>
+
+<h3>createPanner()</h3>
+
+<p><a name="createPanner2"></a></p>
+
+<h3>createPanner2()</h3>
+
+<p><a name="createPart"></a></p>
+
+<h3>createPart()</h3>
+
+<p><a name="createReverb"></a></p>
+
+<h3>createReverb()</h3>
+
+<p><a name="createSample"></a></p>
+
+<h3>createSample()</h3>
+
+<p><a name="createSimpleSynth"></a></p>
+
+<h3>createSimpleSynth()</h3>
+
+<p><a name="createSong"></a></p>
+
+<h3>createSong()</h3>
+
+<p><a name="createTrack"></a></p>
+
+<h3>createTrack()</h3>
+
+<p><a name="enableMasterCompressor"></a></p>
+
+<h3>enableMasterCompressor()</h3>
+
+<p><a name="findEvent"></a></p>
+
+<h3>findEvent()</h3>
+
+<p><a name="findItem"></a></p>
+
+<h3>findItem()</h3>
+
+<p><a name="findNote"></a></p>
+
+<h3>findNote()</h3>
+
+<p><a name="fixedLength"></a></p>
+
+<h3>fixedLength()</h3>
+
+<p><a name="getCompressionReduction"></a></p>
+
+<h3>getCompressionReduction()</h3>
+
+<p><a name="getInstrument"></a></p>
+
+<h3>getInstrument()</h3>
+
+<p><a name="getInstrumentsInFolder"></a></p>
+
+<h3>getInstrumentsInFolder()</h3>
+
+<p><a name="getMasterVolume"></a></p>
+
+<h3>getMasterVolume()</h3>
+
+<p><a name="getMidiFile"></a></p>
+
+<h3>getMidiFile()</h3>
+
+<p><a name="getMidiFilesInFolder"></a></p>
+
+<h3>getMidiFilesInFolder()</h3>
+
+<p><a name="getMidiInputs"></a></p>
+
+<h3>getMidiInputs()</h3>
+
+<p><a name="getMidiInputsAsDropdown"></a></p>
+
+<h3>getMidiInputsAsDropdown()</h3>
+
+<p><a name="getMidiOutputs"></a></p>
+
+<h3>getMidiOutputs()</h3>
+
+<p><a name="getMidiOutputsAsDropdown"></a></p>
+
+<h3>getMidiOutputsAsDropdown()</h3>
+
+<p><a name="getMidiPortsAsDropdown"></a></p>
+
+<h3>getMidiPortsAsDropdown()</h3>
+
+<p><a name="getNiceTime"></a></p>
+
+<h3>getNiceTime()</h3>
+
+<p><a name="getSample"></a></p>
+
+<h3>getSample()</h3>
+
+<p><a name="getSamplePack"></a></p>
+
+<h3>getSamplePack()</h3>
+
+<p><a name="getSamplesInFolder"></a></p>
+
+<h3>getSamplesInFolder()</h3>
+
+<p><a name="getSnapshot"></a></p>
+
+<h3>getSnapshot()</h3>
+
+<p><a name="getStats"></a></p>
+
+<h3>getStats()</h3>
+
+<p><a name="getTime"></a></p>
+
+<h3>getTime()</h3>
+
+<p>Returns the time passed since the audio context was created.</p>
+
+<p><a name="gridToSong"></a></p>
+
+<h3>gridToSong()</h3>
+
+<p><a name="isBlackKey"></a></p>
+
+<h3>isBlackKey()</h3>
+
+<p><a name="midiEventNameByNumber"></a></p>
+
+<h3>midiEventNameByNumber()</h3>
+
+<p><a name="midiEventNumberByName"></a></p>
+
+<h3>midiEventNumberByName()</h3>
+
+<p><a name="play"></a></p>
+
+<h3>play()</h3>
+
+<p>Plays back anything, you can pass seperate midi events, arrays of midi events, parts, track and songs. You can also pass a bpm value and an instrument. The order of arguments is not important.</p>
+
+<p>It creates a temporarily song of all supplied data. The first found bpm value is used for the song's tempo.</p>
+
+<p><a name="positionToSong"></a></p>
+
+<h3>positionToSong()</h3>
+
+<p><a name="processEvent"></a></p>
+
+<h3>processEvent()</h3>
+
+<p><a name="processEvents"></a></p>
+
+<h3>processEvents()</h3>
+
+<p><a name="quantize"></a></p>
+
+<h3>quantize()</h3>
+
+<p><a name="ready"></a></p>
+
+<h3>ready()</h3>
+
+<p>If you don't add any assets (midifiles, sample- or assetpacks) you have to wait for heartbeat's 'ready' event before you can use it.</p>
+
+<pre><code class="language-javascript">sequencer.ready(function init(){
+   // now heartbeat has been initialized
+});
+</code></pre>
+
+<p>If you do load assets, you don't have to wait for the 'ready' event because the callback of the add method will be called after heartbeat has been fully initialized.</p>
+
+<pre><code class="language-javascript">sequencer.addAssetPack({url:path/to/assetpack}, function init(){
+    // fully initialized
+})
+</code></pre>
+
+<p><a name="saveSongAsMidiFile"></a></p>
+
+<h3>saveSongAsMidiFile()</h3>
+
+<p><a name="setAnimationFrameType"></a></p>
+
+<h3>setAnimationFrameType()</h3>
+
+<p><a name="setMasterVolume"></a></p>
+
+<h3>setMasterVolume()</h3>
+
+<p><a name="songToGrid"></a></p>
+
+<h3>songToGrid()</h3>
+
+<p><a name="stopProcessEvent"></a></p>
+
+<h3>stopProcessEvent()</h3>
+
+<p><a name="stopProcessEvents"></a></p>
+
+<h3>stopProcessEvents()</h3>
+
+<p><a name="storeItem"></a></p>
+
+<h3>storeItem()</h3>
+
+<p><a name="unloadInstrument"></a></p>
+
+<h3>unloadInstrument()</h3>
+
+<p><a name="unloadMidiFile"></a></p>
+
+<h3>unloadMidiFile()</h3>
+
+<p><a name="unloadSamplePack"></a></p>
+
+<h3>unloadSamplePack()</h3>
+
+<p><a name="objects"></a></p>
+
+<h2>objects</h2>
+
+<p><a name="midiInputs"></a></p>
+
+<h3>midiInputs</h3>
+
+<p><a name="midiOutputs"></a></p>
+
+<h3>midiOutputs</h3>
+
+<p><a name="storage"></a></p>
+
+<h3>storage</h3>
+
+<p><a name="ui"></a></p>
+
+<h3>ui</h3>
+
+<p><a name="util"></a></p>
+
+<h3>util</h3>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

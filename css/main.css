@@ -1,0 +1,21 @@
+html, body{
+    background-color: #fff;
+    font-family: Verdana;
+    font-size: 13px;
+    line-height: 18px;
+    padding: 10px;
+}
+table, th, td{
+    border: 1px solid #ddd;
+}
+td{
+    padding: 10px;
+}
+td:first-child{
+    color: blue;
+}
+pre{
+    border: 1px solid #ddd;
+    overflow: auto;
+    font-size: 13px;
+}

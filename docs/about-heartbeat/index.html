@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>About heartbeat</h1>
+
+<p>Heartbeat is a toolkit, a set of tools that make it easy to handle MIDI in the browser. Heartbeat has no GUI. It is intended to be used as an engine behind your application. Heartbeat is set up very flexible so you can make any kind of application on top of it; a game, an online DAW, artistic sites, music science experiments and so on.</p>
+
+<p>The tools are organized around the concept of a song like Ardour, Cubase, Logic and so on. So you have songs that contain tracks that contain parts that contain MIDI or Audio events. But you can also just create and play events without the whole hierarchical structure of a song.</p>
+
+<p>Each track has individual panning and volume controllers. Each song has its own master volume. Channel effects like reverb can be added per track, and to the master output of a song.</p>
+
+<p>You can create instruments for the sample player very easily yourself. The instrument format is very similar to the .sfz format and in the tools folder you'll find a tool that converts .sfz files to heartbeat instruments.</p>
+
+<p>Heartbeat instruments support the controller events sustain pedal, volume and panning. You can set the release duration and the type of release envelope and you can set key scaling for panning (stereo spread) and for release duration.</p>
+
+<p>There are a couple of instruments available that show you what is possible. For instance the City Piano is an example of an instrument with multiple velocity layers and the organ an example of a sustained instrument.</p>
+
+<p>The documentation is utterly incomplete. The examples expose some of the features and their working, but that still leaves plenty of features unexplained. I am working hard to get the documentation complete.</p>
+
+<p>Meanwhile if you have questions about heartbeat, drop me a line or create an issue in <a href="https://github.com/abudaan/heartbeat/issues">GitHub</a>.</p>
+
+<p><a name="Supported-browsers"></a></p>
+
+<h3>Supported browsers</h3>
+
+<p>Heartbeat works in all browsers that have <a href="https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html">WebAudio API</a> implemented. That means all modern browsers but Internet Explorer. However, it is said that the next version of Internet Explorer will support the WebAudio API.</p>
+
+<p>Heartbeat's support for midi input and output is based on the <a href="http://www.w3.org/TR/webmidi/">WebMIDI API</a> which is currently only implemented in Chrome, Canary and Chromium on all available platforms except iOS. In browsers that don't have the WebMIDI API implemented, heartbeat tries to fall back to the <a href="http://jazz-soft.net">Jazz plugin</a> using Chris Wilson's <a href="https://github.com/cwilso/WebMIDIAPIShim">WebMIDIAPIShim</a>. There is no Jazz plugin for iOS, however you can try <a href="https://github.com/mizuhiki/WebMIDIAPIShimForiOS">WebMIDIAPIShimForiOS</a>.</p>
+
+<p>Heartbeat has been tested to work on the following browsers:</p>
+
+<ol>
+<li>Chrome (Linux | Android | OSX | iOS | Windows)</li>
+<li>Safari (iOS 6.0+ | OSX)</li>
+<li>Canary (OSX | Windows)</li>
+<li>Chromium (Linux | OSX | Windows)</li>
+<li>Firefox (Linux | Android | OSX | Windows)</li>
+<li>Opera (Linux | OSX | Windows)</li>
+</ol>
+
+<p>Note that some browsers don't support all audio formats. For instance Safari on iOS and OSX, and Chrome on iOS don't support ogg files and Opera doesn't support mp3 files. And Chromium only supports mp3 dependent on the build and the platform.</p>
+
+<p>Best is to serve your sample packs in both ogg and mp3 format. Or if you don't care about support for Opera you can just use the mp3 format. Conversely, if you don't care about support for iOS you can just use ogg. More information about supported codecs in browser can be found <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats">here</a>.</p>
+
+<p><a name="State-of-development"></a></p>
+
+<h3>State of development</h3>
+
+<p>Heartbeat is still in development. The planned next steps are:</p>
+
+<ul>
+<li>write documentation</li>
+<li>more examples</li>
+<li>audio support: AudioEvent, AudioPart, transpose audio, record audio</li>
+<li>add support for MusicXML (read only, <a href="http://en.wikipedia.org/wiki/Dynamics_%28music%29">dynamics</a> will be interpreted during playback)</li>
+<li>add more instruments and effects</li>
+<li>create API for third party Web Audio synths and sample players</li>
+<li>add plugin API for synths and effects</li>
+<li>score editor with <a href="http://vexflow.com/">VexFlow</a></li>
+</ul>
+
+<p><a name="Technical-stuff"></a></p>
+
+<h3>Technical stuff</h3>
+
+<p>Heartbeat makes use of the following external libraries:</p>
+
+<ol>
+<li>For parsing binary to base64: <a href="https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js">base64binary.js</a> by Daniel Guerrero.</li>
+<li>For reading midi files: an adapted version of <a href="https://github.com/gasman/jasmid">jasmid</a> by Matt Westcott &amp; Ben Firshman.</li>
+<li>For writing midi files: an adapted version of <a href="https://github.com/sergi/jsmidi">jsmidi</a> by Sergi Mansilla.</li>
+<li>For midi i/o heartbeat relies on the <a href="http://www.w3.org/TR/webmidi/">WebMIDI API</a>.</li>
+<li>For midi i/o in browsers that don't have the WebMIDI API implemented: <a href="http://jazz-soft.net">Jazz plugin</a> using <a href="https://github.com/cwilso/WebMIDIAPIShim">WebMIDIAPIShim</a>.</li>
+<li>For recording audio heartbeat uses the <a href="http://dev.w3.org/2011/webrtc/editor/getusermedia.html">getUserMedia API</a>.</li>
+</ol>
+
+<p><a name="Links-to-related-libraries-or-other-interesting-projects"></a></p>
+
+<h3>Links to related libraries or other interesting projects</h3>
+
+<ul>
+<li><a href="http://mohayonao.github.io/timbre.js/">Timbrejs</a> javascript sound programming library</li>
+<li><a href="http://lowlag.alienbill.com/">lowLagjs</a> javascript sound generating library</li>
+<li>a lot of <a href="http://www.g200kg.com/">webmusic tools</a>, Japanese site, use Google translate</li>
+<li><a href="http://www.g200kg.com/en/docs/webmidilink/">webmidi link</a></li>
+<li><a href="http://www.iannix.org/en/download-iannix/">iannix</a></li>
+<li><a href="http://luketeaford.com/apps/tanguy/">tanguy</a> Web Audio synthesizer</li>
+</ul>
+
+<p><a name="Contribute-to-heartbeat"></a></p>
+
+<h3>Contribute to heartbeat</h3>
+
+<p>Bug reports, feature requests, good ideas and feedback are very welcome! You can use the <a href="https://github.com/abudaan/heartbeat/issues">GitHub issue tracker</a> for this.</p>
+
+<p>If you use heartbeat in your project it would be nice if you send me the link so I can add it to the 'used by' list.</p>
+
+<p>If you are a native English speaker, or just very good at English, and you come across a grammar error or a weird sentence structure, please let me know.</p>
+
+<p>If you are a coder you could contribute to the code.</p>
+
+<p>If you are a sounddesigner you could contribute to the instruments library.</p>
+
+<p>Or else you might consider the option of donating money:</p>
+
+<blockquote>
+  <p>BIC: TRIONL2U<br>
+  IBAN: NL60 TRIO 0197 7415 09<br>
+  account holder: <a href="http://abumarkub.net/abublog/?page_id=262">abumarkub</a><br></p>
+</blockquote>
+
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="DXYL6EDYHNGWS">
+<input type="image" src="https://www.paypalobjects.com/en_GB/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal – The safer, easier way to pay online.">
+<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+
+<p><a name=credits></p>
+
+<p><a name="Credits"></a></p>
+
+<h3>Credits</h3>
+
+<p>I would like to thank the following people for using and testing the early versions of heartbeat and/or for their most valuable feedback:</p>
+
+<ul>
+<li><a href="https://www.musicfirst.com/">Michael Avery</a></li>
+<li><a href="http://www.sonicworks.co.uk/">Tim Venison</a></li>
+<li><a href="http://www.nicolaslair.com/">Nicolas Lair</a></li>
+<li><a href="http://danielhai.com">Daniel Hai</a></li>
+<li><a href="http://intervalstudios.com/">Joshue Ott</a></li>
+<li><a href="http://www.linkedin.com/pub/stephan-marche/59/335/28b">Stephan Marche</a></li>
+<li><a href="http://brnrd.net">Bernard Vehmeyer</a></li>
+</ul>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

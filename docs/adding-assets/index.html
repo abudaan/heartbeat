@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Adding assets: samples, sample packs, midi files and instruments</h1>
+
+<blockquote>
+  <p><em>described methods:</em><br/>
+  addMidiFile()<br/>
+  addInstrument()<br/>
+  addSamplePack()<br/>
+  addAssetPack()<br/>
+  <br/>
+  removeMidiFile()<br/>
+  removeInstrument()<br/>
+  removeSamplePack()<br/>
+  removeAssetPack()<br/>
+  <br/>
+  getMidiFile()<br/>
+  getInstrument()<br/>
+  getSample()<br/>
+  getSamplePack()<br/>
+  getAssetPack()<br/>
+  <br/>
+  getMidiFiles()<br/>
+  getInstruments()<br/>
+  getSamples()<br/>
+  getSamplePacks()<br/>
+  getAssetPacks()<br/></p>
+</blockquote>
+
+<p><a name="introduction"></a></p>
+
+<h2>introduction</h2>
+
+<p>There are 4 types of assets that you can load into heartbeat: midi files, instruments, sample packs and asset packs.</p>
+
+<p>All asset types are basically javascript objects and can be loaded as json data.</p>
+
+<p>An asset may contain base64 encoded binary data if needed.</p>
+
+<p>Midi files can also be loaded in binary .mid format, and the audio files of a sample pack can be loaded as binary audio files.</p>
+
+<p>An instrument asset maps note names or note numbers to samples and describes how to play these samples; it only contains the paths to the samples, not the samples themselves. Samples are loaded separately as sample packs.</p>
+
+<p>A sample pack maps ids or names to sample data, it may include the samples as base64 encoded audio files or as urls of the audio files.</p>
+
+<p>An asset pack is a container that can hold multiple midi files, instruments and sample packs. Asset packs can be used to group a set of assets that have some form of relation with each other. Using asset packs can limit the amount of http requests.</p>
+
+<p><a name="methods-and-instances"></a></p>
+
+<h2>methods and instances</h2>
+
+<p>If you add an asset to heartbeat, an instance of the associated javascript class will be created from the asset data:</p>
+
+<ul>
+<li>midi files -> addMidiFile() -> MidiFile</li>
+<li>instruments -> addInstrument() -> InstrumentConfig</li>
+<li>sample packs -> addSamplePack() -> SamplePack</li>
+<li>asset packs -> addAssetPack() -> AssetPack</li>
+</ul>
+
+<p>As you can see it is rather straightforward. Instrument assets are the odd ones here, they are not converted into instances of Instrument as you would expect. This is because an Instrument instance needs a SamplePack as well; the SamplePack provides the samples and the InstrumentConfig provides the way these samples are used by the Instrument.</p>
+
+<p><a name="heartbeat's-storage"></a></p>
+
+<h2>heartbeat's storage</h2>
+
+<p>The instances will be stored in heartbeat's storage, an object that mimics a file system:</p>
+
+<ul>
+<li>samples are stored in <code class="language-javascript">sequencer.storage.audio</code></li>
+<li>midi files are stored in <code class="language-javascript">sequencer.storage.midi</code></li>
+<li>instruments are stored in <code class="language-javascript">sequencer.storage.instruments</code></li>
+<li>sample packs are stored in <code class="language-javascript">sequencer.storage.samplepacks</code></li>
+<li>asset packs are stored in <code class="language-javascript">sequencer.storage.assetpacks</code></li>
+</ul>
+
+<p>Note that the samples of a sample pack are stored in the folder "audio".</p>
+
+<p>If you add an asset, you can specify a folder in which you want to store the asset. For instance if you add a midi file and specify the name "Sonata Facile" and the folder "classical/mozart/sonatas", the midi file will be stored here:<br/>
+<code class="language-javascript">sequencer.storage.midi.classical.mozart.sonatas["Sonata Facile"]</code></p>
+
+<p>If you try to add an asset to a location in the storage that is already occupied, heartbeat will by default <em>not</em> overwrite the existing asset. If it is your intention to replace an existing asset, you can set the key "action" of the asset to "overwrite".</p>
+
+<p>The "action" key can be set to "default" which is the same as omitting the key altogether, to "overwrite" and, for sample packs only, to "append". The last value allows you to add samples to an already loaded sample pack.</p>
+
+<p><a name="ways-of-using-add-methods"></a></p>
+
+<h2>ways of using add methods</h2>
+
+<p>There is a small difference between "adding assets" and "loading assets"; adding assets means that local json data or a local javascript object is converted into an instance of the javascript class that is associated with the asset type, loading means that this data has to be retrieved from a remote server first. However this distinction is almost transparent because you can use the same method for loading and adding. All assets can be added/loaded in the same 3 ways:</p>
+
+<p><em>1. load a remote json file</em></p>
+
+<p>Uses the following keys:</p>
+
+<ul>
+<li>"url"  mandatory</li>
+<li>"name"  optional</li>
+<li>"folder"  optional</li>
+<li>"action"  optional, defaults to "default"</li>
+</ul>
+
+<p>Obviously, "url" is the url of the remote json file. The keys "name" and folder" are optional. If you supply a value for "name" it will overrule the name that is specified in the json file. If you don't supply a value for "name" and there isn't a name specified in the json file either, the name of the json file will be used.</p>
+
+<p>If you don't supply a value for "folder" and there isn't a value for value specified in the json file either, the asset will be stored directly in the root folder of the asset type. For instance for midi files this is the folder "sequencer.storage.midi".</p>
+
+<p><em>2 add local json data</em></p>
+
+<p>Uses the following keys:</p>
+
+<ul>
+<li>"json"  mandatory</li>
+<li>"name"  optional</li>
+<li>"folder"  optional</li>
+<li>"action"  optional, defaults to "default"</li>
+</ul>
+
+<p>The value of "json" can be a json string, a json object and a non-strict javascript object. Non-strict means that you don't need to use double quotes and quotes around the keys as is mandatory for json.</p>
+
+<p>For instrument assets "folder" is optional but "name" is mandatory, so it has to be supplied to the add method, or specified in the json file.</p>
+
+<p>For all other assets both "name" and folder" are optional. If you don't supply a value for "name" and there isn't a name specified in the json file either, the id of the asset instance will be used to store the asset in the storage. You can retrieve this id like so:</p>
+
+<pre><code class="language-javascript">var samplePackId;
+
+addSamplePack({
+        json: {
+            JSON data with no value for "name"
+        }
+    }, function(samplepack){
+        // samplepack is an instance of SamplePack
+        samplePackId = samplepack.id;
+    }
+);
+</code></pre>
+
+<p>As you can see, a reference to the instance that is created from the asset data is returned to the callback method. This applies to all methods that add assets.</p>
+
+<p><em>3 add directly as javascript object</em></p>
+
+<p>This way of adding an asset is very suitable for creating assets at runtime. In fact you create the json data that the other 2 methods load or add. The keys that are mandatory depend on the type of asset, see the detailed description of the asset types below.</p>
+
+<p>Note that if you load assets from a different server, <a href="http://enable-cors.org/">CORS</a> must be enabled on that server.</p>
+
+<p><a name="sample-packs"></a></p>
+
+<h2>sample packs</h2>
+
+<p>Samples are loaded as sample pack, a sample pack is basically a logic set of samples, for instance all samples that are used in a particular instrument like piano or violin, or samples that belong to a certain group of sounds like sound-effects, impulse-responses, or any other grouping of samples you see fit.</p>
+
+<p>A sample pack asset is parse into a SamplePack instance and must at least contain a mapping object. The mapping object maps names or ids to sample data. The sample data can be specified as base64 string or as path or url to an audio file.</p>
+
+<p>The name or id of the samples is very handy for non-instrument samplepacks, like samplepacks that contain impulse-response files for convolution reverb. For instrument sample packs you can also use the note numbers or the note names as id, see in the chapter about <a href="http://abumarkub/docs/loading-assets/#instruments">instruments</a>.</p>
+
+<p>An example of a base64 sample pack:</p>
+
+<pre><code class="language-javascript">{
+    "name": "SFX",
+    "folder": "soundeffects",
+    "mapping": {
+        "SFX001": "SUQzAwAAAAAHd.....",
+        "SFX002": "SUQzAwAAAAAHdlRD.....",
+        "SFX003": "SUQzAwAAAAAHdlRDT04AA....."
+    }
+}
+</code></pre>
+
+<p>A value for the folder key is specified, this means that the sample pack will be stored here:<br/>
+<code class="language-javascript">sequencer.storage.samplepacks.soundeffects.SFX</code></p>
+
+<p>If you load a sample pack all samples will be parsed and decoded into AudioBuffers and stored in the audio storage object:<br/>
+<code class="language-javascript">sequencer.storage.audio.soundeffects.SFX.SFX001</code><br/>
+<code class="language-javascript">sequencer.storage.audio.soundeffects.SFX.SFX002</code><br/>
+<code class="language-javascript">sequencer.storage.audio.soundeffects.SFX.SFX003</code><br/></p>
+
+<p>An example of a path/url based sample pack that loads impulse-response files for convolution reverberation:</p>
+
+<pre><code class="language-javascript">{
+    "name": "VS8F",
+    "folder": "ir",
+    "extension": "wav",
+    "remote_path": "../audio/samples",
+    "mapping": {
+        "reverb": "/ogg/100-Reverb.ogg",
+        "cathedral": "314-Cathedral",
+        "plate": "109-CoolPlate.wav",
+        "muffler": "muffler.mp3",
+        "telephone": "http://otherdomain.org/audio/samples/telephone.wav"
+    }
+}
+</code></pre>
+
+<p>As you can see, you can mix paths and urls. The keys <code class="language-javascript">extension</code> and <code class="language-javascript">remote_path</code> are optional, but if you omit both you have to provide full paths/urls to the samples. If all your samples are located in the same directory and all have the same file extension, then providing a value for <code class="language-javascript">remote_path</code> and <code class="language-javascript">extension</code> results in a smaller file size.</p>
+
+<p>In the example above the samples will be downloaded from:</p>
+
+<ul>
+<li>reverb: ../audio/samples/ogg/100-Reverb.ogg</li>
+<li>cathedral: ../audio/samples/314-Cathedral.wav</li>
+<li>coolplate: ../audio/samples/109-CoolPlate.wav</li>
+<li>muffler: ../audio/samples/muffler.mp3</li>
+<li>telephone: <a href="http://otherdomain.org/audio/samples/telephone.wav">http://otherdomain.org/audio/samples/telephone.wav</a></li>
+</ul>
+
+<p>If you load a url/path based sample pack, all samples will be downloaded, decoded to ArrayBuffers and stored in the audio storage object.</p>
+
+<p>Note that this way of loading samples is very flexible but requires a lot of http requests.</p>
+
+<p>Note also that if you load samples from a different server, <a href="http://enable-cors.org/">CORS</a> must be enabled on that server.</p>
+
+<p>You can add a sample pack to heartbeat in three ways:</p>
+
+<p><em>1. load remote json file</em></p>
+
+<pre><code class="language-javascript">addSamplePack({
+    url: 'url/to/file.json',// mandatory
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+}, callback);               // optional
+</code></pre>
+
+<p><em>2. add local json data</em></p>
+
+<pre><code class="language-javascript">addSamplePack({
+    json: {JSON},           // mandatory
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+}, callback);               // optional
+</code></pre>
+
+<p><em>3 add directly as javascript object</em></p>
+
+<pre><code class="language-javascript">addSamplePack({
+    mapping: {              // mandatory
+        id: 'sample'        // url or base64 encoded audio file
+    },
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+}, callback);               // optional
+
+</code></pre>
+
+<p>Because sample packs can be very large in file size, you can load a sample pack in chunks if you set the action key to "append", see the last code example below.</p>
+
+<p>Code examples:<br/></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/3._sample_packs/from_remote_json">load remote json</a></li>
+<li><a href="../../examples/#!1._managing_assets/3._sample_packs/from_local_json">add local json</a></li>
+<li><a href="../../examples/#!1._managing_assets/3._sample_packs/append_to_sample_pack">append samples to sample pack</a></li>
+</ul>
+
+<p><a name="instruments"></a></p>
+
+<h2>instruments</h2>
+
+<p>An instrument asset will be parsed into a InstrumentConfig instance and must have at least a name and a mapping or a key range. A mapping maps note names or midi note numbers to sample names:</p>
+
+<pre><code class="language-javascript">{
+    "name": "piano",
+    "folder": "keyboard",
+    "sample_path": "stereo_samples/piano_upright",
+    "mapping": {
+        "21": {"n":"A0"},
+        "22": {"n":"Bb0"},
+        "23": {"n":"B0"},
+        "24": {"n":"C1"},
+        "25": {"n":"Db1"},
+        "26": {"n":"D1"},
+        "27": {"n":"Eb1"},
+
+        ...
+
+        "107": {"n":"B7"},
+        "108": {"n":"C8"}
+    }
+}
+</code></pre>
+
+<p>There are more keys that you can add to an instrument, see <a href="../instruments">this page</a>.</p>
+
+<p>If you want to use note names instead of note numbers, please use the <a href="http://en.wikipedia.org/wiki/Scientific_pitch_notation">scientific pitch notation</a>.</p>
+
+<p>If you add a value for "folder", the instrument will be stored in that folder:<br/>
+<code class="language-javascript">sequencer.storage.instruments.keyboard.piano</code></p>
+
+<p>Otherwise it will be stored directly in the instruments folder:<br/>
+<code class="language-javascript">sequencer.storage.instruments.piano</code></p>
+
+<p>If you add a value for "sample_path", the instrument will look at that location for the samples:</p>
+
+<p><code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.A0</code>
+<code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.Bb0</code>
+<code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.B0</code></p>
+
+<p>...and so on</p>
+
+<p>Instead of "mapping" you can also use "key_range":</p>
+
+<pre><code class="language-javascript">{
+    "name": "piano",
+    "folder": "keyboard",
+    "notename_mode": "flat",
+    "sample_path": "stereo_samples/piano_upright",
+    "key_range": [21, 108]
+}
+</code></pre>
+
+<p>The array that is supplied as value for "key_range" specifies the lowest note and the highest note of the instrument in midi note numbers. The range is inclusive. The instrument will now try to find samples by using the midi note numbers and the midi note names in lower and upper case.</p>
+
+<p>For instance for the first note in the key range above, the note with midi note number 21, the instrument will first try to find a sample at:</br><code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.21</code></p>
+
+<p>If it doesn't find a sample at that location, it translate the midi note number into a note name by using the "notename_mode" specified. Supported note name modes are "sharp", "flat", "enharmonic-sharp" and "enharmonic-flat". The default value is "sharp".</p>
+
+<p>In this example the note name mode is set to "flat", this means that the note name of midi note number 21 is "A0" and of number 22 "Bb0". If the note name mode was set to "sharp", note number 22 would have had the note name "A#0".</p>
+
+<p>If the instrument doesn't find a sample at <code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.A0</code> if tries again by converting the name to lower case: <code class="language-javascript">sequencer.storage.audio.stereo_samples.piano_upright.a0</code>.</p>
+
+<p>You can add an instrument to heartbeat in three ways:</p>
+
+<p><em>1. load remote json</em></p>
+
+<pre><code class="language-javascript">addInstrument({
+    url: 'url/to/file.json',// mandatory
+    name: 'name',           // optional
+    folder: 'folder'        // optional
+    action: 'action'        // optional
+}, callback);               // optional
+</code></pre>
+
+<p><em>2 add local json data</em></p>
+
+<pre><code class="language-javascript">addInstrument({
+    json: {JSON},           // mandatory
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+}, callback);               // optional
+</code></pre>
+
+<p>Note that opposed to all other asset types, "name" is mandatory for instruments so a value for "name" must be supplied or name must be specified in the json data. A folder is optional.</p>
+
+<p><em>3 add directly as javascript object</em></p>
+
+<pre><code class="language-javascript">addInstrument({
+    mapping: {                      // mandatory
+        note_id: {
+            n: 'sample_id'
+        }
+    }
+    name: 'name',                   // mandatory
+    folder: 'folder',               // optional
+    action: 'action',               // optional
+    sample_path: "path/to/samples", // optional
+}, callback);                       // optional
+
+//or:
+
+addInstrument({
+    key_range: [min, max],          // mandatory
+    name: 'name',                   // mandatory
+    folder: 'folder',               // optional
+    action: 'action',               // optional
+    sample_path: "path/to/samples", // optional
+}, callback);                       // optional
+</code></pre>
+
+<p>Code examples:<br/></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/2._instruments/from_remote_json">load remote json</a></li>
+<li><a href="../../examples/#!1._managing_assets/2._instruments/from_local_json">add local json</a></li>
+</ul>
+
+<p><a name="midi-files"></a></p>
+
+<h2>midi files</h2>
+
+<p>You can add midi files as json data or as binary .mid file. A midi file asset will be parsed into a MidiFile instance that contains all important data of the midi file like ppq, bpm, number of tracks and so on. Also you can create a song from this object immediately:</p>
+
+<pre><code class="language-javascript">sequencer.addMidiFile({url:'url/to/file.mid'}, function(midifile){
+    //midifile is an instance of MidiFile
+    sequencer.createSong(midifile).play();
+})
+</code></pre>
+
+<p>A midi file in json format must contain a key "base64" that holds the base64 encoded midi file as value:</p>
+
+<pre><code class="language-javascript">{
+    "name": "Sonata Facile",                        // optional
+    "folder": "classical/Mozart",                   // optional
+    "base64" "TVRoZAAAAAYAAQAPAYBNVHJrAAAAGgD...."  // mandatory
+}
+</code></pre>
+
+<p>You can add a midi file in the 3 'standard' ways, plus 2 more for loading .mid files and adding as ArrayBuffer:</p>
+
+<p><em>1. load remote json file</em></p>
+
+<pre><code class="language-javascript">addMidiFile({
+    url: 'url/to/file.json',// mandatory
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+});
+</code></pre>
+
+<p><em>2. add local json data</em></p>
+
+<pre><code class="language-javascript">addMidiFile({
+    json: {JSON},           // mandatory
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+});
+</code></pre>
+
+<p><em>3. load local base64 data</em></p>
+
+<pre><code class="language-javascript">addMidiFile({
+    base64: 'TVRoZAAA....',     // mandatory
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional
+});
+</code></pre>
+
+<p><em>4. load local ArrayBuffer instance</em></p>
+
+<p>If you happen to have your midi file as an ArrayBuffer, for instance because you are using your own loading functionality, you can parse the ArrayBuffer into a heartbeat MidiFile instance.</p>
+
+<pre><code class="language-javascript">addMidiFile({
+    arraybuffer: ArrayBuffer,   // mandatory
+    name: 'name',               // optional
+    folder: 'folder',           // optional
+    action: 'action'            // optional
+});
+</code></pre>
+
+<p><em>5. load remote mid file</em></p>
+
+<p>If you don't supply a value for "name", the name of the .mid file will be used.</p>
+
+<pre><code class="language-javascript">addMidiFile({
+    url: 'url/to/file.mid', // mandatory
+    name: 'name',           // optional
+    folder: 'folder,        // optional
+    action: 'action'        // optional
+});
+</code></pre>
+
+<p>Code examples:<br/></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/1._midi_files/from_remote_json">load remote json</a></li>
+<li><a href="../../examples/#!1._managing_assets/1._midi_files/from_local_json">add local json</a></li>
+<li><a href="../../examples/#!1._managing_assets/1._midi_files/from_binary">load .mid file</a></li>
+<li><a href="../../examples/#!1._managing_assets/1._midi_files/from_binary_2">load .mid file 2</a></li>
+</ul>
+
+<p><a name="asset-packs"></a></p>
+
+<h2>asset packs</h2>
+
+<p>An asset pack consists of up to 3 arrays named "instruments", "samplepacks" and "midifiles". In these arrays other assets are stored by type. It might look like this:</p>
+
+<pre><code class="language-javascript">{
+    "instruments":[{
+        "name": "SHFX2",
+        "folder": "bank1",
+        "single_pitch": true,
+        "sample_path": "my_samples/soundeffects",
+        "mapping": {
+            "60": {"n":"SHFX001"}
+        }
+    }],
+
+    "samplepacks":[{
+        "name": "soundeffects",
+        "folder": "my_samples",
+        "mapping": {
+            "SHFX001": "SUQzAwAAAAAHdlRD...",
+            "SHFX002": "SUQzAwAAAAAHdlRDT04...",
+            "SHFX003": "SUQzAwAAAAAHdlRDT04AAA..."
+        }
+    }],
+
+    "midifiles":[{
+        "name": "mozart",
+        "folder": "classical",
+        "url": "../midi/mozk545a.mid"
+    },{
+        "name": "test",
+        "base64": "TVRoZAAAAAYAAQABAeBNVHJrAAAAHwCQPFqBAJBAWgCAPACBAJBDWgCAQACBAIBDAAD/LwA="
+    }]
+}
+</code></pre>
+
+<p>This asset pack contains an instrument, a sample pack and 2 midi files. You can add as many instruments, sample packs and midi files as needed, they will all be loaded in one go.</p>
+
+<p>In this example both the instrument "SHFX2" and its samples are loaded: instrument "SHFX2" looks for samples in the folder "my_samples/soundeffects" which is the folder where the sample pack "soundeffects" stores its samples. Note that the order in which you load assets is not important.</p>
+
+<p>You can add a sample pack in the same 3 ways as you can add an instrument or a sample pack.</p>
+
+<p><em>1. load remote json</em></p>
+
+<pre><code class="language-javascript">addAssetPack({
+    url: 'url/to/file.json', // mandatory
+    name: 'name',            // optional
+    folder: 'folder',        // optional
+    action: 'action'         // optional
+}, callback);                // optional
+</code></pre>
+
+<p><em>2 add local json data</em></p>
+
+<pre><code class="language-javascript">addAssetPack({
+    json: {JSON},            // mandatory
+    name: 'name',            // optional
+    folder: 'folder',        // optional
+    action: 'action'         // optional
+}, callback);                // optional
+</code></pre>
+
+<p><em>3 add directly as javascript object</em></p>
+
+<pre><code class="language-javascript">addAssetPack({
+    instruments: [],        // optional
+    midifiles: [],          // optional
+    samplepacks: [],        // optional
+    name: 'name',           // optional
+    folder: 'folder',       // optional
+    action: 'action'        // optional
+}, callback);               // optional
+</code></pre>
+
+<p>Code examples:</br></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/4._asset_packs/from_remote_json">load remote json</a></li>
+</ul>
+
+<p><a name="removing-assets"></a></p>
+
+<h2>removing assets</h2>
+
+<p>There are also methods for unloading or removing assets. You have to specify the full path to the asset you want to unload, or the full path to a folder if you want to unload all assets in that folder.</p>
+
+<pre><code class="language-javascript">// unloads the midi file mozk545 (stored at sequencer.storage.midi.classical.mozart.sonatas.mozk545)
+sequencer.removeMidiFile('classical/mozart/sonatas/mozk545');
+
+// removes all midi files in folder 'sonatas'
+sequencer.removeMidiFile('classical/mozart/sonatas');
+
+
+// unloads all instruments with the name "piano"
+sequencer.removeInstrument('piano');
+
+
+// unloads only the instruments "piano" found in the folder "key-instruments"
+sequencer.removeInstrument('/key-instruments/piano');
+
+
+// unloads instrument "piano" plus the sample pack and its samples that this instrument uses
+sequencer.removeInstrument('/key-instruments/piano', true);
+
+
+// unloads sample pack SFX (stored at sequencer.storage.samplepacks.soundeffects.SFX)
+sequencer.removeSamplePack('soundeffects/SFX');
+</code></pre>
+
+<p>Note that the paths are relative to the folder of the asset type in the storage object; for instance for removing midi files you omit the part "sequencer.storage.midi" of the path.</p>
+
+<p>If you unload a sample pack all samples in that pack will be unloaded. If there are tracks that use instruments that use the unloaded sample pack, the track's instrument will be set to the default instrument of the song or if not set, the default instrument of the sequencer.</p>
+
+<p>If you want to remove all samples that are loaded but not used in your song you can remove all unnecessary samples by calling <code class="language-javascript">sequencer.purge()</code> (not implemented yet).</p>
+
+<p>Code examples:</br></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/2._instruments/unload">unload instrument</a></li>
+<li><a href="../../examples/#!1._managing_assets/2._instruments/unload_2">unload instrument 2</a></li>
+<li><a href="../../examples/#!1._managing_assets/4._asset_packs/unload">unload asset pack</a></li>
+<li><a href="../../examples/#!1._managing_assets/load_+_unload_test">load and unload test</a></li>
+<li><a href="../../examples/#!1._managing_assets/load_+_unload_test_2">load and unload test 2</a></li>
+</ul>
+
+<p><a name="retrieving-files-from-the-storage"></a></p>
+
+<h2>retrieving files from the storage</h2>
+
+<p>If you want to retrieve an asset from the storage, you can either reference it directly using the dot notation above or by using a get asset method:</p>
+
+<ul>
+<li>getMidiFile();</li>
+<li>getInstrument();</li>
+<li>getSamplePack();</li>
+<li>getSample();</li>
+<li>getAssetPack();</li>
+</ul>
+
+<p>For instance an instrument is stored by the name "piano" in the folder "keyboards", you can retrieve this asset by using:</br>
+<code class="language-javascript">sequencer.getInstrument('piano')</code>.</p>
+
+<p>Note that the first found instrument with this name is returned. So if for instance you have added another instrument at "acoustic/piano", it is not completely sure which piano will be returned because the storage is an object and in a javascript object the order of the keys/properties is not always the same.</p>
+
+<p>To circumvent this you can add (a part of) the path to the file:<br/>
+<code class="language-javascript">sequencer.getInstrument('keyboards/piano')</code>.</p>
+
+<p>There is an optional second argument <code class="language-javascript">exact_match</code> which defaults to false. If set to true the method behaves more strictly. For instance if your organ is stored at "keyboards/organ" and you misspell the folder like so:<br/>
+<code class="language-javascript">sequencer.getInstrument('keybaorsd/organ')</code> it will still find an instrument organ.</p>
+
+<p>But with the second argument set to true:<br/>
+<code class="language-javascript">sequencer.getInstrument('keybaorsd/organ', true)</code></p>
+
+<p>It will only look for the asset in the "keybaorsd" folder and if it won't find the folder or the file in that folder it returns false.</p>
+
+<p>You can also retrieve multiple files from the storage by using the same methods as above but with an extra 's' at the end of the method name:</p>
+
+<ul>
+<li>getMidiFiles();</li>
+<li>getInstruments();</li>
+<li>getSamplePacks();</li>
+<li>getSamples();</li>
+<li>getAssetPacks();</li>
+</ul>
+
+<p>All methods have two optional arguments: "path" and "include_subfolders". Say we have stored a bunch of midi files and the structure of the folder sequencer.storage.midi is as follows:</p>
+
+<pre><code class="language-javascript">- midi
+    - classical
+        - Mozart
+        - Schubert
+        - Hayn
+
+    - avant garde
+        - Stockhausen
+</code></pre>
+
+<p>Below you can see what will be returned if you use getMidiFiles() with different arguments:</p>
+
+<pre><code class="language-javascript">// returns all midi files in the storage
+sequencer.getMidiFiles();
+
+
+// 2nd argument is to false which means the search doesn't traverse into subfolders; because there are no
+// midi files stored directly in the folder "classical", no midi files are returned
+sequencer.getMidiFiles('classical', false);
+
+
+// returns all midi files in the folders "Mozart", "Schubert" and "Haydn" because the function traverses into
+// the subfolders of "classical"
+sequencer.getMidiFiles('classical', true);
+
+
+// same as above because "include_subfolders" defaults to true
+sequencer.getMidiFiles('classical');
+
+</code></pre>
+
+<p>The found assets are returned as an array that is ordered alphabetically by the name of the asset.</p>
+
+<p>Code examples:</br></p>
+
+<ul>
+<li><a href="../../examples/#!1._managing_assets/find_item">find item</a></li>
+<li><a href="../../examples/#!1._managing_assets/find_item_2">find item 2</a></li>
+</ul>
+
+<p><a name="task-queue"></a></p>
+
+<h2>task queue</h2>
+
+<p>All methods that add assets to heartbeat are asynchronous, but because they are automatically added as task to heartbeat's internal task queue you can call add methods successively without having to wait for the callback. For instance:</p>
+
+<pre><code class="language-javascript">sequencer.addSamplePack({url: 'url/to/sample_pack1.json'});
+sequencer.addSamplePack({url: 'url/to/sample_pack2.json'});
+sequencer.addSamplePack({url: 'url/to/sample_pack3.json'});
+
+sequencer.addInstrument({url: 'url/to/instrument1.json'});
+sequencer.addInstrument({url: 'url/to/instrument2.json'});
+sequencer.addInstrument({url: 'url/to/instrument3.json'}, function callback(){
+
+    // at this point, all sample packs and instruments are loaded and ready to be used
+
+});
+</code></pre>
+
+<p>As you can see, only the last add method has a callback. If you add a callback to an add method, it will be called as soon as the method has finished, and because the queue handles the tasks in the order they come in, all assets are loaded at the time the callback is called.</p>
+
+<p>You can achieve the same effect like so:</p>
+
+<pre><code class="language-javascript">sequencer.addSamplePack({url: 'url/to/sample_pack1.json'}, function callback(){
+
+    // at this point, all sample packs and instruments are loaded and ready to be used
+
+}, true);
+
+sequencer.addSamplePack({url: 'url/to/sample_pack2.json'});
+sequencer.addSamplePack({url: 'url/to/sample_pack3.json'});
+
+sequencer.addInstrument({url: 'url/to/instrument1.json'});
+sequencer.addInstrument({url: 'url/to/instrument2.json'});
+sequencer.addInstrument({url: 'url/to/instrument3.json'});
+</code></pre>
+
+<p>There is a 3rd argument "true" added to the first add method; this means that the callback will only be called when all the tasks in the queue are done.</p>
+
+<p>See also the <a href="/api/sequencer/#addTask">API</a>.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+html{
+	background-color: #fff;
+	font-family: sans-serif;
+	font-size: 12px;
+	overflow: hidden;
+}
+
+em{
+	font-weight: bold;
+}
+
+body{
+	background-color: #fff;
+	overflow: hidden;
+}
+select{
+	padding: 10px;
+}
+
+#editor{
+	font-size: 30px;
+	font-weight: bold;
+	font-family: monospace;
+	color: #1BB2E0;	
+	line-height: 400px;
+	text-align: center;		
+	float:left;
+}
+
+#controls{
+	float:left;
+}
+
+.control{
+	margin: 10px;
+}
+
+input[type='button']{
+	padding: 10px;
+}
+
+input[type='range']{
+	width: 200px;
+	margin: 5px;
+}
+
+#play_head{
+	width: 40px;
+	background-color: rgba(255,0,0,0.1);
+	cursor: move;
+	background-image: url('playhead.png');
+}
+
+#musical_time,#linear_time,#tempo{
+	font-size: 30px;
+	font-weight: bold;
+	font-family: monospace;
+	color: #FF1CAE;			
+}
+
+#linear_time{
+	color: #71DE71;			
+}
+
+#tempo{
+	color: #1BB2E0;			
+}
+
+label{
+	height: 20px;
+	font-size: 15px;
+	vertical-align: bottom; 
+}
+
+.tooltip{
+	border-radius:5px;
+	font: normal 12px monospace;
+	color: #333333;
+	background-color: #FFFF99;
+	padding: 2px 5px;
+	position: absolute;
+	z-index: 5;
+	top: -100px;
+	left: -100px;
+	box-shadow: 7px 7px 5px #888888;
+}
+
+.note{
+	background-color: #1BAFE0;
+	position: absolute;
+	cursor: pointer;
+}
+
+.clearfix:after {
+	content: ".";
+	display: block;
+	clear: both;
+	visibility: hidden;
+	line-height: 0;
+	height: 0;
+}
+ 
+.clearfix {
+	display: inline-block;
+}
+ 
+html[xmlns] .clearfix {
+	display: block;
+}
+ 
+* html .clearfix {
+	height: 1%;
+}
+
+.unselectable {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

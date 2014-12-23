@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<p><a name="createNote"></a></p>
+
+<h2>createNote(parameter1, [parameter2, noteNameMode])</h2>
+
+<blockquote>
+  <p>defined in <a href="https://bitbucket.org/abudaan/heartbeat/src/a7db64b7346f9c922f518fe83758f2a3d7db5452/src/heartbeat/note.js">note.js</a><br>
+  related methods:<br>
+  <a href="#!Sequencer/getNoteName">sequencer.getNoteName()</a><br>
+  <a href="#!Sequencer/getNoteOctave">sequencer.getNoteOctave()</a><br>
+  <a href="#!Sequencer/getNoteNumber">sequencer.getNoteNumber()</a><br>
+  <a href="#!Sequencer/getFullNoteName">sequencer.getFullNoteName()</a><br>
+  <a href="#!Sequencer/getFrequency">sequencer.getFrequency()</a><br></p>
+</blockquote>
+
+<p>Note is basically a data container that has the following properties:</p>
+
+<p><code class="language-javascript">name</code> → the name of the note, a letter from A to G
+<code class="language-javascript">octave</code> → the octave, a number from -1 to 9
+<code class="language-javascript">fullName</code> → the name and the octave, e.g. C4 for central C
+<code class="language-javascript">number</code> → the midi note number
+<code class="language-javascript">frequency</code> → the frequency of the note</p>
+
+<p><a name="standards"></a></p>
+
+<h3>standards:</h3>
+
+<p>The naming of the note is according to the <a href="http://en.wikipedia.org/wiki/Scientific_pitch_notation">scientific pitch notation</a>, and the numbering and the frequency of the notes follows the <a href="http://en.wikipedia.org/wiki/MIDI_Tuning_Standard">Midi Tuning Standard</a>. The frequency is based on the pitch set for A4; the standard pitch is 440 Hz but you can change it by setting the value <code class="language-javascript">sequencer.pitch</code>. The <a href="http://en.wikipedia.org/wiki/Middle_C">central C</a> is C4 and has with A4 = 440 Hz a frequency of 261.626 Hz.</p>
+
+<p><a name="usage"></a></p>
+
+<h3>usage:</h3>
+
+<p>You can create a note by calling <code class="language-javascript">sequencer.createNote()</code> in one of the following ways:</p>
+
+<p><code class="language-javascript">createNote(noteNumber)</code>
+<code class="language-javascript">createNote(noteNumber, noteNameMode)</code></p>
+
+<p><code class="language-javascript">createNote(noteName)</code> → actually this is wrong because no value for octave is given; octave will default to 0
+<code class="language-javascript">createNote(noteName, noteNameMode)</code></p>
+
+<p><code class="language-javascript">createNote(fullNoteName)</code>
+<code class="language-javascript">createNote(fullNoteName, noteNameMode)</code></p>
+
+<p><code class="language-javascript">createNote(noteName, octave)</code>
+<code class="language-javascript">createNote(noteName, octave, noteNameMode)</code></p>
+
+<p>All methods return a note object where all the above mentioned properties have the correct value. For instance if you want to know the note number of C#3 you could do this:</p>
+
+<p><code class="language-javascript">console.log(sequencer.createNote('C#3').number);</code></p>
+
+<p>But there are also special shortcut methods for getting a property of a note based on another property:</p>
+
+<p><code class="language-javascript">getNoteName()</code>
+<code class="language-javascript">getNoteOctave()</code>
+<code class="language-javascript">getFullNoteName()</code>
+<code class="language-javascript">getNoteNumber()</code>
+<code class="language-javascript">getFrequency()</code></p>
+
+<p>These methods can be called with the same parameters as <code class="language-javascript">createNote()</code>. For instance:</p>
+
+<p><code class="language-javascript">getNoteOctave(0)</code> → returns -1 because 0 is interpreted as the note number which is the note C-1.</p>
+
+<p><a name="note-name-mode"></a></p>
+
+<h3>note name mode:</h3>
+
+<p>There are 4 note name modes that you can chose from:</p>
+
+<p><code class="language-javascript">sharp</code> →  C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+<code class="language-javascript">flat</code> →  C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B
+<code class="language-javascript">enharmonic-sharp</code> → B#, C#, C##, D#, D##, E#, F#, F##, G#, G##, A#, A##
+<code class="language-javascript">enharmonic-flat</code> → Dbb, Db, Ebb, Eb, Fb, Gbb, Gb, Abb, Ab, Bbb, Bb, Cb</p>
+
+<p>The default note name mode is <code class="language-javascript">sharp</code>.</p>
+
+<p>You can also use the following statics:</p>
+
+<pre><code class="language-javascript">sequencer.SHARP
+sequencer.FLAT
+sequencer.ENHARMONIC_SHARP
+sequencer.ENHARMONIC_FLAT
+
+</code></pre>
+
+<p>In the near feature scales will be added to place the use of accidentals within a more or less harmonic context:</p>
+
+<p><code class="language-javascript">D-major</code> → D, E, F#, G, A, B, C# and for chromatic notes the accidental # will be used: D#, E#, G#, A#, B#</p>
+
+<p>This isn't of course a very musical harmonic context; for instance IV moll-dur in D is G, Bb, D and not G, A#, D.</p>
+
+<p><a name="examples"></a></p>
+
+<h3>examples:</h3>
+
+<p><code class="language-javascript">getFullNoteName('C#3', 'flat')</code> → returns Db3
+<code class="language-javascript">getFullNoteName('C#', 3, 'flat')</code> → same as above
+<code class="language-javascript">getFullNoteName('C#', '3', 'flat')</code> → same as above</p>
+
+<p><code class="language-javascript">getNoteName('Bb', 'sharp')</code> → returns A#
+<code class="language-javascript">getNoteName('C', 'enharmonic-sharp')</code> → returns B#
+<code class="language-javascript">getNoteName('C', 'enharmonic-flat')</code> → returns Dbb</p>
+
+<p><code class="language-javascript">getNoteOctave(60)</code> → returns 4</p>
+
+<p><code class="language-javascript">getFrequency('A4')</code> → returns 440
+<code class="language-javascript">getFrequency('C4')</code> → returns 261.626</p>
+
+<p><code class="language-javascript">sequencer.pitch = 432</code> → Verdi tuning
+<code class="language-javascript">getFrequency('A4')</code> → returns 432
+<code class="language-javascript">getFrequency('C4')</code> → returns 256.869</p>
+
+<p><code class="language-javascript">createNote(102)</code> → returns {name: "F#", octave: 7, fullName: "F#7", number: 102, frequency: 2959.955}
+<code class="language-javascript">createNote(102, 'flat')</code> → returns {name: "Gb", octave: 7, fullName: "Gb7", number: 102, frequency: 2959.955}</p>
+
+<p><code class="language-javascript">createNote('E7')</code> → returns {name: "E", octave: 7, fullName: "E7", number: 100, frequency: 2637.020}
+<code class="language-javascript">createNote('e7')</code> → same as above
+<code class="language-javascript">createNote('E', 7)</code> → same as above
+<code class="language-javascript">createNote('E', '7')</code> → same as above
+<code class="language-javascript">createNote('E', '7', 'sharp')</code> → same as above</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

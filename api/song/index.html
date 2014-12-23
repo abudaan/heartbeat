@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Song</h1>
+
+<p><a name="properties"></a></p>
+
+<h2>properties:</h2>
+
+<p><a name="activeEvents"></a></p>
+
+<h3>activeEvents</h3>
+
+<p><a name="activeNotes"></a></p>
+
+<h3>activeNotes</h3>
+
+<p><a name="activeParts"></a></p>
+
+<h3>activeParts</h3>
+
+<p><a name="allEvents"></a></p>
+
+<h3>allEvents</h3>
+
+<p><a name="autoQuantize"></a></p>
+
+<h3>autoQuantize</h3>
+
+<p><a name="bar"></a></p>
+
+<h3>bar</h3>
+
+<p><a name="bars"></a></p>
+
+<h3>bars</h3>
+
+<p><a name="barsAsString"></a></p>
+
+<h3>barsAsString</h3>
+
+<p><a name="beat"></a></p>
+
+<h3>beat</h3>
+
+<p><a name="bpm"></a></p>
+
+<h3>bpm</h3>
+
+<p><a name="changedEvents"></a></p>
+
+<h3>changedEvents</h3>
+
+<p><a name="changedNotes"></a></p>
+
+<h3>changedNotes</h3>
+
+<p><a name="changedParts"></a></p>
+
+<h3>changedParts</h3>
+
+<p><a name="className"></a></p>
+
+<h3>className</h3>
+
+<p><a name="defaultInstrument"></a></p>
+
+<h3>defaultInstrument</h3>
+
+<p><a name="denominator"></a></p>
+
+<h3>denominator</h3>
+
+<p><a name="doLoop"></a></p>
+
+<h3>doLoop</h3>
+
+<p><a name="durationMillis"></a></p>
+
+<h3>durationMillis</h3>
+
+<p><a name="durationTicks"></a></p>
+
+<h3>durationTicks</h3>
+
+<p><a name="eventIndex"></a></p>
+
+<h3>eventIndex</h3>
+
+<p><a name="events"></a></p>
+
+<h3>events</h3>
+
+<p><a name="eventsById"></a></p>
+
+<h3>eventsById</h3>
+
+<p><a name="factor"></a></p>
+
+<h3>factor</h3>
+
+<p><a name="fixedLength"></a></p>
+
+<h3>fixedLength</h3>
+
+<p><a name="fixedLengthValue"></a></p>
+
+<h3>fixedLengthValue</h3>
+
+<p><a name="followEvent"></a></p>
+
+<h3>followEvent</h3>
+
+<p><a name="gainNode"></a></p>
+
+<h3>gainNode</h3>
+
+<p><a name="grid"></a></p>
+
+<h3>grid</h3>
+
+<p><a name="highestNote"></a></p>
+
+<h3>highestNote</h3>
+
+<p><a name="hour"></a></p>
+
+<h3>hour</h3>
+
+<p><a name="id"></a></p>
+
+<h3>id</h3>
+
+<p><a name="illegalLoop"></a></p>
+
+<h3>illegalLoop</h3>
+
+<p><a name="instruments"></a></p>
+
+<h3>instruments</h3>
+
+<p><a name="lastBar"></a></p>
+
+<h3>lastBar</h3>
+
+<p><a name="lastEvent"></a></p>
+
+<h3>lastEvent</h3>
+
+<p><a name="lastEventTmp"></a></p>
+
+<h3>lastEventTmp</h3>
+
+<p><a name="listeners"></a></p>
+
+<h3>listeners</h3>
+
+<p><a name="loop"></a></p>
+
+<h3>loop</h3>
+
+<p><a name="loopEnd"></a></p>
+
+<h3>loopEnd</h3>
+
+<p><a name="loopStart"></a></p>
+
+<h3>loopStart</h3>
+
+<p><a name="loopedTime"></a></p>
+
+<h3>loopedTime</h3>
+
+<p><a name="lowestNote"></a></p>
+
+<h3>lowestNote</h3>
+
+<p><a name="metronome"></a></p>
+
+<h3>metronome</h3>
+
+<p><a name="midiEventListeners"></a></p>
+
+<h3>midiEventListeners</h3>
+
+<p><a name="midiInputs"></a></p>
+
+<h3>midiInputs</h3>
+
+<p><a name="midiOutputs"></a></p>
+
+<h3>midiOutputs</h3>
+
+<p><a name="millis"></a></p>
+
+<h3>millis</h3>
+
+<p><a name="millisPerTick"></a></p>
+
+<h3>millisPerTick</h3>
+
+<p><a name="millisRounded"></a></p>
+
+<h3>millisRounded</h3>
+
+<p><a name="millisecond"></a></p>
+
+<h3>millisecond</h3>
+
+<p><a name="minute"></a></p>
+
+<h3>minute</h3>
+
+<p><a name="name"></a></p>
+
+<h3>name</h3>
+
+<p><a name="newEvents"></a></p>
+
+<h3>newEvents</h3>
+
+<p><a name="newNotes"></a></p>
+
+<h3>newNotes</h3>
+
+<p><a name="newParts"></a></p>
+
+<h3>newParts</h3>
+
+<p><a name="nominator"></a></p>
+
+<h3>nominator</h3>
+
+<p><a name="notes"></a></p>
+
+<h3>notes</h3>
+
+<p><a name="notesById"></a></p>
+
+<h3>notesById</h3>
+
+<p><a name="numEvents"></a></p>
+
+<h3>numEvents</h3>
+
+<p><a name="numMidiInputs"></a></p>
+
+<h3>numMidiInputs</h3>
+
+<p><a name="numMidiOutputs"></a></p>
+
+<h3>numMidiOutputs</h3>
+
+<p><a name="numNotes"></a></p>
+
+<h3>numNotes</h3>
+
+<p><a name="numParts"></a></p>
+
+<h3>numParts</h3>
+
+<p><a name="numSixteenth"></a></p>
+
+<h3>numSixteenth</h3>
+
+<p><a name="numTimeEvents"></a></p>
+
+<h3>numTimeEvents</h3>
+
+<p><a name="numTracks"></a></p>
+
+<h3>numTracks</h3>
+
+<p><a name="parts"></a></p>
+
+<h3>parts</h3>
+
+<p><a name="partsById"></a></p>
+
+<h3>partsById</h3>
+
+<p><a name="paused"></a></p>
+
+<h3>paused</h3>
+
+<p><a name="percentage"></a></p>
+
+<h3>percentage</h3>
+
+<p><a name="pitchRange"></a></p>
+
+<h3>pitchRange</h3>
+
+<p><a name="playbackSpeed"></a></p>
+
+<h3>playbackSpeed</h3>
+
+<p><a name="playhead"></a></p>
+
+<h3>playhead</h3>
+
+<p><a name="playheadRecording"></a></p>
+
+<h3>playheadRecording</h3>
+
+<p><a name="playing"></a></p>
+
+<h3>playing</h3>
+
+<p><a name="positionType"></a></p>
+
+<h3>positionType</h3>
+
+<p><a name="ppq"></a></p>
+
+<h3>ppq</h3>
+
+<p><a name="precount"></a></p>
+
+<h3>precount</h3>
+
+<p><a name="precounting"></a></p>
+
+<h3>precounting</h3>
+
+<p><a name="preroll"></a></p>
+
+<h3>preroll</h3>
+
+<p><a name="prerolling"></a></p>
+
+<h3>prerolling</h3>
+
+<p><a name="quantizeValue"></a></p>
+
+<h3>quantizeValue</h3>
+
+<p><a name="recordId"></a></p>
+
+<h3>recordId</h3>
+
+<p><a name="recordedEvents"></a></p>
+
+<h3>recordedEvents</h3>
+
+<p><a name="recordedNotes"></a></p>
+
+<h3>recordedNotes</h3>
+
+<p><a name="recording"></a></p>
+
+<h3>recording</h3>
+
+<p><a name="recordingNotes"></a></p>
+
+<h3>recordingNotes</h3>
+
+<p><a name="removedEvents"></a></p>
+
+<h3>removedEvents</h3>
+
+<p><a name="removedNotes"></a></p>
+
+<h3>removedNotes</h3>
+
+<p><a name="removedParts"></a></p>
+
+<h3>removedParts</h3>
+
+<p><a name="scheduler"></a></p>
+
+<h3>scheduler</h3>
+
+<p><a name="second"></a></p>
+
+<h3>second</h3>
+
+<p><a name="secondsPerTick"></a></p>
+
+<h3>secondsPerTick</h3>
+
+<p><a name="sixteenth"></a></p>
+
+<h3>sixteenth</h3>
+
+<p><a name="songAndMetronomeEvents"></a></p>
+
+<h3>songAndMetronomeEvents</h3>
+
+<p><a name="songAndTimeEvents"></a></p>
+
+<h3>songAndTimeEvents</h3>
+
+<p><a name="stopped"></a></p>
+
+<h3>stopped</h3>
+
+<p><a name="tempoEvent"></a></p>
+
+<h3>tempoEvent</h3>
+
+<p><a name="tick"></a></p>
+
+<h3>tick</h3>
+
+<p><a name="ticks"></a></p>
+
+<h3>ticks</h3>
+
+<p><a name="ticksPerBar"></a></p>
+
+<h3>ticksPerBar</h3>
+
+<p><a name="ticksPerBeat"></a></p>
+
+<h3>ticksPerBeat</h3>
+
+<p><a name="ticksPerSixteenth"></a></p>
+
+<h3>ticksPerSixteenth</h3>
+
+<p><a name="timeAsString"></a></p>
+
+<h3>timeAsString</h3>
+
+<p><a name="timeEvents"></a></p>
+
+<h3>timeEvents</h3>
+
+<p><a name="timeSignatureEvent"></a></p>
+
+<h3>timeSignatureEvent</h3>
+
+<p><a name="tracks"></a></p>
+
+<h3>tracks</h3>
+
+<p><a name="tracksById"></a></p>
+
+<h3>tracksById</h3>
+
+<p><a name="tracksByName"></a></p>
+
+<h3>tracksByName</h3>
+
+<p><a name="useMetronome"></a></p>
+
+<h3>useMetronome</h3>
+
+<p><a name="volume"></a></p>
+
+<h3>volume</h3>
+
+<p><a name="methods"></a></p>
+
+<h2>methods:</h2>
+
+<p><a name="addEffect"></a></p>
+
+<h3>addEffect()</h3>
+
+<p><a name="addEvent"></a></p>
+
+<h3>addEvent()</h3>
+
+<p><a name="addEventListener"></a></p>
+
+<h3>addEventListener()</h3>
+
+<blockquote>
+  <p>defined in <a href="https://bitbucket.org/abudaan/heartbeat/src/71c9b55bb685506bb13eb8fe048165078bdbfa6c/src/heartbeat/song_follow_event?at=master">follow_event_song.js</a></p>
+  
+  <p>related methods:
+  <a href="#!Song/removeEventListener">song.removeEventListener()</a>;</p>
+</blockquote>
+
+<p>The first argument specifies the type of event that you want to listen for. There are 4 main types of event: <code class="language-javascript">transport</code>, <code class="language-javascript">event</code>, <code class="language-javascript">note</code> and <code class="language-javascript">position</code>.</p>
+
+<p>The transport type doesn't need to be specified. There are 4 transport events:</p>
+
+<pre><code class="language-javascript">song.addEventListener('play', callback);
+
+song.addEventListener('pause', callback);
+
+song.addEventListener('stop', callback);
+
+// listener for the end of the song, gets automatically adjusted when the duration of the song changes
+song.addEventListener('end', callback);
+</code></pre>
+
+<p>The other 3 types of event need to be specified, so for these evnents you have to provide 3 parameters instead of 2.</p>
+
+<p>Note that in the context of this method, the term 'event' is not necessarily interchangable with 'midi event'.</p>
+
+<p>Type <code class="language-javascript">note</code> adds basically 2 listeners in one go: one for the NOTE_ON event and one for the NOTE_OFF event.</p>
+
+<p>Listeners that are added to an event or to a note, stick with that event or note if you move it to another position or pitch.</p>
+
+<p>The data argument can be a midi event, an array of midi events or a search string, like for instance <code class="language-javascript">bar = 3</code>.</p>
+
+<p>The callback argument is the function that gets called when the playhead passes the event or the position that the listener was added to. If you have added a listener to an event, that event will be passed as argument to the callback function. If you have added a listener by using a search string, the search string will be passed.</p>
+
+<p>The update interval of the listeners is limited by the frame rate of requestAnimationFrame(). The frame rate of requestAnimationFrame is in its turn limited by the cpu and the gpu, and ultimately by the refresh rate of your monitor.</p>
+
+<p>Since most screens have a refresh rate of 60Hz, the update interval of the listeners is 1000/60 = 16.7 ms. This has an impact on when the callbacks are called:</p>
+
+<p>If you add a listener, its callback will be called as soon as the playhead reaches the position or the event that the event listener is added to, or in the first update cycle after that situation. This means that there can be a delay of 16.7 ms or more before the callback method gets called.</p>
+
+<p>The method addEventListener returns a listener id or an array of listener ids that you can use to remove the listener again, see <a href="#!Song/removeEventListener">removeEventListener()</a></p>
+
+<ul>
+<li>if you add a listener to a single event, only 1 listener id will be returned</li>
+<li>if you add a listener to a single note, an array with 2 listener ids will be returned, one for the NOTE_ON event and one for the NOTE_OFF event</li>
+<li>if you add a listener to an array of events or notes, an array of listener ids will be returned: one listener id per event and 2 listeners per note</li>
+<li>if you add a listener to a position, only 1 listener id will be returned</li>
+<li>if you add a listener of to an event or a note by using a search string, an array of listener ids will be returned, even if only 1 listener has been added (and thus the array only contains 1 element)</li>
+</ul>
+
+<p><a name="add-a-listener-to-an-event-or-a-note"></a></p>
+
+<h4>add a listener to an event or a note</h4>
+
+<pre><code class="language-javascript">// add a listener to a single event
+song.addEventListener('event', midiEvent, callback);
+
+// add listeners to multiple events
+song.addEventListener('event', [midiEvent, midiEvent, midiEvent], callback);
+
+// or with findEvent()
+song.addEventListener('event', song.findEvent('noteName = B4 AND velocity > 40 < 80'), callback);
+
+// or with a search string
+song.addEventListener('event', 'noteName = B4 AND velocity > 40 < 80', callback);
+
+// add a listener to a note, so to the NOTE_ON and the NOTE_OFF event
+song.addEventListener('note', midiEvent, callback);
+
+// add event listener to several notes
+song.addEventListener('note', song.findNote('velocity = 100'), callback);
+
+// add event listener to several notes in a bar
+song.addEventListener('note', song.findNote('bar = 45'), callback);
+</code></pre>
+
+<p><a name="add-an-event-listener-to-a-position"></a></p>
+
+<h4>add an event listener to a position</h4>
+
+<p>If you want to add listeners of the type <code class="language-javascript">position</code> you have to provide a search string for the data argument. This is the same kind of search string you use in [findEvent()](#!find events).</p>
+
+<p>As mentioned above there are two modes of event type <code class="language-javascript">position</code>, namely bars and beats and time. The latter is the regular time format in hours, minutes, seconds and milliseconds, and the former is described in bars, beats, sixteenth and ticks.</p>
+
+<p>There are also 2 subtypes: one-shot and repetitive position events. One-shot events fire only at a specific position and repetitive events fire every time a certain condition in the position is met, for instance every at every first beat.</p>
+
+<p><strong>one-shot events</strong>
+You can use one of the following search parameters:</p>
+
+<p><code class="language-javascript">barsbeats</code> → in combination with a position in bars, beats, sixteenths and ticks, or a number
+<code class="language-javascript">barsandbeats</code> → same as above
+<code class="language-javascript">time</code> → in combination with a position in hours, minutes, seconds and milliseconds, or a number
+<code class="language-javascript">ticks</code> → number
+<code class="language-javascript">millis</code>→ number</p>
+
+<p>You can only use the equal operators: <code class="language-javascript">=</code>,<code class="language-javascript">==</code> or <code class="language-javascript">===</code>. These will all be interpreted strictly.</p>
+
+<p><strong>repetitive events</strong>
+You can use one of the following search parameters:</p>
+
+<p><code class="language-javascript">bar</code>
+<code class="language-javascript">beat</code>
+<code class="language-javascript">sixteenth</code>
+<code class="language-javascript">hour</code>
+<code class="language-javascript">minute</code>
+<code class="language-javascript">second</code></p>
+
+<p>You can use these operators:</p>
+
+<p><code class="language-javascript">=</code>
+<code class="language-javascript">==</code>
+<code class="language-javascript">===</code>
+<code class="language-javascript">!=</code>
+<code class="language-javascript">!==</code>
+<code class="language-javascript">%=</code>
+<code class="language-javascript">></code>
+<code class="language-javascript">>=</code>
+<code class="language-javascript">&lt;</code>
+<code class="language-javascript">&lt;=</code></p>
+
+<p>You can also use the search parameter without condition; in this case the callback will be called on every subsequent time unit. For instance on every beat, see examples below.</p>
+
+<p>Note that <code class="language-javascript">bar</code> and <code class="language-javascript">hour</code> are one-shot events when used with the <code class="language-javascript">===</code> operator. For instance <code class="language-javascript">bar === 3</code> will only fire once because there is only one bar 3 in a song.</p>
+
+<p><a name="examples"></a></p>
+
+<h4>examples</h4>
+
+<p><strong>midi events</strong>
+You can use any search string that is supported by [findEvent()](#!find events).</p>
+
+<pre><code class="language-javascript">// listen for all NOTE_OFF events
+addEventListener('event', 'type = NOTE_OFF', callback) ;
+
+// listen for all sustain pedal on events, very useful if you want to add a pedal animation
+addEventListener('event', 'type = CONTROL_CHANGE AND data1 = 64 AND data2 = 1', callback) ;
+</code></pre>
+
+<p><strong>positions in bars and beats (one-shot)</strong></p>
+
+<pre><code class="language-javascript">// callback at the start of bar 5
+addEventListener('position', 'barsandbeats = 5,1,1,0', callback)
+
+// same as above
+addEventListener('position', 'barsandbeats = [5,1,1,0]', callback)
+
+// same as above
+addEventListener('position', 'barsbeats = [5,1,1,0]', callback)
+
+// same as above
+addEventListener('position', 'barsandbeats = 5', callback)
+</code></pre>
+
+<p>Note that whitespaces are important:</p>
+
+<pre><code class="language-javascript">// using whitespaces in the position data yields an error
+addEventListener('position', 'barsandbeats = 5, 1, 1, 0', callback)
+// prints error: invalid search string, please consult documentation
+</code></pre>
+
+<p><strong>positions in time (one-shot)</strong></p>
+
+<pre><code class="language-javascript">// callback after 1 hour, 2 minutes, 30 seconds and 450 milliseconds
+addEventListener('position', 'time = [1,2,30,450]', callback)
+
+// callback after 3 minutes
+addEventListener('position', 'time = 0,3,0,0', callback)
+
+// same as above
+addEventListener('position', 'time = 3', callback)
+</code></pre>
+
+<p><strong>positions in ticks or millis (one-shot)</strong></p>
+
+<pre><code class="language-javascript">// callback on number of ticks from start of song
+addEventListener('position', 'ticks = 99360', callback)
+
+// callback on number of milliseconds from start of song
+addEventListener('position', 'millis = 65740', callback)
+</code></pre>
+
+<p><strong>position in bars and beats without condition (repetitive)</strong></p>
+
+<pre><code class="language-javascript">// callback on every a bar
+addEventListener('position', 'bar', callback);
+
+// callback on every a beat
+addEventListener('position', 'beat', callback);
+
+// callback on every a sixteenth
+addEventListener('position', 'sixteenth', callback);
+
+// not supported because the update interval is too coarse → see above
+addEventListener('position', 'tick', callback);
+</code></pre>
+
+<p><strong>position in time without condition (repetitive)</strong></p>
+
+<pre><code class="language-javascript">// callback on every hour
+addEventListener('position', 'hour', callback);
+
+// callback on every a minute
+addEventListener('position', 'minute', callback);
+
+// callback on every a second
+addEventListener('position', 'second', callback);
+
+// not supported because the update interval is too coarse → see above
+addEventListener('position', 'millis', callback);
+</code></pre>
+
+<p><strong>position in bars and beats with assignment condition (repetitive)</strong></p>
+
+<pre><code class="language-javascript">// note that this is not a repetitive event because there is only one third bar
+addEventListener('position', 'bar = 3', callback);
+
+// callback on every third beat in a bar
+addEventListener('position', 'beat = 3', callback);
+
+
+// callback on every third sixteenth in a bar
+addEventListener('position', 'sixteenth = 3', callback);
+
+// not supported because the update interval is too coarse → see above
+addEventListener('position', 'tick = 3', callback);
+</code></pre>
+
+<p><strong>position time with assignment condition (repetitive)</strong></p>
+
+<pre><code class="language-javascript">// note that this is not a repetitive event → callback is called once after 3 hours
+addEventListener('position', 'hour = 3', callback);
+
+// callback on 1 hour and 3 minutes, 2 hours and 3 minutes, and so on
+addEventListener('position', 'minute = 3', callback);
+
+// callback every time second has value 3, i.e. when position is 1 minute and 3 seconds, 2 minute and 3 seconds, and so on
+addEventListener('position', 'second = 3', callback);
+
+
+// not supported because the update interval is too coarse → see above
+addEventListener('position', 'millis = 3', callback);
+</code></pre>
+
+<p><strong>position with condition (repetitive)</strong></p>
+
+<pre><code class="language-javascript">// callback on every second between second 2 and second 10
+addEventListener('position', 'second > 2 < 10', callback);
+
+// beginning in bar 6, callback gets called on every new bar
+addEventListener('position', 'bar > 5', callback);
+
+// beginning in bar 6, callback gets called on every event
+addEventListener('event', 'bar > 5', callback);
+
+// callback gets called on every event in bar 5
+addEventListener('event', 'bar = 5', callback);
+
+// callback gets called on every note in bar 5 → a note is considered to be inside a bar if it both starts and ends in that bar
+addEventListener('note', 'bar = 5', callback);
+
+// callback gets called on every after beat (in a 4/4 measure)
+addEventListener('position', 'beat % 2', callback);
+</code></pre>
+
+<p><strong>not yet supported conditions</strong>
+Compound conditions with <code class="language-javascript">AND</code>,<code class="language-javascript">OR</code>,<code class="language-javascript">NOT</code> and <code class="language-javascript">XOR</code> are not yet supported</p>
+
+<pre><code class="language-javascript">// callback gets called on the second beat in every other bar
+addEventListener('position', 'bar %= 2 AND beat = 2', callback);
+
+// in bar 5 to 10, callback gets called on the second beat
+addEventListener('position', 'bar >= 5 < 10 AND beat = 2', callback);
+</code></pre>
+
+<p><a name="addEvents"></a></p>
+
+<h3>addEvents()</h3>
+
+<p><a name="addMidiEventListener"></a></p>
+
+<h3>addMidiEventListener()</h3>
+
+<p><a name="addPart"></a></p>
+
+<h3>addPart()</h3>
+
+<p><a name="addParts"></a></p>
+
+<h3>addParts()</h3>
+
+<p><a name="addSong"></a></p>
+
+<h3>addSong()</h3>
+
+<p><a name="addSongs"></a></p>
+
+<h3>addSongs()</h3>
+
+<p><a name="addTimeEvent"></a></p>
+
+<h3>addTimeEvent()</h3>
+
+<p><a name="addTimeEvents"></a></p>
+
+<h3>addTimeEvents()</h3>
+
+<p><a name="addTrack"></a></p>
+
+<h3>addTrack()</h3>
+
+<p><a name="addTracks"></a></p>
+
+<h3>addTracks()</h3>
+
+<p><a name="allNotesOff"></a></p>
+
+<h3>allNotesOff()</h3>
+
+<p><a name="barsToMillis"></a></p>
+
+<h3>barsToMillis()</h3>
+
+<p><a name="barsToTicks"></a></p>
+
+<h3>barsToTicks()</h3>
+
+<p><a name="cleanUp"></a></p>
+
+<h3>cleanUp()</h3>
+
+<p><a name="configureMetronome"></a></p>
+
+<h3>configureMetronome()</h3>
+
+<p><a name="connect"></a></p>
+
+<h3>connect()</h3>
+
+<p><a name="createGrid"></a></p>
+
+<h3>createGrid()</h3>
+
+<p><a name="disconnect"></a></p>
+
+<h3>disconnect()</h3>
+
+<p><a name="eventToGrid"></a></p>
+
+<h3>eventToGrid()</h3>
+
+<p><a name="findEvent"></a></p>
+
+<h3>findEvent()</h3>
+
+<p><a name="findEvents"></a></p>
+
+<h3>findEvents()</h3>
+
+<p><a name="findNote"></a></p>
+
+<h3>findNote()</h3>
+
+<p><a name="findNotes"></a></p>
+
+<h3>findNotes()</h3>
+
+<p><a name="getMidiInputs"></a></p>
+
+<h3>getMidiInputs()</h3>
+
+<p><a name="getMidiInputsAsDropdown"></a></p>
+
+<h3>getMidiInputsAsDropdown()</h3>
+
+<p><a name="getMidiOutputs"></a></p>
+
+<h3>getMidiOutputs()</h3>
+
+<p><a name="getMidiOutputsAsDropdown"></a></p>
+
+<h3>getMidiOutputsAsDropdown()</h3>
+
+<p><a name="getNoteLengthName"></a></p>
+
+<h3>getNoteLengthName()</h3>
+
+<p><a name="getPart"></a></p>
+
+<h3>getPart()</h3>
+
+<p><a name="getParts"></a></p>
+
+<h3>getParts()</h3>
+
+<p><a name="getPosition"></a></p>
+
+<h3>getPosition()</h3>
+
+<p><a name="getStats"></a></p>
+
+<h3>getStats()</h3>
+
+<p><a name="getTempoEvents"></a></p>
+
+<h3>getTempoEvents()</h3>
+
+<p><a name="getTimeSignatureEvents"></a></p>
+
+<h3>getTimeSignatureEvents()</h3>
+
+<p><a name="getTrack"></a></p>
+
+<h3>getTrack()</h3>
+
+<p><a name="getTracks"></a></p>
+
+<h3>getTracks()</h3>
+
+<p><a name="getVolume"></a></p>
+
+<h3>getVolume()</h3>
+
+<p><a name="gridToSong"></a></p>
+
+<h3>gridToSong()</h3>
+
+<p><a name="millisToBars"></a></p>
+
+<h3>millisToBars()</h3>
+
+<p><a name="millisToTicks"></a></p>
+
+<h3>millisToTicks()</h3>
+
+<p><a name="muteAllTracks"></a></p>
+
+<h3>muteAllTracks()</h3>
+
+<p><a name="noteToGrid"></a></p>
+
+<h3>noteToGrid()</h3>
+
+<p><a name="pause"></a></p>
+
+<h3>pause()</h3>
+
+<p><a name="play"></a></p>
+
+<h3>play()</h3>
+
+<p><a name="positionToGrid"></a></p>
+
+<h3>positionToGrid()</h3>
+
+<p><a name="quantize"></a></p>
+
+<h3>quantize()</h3>
+
+<p><a name="quantizeRecording"></a></p>
+
+<h3>quantizeRecording()</h3>
+
+<p><a name="record"></a></p>
+
+<h3>record()</h3>
+
+<p><a name="remove"></a></p>
+
+<h3>remove()</h3>
+
+<p><a name="removeDoubleTimeEvents"></a></p>
+
+<h3>removeDoubleTimeEvents()</h3>
+
+<p><a name="removeEffect"></a></p>
+
+<h3>removeEffect()</h3>
+
+<p><a name="removeEventListener"></a></p>
+
+<h3>removeEventListener()</h3>
+
+<p><a name="removeMidiEventListener"></a></p>
+
+<h3>removeMidiEventListener()</h3>
+
+<p><a name="removeMidiEventListeners"></a></p>
+
+<h3>removeMidiEventListeners()</h3>
+
+<p><a name="removeTimeEvent"></a></p>
+
+<h3>removeTimeEvent()</h3>
+
+<p><a name="removeTimeEvents"></a></p>
+
+<h3>removeTimeEvents()</h3>
+
+<p><a name="removeTrack"></a></p>
+
+<h3>removeTrack()</h3>
+
+<p><a name="removeTracks"></a></p>
+
+<h3>removeTracks()</h3>
+
+<p><a name="resetExternalMidiDevices"></a></p>
+
+<h3>resetExternalMidiDevices()</h3>
+
+<p><a name="resetMetronome"></a></p>
+
+<h3>resetMetronome()</h3>
+
+<p><a name="resetTempo"></a></p>
+
+<h3>resetTempo()</h3>
+
+<p><a name="resetTimeSignature"></a></p>
+
+<h3>resetTimeSignature()</h3>
+
+<p><a name="setDurationInBars"></a></p>
+
+<h3>setDurationInBars()</h3>
+
+<p><a name="setLeftLocator"></a></p>
+
+<h3>setLeftLocator()</h3>
+
+<p><a name="setLoop"></a></p>
+
+<h3>setLoop()</h3>
+
+<p><a name="setMetronomeVolume"></a></p>
+
+<h3>setMetronomeVolume()</h3>
+
+<p><a name="setMidiInput"></a></p>
+
+<h3>setMidiInput()</h3>
+
+<p><a name="setMidiOutput"></a></p>
+
+<h3>setMidiOutput()</h3>
+
+<p><a name="setPitchRange"></a></p>
+
+<h3>setPitchRange()</h3>
+
+<p><a name="setPlaybackSpeed"></a></p>
+
+<h3>setPlaybackSpeed()</h3>
+
+<p><a name="setPlayhead"></a></p>
+
+<h3>setPlayhead()</h3>
+
+<p><a name="setPrecount"></a></p>
+
+<h3>setPrecount()</h3>
+
+<p><a name="setRightLocator"></a></p>
+
+<h3>setRightLocator()</h3>
+
+<p><a name="setTempo"></a></p>
+
+<h3>setTempo()</h3>
+
+<p><a name="setTimeSignature"></a></p>
+
+<h3>setTimeSignature()</h3>
+
+<p><a name="setTrackSolo"></a></p>
+
+<h3>setTrackSolo()</h3>
+
+<p><a name="setVolume"></a></p>
+
+<h3>setVolume()</h3>
+
+<p><a name="startRecording"></a></p>
+
+<h3>startRecording()</h3>
+
+<p><a name="stop"></a></p>
+
+<h3>stop()</h3>
+
+<p><a name="stopRecording"></a></p>
+
+<h3>stopRecording()</h3>
+
+<p><a name="ticksToBars"></a></p>
+
+<h3>ticksToBars()</h3>
+
+<p><a name="ticksToMillis"></a></p>
+
+<h3>ticksToMillis()</h3>
+
+<p><a name="trim"></a></p>
+
+<h3>trim()</h3>
+
+<p><a name="undoQuantize"></a></p>
+
+<h3>undoQuantize()</h3>
+
+<p><a name="undoRecording"></a></p>
+
+<h3>undoRecording()</h3>
+
+<p><a name="update"></a></p>
+
+<h3>update()</h3>
+
+<p><a name="updateGrid"></a></p>
+
+<h3>updateGrid()</h3>
+
+<p><a name="updatePlayheadAndLocators"></a></p>
+
+<h3>updatePlayheadAndLocators()</h3>
+
+<p><a name="updateTempoEvent"></a></p>
+
+<h3>updateTempoEvent()</h3>
+
+<p><a name="updateTimeSignatureEvent"></a></p>
+
+<h3>updateTimeSignatureEvent()</h3>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

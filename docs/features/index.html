@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Features</h1>
+
+<p><a name="MIDI"></a></p>
+
+<h3>MIDI:</h3>
+
+<ul>
+<li>create midi file from scratch</li>
+<li>import existing midi files</li>
+<li>save midi data to file (SMF 1.0)</li>
+<li>record midi (only in browsers that support the WebMIDI API)</li>
+<li>quantize and fixed length functions</li>
+<li>quantize undo history</li>
+<li>you can set the PPQ value of a file</li>
+<li>support for tempo and time signature changes</li>
+<li>multiple songs to be loaded and played back at the same time</li>
+<li>midi data can be shared or moved across songs, tracks and parts very easily</li>
+</ul>
+
+<p><a name="Instruments"></a></p>
+
+<h3>Instruments:</h3>
+
+<ul>
+<li>support multiple velocity layers</li>
+<li>support control change events for sustain pedal, volume and panning</li>
+<li>sustained instruments (like organ, stings, pads)</li>
+<li>keyscaling for release and panning</li>
+<li>configurable release duration and envelope type</li>
+<li>support for .sfz format (upto a certain level)</li>
+<li>instrument samples can be transposed at runtime (experimental)</li>
+</ul>
+
+<p><a name="Audio"></a></p>
+
+<h3>Audio</h3>
+
+<ul>
+<li>volume and panning controller per track</li>
+<li>volume controller per song and one master volume output with compression</li>
+<li>channel effects per track: reverb, panning, autopan and more to come</li>
+</ul>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

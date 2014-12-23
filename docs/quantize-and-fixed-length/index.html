@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Quantize</h1>
+
+<blockquote>
+  <p><em>described methods:</em><br/>
+  sequencer.quantize(events, quantizeValue, [ppq, historyObject])<br/>
+  song.quantize([quantizeValue, historyObject])<br/>
+  track.quantize([quantizeValue, historyObject])<br/>
+  song.quantizeRecording([quantizeValue, historyObject])<br/>
+  track.quantizeRecording([quantizeValue, historyObject])<br/>
+  sequencer.undoQuantize(events, historyObject)<br/>
+  song.undoQuantize(historyObject)<br/>
+  track.undoQuantize(historyObject)<br/>
+  <br/>
+  <em>described properties:</em><br/>
+  song.quantizeValue<br/>
+  track.quantizeValue<br/></p>
+</blockquote>
+
+<p>Quantizing midi notes is basically aligning them on a grid. Time in midi is measured in ticks, which are units. This means that ticks don't have a predefined duration in time.</p>
+
+<p>The amount of ticks per quarter note is defined by the PPQ value of the midi file, or by the program that opens the midi file. A common value is 384, this is because this value is easy to divide by both 3 and 4:</p>
+
+<ul>
+<li>whole note: 4 * 384 = 1920 ticks</li>
+<li>half note: 2 * 384 = 960 ticks</li>
+<li>quarter note: 1 * 384 = 384 ticks</li>
+<li>eighth note: 1/2 * 384 = 240 ticks</li>
+<li>16th note: 1/4 * 384 = 120 ticks</li>
+<li>32th note: 1/8 * 384 = 48 ticks</li>
+<li>64th note: 1/16 * 384 = 24 ticks</li>
+</ul>
+
+<p>the values of triplets:</p>
+
+<ul>
+<li>whole note triplet: 2/3 * 1920 = 1280 ticks</li>
+<li>half note triplet: 2/3 * 960 =  640 ticks</li>
+<li>quarter note triplet: 2/3 * 384 =  320 ticks</li>
+<li>eighth note triplet: 2/3 * 240 = 160 ticks</li>
+<li>16th note triplet: 2/3 * 120 = 80 ticks</li>
+<li>32th triplet note: 2/3 * 48 = 32 ticks</li>
+<li>64th triplet note: 2/3 * 24 = 16 ticks</li>
+</ul>
+
+<p>and it even works with dotted notes, double and triple dotted notes:</p>
+
+<ul>
+<li>dotted 64th note: 1.5 * 24 = 36 ticks</li>
+<li>double dotted 64th note: 1.75 * 24 = 42 ticks</li>
+<li>triple dotted 64th note: 1.875 * 24 = 45 ticks</li>
+</ul>
+
+<p>You can call the quantize method on a track, on a whole song or on an plain array of events.</p>
+
+<p>If you call quantize on a song without specifying a quantize value, the quantize value of the song will be used. If a track in that song has its own (different) quantize value, that value will be used.</p>
+
+<p>If you call quantize without value on a track, the quantize value of the track will be used. By default a track has the same quantize value as the song it belongs to.</p>
+
+<p>If you do specify a value when calling quantize, that value will override both the default value of the song and the default value of the tracks in that song.</p>
+
+<p>If you specifying an invalid value or <code class="language-javascript">0</code> or '0', no quantize will be applied.</p>
+
+<p>Note that you don't change the quantize value of a song or a track by calling the quantize method: this can be done by setting <code class="language-javascript">song.quantizeValue</code> and <code class="language-javascript">track.quantizeValue</code>.</p>
+
+<p>You can specify a quantize value by supplying a value as a string, for instance:</p>
+
+<ul>
+<li>'4' means quarter note</li>
+<li>'8' means eighth note</li>
+<li>'8T' means eighth triplet</li>
+<li>'8.' means eighth dotted note</li>
+<li>'8..' means eighth double dotted note</li>
+<li>'8...' means eighth triple dotted note</li>
+</ul>
+
+<p>Values from '1' (whole note) to '128' (128th note) are supported, all values support the postfixes. Note that a triple dotted 128th note has 22.5 ticks (12 * 1.875), that is no problem, the note will be scheduled perfectly in time.</p>
+
+<p>Single numeric values like '4', '8', '128' can also be specified as number. The 'T' for triplets may be lowercase as well.</p>
+
+<p>You can also specify any arbitrary value in ticks, for instance '3ticks'.</p>
+
+<pre><code class="language-javascript">var
+track1 = sequencer.createTrack(),
+track2 = sequencer.createTrack(),
+song = sequencer.createSong({
+    quantizeValue: '8',
+    tracks: [track1, track2]
+});
+
+// all tracks get quantized to eighth notes
+song.quantize();
+
+// track2 gets quantized to eighth notes, track1 has its own value and will be quantized to 16th triplets
+track1.quantizeValue = '16T';
+song.quantize();
+
+// this value overrules both the quantize value of track1 and track2; they will be quantized to 16th notes
+song.quantize('16');
+
+// result is the same as above, note however that the quantize value of the song now has changed
+song.quantizeValue = '16';
+song.quantize();
+
+// same as above, provide quantize value as number
+song.quantizeValue = 16;
+song.quantize();
+
+// track1 is not quantized, track2 is quantized to 16th notes
+track1.quantizeValue = 'bogus';
+song.quantize();
+
+// same as above but with a valid 'do not quantize' value (no warning messages in the console)
+track1.quantizeValue = '0';
+song.quantize();
+
+</code></pre>
+
+<p>If you specify a value in ticks, your argument can take any form:</p>
+
+<pre><code class="language-javascript">song.quantize('3ticks');
+
+song.quantize('3TICKS');
+
+song.quantize('ticks3');
+
+song.quantize('tIcKs3');
+</code></pre>
+
+<p>You can also quantize plain arrays of events:</p>
+
+<pre><code class="language-javascript">var events = song.findEvents('noteNumber=80');
+sequencer.quantize(events, '16T', 384);
+</code></pre>
+
+<p>This method is for instance handy if you want to quantize your highhat with a different value than the rest of your drum sounds. The last argument is the PPQ value, if you omit this argument it will default to 384.</p>
+
+<p>You can also use <code class="language-javascript">sequencer.quantize()</code> to quantize events across different songs in one go.</p>
+
+<pre><code class="language-javascript">var events = [].concat(song1.events, song2.events, song3.events);
+sequencer.quantize(events, 32, 480);
+</code></pre>
+
+<p>The methods <code class="language-javascript">song.quantizeRecording()</code> or <code class="language-javascript">track.quantizeRecording()</code> only quantize the lastly recorded events. Just like the <code class="language-javascript">quantize()</code> method the parameters <code class="language-javascript">quantizeValue</code> and <code class="language-javascript">historyObject</code> are optional and can be passed in any order.</p>
+
+<p><a name="Quantize-history"></a></p>
+
+<h3>Quantize history</h3>
+
+<p>The method quantize returns an object containing the events and their ticks values before the quantize was applied. You can use this object to keep a history of the quantize actions and implement an undo function in your code.</p>
+
+<p>The object returned by the quantize method has this layout:</p>
+
+<pre><code class="language-javascript">{
+    events: {
+        eventId1: {
+            event: event1,
+            ticks: originalTicksValue
+        },
+        eventId2: {
+            event: event2,
+            ticks: originalTicksValue
+        },
+        ...
+    },
+
+    tracks: {
+        trackId1: {
+            track: track1,
+            quantizedEvents: array
+        },
+        trackId2: {
+            track: track2,
+            quantizedEvents: array
+        },
+        ...
+
+    }
+}
+</code></pre>
+
+<p>This object will be overwritten <em>every</em> time you call quantize on a track, on a song or directly on the global sequencer object, so you have to take care of a history list in your own code:</p>
+
+<pre><code class="language-javascript">var myHistory = [];
+myHistory.push(track.quantize());
+
+// now it is save to call quantize, for instance on another song:
+song2.quantize();
+</code></pre>
+
+<p>You can also provide your own history object so history gets stored exactly where you want. This is useful if you are using a rotating history system with a limited set of slots for storing history states, for instance to save memory.</p>
+
+<pre><code class="language-javascript">// getNextHistorySlot() is your own function for getting the next slot to write to
+var historyObject = getNextHistorySlot('track1');
+track1.quantize('16t', historyObject); // now the quantize history is stored in historyObject
+
+</code></pre>
+
+<p>The <code class="language-javascript">events</code> and <code class="language-javascript">track</code> objects in the history object are different ways of organizing the same set of events. For instance if you want to show the positions of all events in track1 before quantize was applied, you can do this:</p>
+
+<pre><code class="language-javascript">var events = myHistory.tracks[track1.id].quantizedEvents;
+
+quantizedEvents.forEach(function(event){
+    var ticks = myHistory.events[event.id].ticks;
+    console.log('this event was originally positioned at', ticks);
+});
+
+</code></pre>
+
+<p>But you can also do this by looping over the <code class="language-javascript">events</code> object, which is a bit more laborious:</p>
+
+<pre><code class="language-javascript">var event;
+
+for(eventId in myHistory.events){
+    if(myHistory.events.hasOwnProperty(eventId)){
+        event = myHistory.events[eventId];
+        if(event.track === track1){
+            console.log('this event was originally positioned at', event.ticks);
+        }
+    }
+}
+</code></pre>
+
+<p>You may put the arguments in <code class="language-javascript">song.quantize()</code> and <code class="language-javascript">track.quantize()</code> in any order, but the order of arguments in <code class="language-javascript">sequencer.quantize()</code> is fixed. Here some examples:</p>
+
+<pre><code class="language-javascript">// any order will do:
+
+song.quantize(16);
+song.quantize(historyObject, '16t');
+
+track.quantize('32T', historyObject);
+track.quantize(historyObject);
+
+
+// fixed order:
+
+sequencer.quantize(16); // error: no events specified
+sequencer.quantize(16, events); // quantized with default PPQ of 384
+sequencer.quantize(16, events, 480); // quantized with PPQ of 480
+sequencer.quantize(16, events, 480, historyObject); // history stored in specified object
+
+sequencer.quantize(16, events, historyObject); // yields an error!
+
+</code></pre>
+
+<p><a name="Undoing-quantize"></a></p>
+
+<h3>Undoing quantize</h3>
+
+<p>Quantize can be undone by specifying a state that you want to restore:</p>
+
+<pre><code class="language-javascript">var myTrackHistory = track.quantize();
+track.undoQuantize(myTrackHistory);
+
+//or better:
+
+var myTrackHistory = [];
+myTrackHistory.push(track.quantize());
+track.undoQuantize(myTrackHistory[0]);
+
+</code></pre>
+
+<p>You can manipulate the history states in your own code before passing them on to undoQuantize(), this way you can for instance let the user merge multiple history states, or let the user only pick specific events across several history states.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

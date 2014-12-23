@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Event Statistics</h1>
+
+<p><a name="getStats"></a></p>
+
+<h3>getStats(searchstring)</h3>
+
+<blockquote>
+  <p>defined in <a href="https://bitbucket.org/abudaan/heartbeat/src/a7db64b7346f/src/heartbeat/event_statistics.js">event_statistics.js</a><br/>
+  related methods:<br/>
+  <a href="/docs/find_event">findEvent()</a><br/>
+  <a href="/docs/find_note">findNote()</a><br/></p>
+</blockquote>
+
+<p>The <code class="language-javascript">getStats()</code> function is implemented in song, track, part and sequencer. The first 3 implementations allow you to get statistics of events in a song, a track or a part. The implementation in sequencer allows you to get statistics of events in a plain array.</p>
+
+<pre><code class="language-javascript">// run statistics on a song
+song.getStats('noteNumber max');
+
+// run statistics on a track
+track.getStats('velocity min noteName > D#4 < F5');
+
+// run statistics on a part
+part.getStats('frequency avg bar > 10 < 25');
+
+// run statistics on an array of events
+sequencer.getStats(array, 'data2 avg type = CONTROL_CHANGE AND bar < 10');
+
+</code></pre>
+
+<p>The search string consists of three parts:</p>
+
+<p>1) The event property that you want to run the statistics on, this can be any of the following:</p>
+
+<p><code class="language-javascript">data1</code>
+<code class="language-javascript">data2</code>
+<code class="language-javascript">velocity</code>
+<code class="language-javascript">noteNumber</code>
+<code class="language-javascript">noteName</code>
+<code class="language-javascript">frequency</code></p>
+
+<p>2) The type of statistics that you want to run:</p>
+
+<p><code class="language-javascript">min</code> → the minimum value
+<code class="language-javascript">max</code> → the maximum value
+<code class="language-javascript">avg</code> → the average value
+<code class="language-javascript">all</code> → runs all above statistics</p>
+
+<p>3) A searchstring that filters events from the provided events, this is a search string as described at [findEvent()](#!find events)</p>
+
+<p>The getStats method returns a single value when used with <code class="language-javascript">min</code>, <code class="language-javascript">max</code> or <code class="language-javascript">avg</code>, and an object containing keys for all values when used with <code class="language-javascript">all</code>, for instance:</p>
+
+<pre><code class="language-javascript">// get all stats of the velocity values of NOTE_ON events
+var stats = song.getStats('velocity all type = NOTE_ON');
+
+console.log(stats.min); // prints 60
+console.log(stats.max); // prints 99
+console.log(stats.avg); // prints 76.42112986060161
+
+</code></pre>
+
+<p>Note that the average is not simply (60 + 99)/2 = 79.5. The average is a weighted average that takes into account how many notes have a certain velocity value.</p>
+
+<p>If you perform statistics on non-numeric values such as note names, the returned values will be in the same format, for instance:</p>
+
+<pre><code class="language-javascript">// get the average note name on afterbeats between bar 3 and 40
+var averageNote = song.getStats('noteName avg bar >= 3 < 40 AND beat % 2');
+console.log(averageNote); // prints F#3
+
+</code></pre>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<p><a name="findEvent"></a></p>
+
+<h1>Find Events</h1>
+
+<blockquote>
+  <p>defined in <a href="https://bitbucket.org/abudaan/heartbeat/src/a7db64b7346f/src/heartbeat/find_event.js">find_event.js</a><br/>
+  related methods:<br/>
+  <a href="#findNote">findNote()</a><br/></p>
+</blockquote>
+
+<p>The <code class="language-javascript">findEvent()</code> function is implemented in song, track, part and sequencer. The first 3 implementations allow you to perform search actions on a song, a track or a part. The implementation in sequencer allows you to search events in a plain array of events.</p>
+
+<pre><code class="language-javascript">song.findEvent('noteNumber > 60');
+
+track.findEvent('noteName > D#4 OR noteName < F5');
+
+part.findEvent('noteName > D#4 OR noteName < F5');
+
+var array = [event1, event2 ... event392];
+
+sequencer.findEvent(array, 'noteName > D#4 AND velocity > 100 < 127 OR bar < 10');
+
+</code></pre>
+
+<p>The search string can be a single condition or a number of conditions chained by logical operators.</p>
+
+<p><a name="search-operators"></a></p>
+
+<h3>search operators:</h3>
+
+<p><code class="language-javascript">=</code> → equal
+<code class="language-javascript">==</code> → equal
+<code class="language-javascript">===</code> → equal
+<code class="language-javascript">></code> → greater then
+<code class="language-javascript">&lt;</code> → less then
+<code class="language-javascript">>=</code> → greater then or equal
+<code class="language-javascript">&lt;=</code> → less then or equal
+<code class="language-javascript">^=</code> → starts with (strings)
+<code class="language-javascript">$=</code> → ends with (strings)
+<code class="language-javascript">*=</code> → contains
+<code class="language-javascript">!=</code> → does not contain (strings) or not equal (numbers)
+<code class="language-javascript">!==</code> → does not contain (strings) or not equal (numbers)
+<code class="language-javascript">%=</code> → modulo, see below for an example (numbers)
+<code class="language-javascript">~=</code> → contains surrounded by white spaces (currently not in use)</p>
+
+<p>All equal and non equal operators are strict!</p>
+
+<p><a name="logical-operators"></a></p>
+
+<h3>logical operators:</h3>
+
+<p><code class="language-javascript">OR</code> → adds the result of the condition after the OR operator to the result of all conditions before the OR condition
+<code class="language-javascript">XOR</code> → same as OR but filters out the events that exist in both result sets
+<code class="language-javascript">AND</code> → applies the condition followed by the AND on the result of all conditions before the AND operator
+<code class="language-javascript">NOT</code> → the inverse of AND</p>
+
+<p>It is not (yet) possible to use parentheses to group logical expressions. See advanced examples.</p>
+
+<p><a name="search-properties"></a></p>
+
+<h3>search properties:</h3>
+
+<p><code class="language-javascript">id</code> → the unique event id that is assigned when the midi event was created
+<code class="language-javascript">type</code> → midi event type
+<code class="language-javascript">data1</code> → midi event data 1
+<code class="language-javascript">data2</code> → midi event data 2
+<code class="language-javascript">noteNumber</code> → same as data 1 in case of a note on or note off event
+<code class="language-javascript">velocity</code> → same as data 2 in case of a note on or note off event
+<code class="language-javascript">noteName</code> → name of note based on note name mode (sharp, flat, enharmonic-sharp, enharmonic-flat)
+<code class="language-javascript">frequency</code> → frequency of note based on the current <a href="#!Note">pitch setting</a></p>
+
+<p><code class="language-javascript">ticks</code> → position from start in ticks (eternal ticks)
+<code class="language-javascript">millis</code> → position from start in milliseconds</p>
+
+<p><code class="language-javascript">barsbeats</code> → position of the event in bars and beats, e.g. [1,2,1,30] → bar 1, beat 2, sixteenth 1, tick 30
+<code class="language-javascript">bar</code>
+<code class="language-javascript">beat</code>
+<code class="language-javascript">sixteenth</code>
+<code class="language-javascript">tick</code></p>
+
+<p><code class="language-javascript">time</code> → position of the event in time, e.g. [0,3,25,999] → hour 0, minute 30, second 25, millisecond 999
+<code class="language-javascript">hour</code>
+<code class="language-javascript">minute</code>
+<code class="language-javascript">second</code>
+<code class="language-javascript">millisecond</code></p>
+
+<p><a name="examples"></a></p>
+
+<h3>examples:</h3>
+
+<p><code class="language-javascript">findEvent('noteName ^= C')</code> → finds all C, C# and Cb notes in all octaves
+<code class="language-javascript">findEvent('noteName *= #')</code> → finds sharp notes in all octaves
+<code class="language-javascript">findEvent('noteName $= 5')</code> → finds all notes in octave 5
+<code class="language-javascript">findEvent('noteName = C')</code> → finds all C notes in all octaves</p>
+
+<p><code class="language-javascript">findEvent('noteName > C4')</code> → finds all notes higher then C4
+<code class="language-javascript">findEvent('noteNumber > 60')</code> → finds all notes higher then note number 60, same as above</p>
+
+<p><code class="language-javascript">findEvent('noteName >= C4')</code> → finds all notes higher or equal then C4
+<code class="language-javascript">findEvent('noteNumber >= 60')</code> → same as above with note numbers</p>
+
+<p><code class="language-javascript">findEvent('noteName > C4 &lt; D5')</code> → finds all notes between C4 and D5
+<code class="language-javascript">findEvent('noteNumber > 60 &lt; 74')</code> → same as above with note numbers</p>
+
+<p><code class="language-javascript">findEvent('noteName >= C4 &lt;= D5')</code> → finds all notes between and including C4 and D5
+<code class="language-javascript">findEvent('noteNumber >= 60 &lt;= 74')</code> → same as above with note numbers</p>
+
+<p><code class="language-javascript">findEvent('velocity >= 60 &lt; 127')</code> → finds all notes with a velocity greater then or equal to 60 and less then 127</p>
+
+<p><code class="language-javascript">findEvent('bar = 3')</code> → finds all events in bar 3
+<code class="language-javascript">findEvent('bar > 3')</code> → finds all events from bar 3 (not including bar 3)</p>
+
+<p><code class="language-javascript">findEvent('bar *= 3')</code> → finds all events in bars with a number that contains a 3, e.g. 131, 203, 32
+<code class="language-javascript">findEvent('bar %= 4')</code> → finds all events in bars where (barnumber % 4) is 0, i.e. bar 4, 8, 12 and so on</p>
+
+<p><code class="language-javascript">findEvent('beat = 2')</code> → finds all events on beat 2 (in all bars)
+<code class="language-javascript">findEvent('beat %= 2')</code> → finds all events on beat 2 (in all bars)</p>
+
+<p><code class="language-javascript">findEvent('barsbeats = [1,3,2,60]')</code> → finds all events on bar 1, beat 2, sixteenth 2 and tick 60
+<code class="language-javascript">findEvent('barsbeats = 1,3,2,60')</code> → same as above</p>
+
+<p><code class="language-javascript">findEvent('barsbeats = [3]')</code> → finds all events on bar 3, beat 1, sixteenth 1 and tick 0
+<code class="language-javascript">findEvent('barsbeats = 3')</code> → same as above</p>
+
+<p>Please note that the 2 examples above are <em>not</em> the same as <code class="language-javascript">findEvent('bar = 3)</code>; they will return less results because the pattern only matches events on position 3,1,1,0!</p>
+
+<p><code class="language-javascript">findEvent('time > [0,3,34,899]')</code> → finds all events from time position 3 minutes, 30 seconds and 899 milliseconds
+<code class="language-javascript">findEvent('second = 30')</code> → finds all events on time position 30 seconds
+<code class="language-javascript">findEvent('time = 30')</code> → same as above: if no position array is supplied the argument will be interpreted as seconds, i.e. [0,argument,0,0]
+<code class="language-javascript">findEvent('time = [0,30]')</code> → same as above
+<code class="language-javascript">findEvent('time = [0,30,0]')</code> → same as above
+<code class="language-javascript">findEvent('time = [0,30,0,0]')</code> → same as above
+<code class="language-javascript">findEvent('time = 0,30,0,0')</code> → same as above
+<code class="language-javascript">findEvent('time = [30]')</code> → finds all events on time position 30 hours (!!), 0 minutes, 0 seconds and 0 milliseconds</p>
+
+<p><code class="language-javascript">findEvent('type = PROGRAM_CHANGE')</code> → finds all program change events
+<code class="language-javascript">findEvent('type = 0xC0')</code> → same as above
+<code class="language-javascript">findEvent('type = 192')</code> → same as above
+<code class="language-javascript">findEvent('type = ' + sequencer.PROGRAM_CHANGE)</code> → same as above</p>
+
+<p><code class="language-javascript">findEvent(song, 'type = CONTROL_CHANGE AND data1 = 64')</code>→ finds all damper pedal events
+<code class="language-javascript">findEvent(song, 'type = CONTROL_CHANGE AND data1 = 64 AND data2 = 0')</code>→ finds all damper pedal off events</p>
+
+<p><a name="advanced-examples"></a></p>
+
+<h3>advanced examples:</h3>
+
+<p><code class="language-javascript">findEvent('noteName = C OR velocity &lt; 100')</code> → all events that match pattern 1 plus all events that match pattern 2
+<code class="language-javascript">findEvent('noteName = C OR velocity &lt; 100')</code> → same as above</p>
+
+<p><code class="language-javascript">findEvent('noteName = C AND velocity &lt; 100')</code> → all event that match both pattern 1 and pattern 2
+<code class="language-javascript">findEvent('noteName = C NOT velocity &lt; 100')</code> → inverse of above
+<code class="language-javascript">findEvent('noteName = C AND velocity >= 100')</code> → same as above</p>
+
+<p><code class="language-javascript">findEvent('velocity > 60 &lt; 66 OR noteName = B4')</code> → finds all events that have a velocity between 61 and 65 and all events that have the noteName B4
+<code class="language-javascript">findEvent('velocity > 60 &lt; 66 XOR noteName = B4')</code> → finds all events that have a velocity between 61 and 65 and all events that have the noteName B4, but not the events that have both noteName B4 and a velocity between 61 and 65</p>
+
+<p><code class="language-javascript">findEvent('noteName ^= C AND noteName != # AND noteName != b')</code> → finds all C notes in all octaves, same as:
+<code class="language-javascript">findEvent('noteName = C')</code></p>
+
+<p><code class="language-javascript">findEvent('velocity > 60 XOR noteName = B4 AND beat = 2')</code> → finds all events on the second beat of a bar but not the events that have a velocity value of more then 60 and a note name B4. This clearly shows that the condition after the AND operator has filtered the results of the 2 conditions before the AND operator.</p>
+
+<p>You may have thought that the result would have been:
+ - all events with a velocity value greater then 60
+ - all events with note name B4 on the second beat of a bar
+ - minus the events that are common in both result sets</p>
+
+<p>To get this result we need to use parantheses like so:
+<code class="language-javascript">findEvent('velocity > 60 XOR (noteName = B4 AND beat = 2)')</code></p>
+
+<p>But the use of parentheses is not yet supported, but you can get the same result by using the method <code class="language-javascript">sequencer.removeMutualEvents()</code></p>
+
+<pre><code class="language-javascript">var events = song.getEvents(),   // the array of events that you want to search in
+    resultSet1,
+    resultSet2,
+    result;
+
+resultSet1 = sequencer.findEvent(events, 'noteName = B4 AND beat = 2');
+resultSet2 = sequencer.findEvent(events, 'velocity > 60');
+
+result = sequencer.removeMutualEvents(resultSet1, resutlSet2);
+
+// or in one line:
+
+result = sequencer.removeMutualEvents(
+    sequencer.findEvent(events, 'noteName = B4 AND beat = 2'),
+    sequencer.findEvent(events, 'velocity > 60')
+);
+</code></pre>
+
+<p>You might have noticed that for instance:
+<code class="language-javascript">findEvent('velocity > 60 &lt; 100')</code>
+is actually a shorthand for:
+<code class="language-javascript">findEvent('velocity > 60 AND velocity &lt; 100')</code></p>
+
+<p>Also you rewrite:
+<code class="language-javascript">result = findEvent(events, 'noteName = B4 AND beat = 2')</code>
+like so:</p>
+
+<pre><code class="language-javascript">var events = song.getEvents(),   // the array of events that you want to search in
+    resultSet,
+    result;
+
+resultSet = sequencer.findEvent(events, 'noteName = B4');
+
+result = findEvent(resultSet, 'beat = 2');
+
+//or with nested findEvent calls like so:
+
+result = findEvent(findEvent(events, 'noteName = B4'), 'beat = 2');
+</code></pre>
+
+<p><br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/></p>
+
+<p><a name="findNote"></a></p>
+
+<h1>Find Note</h1>
+
+<blockquote>
+  <p>defined in <a href="https://bitbucket.org/abudaan/heartbeat/src/a7db64b7346f/src/heartbeat/find_note.js">find_note.js</a>
+  related methods:
+  <a href="#findEvent">findEvent()</a></p>
+</blockquote>
+
+<p>The <code class="language-javascript">findNote()</code> function is implemented in song, track, part and sequencer. The first 3 implementations allow you to perform search actions on a song, a track, a part, respectively. The implementation in sequencer allows you to search notes in a plain array of notes.</p>
+
+<pre><code class="language-javascript">song.findNote('noteNumber > 60');
+
+track.findNote('noteName > D#4 OR noteName < F5');
+
+part.findNote('noteName > D#4 OR noteName < F5');
+
+var array = [note1, note2 ... note392];
+
+sequencer.findNote(array, 'noteName > D#4 AND velocity > 100 < 127 OR bar < 10');
+</code></pre>
+
+<p>Works the same as [findEvent()](#!find events), the only difference is that it returns notes instead of events. A note is basically a note on midi event that has some extra properties:</p>
+
+<p><code class="language-javascript">endEvent</code> → the matching note off event
+<code class="language-javascript">durationSeconds</code> → difference in seconds between the position of the note of and the note on event
+<code class="language-javascript">durationMillis</code> → difference in millis between the position of the note of and the note on event
+<code class="language-javascript">durationTicks</code> → difference in ticks between the position of the note of and the note on event
+<code class="language-javascript">endTicks</code> → tick position of the note off event
+<code class="language-javascript">endMillis</code> → millis of the note off event</p>
+
+<p>This method is particularly handy for searching inside a certain time span, for instance a bar. The search action will only return the notes that have both the note on and the note off event inside the given time span.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeatjs/css/docs.css">
+    <script src="/heartbeatjs/js/open.js"></script>
+    <script src="/heartbeatjs/js/create_navigation.js"></script>
+    <script src="/heartbeatjs/js/create_tabs.js"></script>
+    <script src="/heartbeatjs/js/navigation_items.js"></script>
+    <script src="/heartbeatjs/js/util.js"></script>
+    <script src="/heartbeatjs/js/close.js"></script>
+    <script src="/heartbeatjs/js/main.js"></script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+      ga('require', 'displayfeatures');
+      ga('require', 'linkid', 'linkid.js');
+      ga('send', 'pageview');
+
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<p><a name="Creating-your-own-assets-for-heartbeat"></a></p>
+
+<h3>Creating your own assets for heartbeat</h3>
+
+<blockquote>
+  <p>related methods:
+  <a href="/docs/adding-assets/">loading assets</a></p>
+</blockquote>
+
+<p>All assets must be loaded as json data. Only a midi file asset can also be loaded as binary .mid or .midi file. In the repository in the "tools" folder you will find tools for converting binary data to json.</p>
+
+<p>The tools are javascript files for <a href="http://nodejs.org/">Nodejs</a>, so you have to install Nodejs on your computer. For creating sample packs you also need to install <a href="http://sox.sourceforge.net/">Sox</a>.</p>
+
+<p><a name="Creating-midi-file-assets"></a></p>
+
+<h3>Creating midi file assets</h3>
+
+<p>Although you can load binary midi files into heartbeat, you might want to convert it to json because it allows you to add some additional information to the asset:</p>
+
+<ul>
+<li>name: the name that is used to store the midi file in heartbeat's local storage</li>
+<li>folder: the folder in heartbeat's local storage where the midi file will be stored</li>
+<li>author: author of the midi file (not necessarily the composer)</li>
+<li>license: copyright info</li>
+<li>info: further info that might be interesting such as creation date</li>
+</ul>
+
+<p>You can add this information to a midi file asset by creating a configuration file. The configuration file is a plain text file with a .cfg extension.</p>
+
+<p>The tool for converting midi files to assets is called "midifile2asset.js". You can pass any number of midi or configuration files as argument. You can also pass any number of paths to folders; the tool will look for midi and config files in these folders. The order of arguments is not important.</p>
+
+<p>There are a couple of switches:</p>
+
+<ul>
+<li><code class="language-javascript">-a</code> or <code class="language-javascript">-assetpack</code>:</li>
+<li><code class="language-javascript">-s</code> or <code class="language-javascript">-separate</code>:</li>
+<li><code class="language-javascript">-f</code> or <code class="language-javascript">-file</code>:</li>
+<li><p><code class="language-javascript">-o</code> or <code class="language-javascript">-output</code>:</p></li>
+<li><p>output_file: the midi file asset will be saved to this file</p></li>
+<li>assetpack: the midi file asset will be added to this existing or new asset pack</li>
+</ul>
+
+<p>The heartbeat instrument format is based on the open <a href="http://ariaengine.com/overview/sfz-format/">SFZ</a> format. An instrument file is a JSON file that maps note names or note numbers to samples, and describes how these samples must be played back. The file only contains the paths to the samples, not the samples themselves.</p>
+
+<pre><code class="language-javascript">{
+    "name": "Organ",
+    "folder": "keys",
+    "sample_path": "keys_samples/Organ",
+    "mapping": {
+        "60": {
+            "n": "Organ-060-c3",
+            "s": [
+                2296.2585034013605,
+                4474.058956916099
+            ]
+        },
+        "61": {
+            "n": "Organ-061-c#3",
+            "s": [
+                2201.40589569161,
+                3456.462585034014
+            ]
+        },
+        "62": {
+            "n": "Organ-062-d3",
+            "s": [
+                2655.714285714286,
+                3989.9773242630386
+            ]
+        },
+        "63": {
+            "n": "Organ-063-d#3",
+            "r": 1300,
+            "s": [
+                1963.6961451247166,
+                3769.342403628118
+            ]
+        },
+        "64": {
+            "n": "Organ-064-e3",
+            "s": [
+                1885.328798185941,
+                2910.408163265306
+            ]
+        },
+        "65": {
+            "n": "Organ-065-f3",
+            "s": [
+                2054.3990929705215,
+                2793.5600907029475
+            ]
+        }
+    },
+    "release_duration": 1200,
+    "release_envelope": "equal power",
+    "stereo_spread": [-1, 1],
+    "autopan": true
+}
+</code></pre>
+
+<p><code class="language-javascript">name</code> → The name of the instrument, this doesn't have to be an unique name, as long as the combination of folder name and instrument name is unique</br/></p>
+
+<p><code class="language-javascript">folder</code> → The folder in heartbeats internal storage where the instrument will be stored, if omitted the instrument will be added to the default folder (read more about <a href="/docs/adding-assets/#heartbeat%27s-storage">storage</a>)</p>
+
+<p><code class="language-javascript">sample_path</code> → Path to the samples as AudioBuffer in heartbeats local storage, or the url or path to the audio files in their original file format (.wav, .ogg, and so on)</p>
+
+<p><code class="language-javascript">mapping</code> → Object that maps midi notes or numbers to sample names, the mapping doesn't have to be in numeric order, doesn't have to be successive, and also you don't have to provide samples for the full range of note numbers (midi note number 0 to midi note number 127). The name of the sample can either be the key in heartbeat's sample storage object, or the file name of the original audio file.</p>
+
+<p><code class="language-javascript">n</code> → The key or filename of the sample.</p>
+
+<p><code class="language-javascript">s</code> → The start- and end-time of the sustain loop of the sample in high precision milliseconds. Only needed for looped samples</p>
+
+<p><code class="language-javascript">r</code> → The duration of the release phase in milliseconds of the sample</p>
+
+<p><code class="language-javascript">release_duration</code> → The global release duration of the instrument. If a sample has a <code class="language-javascript">r</code> key it will overrule the global setting.</p>
+
+<p><code class="language-javascript">release_envelope</code> → The way the sample fades out in the release phase. Supported types are <code class="language-javascript">linear</code> and `equal power, but you can also provide an array of values between 0 and 1 if you need to set a custom envelope.</p>
+
+<p><code class="language-javascript">stereo_spread</code> → Defines the way samples are laid out over the stereo range; low notes are positioned to the left and the higher the note, the more it is positioned to the right. This mimics the physical position of keys on a piano. You can provide any float value between -1 and +1, whereby -1 means panned to the full left and +1 means panned to the full right. It is possible to invert the channels by setting the second value of the array to a negative number, for instance <code class="language-javascript">[0.65, -0.99]</code></p>
+
+<p><code class="language-javascript">autopan</code> → Autopan is a channel effect</p>
+
+<!--
+@TODO: should I list the other channel effects here as well?
+-->
+
+<!--
+
+
+1) leave out name -> it will look for samples named the note number or the note name
+
+
+
+<pre><code class="language-javascript">{
+    "name": "Organ",
+    "folder": "keys",
+    "sample_path": "keys_samples/Organ",
+    "mapping": {
+        "60": {
+            "s": [
+                2296.2585034013605,
+                4474.058956916099
+            ]
+        },
+        "61": {
+            "s": [
+                2201.40589569161,
+                3456.462585034014
+            ]
+        },
+        "62": {
+            "s": [
+                2655.714285714286,
+                3989.9773242630386
+            ]
+        },
+        "63": {
+            "r": 1300,
+            "s": [
+                1963.6961451247166,
+                3769.342403628118
+            ]
+        },
+        "64": {
+            "s": [
+                1885.328798185941,
+                2910.408163265306
+            ]
+        },
+        "65": {
+            "s": [
+                2054.3990929705215,
+                2793.5600907029475
+            ]
+        }
+    },
+    "release_duration": 1200,
+    "release_envelope": "equal power",
+    "stereo_spread": [-1, 1],
+    "autopan": true
+}
+</code></pre>
+
+
+2) if your instrument doesn't have looped samples nor release settings per sample, you can use the key <code class="language-javascript">key_range</code> instead of the key <code class="language-javascript">mapping</code>. The range is inclusive, so [60, 65] means 60, 61, 62, 63, 64 and 65.
+
+
+
+<pre><code class="language-javascript">{
+    "name": "Organ",
+    "folder": "keys",
+    "sample_path": "keys_samples/Organ",
+    "key_range": [60, 65],
+    "release_duration": 1200,
+    "release_envelope": "equal power",
+    "stereo_spread": [-1, 1],
+    "autopan": true
+}
+</code></pre>
+
+
+
+
+
+
+This separation between instruments and samples makes it possible to use the same samples across several instruments
+
+
+
+
+
+An instrument is basically a mapping of midi note numbers to samples. Samples can be separate audio files in any format that Chrome supports, see [this list](https://developer.mozilla.org/en-US/docs/HTML/Supported_media_formats).
+
+To save loading time, it is also possible to convert all samples to base64 format and store them in a single javascript file. You can add base64 encoded samples to heartbeat by using the method <code class="language-javascript">sequencer.addSamples()</code>.
+
+Instruments can be single- and multi-layered. Single-layered means that you have only one sample per midi note number and that the playback volume of the sample is dependent on the velocity value.
+
+Multi-layered means that you provide samples per velocity range; for instance one sample for velocity range 0 to 40, one for 41 to 80 and one for velocity values from 81 to 127. Based on the velocity value of the midi note, the right sample will be played.
+
+The mapping of midi note number to samples is stored in an object:
+
+
+
+<pre><code class="language-javascript">var myInstrument = {
+    name: 'my_instrument',
+    bank: 'my_bank',
+    url: 'my_samples/my_instrument',
+    extension: 'ogg',
+    mapping: {
+        21: 'my_sample_A0',
+        22: 'my_sample_Bb0',
+        23: 'my_sample_B0',
+        24: 'my_sample_C1',
+
+            ...
+
+            107: 'my_sample_B7',
+            108: 'my_sample_C8'
+        }
+    };
+
+// add the instrument to heartbeat's instrument storage
+sequencer.addInstrument(myInstrument);
+</code></pre>
+
+
+
+
+
+
+<a name="addInstrument"></a>
+### addInstrument()
+
+After you have created the mapping object, you can add the instrument to heartbeat's instrument and bank storage. This does not load the samples of the instrument, it only makes an entry in the storage that you can refer to for loading the samples, and that you can refer to for playing back after the samples have loaded.
+
+This separation allows you to synchronize the loading of the samples with the loading of the rest of your application.
+
+
+
+<a name="loadInstrument"></a>
+### loadInstrument()
+Loads the samples of the instrument.
+
+This method is overloaded, you can use it in the following ways:
+
+
+
+<pre><code class="language-javascript">// loads the samples of an instrument that has already been added to heartbeat's storage
+sequencer.loadInstrument('my_instrument', callback);
+
+// same as above
+sequencer.loadInstrument('my_instrument', 'my_bank', callback);
+
+// same as above but adds the instrument to another bank
+sequencer.loadInstrument('my_instrument', 'other_bank', callback);
+
+// loads several instruments
+sequencer.loadInstrument(['my_instrument1', 'my_instrument2', 'my_instrument3'], callback);
+</code></pre>
+
+
+
+<a name="loadBank"></a>
+### loadBank()
+Loads the default bank or the bank that is currently set by <code class="language-javascript">useBank()</code>, see below. It is possible to have more than one bank loaded at the same time; in this case you have to prepend the name of the bank to the instrument id of the track, see [track](track.md), because the combination of bank name and instrument name is a unique identifier for an instrument.
+
+
+
+<a name="useBank"></a>
+### useBank()
+Sets the bank that heartbeat will use for playing midi notes. By default heartbeat uses the default bank; if you haven't added any instruments to the default bank, you won't be able to hear anything.
+
+
+Code example of the 3 ways that you can use <code class="language-javascript">loadBank()</code> to load an instrument:
+
+
+
+<pre><code class="language-javascript">// method 1
+
+sequencer.loadBank('my_bank', callback);
+
+
+// method 2
+
+// set the default bank to 'my_bank'
+sequencer.useBank('my_bank');
+
+// now you don't have to provide a bank name
+sequencer.loadBank(callback);
+
+
+// method 3
+
+// load a number of banks
+sequencer.loadBank(['my_bank1', 'my_bank2'], callback);
+</code></pre>
+
+
+
+
+<a name="addSamples"></a>
+### addSamples()
+
+This method allows you to add base64 encoded samples to heartbeat's sample storage object.
+
+
+
+<pre><code class="language-javascript">var samples = {
+        'my_sample1': 'CDB9gBKUgIEMGakCUiCAI0JWA ...',
+        'my_sample2': 'EhGgAPgSqwJAVAIG7+qo/x0pn ...',
+        'my_sample3': 'BASTRtILywY0BPYHPzSjHjqIc ...',
+
+        ...
+
+            'my_sample44': 'ZJkU6C8+Bn4an2GA6HZ0SgeNB ...'
+        };
+
+
+    sequencer.addSamples('my_samples/my_sampled_piano', samples);
+</code></pre>
+
+
+The samples object is a mapping of sample names to base64 encoded sample audio data. The names of the samples don't have to be unique outside the scope of the samples object, as long as the combination of the path and the sample name is unique. The path is the key in the sample storage object that contains the audio data.
+
+If a path contains slash forwards, new objects will be created inside the heartbeat's main sample storage object. In the case of the example above the main sample storage object will look like:
+
+
+
+<pre><code class="language-javascript">// sequencer.sounds is the main object
+
+sequencer.sounds = {
+
+    'my_samples': {
+
+        'my_sampled_piano': {
+
+            'my_sample1': 'CDB9gBKUgIEMGakCUiCAI0JWA ...',
+            'my_sample2': 'EhGgAPgSqwJAVAIG7+qo/x0pn ...',
+            'my_sample3': 'BASTRtILywY0BPYHPzSjHjqIc ...',
+
+            ...
+
+                'my_sample44': 'ZJkU6C8+Bn4an2GA6HZ0SgeNB ...'
+            }
+        }
+}
+</code></pre>
+
+
+In this example I use the name 'my_sampled_piano' but it is not mandatory to organize samples around an instrument. The sample storage is just a simple database that you can organize in any way you like.
+
+Note that by separating samples and instruments you can use the same samples in multiple instruments.
+
+
+
+<a name="Tools"></a>
+### Tools
+
+In the tools folder you'll find a file called sample_to_base64.js, this is very basic tool that allows you convert the samples of your instrument to an key-value object that contains the base64 encoded audio data, as described above.
+
+You have to replace the instrument object in line 4 with your own code and then run the file in [Nodejs](http://nodejs.org/) on the command line:
+
+<code class="language-javascript">nodejs sample_to_base64.js > output.js</code>
+
+The output is piped to a file output.js but you can use a more descriptive name like for instance my_piano_samples.js.
+
+If you add the generated file to your html page (after you've added heartbeat.min.js) the samples will be automatically added to heartbeat's sample storage and can be accessed by your instruments using the path you've provided.
+
+I will make the tool more user friendly and also create an online version of the tool. Josh: for the time being you can also send me your instruments and samples and I convert it for you.
+
+Also it will be possible in the future to load soundfonts directly into heartbeat.
+
+-->
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeatjs/js/prism.js"></script>
+</body>
+</html>
