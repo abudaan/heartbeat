@@ -110,16 +110,17 @@ h4{
     width: 800px;
     text-align:center;
 }
-/*
+
 ul{
     list-style-type: disc;
     margin-left: 20px;
+    margin-top: -20px;
 }
 
 ul li{
     padding: 5px;
 }
-*/
+
 nav > ul{
     list-style-type: none;
     margin: 0 auto;
@@ -147,28 +148,16 @@ nav li:hover{
     /*border: 1px dotted #FF1CAE;*/
     border: 1px dotted #fff;
 }
-a.high-profile{
-    font-weight: 300;
-    color: #1BB2E0;
-    text-decoration: none;
-}
 a:hover{
     color: #1BB2E0;
     text-decoration: none;
 }
-a, em{
-    color: #555;
+a{
+    color: #1BB2E0;
     font-weight: 100;
+    text-decoration: none;
+}
+a.black{
+    color: #555;
     text-decoration: underline;
-}
-#test_button{
-    width: 600px;
-    height: 20px;
-    margin: 0 auto;
-    margin-top: -21px;
-}
-#test{
-    float: right;
-    margin: 0;
-    height: 21px;
 }
