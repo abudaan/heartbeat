@@ -22,7 +22,7 @@ Heartbeat instruments support the controller events sustain pedal, volume and pa
 
 There are a couple of instruments available that show you what is possible. For instance the City Piano is an example of an instrument with multiple velocity layers and the organ an example of a sustained instrument.
 
-Documentation can be found on [heartbeatjs.org](http://heartbeatjs.org) but it is utterly incomplete. The examples expose some of the features and their working, but that still leaves plenty of features unexplained. I am working hard to get the documentation complete.
+Documentation can be found [here](http://abudaan.github.io/heartbeat) but it is utterly incomplete. The examples expose some of the features and their working, but that still leaves plenty of features unexplained. I am working hard to get the documentation complete.
 
 Meanwhile if you have questions about heartbeat, drop me a line or create an [issue](https://github.com/abudaan/heartbeat/issues).
 

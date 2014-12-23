@@ -1,0 +1,15 @@
+{
+    "type": "instrument",
+    "name": "Percussion Small",
+    "folder": "heartbeat/percussive",
+    "sample_path": "heartbeat/percussive/Percussion Small",
+    "compression_type": "mp3",
+    "compression_level": 128,
+    "sustain": false,
+    "release_duration": 400,
+    "release_envelope": "equal power",
+    "info": "heartbeat instruments library",
+    "author": "abudaan",
+    "license": "MIT (http://heartbeatjs.org/license)",
+    "mapping": [60, 65]
+}
