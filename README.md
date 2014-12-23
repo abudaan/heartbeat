@@ -2,7 +2,7 @@ heartbeat
 =========
 
 
-Heartbeat is a MIDI/Audio sequencer for your browser. Heartbeat has no GUI. It is intended to be used as an engine behind your application. Heartbeat is set up very flexible so you can make any kind of application on top of it; a game, an online DAW, artistic sites, music science experiments and so on.
+Heartbeat is a MIDI/Audio sequencer for your browser. Heartbeat has no GUI. It is intended to be used as an engine behind your application. Heartbeat is set up very flexible so you can make any kind of application on top of it; a game, an online DAW, artistic sites, music science experiments and so on. [Read more](http://abudaan.github.io/heartbeat/docs).
 
 So far heartbeat has been used in 2 projects:
 - [Groovy](https://musicfirst.com/groovy-music)
@@ -49,4 +49,4 @@ So far heartbeat has been used in 2 projects:
 
 
 
- More documentation can be found [here](http://abudaan.github.io/heartbeat/docs).
+More documentation can be found [here](http://abudaan.github.io/heartbeat/docs).
