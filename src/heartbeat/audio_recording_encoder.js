@@ -8,6 +8,7 @@
 
         // import
         encode64, // defined in util.js
+        base64EncArr, // defined in util.js
         context, // defined in open_module.js
 
         oggEncoder,
@@ -39,16 +40,19 @@
             if(mp3Encoder === undefined){
                 mp3Encoder = createMp3EncoderWorker();
                 mp3Encoder.onmessage = function(e){
-                    //console.log(e);
-                    blob = new Blob([new Uint8Array(e.data.buf)], {type: 'audio/mp3'});
-                    base64 = encode64(e.data.buf);
-                    dataUrl = 'data:audio/mp3;base64,' + base64;
-                    recording.mp3 = {
-                        blob: blob,
-                        base64: base64,
-                        dataUrl: dataUrl
-                    };
-                    callback(recording);
+                    if(e.data.cmd === 'data'){
+                        //console.log(e);
+                        blob = new Blob([new Uint8Array(e.data.buf)], {type: 'audio/mp3'});
+                        //base64 = encode64(e.data.buf);
+                        base64 = base64EncArr(e.data.buf);
+                        dataUrl = 'data:audio/mp3;base64,' + encode64(e.data.buf);
+                        recording.mp3 = {
+                            blob: blob,
+                            base64: base64,
+                            dataUrl: dataUrl
+                        };
+                        callback(recording);
+                    }
                 };
             }
 
@@ -202,6 +206,7 @@
 
     sequencer.protectedScope.addInitMethod(function(){
         encode64 = sequencer.util.encode64;
+        base64EncArr = sequencer.util.base64EncArr;
         context = sequencer.protectedScope.context;
     });
 

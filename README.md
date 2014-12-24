@@ -44,7 +44,7 @@ So far heartbeat has been used in 2 projects:
 - configurable release duration and envelope type
 - support for .sfz format (upto a certain level)
 - instrument samples can be transposed at runtime (experimental)
-- 12 sample based instruments included for the sample player
+- 12 sample based instruments included for the sample player (570MB of samples)
 - 1 simple sinewave synthesizer included as fallback instrument
 
 

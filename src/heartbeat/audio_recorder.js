@@ -48,7 +48,8 @@
                     blob: new Blob([new Uint8Array(arrayBuffer)], {type: 'audio/wav'}),
                     base64: base64,
                     dataUrl: 'data:audio/wav;base64,' + base64
-                }
+                },
+                waveform: {}
             };
 
             // keep a copy of the original samples for non-destructive editing
@@ -71,10 +72,12 @@
                     bgcolor: '#000'
                 },
 
+                //callback
                 function(urls){
                     var image, images = [],
                         i, maxi = urls.length;
 
+                    // create html image instances from the data-urls
                     for(i = 0; i < maxi; i++){
                         image = document.createElement('img');
                         image.src = urls[i];
@@ -83,10 +86,8 @@
                         images.push(image);
                     }
 
-                    recording.waveformImage = images[0];
-                    recording.waveformImages = images;
-                    recording.waveformSmallImageDataUrl = urls[0];
-                    recording.waveformImageDataUrls = urls;
+                    recording.waveform.images = images;
+                    recording.waveform.dataUrls = urls;
 
                     sequencer.storage.audio.recordings[scope.recordId] = recording;
 

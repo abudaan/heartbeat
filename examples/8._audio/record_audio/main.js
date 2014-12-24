@@ -276,9 +276,10 @@ window.onload = function(){
                             print += '<tr>';
                             print += '<td>' + event.ticks + '</td>';
                             print += '<td>' + event.barsAsString + '</td>';
-                            print += '<td><img src="' + recording.waveformSmallImageDataUrl + '" width="800" height="200"></td>';
+                            print += '<td><img src="' + recording.waveform.dataUrls[0] + '" width="800" height="200"></td>';
                             print += '<td><span class="download_link" data:type="wav" data:recording_id="' + recording.id + '">save wav file</span></td>';
                             print += '<td><span class="download_link" data:type="mp3" data:recording_id="' + recording.id + '">save mp3 file</span></td>';
+                            print += '<td><span class="download_link" data:type="samplepack" data:recording_id="' + recording.id + '">save samplepack</span></td>';
                             print += '</tr>';
                         }
                     }
@@ -301,13 +302,41 @@ window.onload = function(){
                     type = this.getAttribute('data:type');
 
                 recording = song.getAudioRecordingData(id);
+                /*
+                    recording is an object that contains the keys:
+                    - id
+                    - arraybuffer (raw wav data)
+                    - audiobuffer (raw wav data converted to AudioBuffer instance)
+                    - wav
+                        - blob
+                        - base64
+                        - dataUrl
+                    // after you've called encodeAudioRecording() and passed 'mp3' for encoding type
+                    - mp3
+                        - blob
+                        - base64
+                        - dataUrl
+
+                */
 
                 if(type === 'mp3'){
-                    track.encodeAudioRecording(id, 'mp3', 128, function(recording){
+                    if(recording.mp3 === undefined){
+                        track.encodeAudioRecording(id, 'mp3', 128, function(recording){
+                            saveAs(recording.mp3.blob, id + '.mp3');
+                        });
+                    }else{
                         saveAs(recording.mp3.blob, id + '.mp3');
-                    });
+                    }
                 }else if(type === 'wav'){
                     saveAs(recording.wav.blob, id + '.wav');
+                }else if(type === 'samplepack'){
+                    if(recording.mp3 === undefined){
+                        track.encodeAudioRecording(id, 'mp3', 128, function(recording){
+                            saveAsSamplePack(recording);
+                        });
+                    }else{
+                        saveAsSamplePack(recording);
+                    }
                 }
 
             }, false);
@@ -316,6 +345,21 @@ window.onload = function(){
         lastRecording = recording;
         selectedRecordingId = undefined;
         btnDeleteRecording.disabled = true;
+    }
+
+
+    function saveAsSamplePack(recording){
+        var sp = {
+            name: 'my recordings',
+            folder: 'my folder',
+            type: 'samplepack',
+            mapping: {
+            }
+        };
+        sp.mapping[recording.id] = recording.mp3.base64;
+        sp = JSON.stringify(sp);
+        sp = sp.replace(/\\r\\n/g, '');
+        saveAs(new Blob([sp], {type: 'application/json'}), 'test.json');
     }
 
 
