@@ -66,6 +66,24 @@ https://github.com/cwilso/WebMIDIAPIShim
     var inNodeJs = ( typeof __dirname !== 'undefined' && window.jazzMidi );
     var allMidiIns = [];
 
+    function Iterator(items) {
+        this._items = items;
+        this._index = 0;
+        this._maxIndex = items.length;
+    }
+
+    Iterator.prototype.next = function(){
+        if(this._index === this._maxIndex){
+            return {value: undefined, done: true};
+        }
+        return {value: this._items[this._index++], done: false};
+    };
+
+    Iterator.prototype.reset = function(){
+        this._index = 0;
+    };
+
+
     function Promise() {
 
     }
@@ -73,17 +91,17 @@ https://github.com/cwilso/WebMIDIAPIShim
     Promise.prototype.then = function(accept, reject) {
         this.accept = accept;
         this.reject = reject;
-    }
+    };
 
     Promise.prototype.succeed = function(access) {
         if (this.accept)
             this.accept(access);
-    }
+    };
 
     Promise.prototype.fail = function(error) {
         if (this.reject)
             this.reject(error);
-    }
+    };
 
     function _JazzInstance() {
         this.inputInUse = false;
@@ -123,7 +141,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         var insertionPoint = document.getElementById("MIDIPlugin");
         if (!insertionPoint) {
             // Create hidden element
-            var insertionPoint = document.createElement("div");
+            insertionPoint = document.createElement("div");
             insertionPoint.id = "MIDIPlugin";
             insertionPoint.style.position = "absolute";
             insertionPoint.style.visibility = "hidden";
@@ -156,6 +174,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         }, 100);
     };
 
+
     _requestMIDIAccess = function _requestMIDIAccess() {
         var access = new MIDIAccess();
         return access._promise;
@@ -175,7 +194,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         this._promise = new Promise;
 
         instance._delayedInit(function() {
-            if(instance._Jazz){
+            if (instance._Jazz) {
                 this._Jazz = instance._Jazz;
                 numInputs = this._Jazz.MidiInList().length;
                 numOutputs = this._Jazz.MidiOutList().length;
@@ -187,9 +206,9 @@ https://github.com/cwilso/WebMIDIAPIShim
                     already created a _JazzInstance.
                 */
                 numInstances = Math.max(numInputs, numOutputs) - 1;
-                if(numInstances > 0){
+                if (numInstances > 0) {
                     _createJazzInstance.bind(this)(0, numInstances);
-                }else{
+                } else {
                     // no need to create additional instances
                     window.setTimeout(_onReady.bind(this), 3);
                 }
@@ -205,7 +224,7 @@ https://github.com/cwilso/WebMIDIAPIShim
 
         instance._delayedInit(function() {
             i++;
-            if(i < max) {
+            if (i < max) {
                 _createJazzInstance.bind(this)(i, max);
             } else {
                 /*
@@ -218,39 +237,115 @@ https://github.com/cwilso/WebMIDIAPIShim
     };
 
     _onReady = function() {
-        if (this._promise)
+        if (this._promise){
+            this._createMIDIInputMap();
+            this._createMIDIOutputMap();
             this._promise.succeed(this);
+        }
     };
 
     _onNotReady = function() {
-        if (this._promise){
+        if (this._promise)
             this._promise.fail( { code: 1 } );
-        }
     };
 
-    MIDIAccess.prototype.inputs = function(  ) {
-        if (!this._Jazz)
-              return null;
-        var list=this._Jazz.MidiInList();
-        var inputs = new Array( list.length );
 
-        for ( var i=0; i<list.length; i++ ) {
-            inputs[i] = new MIDIInput( this, list[i], i );
-        }
-        return inputs;
-    }
-
-    MIDIAccess.prototype.outputs = function(  ) {
-        if (!this._Jazz)
+    MIDIAccess.prototype._createMIDIInputMap = function() {
+        if(!this._Jazz){
             return null;
-        var list=this._Jazz.MidiOutList();
-        var outputs = new Array( list.length );
-
-        for ( var i=0; i<list.length; i++ ) {
-            outputs[i] = new MIDIOutput( this, list[i], i );
         }
-        return outputs;
+
+        var list = this._Jazz.MidiInList(),
+            size = list.length,
+            values = [],
+            keys = [],
+            entries = [],
+            portsById = {},
+            input, i;
+
+        for(i = 0; i < size; i++) {
+            input = new MIDIInput(this, list[i], i);
+            entries.push([input.id, input]);
+            values.push(input);
+            keys.push(input.id);
+            portsById[input.id] = input;
+        }
+
+        this.inputs = {
+            size: size,
+            forEach: function(cb){
+                var i, entry, maxi = entries.length;
+                for(i = 0; i < maxi; i++){
+                    entry = entries[i];
+                    cb(entry[0], entry[1]);
+                }
+            },
+            keys: function(){
+                return new Iterator(keys);
+            },
+            values: function(){
+                return new Iterator(values);
+            },
+            entries: function(){
+                return new Iterator(entries);
+            },
+            get: function(id){
+                return portsById[id];
+            },
+            has: function(id){
+                return portsById[id] !== undefined;
+            }
+        };
     };
+
+    MIDIAccess.prototype._createMIDIOutputMap = function() {
+        if(!this._Jazz){
+            return null;
+        }
+
+        var list = this._Jazz.MidiOutList(),
+            size = list.length,
+            values = [],
+            keys = [],
+            entries = [],
+            portsById = {},
+            output, i;
+
+        for(i = 0; i < size; i++) {
+            output = new MIDIOutput(this, list[i], i);
+            entries.push([output.id, output]);
+            values.push(output);
+            keys.push(output.id);
+            portsById[output.id] = output;
+        }
+
+        this.outputs = {
+            size: size,
+            forEach: function(cb){
+                var i, entry, maxi = entries.length;
+                for(i = 0; i < maxi; i++){
+                    entry = entries[i];
+                    cb(entry[0], entry[1]);
+                }
+            },
+            keys: function(){
+                return new Iterator(keys);
+            },
+            values: function(){
+                return new Iterator(values);
+            },
+            entries: function(){
+                return new Iterator(entries);
+            },
+            get: function(id){
+                return portsById[id];
+            },
+            has: function(id){
+                return portsById[id] !== undefined;
+            }
+        };
+    };
+
 
     MIDIInput = function MIDIInput( midiAccess, name, index ) {
         this._listeners = [];
@@ -264,7 +359,11 @@ https://github.com/cwilso/WebMIDIAPIShim
         this.type = "input";
         this.version = "";
         this.onmidimessage = null;
-
+        if (midiAccess._Jazz.Support("MidiInInfo")) {
+            var info = midiAccess._Jazz.MidiInInfo(name);
+            this.manufacturer = info[1];
+            this.version = info[2];
+        }
         var inputInstance = null;
         var then = function() {
             this._jazzInstance = inputInstance._Jazz;
@@ -282,7 +381,9 @@ https://github.com/cwilso/WebMIDIAPIShim
             inputInstance._delayedInit(then.bind(this));
         } else {
             inputInstance.inputInUse = true;
-            then.bind(this).apply();
+            //inputInstance._delayedInit(then.bind(this));
+            // no need to delay, the instance has already been initialized
+            then.call(this);
         }
     };
 
@@ -361,6 +462,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         // and pass them one at a time.
 
         for (i=0; i<data.length; i+=length) {
+            var isValidMessage = true;
             if (this._inLongSysexMessage) {
                 i = this.bufferLongSysex(data,i);
                 if ( data[i-1] != 0xf7 ) {
@@ -371,6 +473,11 @@ https://github.com/cwilso/WebMIDIAPIShim
             } else {
                 isSysexMessage = false;
                 switch (data[i] & 0xF0) {
+                    case 0x00:  // Chew up spurious 0x00 bytes.  Fixes a Windows problem.
+                        length=1;
+                        isValidMessage = false;
+                        break;
+
                     case 0x80:  // note off
                     case 0x90:  // note on
                     case 0xA0:  // polyphonic aftertouch
@@ -411,7 +518,9 @@ https://github.com/cwilso/WebMIDIAPIShim
                         break;
                 }
             }
-            var evt = {}
+            if (!isValidMessage)
+                continue;
+            var evt = {};
             if (!inNodeJs) {
                 evt = document.createEvent( "Event" );
                 evt.initEvent( "midimessage", false, false );
@@ -424,7 +533,9 @@ https://github.com/cwilso/WebMIDIAPIShim
             } else
                 evt.data = new Uint8Array(data.slice(i, length+i));
 
-            if (inNodeJs) this.onmidimessage( evt );
+            if (inNodeJs) {
+                if (this.onmidimessage) this.onmidimessage( evt );
+            }
             else this.dispatchEvent( evt );
         }
     };
@@ -438,7 +549,11 @@ https://github.com/cwilso/WebMIDIAPIShim
         this.name = name;
         this.type = "output";
         this.version = "";
-
+        if (midiAccess._Jazz.Support("MidiOutInfo")) {
+            var info = midiAccess._Jazz.MidiOutInfo(name);
+            this.manufacturer = info[1];
+            this.version = info[2];
+        }
         var outputInstance = null;
         var then = function() {
             this._jazzInstance = outputInstance._Jazz;
@@ -455,7 +570,9 @@ https://github.com/cwilso/WebMIDIAPIShim
             outputInstance._delayedInit(then.bind(this));
         } else {
             outputInstance.outputInUse = true;
-            then.bind(this).apply();
+            //outputInstance._delayedInit(then.bind(this));
+            // no need to delay, the instance has already been initialized
+            then.call(this);
         }
     };
 
@@ -483,6 +600,103 @@ https://github.com/cwilso/WebMIDIAPIShim
         return true;
     };
 
+
+    // wrapper for older WebMIDI implementation, i.e. Chromium's WebMIDI implementation
+
+    function MIDIAccessWrapper(access){
+        this._createMIDIInputMap(access);
+        this._createMIDIOutputMap(access);
+    };
+
+    MIDIAccessWrapper.prototype._createMIDIInputMap = function(access) {
+        var list = access.inputs(),
+            size = list.length,
+            values = [],
+            keys = [],
+            entries = [],
+            portsById = {},
+            input, i;
+
+        for(i = 0; i < size; i++) {
+            input = list[i];
+            entries.push([input.id, input]);
+            values.push(input);
+            keys.push(input.id);
+            portsById[input.id] = input;
+        }
+
+        this.inputs = {
+            size: size,
+            forEach: function(cb){
+                var i, entry, maxi = entries.length;
+                for(i = 0; i < maxi; i++){
+                    entry = entries[i];
+                    cb(entry[0], entry[1]);
+                }
+            },
+            keys: function(){
+                return new Iterator(keys);
+            },
+            values: function(){
+                return new Iterator(values);
+            },
+            entries: function(){
+                return new Iterator(entries);
+            },
+            get: function(id){
+                return portsById[id];
+            },
+            has: function(id){
+                return portsById[id] !== undefined;
+            }
+        };
+    };
+
+    MIDIAccessWrapper.prototype._createMIDIOutputMap = function(access) {
+        var list = access.outputs(),
+            size = list.length,
+            values = [],
+            keys = [],
+            entries = [],
+            portsById = {},
+            output, i;
+
+        for(i = 0; i < size; i++) {
+            output = list[i];
+            entries.push([output.id, output]);
+            values.push(output);
+            keys.push(output.id);
+            portsById[output.id] = output;
+        }
+
+        this.outputs = {
+            size: size,
+            forEach: function(cb){
+                var i, entry, maxi = entries.length;
+                for(i = 0; i < maxi; i++){
+                    entry = entries[i];
+                    cb(entry[0], entry[1]);
+                }
+            },
+            keys: function(){
+                return new Iterator(keys);
+            },
+            values: function(){
+                return new Iterator(values);
+            },
+            entries: function(){
+                return new Iterator(entries);
+            },
+            get: function(id){
+                return portsById[id];
+            },
+            has: function(id){
+                return portsById[id] !== undefined;
+            }
+        };
+    };
+
+
     //init: create plugin
     if (!window.navigator.requestMIDIAccess) {
         window.navigator.requestMIDIAccess = _requestMIDIAccess;
@@ -492,6 +706,14 @@ https://github.com/cwilso/WebMIDIAPIShim
                 // Need to close MIDI input ports, otherwise Node.js will wait for MIDI input forever.
             };
         }
+    }
+
+    // Not too elegant, but it's the best solution I could think up. Anyway, it is only necessary until Chromium updates its WebMIDI implementation.
+    window.updateMIDIAccess = function(access){
+        if(typeof access.inputs === 'function'){
+            return new MIDIAccessWrapper(access);
+        }
+        return access;
     }
 
 }(window));

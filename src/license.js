@@ -17,6 +17,10 @@ https://github.com/gasman/jasmid
 https://github.com/gasman/jasmid/blob/master/LICENSE
 
 
+In util.js Mozilla's atob and btoa alternatives are included:
+https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#Solution_.232_.E2.80.93_rewriting_atob()_and_btoa()_using_TypedArrays_and_UTF-8
+
+
 The code in midi_write.js is based on Sergi Mansilla's code:
 
 https://github.com/sergi/jsmidi
