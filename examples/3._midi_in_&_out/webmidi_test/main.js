@@ -2,16 +2,6 @@ window.onload = function(){
 
     'use strict';
 
-    window.requestMIDIAccess = function(){
-        return {
-            inputs: function(){
-                aap = 4 + 4;
-                return aap;
-            },
-            outputs: function(){}
-        };
-    }
-
     var
         divLog = document.getElementById('log'),
         divInputs = document.getElementById('inputs'),
