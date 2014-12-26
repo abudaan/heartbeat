@@ -24,7 +24,7 @@
 
 
     function initMidi(cb){
-        var ports, port, numPorts, i, name, doubleNames;
+        var iterator, data, port, name, doubleNames;
 
         //console.log(midiInitialized, navigator.requestMIDIAccess);
 
@@ -46,14 +46,14 @@
                         sequencer.webmidi = true;
                         sequencer.midi = true;
                     }
-                    ports = midi.inputs();
+                    iterator = midi.inputs.values();
                     //console.time('parse ports');
                     //console.log(ports);
                     doubleNames = {};
                     //midiInputsOrder = [];
 
-                    for(i = 0, numPorts = ports.length; i < numPorts; i++){
-                        port = ports[i];
+                    while((data = iterator.next()).done === false){
+                        port = data.value;
                         name = port.name;
                         if(doubleNames[name] === undefined){
                             doubleNames[name] = [];
@@ -72,8 +72,8 @@
                         }else{
                             for(i = 0; i < numPorts; i++){
                                 port = obj[i];
-                                port.label = name + ' ' + (i + 1);
-                                console.log(port.id, port.label, name);
+                                port.label = name + ' port ' + i;//(i + 1);
+                                //console.log(port.id, port.label, name);
                                 midiInputsOrder.push({label: port.label, id: port.id});
                                 sequencer.midiInputs[port.id] = port;
                             }
@@ -95,12 +95,12 @@
 
 
 
-                    ports = midi.outputs();
+                    iterator = midi.outputs.values();
                     doubleNames = {};
                     //midiOutputsOrder = [];
 
-                    for(i = 0, numPorts = ports.length; i < numPorts; i++){
-                        port = ports[i];
+                    while((data = iterator.next()).done === false){
+                        port = data.value;
                         name = port.name;
                         if(doubleNames[name] === undefined){
                             doubleNames[name] = [];
@@ -119,7 +119,7 @@
                         }else{
                             for(i = 0; i < numPorts; i++){
                                 port = obj[i];
-                                port.label = name + ' ' + (i + 1);
+                                port.label = name + ' port ' + i;//(i + 1);
                                 //console.log(port.id, port.label, name);
                                 midiOutputsOrder.push({label: port.label, id: port.id});
                                 sequencer.midiOutputs[port.id] = port;

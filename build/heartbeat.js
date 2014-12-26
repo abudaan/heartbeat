@@ -62,7 +62,7 @@ https://github.com/cwilso/WebMIDIAPIShim
 // Initialize the MIDI library.
 (function (global) {
     'use strict';
-    var midiIO, _requestMIDIAccess, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
+    var midiIO, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
     var inNodeJs = ( typeof __dirname !== 'undefined' && window.jazzMidi );
     var allMidiIns = [];
 
@@ -174,11 +174,6 @@ https://github.com/cwilso/WebMIDIAPIShim
         }, 100);
     };
 
-
-    _requestMIDIAccess = function _requestMIDIAccess() {
-        var access = new MIDIAccess();
-        return access._promise;
-    };
 
     // API Methods
 
@@ -603,9 +598,33 @@ https://github.com/cwilso/WebMIDIAPIShim
 
     // wrapper for older WebMIDI implementation, i.e. Chromium's WebMIDI implementation
 
-    function MIDIAccessWrapper(access){
-        this._createMIDIInputMap(access);
-        this._createMIDIOutputMap(access);
+    function MIDIAccessWrapper(request){
+        this._promise = new Promise();
+        this._request = request;
+    };
+
+    MIDIAccessWrapper.prototype.init = function() {
+        var scope = this;
+
+        this._request.bind(window.navigator)().then(
+
+            function onSuccess(access){
+                if(typeof access.inputs === 'function'){
+                    // add MIDIInputMap and MIDIOutputMap to MIDIAccess object
+                    scope._createMIDIInputMap(access);
+                    scope._createMIDIOutputMap(access);
+                }
+                if(scope._promise){
+                    scope._promise.succeed(access);
+                }
+            },
+
+            function onError(e){
+                if(scope._promise){
+                    scope._promise.fail({code:1});
+                }
+            }
+        );
     };
 
     MIDIAccessWrapper.prototype._createMIDIInputMap = function(access) {
@@ -625,7 +644,7 @@ https://github.com/cwilso/WebMIDIAPIShim
             portsById[input.id] = input;
         }
 
-        this.inputs = {
+        access.inputs = {
             size: size,
             forEach: function(cb){
                 var i, entry, maxi = entries.length;
@@ -669,7 +688,7 @@ https://github.com/cwilso/WebMIDIAPIShim
             portsById[output.id] = output;
         }
 
-        this.outputs = {
+        access.outputs = {
             size: size,
             forEach: function(cb){
                 var i, entry, maxi = entries.length;
@@ -697,24 +716,28 @@ https://github.com/cwilso/WebMIDIAPIShim
     };
 
 
-    //init: create plugin
-    if (!window.navigator.requestMIDIAccess) {
-        window.navigator.requestMIDIAccess = _requestMIDIAccess;
-        if (typeof __dirname !== 'undefined' && window.jazzMidi) {
-            window.navigator.close = function() {
-                for(var i in allMidiIns) allMidiIns[i].MidiInClose();
-                // Need to close MIDI input ports, otherwise Node.js will wait for MIDI input forever.
+    //init: create plugin or wrap native MIDIAccess object
+    (function init(){
+        var access;
+        if(!window.navigator.requestMIDIAccess){
+            window.navigator.requestMIDIAccess = function(){
+                access = new MIDIAccess();
+                return access._promise;
             };
+            if(typeof __dirname !== 'undefined' && window.jazzMidi) {
+                window.navigator.close = function() {
+                    for(var i in allMidiIns) allMidiIns[i].MidiInClose();
+                    // Need to close MIDI input ports, otherwise Node.js will wait for MIDI input forever.
+                };
+            }
+        }else{
+            access = new MIDIAccessWrapper(window.navigator.requestMIDIAccess);
+            window.navigator.requestMIDIAccess = function(){
+                access.init();
+                return access._promise;
+            }
         }
-    }
-
-    // Not too elegant, but it's the best solution I could think up. Anyway, it is only necessary until Chromium updates its WebMIDI implementation.
-    window.updateMIDIAccess = function(access){
-        if(typeof access.inputs === 'function'){
-            return new MIDIAccessWrapper(access);
-        }
-        return access;
-    }
+    }());
 
 }(window));
 
@@ -9551,7 +9574,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     function initMidi(cb){
-        var ports, port, numPorts, i, name, doubleNames;
+        var iterator, data, port, name, doubleNames;
 
         //console.log(midiInitialized, navigator.requestMIDIAccess);
 
@@ -9573,14 +9596,14 @@ if (typeof module !== "undefined" && module !== null) {
                         sequencer.webmidi = true;
                         sequencer.midi = true;
                     }
-                    ports = midi.inputs();
+                    iterator = midi.inputs.values();
                     //console.time('parse ports');
                     //console.log(ports);
                     doubleNames = {};
                     //midiInputsOrder = [];
 
-                    for(i = 0, numPorts = ports.length; i < numPorts; i++){
-                        port = ports[i];
+                    while((data = iterator.next()).done === false){
+                        port = data.value;
                         name = port.name;
                         if(doubleNames[name] === undefined){
                             doubleNames[name] = [];
@@ -9599,8 +9622,8 @@ if (typeof module !== "undefined" && module !== null) {
                         }else{
                             for(i = 0; i < numPorts; i++){
                                 port = obj[i];
-                                port.label = name + ' ' + (i + 1);
-                                console.log(port.id, port.label, name);
+                                port.label = name + ' port ' + i;//(i + 1);
+                                //console.log(port.id, port.label, name);
                                 midiInputsOrder.push({label: port.label, id: port.id});
                                 sequencer.midiInputs[port.id] = port;
                             }
@@ -9622,12 +9645,12 @@ if (typeof module !== "undefined" && module !== null) {
 
 
 
-                    ports = midi.outputs();
+                    iterator = midi.outputs.values();
                     doubleNames = {};
                     //midiOutputsOrder = [];
 
-                    for(i = 0, numPorts = ports.length; i < numPorts; i++){
-                        port = ports[i];
+                    while((data = iterator.next()).done === false){
+                        port = data.value;
                         name = port.name;
                         if(doubleNames[name] === undefined){
                             doubleNames[name] = [];
@@ -9646,7 +9669,7 @@ if (typeof module !== "undefined" && module !== null) {
                         }else{
                             for(i = 0; i < numPorts; i++){
                                 port = obj[i];
-                                port.label = name + ' ' + (i + 1);
+                                port.label = name + ' port ' + i;//(i + 1);
                                 //console.log(port.id, port.label, name);
                                 midiOutputsOrder.push({label: port.label, id: port.id});
                                 sequencer.midiOutputs[port.id] = port;
