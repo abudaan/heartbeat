@@ -25,7 +25,6 @@ window.onload = function(){
                         outputs = midi.outputs;
                     }
                     //console.log(legacyWebMIDI, midi.inputs, midi.addEventListener);
-
                     midi.addEventListener('onconnect', function(e){
                         console.log('device connected', e);
                     }, false);

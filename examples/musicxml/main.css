@@ -1,0 +1,9 @@
+input[type='range']{
+    width: calc(100% - 10px);
+    max-width: 300px;
+}
+ul{
+    list-style-type: disc;
+    list-style-position: inside;
+    margin-bottom: 20px;
+}

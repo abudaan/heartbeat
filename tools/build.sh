@@ -7,6 +7,7 @@ files="../src/license.js
     ../src/heartbeat/assetpack.js
     ../src/heartbeat/audio_event.js
     ../src/heartbeat/audio_recorder.js
+    ../src/heartbeat/audio_recording_encoder.js
     ../src/heartbeat/audio_track.js
     ../src/heartbeat/channel_effects.js
     ../src/heartbeat/event_statistics.js
@@ -24,6 +25,7 @@ files="../src/license.js
     ../src/heartbeat/midi_stream.js
     ../src/heartbeat/midi_system.js
     ../src/heartbeat/midi_write.js
+    ../src/heartbeat/musicxml_parser.js
     ../src/heartbeat/note.js
     ../src/heartbeat/parse_events.js
     ../src/heartbeat/parse_time_events.js

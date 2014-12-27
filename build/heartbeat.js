@@ -62,7 +62,7 @@ https://github.com/cwilso/WebMIDIAPIShim
 // Initialize the MIDI library.
 (function (global) {
     'use strict';
-    var midiIO, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
+    var midiIO, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, _createMIDIPortMap, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
     var inNodeJs = ( typeof __dirname !== 'undefined' && window.jazzMidi );
     var allMidiIns = [];
 
@@ -233,8 +233,8 @@ https://github.com/cwilso/WebMIDIAPIShim
 
     _onReady = function() {
         if (this._promise){
-            this._createMIDIInputMap();
-            this._createMIDIOutputMap();
+            this.inputs = _createMIDIPortMap.call(this, this._Jazz.MidiInList(), MIDIInput);
+            this.outputs = _createMIDIPortMap.call(this, this._Jazz.MidiOutList(), MIDIOutput);
             this._promise.succeed(this);
         }
     };
@@ -245,92 +245,50 @@ https://github.com/cwilso/WebMIDIAPIShim
     };
 
 
-    MIDIAccess.prototype._createMIDIInputMap = function() {
-        if(!this._Jazz){
-            return null;
-        }
-
-        var list = this._Jazz.MidiInList(),
-            size = list.length,
+    _createMIDIPortMap = function(list, PortClass) {
+        var size = list.length,
             values = [],
             keys = [],
             entries = [],
             portsById = {},
-            input, i;
+            port, i;
 
         for(i = 0; i < size; i++) {
-            input = new MIDIInput(this, list[i], i);
-            entries.push([input.id, input]);
-            values.push(input);
-            keys.push(input.id);
-            portsById[input.id] = input;
-        }
-
-        this.inputs = {
-            size: size,
-            forEach: function(cb){
-                var i, entry, maxi = entries.length;
-                for(i = 0; i < maxi; i++){
-                    entry = entries[i];
-                    cb(entry[0], entry[1]);
-                }
-            },
-            keys: function(){
-                return new Iterator(keys);
-            },
-            values: function(){
-                return new Iterator(values);
-            },
-            entries: function(){
-                return new Iterator(entries);
-            },
-            get: function(id){
-                return portsById[id];
-            },
-            has: function(id){
-                return portsById[id] !== undefined;
+            if(PortClass !== undefined){ // Jazz plugin
+                port = new PortClass(this, list[i], i);
+            }else{ // older WebMIDI implementations
+                port = list[i];
             }
-        };
-    };
-
-    MIDIAccess.prototype._createMIDIOutputMap = function() {
-        if(!this._Jazz){
-            return null;
+            entries.push([port.id, port]);
+            values.push(port);
+            keys.push(port.id);
+            portsById[port.id] = port;
         }
 
-        var list = this._Jazz.MidiOutList(),
-            size = list.length,
-            values = [],
-            keys = [],
-            entries = [],
-            portsById = {},
-            output, i;
+        keys = new Iterator(keys);
+        values = new Iterator(values);
+        entries = new Iterator(entries);
 
-        for(i = 0; i < size; i++) {
-            output = new MIDIOutput(this, list[i], i);
-            entries.push([output.id, output]);
-            values.push(output);
-            keys.push(output.id);
-            portsById[output.id] = output;
-        }
-
-        this.outputs = {
+        return {
             size: size,
             forEach: function(cb){
-                var i, entry, maxi = entries.length;
-                for(i = 0; i < maxi; i++){
+                var i, entry;
+                for(i = 0; i < size; i++){
                     entry = entries[i];
                     cb(entry[0], entry[1]);
                 }
             },
             keys: function(){
-                return new Iterator(keys);
+                keys.reset();
+                return keys;
             },
             values: function(){
-                return new Iterator(values);
+                values.reset();
+                return values;
             },
             entries: function(){
-                return new Iterator(entries);
+                entries.reset();
+                return entries;
             },
             get: function(id){
                 return portsById[id];
@@ -377,7 +335,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         } else {
             inputInstance.inputInUse = true;
             //inputInstance._delayedInit(then.bind(this));
-            // no need to delay, the instance has already been initialized
+            // no need for delay, the instance has already been initialized
             then.call(this);
         }
     };
@@ -566,7 +524,7 @@ https://github.com/cwilso/WebMIDIAPIShim
         } else {
             outputInstance.outputInUse = true;
             //outputInstance._delayedInit(then.bind(this));
-            // no need to delay, the instance has already been initialized
+            // no need for delay, the instance has already been initialized
             then.call(this);
         }
     };
@@ -611,8 +569,8 @@ https://github.com/cwilso/WebMIDIAPIShim
             function onSuccess(access){
                 if(typeof access.inputs === 'function'){
                     // add MIDIInputMap and MIDIOutputMap to MIDIAccess object
-                    scope._createMIDIInputMap(access);
-                    scope._createMIDIOutputMap(access);
+                    access.inputs = _createMIDIPortMap.call(null, access.inputs());
+                    access.outputs = _createMIDIPortMap.call(null, access.outputs());
                 }
                 if(scope._promise){
                     scope._promise.succeed(access);
@@ -626,95 +584,6 @@ https://github.com/cwilso/WebMIDIAPIShim
             }
         );
     };
-
-    MIDIAccessWrapper.prototype._createMIDIInputMap = function(access) {
-        var list = access.inputs(),
-            size = list.length,
-            values = [],
-            keys = [],
-            entries = [],
-            portsById = {},
-            input, i;
-
-        for(i = 0; i < size; i++) {
-            input = list[i];
-            entries.push([input.id, input]);
-            values.push(input);
-            keys.push(input.id);
-            portsById[input.id] = input;
-        }
-
-        access.inputs = {
-            size: size,
-            forEach: function(cb){
-                var i, entry, maxi = entries.length;
-                for(i = 0; i < maxi; i++){
-                    entry = entries[i];
-                    cb(entry[0], entry[1]);
-                }
-            },
-            keys: function(){
-                return new Iterator(keys);
-            },
-            values: function(){
-                return new Iterator(values);
-            },
-            entries: function(){
-                return new Iterator(entries);
-            },
-            get: function(id){
-                return portsById[id];
-            },
-            has: function(id){
-                return portsById[id] !== undefined;
-            }
-        };
-    };
-
-    MIDIAccessWrapper.prototype._createMIDIOutputMap = function(access) {
-        var list = access.outputs(),
-            size = list.length,
-            values = [],
-            keys = [],
-            entries = [],
-            portsById = {},
-            output, i;
-
-        for(i = 0; i < size; i++) {
-            output = list[i];
-            entries.push([output.id, output]);
-            values.push(output);
-            keys.push(output.id);
-            portsById[output.id] = output;
-        }
-
-        access.outputs = {
-            size: size,
-            forEach: function(cb){
-                var i, entry, maxi = entries.length;
-                for(i = 0; i < maxi; i++){
-                    entry = entries[i];
-                    cb(entry[0], entry[1]);
-                }
-            },
-            keys: function(){
-                return new Iterator(keys);
-            },
-            values: function(){
-                return new Iterator(values);
-            },
-            entries: function(){
-                return new Iterator(entries);
-            },
-            get: function(id){
-                return portsById[id];
-            },
-            has: function(id){
-                return portsById[id] !== undefined;
-            }
-        };
-    };
-
 
     //init: create plugin or wrap native MIDIAccess object
     (function init(){
@@ -10445,6 +10314,206 @@ if (typeof module !== "undefined" && module !== null) {
 
 }());
 (function(){
+
+    'use strict';
+
+    var
+        // satisfy jslint
+        sequencer = window.sequencer,
+        console = window.console,
+
+        //import
+        ajax, // → defined in util.js
+        typeString, // → defined in util.js
+        getNoteNumber, // → defined in note.js
+
+        nsResolver;
+
+
+    function load(url, cb, returnAsXML){
+        if(url === undefined || cb === undefined){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('please provide an url and a callback method');
+            }
+        }
+
+        ajax({
+            url: url + '?' + new Date().getTime(),
+            method: 'GET',
+            onError: function(){
+                cb(false);
+            },
+            onSuccess: function(response){
+                if(returnAsXML === true){
+                    cb(response);
+                }else{
+                    cb(parse(response));
+                }
+            },
+            responseType: 'xml'
+        });
+    }
+
+
+    function parse(xml){
+        var parser = new DOMParser(),
+            xmlDoc = parser.parseFromString(xml, 'application/xml'),
+            type = xmlDoc.firstChild.nextSibling.nodeName;
+
+        //console.log('type', type);
+
+        nsResolver = xmlDoc.createNSResolver(xmlDoc.ownerDocument === null ? xmlDoc.documentElement : xmlDoc.ownerDocument.documentElement);
+
+        if(type === 'score-partwise'){
+            return parsePartWise(xmlDoc);
+        }else if(type === 'score-timewise'){
+            return parseTimeWise(xmlDoc);
+        }else{
+            console.log('unknown type', type);
+            return false;
+        }
+    }
+
+
+    function parsePartWise(xmlDoc){
+        var partIterator = xmlDoc.evaluate('//score-part', xmlDoc, nsResolver, XPathResult.ANY_TYPE, null),
+            partNode,
+            measureIterator,
+            measureNode,
+            noteIterator,
+            noteNode,
+            tracks = [],
+            timeEvents = [],
+            events,
+            song, track, part,
+            name, id, tmp1, tmp2,
+            step, alter, octave, noteType, noteDuration, noteName, noteNumber, velocity,
+            rest, chord, tie,
+            divisions, numerator, denominator,
+            ppq = sequencer.defaultPPQ,
+            ticks;
+
+        while((partNode = partIterator.iterateNext()) !== null) {
+            // get id and name of the part
+            id = xmlDoc.evaluate('@id', partNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+            name = xmlDoc.evaluate('part-name', partNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+            velocity = xmlDoc.evaluate('midi-instrument/volume', partNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+            velocity = parseInt((velocity/100) * 127);
+
+            ticks = 0;
+            track = sequencer.createTrack(name);
+            part = sequencer.createPart();
+            track.addPart(part);
+            tracks.push(track);
+            events = [];
+
+            //console.log(id, name, velocity);
+
+            // get all measures
+            measureIterator = xmlDoc.evaluate('//part[@id="' + id + '"]/measure', partNode, nsResolver, XPathResult.ANY_TYPE, null);
+            while((measureNode = measureIterator.iterateNext()) !== null) {
+
+                tmp1 = xmlDoc.evaluate('attributes/divisions', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                if(!isNaN(tmp1)){
+                    divisions = tmp1;
+                }
+
+                tmp1 = xmlDoc.evaluate('attributes/time/beats', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                tmp2 = xmlDoc.evaluate('attributes/time/beat-type', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                if(!isNaN(tmp1)){
+                    numerator = tmp1;
+                    denominator = tmp2;
+                    timeEvents.push(sequencer.createMidiEvent(ticks, sequencer.TIME_SIGNATURE, numerator, denominator));
+                }
+                //console.log(divisions, numerator, denominator);
+
+                // get all notes and backups
+                //noteIterator = xmlDoc.evaluate('note', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
+                noteIterator = xmlDoc.evaluate('*[self::note or self::backup]', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
+                while((noteNode = noteIterator.iterateNext()) !== null){
+                    //console.log(noteNode);
+
+                    tie = xmlDoc.evaluate('tie', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    rest = xmlDoc.evaluate('rest', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    chord = xmlDoc.evaluate('chord', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+
+                    if(rest !== null){
+                        //console.log(rest);
+                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        ticks += (noteDuration/divisions) * ppq;
+
+                    }else if(noteNode.nodeName === 'note'){
+
+                        step = xmlDoc.evaluate('pitch/step', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+                        alter = xmlDoc.evaluate('pitch/alter', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        octave = xmlDoc.evaluate('pitch/octave', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        noteType = xmlDoc.evaluate('type', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+                        noteName = step;
+
+                        if(step !== ''){
+                            if(!isNaN(alter)){
+                                switch(alter){
+                                    case -2:
+                                        noteName += 'bb';
+                                        break;
+                                    case -1:
+                                        noteName += 'b';
+                                        break;
+                                    case 1:
+                                        noteName += '#';
+                                        break;
+                                    case 2:
+                                        noteName += '##';
+                                        break;
+                                }
+                            }
+                            noteNumber = getNoteNumber(noteName, octave);
+                            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity));
+                            ticks += (noteDuration/divisions) * ppq;
+                            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0));
+                            if(chord !== null){
+                                ticks -= (noteDuration/divisions) * ppq;
+                            }
+                            //console.log(noteNumber, ticks);
+                        }
+
+                    }else if(noteNode.nodeName === 'backup'){
+                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        ticks -= (noteDuration/divisions) * ppq;
+                        //console.log(noteDuration, divisions);
+                    }
+                    //console.log(ticks);
+                }
+            }
+            part.addEvents(events);
+        }
+
+        song = sequencer.createSong({
+            bpm: 110,
+            tracks: tracks,
+            timeEvents: timeEvents,
+            useMetronome: false
+        });
+
+        return song;
+    }
+
+
+    function parseTimeWise(xmlDoc){
+        return xmlDoc;
+    }
+
+    sequencer.loadMusicXML = load;
+    sequencer.parseMusicXML = parse;
+
+    sequencer.protectedScope.addInitMethod(function(){
+        ajax = sequencer.protectedScope.ajax;
+        typeString = sequencer.protectedScope.typeString;
+        getNoteNumber = sequencer.getNoteNumber;
+    });
+
+}());(function(){
 
     'use strict';
 
