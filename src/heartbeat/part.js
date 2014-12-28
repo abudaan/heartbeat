@@ -183,6 +183,9 @@
             if(e.type === sequencer.END_OF_TRACK || (e.className !== 'MidiEvent' && e.className !== 'AudioEvent')){
                 continue;
             }
+            if(e.className === 'AudioEvent' && part.hasAudioEvents !== true){
+                part.hasAudioEvents = true;
+            }
 
             if(e.part !== undefined){
                 //console.warn('this event has already been added to part', e.part.id, ', adding a copy to', part.id);

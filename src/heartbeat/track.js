@@ -323,6 +323,9 @@
                 //console.warn('this part has already been added to track', part.track.id, ', adding a copy');
                 part = part.copy();
             }
+            if(part.hasAudioEvents && track.audio === undefined){
+                track.audio = createAudioTrack(track);
+            }
 
             //console.log(part.id, part.trackId);
 

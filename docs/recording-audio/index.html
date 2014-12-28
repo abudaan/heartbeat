@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/docs.css">
+    <script src="/heartbeat/js/open.js"></script>
+    <script src="/heartbeat/js/create_navigation.js"></script>
+    <script src="/heartbeat/js/create_tabs.js"></script>
+    <script src="/heartbeat/js/navigation_items.js"></script>
+    <script src="/heartbeat/js/util.js"></script>
+    <script src="/heartbeat/js/close.js"></script>
+    <script src="/heartbeat/js/main.js"></script>
+    <script>
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+        ga('require', 'displayfeatures');
+        ga('require', 'linkid', 'linkid.js');
+        ga('send', 'pageview');
+      }
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Recording audio</h1>
+
+<p>For recording audio you need a browser that has <a href="https://developer.mozilla.org/en-US/docs/NavigatorUserMedia.getUserMedia">getUserMedia</a> implemented.</p>
+
+<p>As you can see at <a href="http://caniuse.com/#feat=stream">can i use</a>, you can use any browser but Internet Explorer and Safari. Also Chrome on iOS doesn't support getUserMedia.</p>
+
+<p>You have to allow access to your microphone by clicking 'Allow' in the small message bar that appears after you've clicked the record button. You have to allow access to your microphone every new browser session.</p>
+
+<p>This <a href="https://nusofthq.com/blog/recording-mp3-using-only-html5-and-javascript-recordmp3-js/">blogpost</a> of Remus from <a href="http://nusofthq.com/">NuSoft</a> has helped me a lot. In this post Remus explains step-by-step how to record and encode the recording to mp3 using <a href="https://github.com/mattdiamond/Recorderjs">Recorder.js</a> and an asm.js version of <a href="http://lame.sourceforge.net/">Lame mp3 encoder</a> made by <a href="https://github.com/akrennmair/libmp3lame-js">Andreas Krennmair</a>. However in heartbeat I have used <a href="https://github.com/kobigurk/libmp3lame-js">Kobu Gurkan</a>'s build of it.</p>
+
+<p>As soon as you start recording, the audio stream from your microphone is routed to a webworker by a <a href="https://developer.mozilla.org/en-US/docs/Web/API/ScriptProcessorNode">ScriptProcessorNode</a>. The ScriptProcessorNode processes the audio data in chunks of 8192 bytes, you can adjust this buffer size if needed. The webworker collects the incoming audio data in a plain javascript array.</p>
+
+<p>As soon as you stop recording, the webworker converts the bytes in this plain javascript array to a Float32Array and this array is returned to the main javascript thread. Here the array gets converted to an <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer">AudioBuffer</a> that can be played back by the AudioContext.</p>
+
+<p>This step also generates a wav file in binary form, in base64 encoded form and as a <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs">data URI</a>. Also waveform images get generated in HTML Image element form and as data URI's.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeat/js/prism.js"></script>
+</body>
+</html>

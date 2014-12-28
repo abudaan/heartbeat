@@ -67,13 +67,18 @@
             measureNode,
             noteIterator,
             noteNode,
+            measureNumber,
             tracks = [],
             timeEvents = [],
+            tiedNotes = {},
+            tieStart,
+            tieStop,
+            tieIterator, tieNode,
             events,
-            song, track, part,
+            song, track, part, noteOn, noteOff,
             name, id, tmp1, tmp2,
-            step, alter, octave, noteType, noteDuration, noteName, noteNumber, velocity,
-            rest, chord, tie,
+            step, alter, octave, voice, noteType, noteDuration, noteName, noteNumber, velocity,
+            rest, chord,
             divisions, numerator, denominator,
             ppq = sequencer.defaultPPQ,
             ticks;
@@ -98,6 +103,8 @@
             measureIterator = xmlDoc.evaluate('//part[@id="' + id + '"]/measure', partNode, nsResolver, XPathResult.ANY_TYPE, null);
             while((measureNode = measureIterator.iterateNext()) !== null) {
 
+                measureNumber = xmlDoc.evaluate('@number', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+
                 tmp1 = xmlDoc.evaluate('attributes/divisions', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
                 if(!isNaN(tmp1)){
                     divisions = tmp1;
@@ -114,11 +121,26 @@
 
                 // get all notes and backups
                 //noteIterator = xmlDoc.evaluate('note', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
-                noteIterator = xmlDoc.evaluate('*[self::note or self::backup]', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
+                noteIterator = xmlDoc.evaluate('*[self::note or self::backup or self::forward]', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
                 while((noteNode = noteIterator.iterateNext()) !== null){
                     //console.log(noteNode);
 
-                    tie = xmlDoc.evaluate('tie', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    tieStart = false;
+                    tieStop = false;
+                    tieIterator = xmlDoc.evaluate('tie', noteNode, nsResolver, XPathResult.ANY_TYPE, null);
+                    while((tieNode = tieIterator.iterateNext()) !== null){
+                        tmp1 = xmlDoc.evaluate('@type', tieNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+                        //console.log(tmp1);
+                        if(tmp1 === 'start'){
+                            tieStart = true;
+                        }else if(tmp1 === 'stop'){
+                            tieStop = true;
+                        }
+                        //tieStart = xmlDoc.evaluate('@type="start"', tieNode, nsResolver, XPathResult.BOOLEAN_TYPE, null).booleanValue;
+                        //tieStop = xmlDoc.evaluate('@type="stop"', tieNode, nsResolver, XPathResult.BOOLEAN_TYPE, null).booleanValue;
+                        //console.log(tieStart, tieStop);
+                    }
+
                     rest = xmlDoc.evaluate('rest', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
                     chord = xmlDoc.evaluate('chord', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 
@@ -131,6 +153,7 @@
 
                         step = xmlDoc.evaluate('pitch/step', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
                         alter = xmlDoc.evaluate('pitch/alter', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        voice = xmlDoc.evaluate('voice', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
                         octave = xmlDoc.evaluate('pitch/octave', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
                         noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
                         noteType = xmlDoc.evaluate('type', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
@@ -154,11 +177,33 @@
                                 }
                             }
                             noteNumber = getNoteNumber(noteName, octave);
-                            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity));
+                            noteOn = sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity);
                             ticks += (noteDuration/divisions) * ppq;
-                            events.push(sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0));
+                            noteOff = sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0);
                             if(chord !== null){
                                 ticks -= (noteDuration/divisions) * ppq;
+                            }
+
+                            //console.log('tie', tieStart, tieStop);
+
+                            if(tieStart === false && tieStop === false){
+                                // no ties
+                                events.push(noteOn, noteOff);
+                                //console.log('no ties', measureNumber, voice, noteNumber, tiedNotes);
+                            }else if(tieStart === true && tieStop === false){
+                                // start of tie
+                                tiedNotes[voice + '-' + noteNumber] = noteOff;
+                                events.push(noteOn, noteOff);
+                                //console.log('start', measureNumber, voice, noteNumber, tiedNotes);
+                            }else if(tieStart === true && tieStop === true){
+                                // tied to yet another note
+                                tiedNotes[voice + '-' + noteNumber].ticks += (noteDuration/divisions) * ppq;
+                                //console.log('thru', measureNumber, voice, noteNumber, tiedNotes);
+                            }else if(tieStart === false && tieStop === true){
+                                // end of tie
+                                tiedNotes[voice + '-' + noteNumber].ticks += (noteDuration/divisions) * ppq;
+                                delete tiedNotes[voice + '-' + noteNumber];
+                                //console.log('end', measureNumber, voice, noteNumber, tiedNotes);
                             }
                             //console.log(noteNumber, ticks);
                         }
@@ -167,16 +212,21 @@
                         noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
                         ticks -= (noteDuration/divisions) * ppq;
                         //console.log(noteDuration, divisions);
+                    }else if(noteNode.nodeName === 'forward'){
+                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
+                        ticks += (noteDuration/divisions) * ppq;
+                        //console.log(noteDuration, divisions);
                     }
                     //console.log(ticks);
                 }
             }
             part.addEvents(events);
+            //console.log(tiedNotes);
         }
 
         song = sequencer.createSong({
             bpm: 110,
-            tracks: tracks,
+            tracks: tracks[0],
             timeEvents: timeEvents,
             useMetronome: false
         });

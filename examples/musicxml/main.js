@@ -21,8 +21,8 @@ window.onload = function(){
     sequencer.addAssetPack({url: path + 'examples/asset_pack_basic.json'}, function init(){
 
         //sequencer.loadMusicXML(path + 'simple_musicxml_test.xml', function(song){
-        sequencer.loadMusicXML(path + 'reunion.xml', function(song){
         //sequencer.loadMusicXML(path + 'mozk545a.xml', function(song){
+        sequencer.loadMusicXML(path + 'reunion.xml', function(song){
 
             //console.log(song);
 
