@@ -2303,7 +2303,7 @@ if (typeof module !== "undefined" && module !== null) {
         microphoneAccessGranted = null,
         localMediaStream,
 
-        bufferSize = 8192 * 2,
+        bufferSize = 8192,
         millisPerSample,
         bufferMillis;
 
@@ -2908,7 +2908,8 @@ if (typeof module !== "undefined" && module !== null) {
                         https://github.com/akrennmair/libmp3lame-js/
                         https://github.com/kobigurk/libmp3lame-js
                 */
-                importScripts('https://raw.githubusercontent.com/kobigurk/libmp3lame-js/master/dist/libmp3lame.min.js');
+                //importScripts('https://raw.githubusercontent.com/kobigurk/libmp3lame-js/master/dist/libmp3lame.min.js');
+                importScripts('/heartbeat/src/kobigurk/libmp3lame.min.js');
 
                 var mp3codec,
                     mp3data;
@@ -2929,7 +2930,7 @@ if (typeof module !== "undefined" && module !== null) {
                             Lame.set_bitrate(mp3codec, e.data.config.bitrate || 128);
 
                             Lame.init_params(mp3codec);
-                            /*
+                            ///*
                             console.log('Version :'+ Lame.get_version() + ' / ' +
                                 'Mode: ' + Lame.get_mode(mp3codec) + ' / ' +
                                 'Samples: ' + Lame.get_num_samples(mp3codec)  + ' / '  +
@@ -2938,10 +2939,10 @@ if (typeof module !== "undefined" && module !== null) {
                                 'Output Samplate: ' + Lame.get_in_samplerate(mp3codec) + ' / ' +
                                 'Bitlate :' + Lame.get_bitrate(mp3codec) + ' / ' +
                                 'VBR :' + Lame.get_VBR(mp3codec));
-                            */
+                            //*/
                             break;
                         case 'encode':
-                            //console.log('encode');
+                            console.log('encode');
                             mp3data = Lame.encode_buffer_ieee_float(mp3codec, e.data.buf, e.data.buf);
                             this.postMessage({cmd: 'data', buf: mp3data.data});
                             break;
@@ -15943,6 +15944,8 @@ if (typeof module !== "undefined" && module !== null) {
         if(audioRecording === false){
             setRecordingStatus.call(this);
         }
+
+        return this.recordId;
     };
 
 
@@ -16013,6 +16016,8 @@ if (typeof module !== "undefined" && module !== null) {
         this.update();
 
         dispatchEvent(this, 'record_stop');
+
+        return this.recordId;
     };
 
 
@@ -16047,7 +16052,9 @@ if (typeof module !== "undefined" && module !== null) {
                 break;
             }
         }
-
+        if(event === undefined){
+            return false;
+        }
         return event.track.getAudioRecordingData(recordId);
     };
 

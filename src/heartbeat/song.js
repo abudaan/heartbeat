@@ -757,6 +757,8 @@
         if(audioRecording === false){
             setRecordingStatus.call(this);
         }
+
+        return this.recordId;
     };
 
 
@@ -827,6 +829,8 @@
         this.update();
 
         dispatchEvent(this, 'record_stop');
+
+        return this.recordId;
     };
 
 
@@ -861,7 +865,9 @@
                 break;
             }
         }
-
+        if(event === undefined){
+            return false;
+        }
         return event.track.getAudioRecordingData(recordId);
     };
 

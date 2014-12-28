@@ -114,6 +114,7 @@
                         https://github.com/kobigurk/libmp3lame-js
                 */
                 importScripts('https://raw.githubusercontent.com/kobigurk/libmp3lame-js/master/dist/libmp3lame.min.js');
+                //importScripts('/heartbeat/src/kobigurk/libmp3lame.min.js');
 
                 var mp3codec,
                     mp3data;

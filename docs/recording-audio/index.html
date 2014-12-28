@@ -56,7 +56,84 @@
 
 <p>As soon as you stop recording, the webworker converts the bytes in this plain javascript array to a Float32Array and this array is returned to the main javascript thread. Here the array gets converted to an <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer">AudioBuffer</a> that can be played back by the AudioContext.</p>
 
-<p>This step also generates a wav file in binary form, in base64 encoded form and as a <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs">data URI</a>. Also waveform images get generated in HTML Image element form and as data URI's.</p>
+<p>The AudioBuffer is stored in a recording object that contains the following keys:</p>
+
+<ul>
+<li>id</li>
+<li>arraybuffer (raw wav data)</li>
+<li>audiobuffer (raw wav data converted to AudioBuffer instance)</li>
+<li>wav
+<ul><li>blob (binary wav file as blob)</li>
+<li>base64 (base64 encode wav file)</li>
+<li>dataUrl (wav file as <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/data_URIs">data URI</a>)</li></ul></li>
+<li>waveform
+<ul><li>images (array containing 1 or more HTML IMG elements)</li>
+<li>dataUrls (array containing 1 or more data URI's)</li></ul></li>
+</ul>
+
+<p>And after you've called encodeAudioRecording() and passed 'mp3' for encoding type also:</p>
+
+<ul>
+<li>mp3
+<ul><li>blob</li>
+<li>base64</li>
+<li>dataUrl</li></ul></li>
+</ul>
+
+<p>The recording object gets stored in heartbeat's internal storage by its id:
+<code class="language-javascript">sequencer.storage.audio.recordings[recordId]</code></p>
+
+<p>You can retrieve this recording object by the recording id that is returned by both <code class="language-javascript">song.startRecording()</code> and <code class="language-javascript">song.stopRecording()</code>:</p>
+
+<pre><code class="language-javascript">// create a track and provide a name (optional)
+var track = sequencer.createTrack('my audio track');
+
+// make it possible to record audio to this track
+track.recordEnabled = 'audio';
+
+// start your recording, store the recording id
+var recordId = song.startRecording();
+
+// record something and stop recording again
+var recordId2 = song.stopRecording();
+
+// prints "true"
+console.log(recordId === recordId2);
+
+// then wait for the recorded_events event to fire
+song.addEventListener('recorded_events', function(){
+
+    // retrieve the recording directly from the storage object
+    var recording = sequencer.storage.audio.recordings[recordId];
+
+    // you can also use
+    var recording = track.getAudioRecordingData(recordId);
+
+    // or
+    var recording = song.getAudioRecordingData(recordId);
+});
+
+
+</code></pre>
+
+<p>There is another, a bit more elaborate way of retrieving the recording object from the recordings (plural) that gets sent as an argument when the <code class="language-javascript">recorded_events</code> event fires:</p>
+
+<pre><code class="language-javascript">song.addEventListener('recorded_events', function(recordings){
+    // the recordings object is a plain javascript object that contains all recordings organized per track,
+    // the track name is used as key, the value is an array containing all recorded events
+
+    // get the audio event: when recording audio, only one audio event per track is created
+    var audioEvent = recording[track.name][0];
+
+    // the sampleId of the event is the same as the id of the recording, so now we can retrieve the recording object
+    var recording = track.getAudioRecordingData(audioEvent.sampleId);
+
+    // or you can retrieve it from storage object directly as well:
+    var recording = sequencer.storage.audio.recordings[audioEvent.sampleId];
+
+});
+
+</code></pre>
         </div><!-- end of div container-->
     </div><!-- end of div main-->
     <div id="side">

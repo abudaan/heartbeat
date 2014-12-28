@@ -22,6 +22,7 @@ window.onload = function(){
 
         song,
         track,
+        recordId,
 
         recordingIndex = 1,
         recordingHistory = {},
@@ -83,14 +84,16 @@ window.onload = function(){
 
         song.addEventListener('recorded_events', function(recording){
             /*
-                Add the recording to the history. The recording object contains per track all events recorded in the last
-                recording session. Usually the object contains only the recorded events of a single track, but you can
-                record multiple inputs to multiple tracks at the same time.
+                Add the recording to the history. The recording object contains per track all events that were recorded
+                in the last recording session. Usually the object contains only the recorded events of a single track,
+                but you can record multiple inputs to multiple tracks at the same time.
             */
             lastRecordingId = 'recording #' + recordingIndex++;
             recordingHistory[lastRecordingId] = recording;
             handleRecordedEvents();
-            //console.log(song.getLastAudioRecording());
+
+            // retrieve the last recording by its id
+            lastRecording = track.getAudioRecordingData(recordId);
         });
 
 
@@ -119,9 +122,9 @@ window.onload = function(){
         btnStartRecording.addEventListener('click', function(){
             if(song.recording === true || song.precounting === true){
                 song.stopRecording();
-            }else{
+             }else{
                 // start recording after the number of precount bars that is set by the slider
-                song.startRecording(numPrecountBars);
+                recordId = song.startRecording(numPrecountBars);
                 btnStartRecording.value = 'stop recording';
             }
         });
@@ -308,10 +311,15 @@ window.onload = function(){
                     - arraybuffer (raw wav data)
                     - audiobuffer (raw wav data converted to AudioBuffer instance)
                     - wav
-                        - blob
-                        - base64
-                        - dataUrl
-                    // after you've called encodeAudioRecording() and passed 'mp3' for encoding type
+                        - blob (binary wav file as blob)
+                        - base64 (base64 encode wav file)
+                        - dataUrl (wav file as data URI)
+                    - waveform
+                        - images (array containing 1 or more HTML IMG elements)
+                        - dataUrls (array containing 1 or more data URI's)
+
+                    // and after you've called encodeAudioRecording() and passed 'mp3' for encoding type:
+
                     - mp3
                         - blob
                         - base64
@@ -342,7 +350,7 @@ window.onload = function(){
             }, false);
         }
 
-        lastRecording = recording;
+        //lastRecording = recording;
         selectedRecordingId = undefined;
         btnDeleteRecording.disabled = true;
     }

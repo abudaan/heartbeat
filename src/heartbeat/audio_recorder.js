@@ -15,7 +15,7 @@
         microphoneAccessGranted = null,
         localMediaStream,
 
-        bufferSize = 8192 * 2,
+        bufferSize = 8192,
         millisPerSample,
         bufferMillis;
 
