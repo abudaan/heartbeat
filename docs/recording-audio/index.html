@@ -44,6 +44,10 @@
         <div id="content">
 <h1>Recording audio</h1>
 
+<p><a name="Background"></a></p>
+
+<h3>Background</h3>
+
 <p>For recording audio you need a browser that has <a href="https://developer.mozilla.org/en-US/docs/NavigatorUserMedia.getUserMedia">getUserMedia</a> implemented.</p>
 
 <p>As you can see at <a href="http://caniuse.com/#feat=stream">can i use</a>, you can use any browser but Internet Explorer and Safari. Also Chrome on iOS doesn't support getUserMedia.</p>
@@ -56,10 +60,14 @@
 
 <p>As soon as you stop recording, the webworker converts the bytes in this plain javascript array to a Float32Array and this array is returned to the main javascript thread. Here the array gets converted to an <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer">AudioBuffer</a> that can be played back by the AudioContext.</p>
 
+<p><a name="Getting-the-recording"></a></p>
+
+<h3>Getting the recording</h3>
+
 <p>The AudioBuffer is stored in a recording object that contains the following keys:</p>
 
 <ul>
-<li>id</li>
+<li>id (recording id, necessary to retrieve the recording data)</li>
 <li>arraybuffer (raw wav data)</li>
 <li>audiobuffer (raw wav data converted to AudioBuffer instance)</li>
 <li>wav
@@ -134,6 +142,50 @@ song.addEventListener('recorded_events', function(){
 });
 
 </code></pre>
+
+<p><a name="Latency"></a></p>
+
+<h3>Latency</h3>
+
+<p>If you are recording audio you have to deal with latency. Latency can be caused by many factors, in our case the most likely factors are:</p>
+
+<ul>
+<li>Buffering audio data in order to ensure a gap-less audio stream from your microphone to your computer.</li>
+<li>Converting analog audio from your microphone to digital audio, this happens in the A/D converters of your sound card.</li>
+<li>Routing digital audio from your sound card back to the native browser process, the speed of this is dependent on your drivers, for instance CoreAudio or ASIO. If you are on Linux it depends on whether or not you're using the RT kernel as well.</li>
+<li>Routing the signal onwards to the javascript main thread.</li>
+<li>Then as described above the audio data is sent to a webworker, which converts the audio data to a Float32Array that can be use to create a wav file.</li>
+<li>The array is sent back to the javascript main thread which then converts it to an AudioBuffer.</li>
+</ul>
+
+<p>Professional DAW's like Cubase, Ardour or Logic usually have to deal with the latency that is caused by buffering. The latency can be calculated very easily and the DAW will compensate it for you automatically:</p>
+
+<pre><code class="language-javascript">var sampleRate = 44100; // value in Hz, other common values are 48000, 96000 and even 192000
+var buffersize = 8192; // this is the amount of bytes/samples that are buffered
+var millisPerSample = (1/sampleRate) * 1000; // calculate the duration of one single sample
+var latency = buffersize * millisPerSample;
+
+console.log(latency + ' milliseconds') // prints 185.759637188 milliseconds
+
+</code></pre>
+
+<p>Note that a buffer of 8192 samples is very high; in your DAW you'd probably use value between 64 and 256 bytes which results in a latency of 1.5 and 5.8 milliseconds respectively.</p>
+
+<p>In heartbeat I use a buffer of 8192 samples (configurable) and I have tried to compensate for it automatically but unfortunately that didn't work. The latency turned out to vary in subsequent recordings, however in most cases the second and following recordings all have the same, somewhat smaller latency than the first recording. My first thought was that it had to do with the time it takes to click on the "allow" button to grant access to your microphone, but that had nothing to do with it.</p>
+
+<p>So I added a function that lets you adjust the latency per recording and a function that lets you adjust the latency for all recordings. The first function takes three arguments:</p>
+
+<pre><code class="language-javascript">song.setAudioRecordingLatency(recordId, value, function(data){
+    // data is the object that contains all updated recording data, see above
+});
+</code></pre>
+
+<p>And the second takes only one value:</p>
+
+<pre><code class="language-javascript">song.adjustLatencyForAllRecordings(value);
+</code></pre>
+
+<p>The value is the amount of latency compensation: it has to be a positive integer and it is the amount of milliseconds that gets removed from the start of the recording. This is a non-destructive action so if you have removed too much you can simply re-adjust the latency afterwards.</p>
         </div><!-- end of div container-->
     </div><!-- end of div main-->
     <div id="side">
