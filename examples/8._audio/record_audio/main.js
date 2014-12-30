@@ -6,6 +6,7 @@ window.onload = function(){
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
+        saveAs = window.saveAs,
 
         // creates handy wrapper around the range element
         createSlider = sequencer.util.createSlider,
@@ -44,6 +45,14 @@ window.onload = function(){
         track = sequencer.createTrack();
         // enable the track for recording audio
         track.recordEnabled = 'audio';
+        track.setWaveformConfig({
+            height: 200,
+            width: 800,
+            //density: 0.001,
+            sampleStep: 1,
+            color: '#71DE71',
+            bgcolor: '#000'
+        });
 
         song = sequencer.createSong({
             useMetronome: true,
@@ -315,10 +324,9 @@ window.onload = function(){
                         - base64 (base64 encode wav file)
                         - dataUrl (wav file as data URI)
                     - waveform
-                        - images (array containing 1 or more HTML IMG elements)
                         - dataUrls (array containing 1 or more data URI's)
 
-                    // and after you've called encodeAudioRecording() and passed 'mp3' for encoding type:
+                    // and after you've called track.encodeAudioRecording() and passed 'mp3' for encoding type:
 
                     - mp3
                         - blob

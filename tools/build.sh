@@ -5,9 +5,10 @@ files="../src/license.js
     ../src/heartbeat/open_module.js
     ../src/heartbeat/asset_manager.js
     ../src/heartbeat/assetpack.js
+    ../src/heartbeat/audio_encoder.js
     ../src/heartbeat/audio_event.js
     ../src/heartbeat/audio_recorder.js
-    ../src/heartbeat/audio_recording_encoder.js
+    ../src/heartbeat/audio_recording_worker.js
     ../src/heartbeat/audio_track.js
     ../src/heartbeat/channel_effects.js
     ../src/heartbeat/event_statistics.js

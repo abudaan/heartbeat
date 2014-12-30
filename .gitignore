@@ -13,6 +13,7 @@ src/danguer/
 src/jasmid/
 src/mozilla/
 src/mozillla/
+src/kobigurk/
 
 tools/heartbeat_tmp
 tools/testoop.json

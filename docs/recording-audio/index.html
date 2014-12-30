@@ -185,7 +185,33 @@ console.log(latency + ' milliseconds') // prints 185.759637188 milliseconds
 <pre><code class="language-javascript">song.adjustLatencyForAllRecordings(value);
 </code></pre>
 
-<p>The value is the amount of latency compensation: it has to be a positive integer and it is the amount of milliseconds that gets removed from the start of the recording. This is a non-destructive action so if you have removed too much you can simply re-adjust the latency afterwards.</p>
+<p>The value is the amount of latency compensation: it has to be a positive integer and it is the amount of milliseconds that gets removed from the start of the recording. This is a non-destructive action so the removed audio data will not be lost and you can re-adjust the latency to a lower value at any time.</p>
+
+<p><a name="Test-and-adjust-the-latency-on-your-system"></a></p>
+
+<h3>Test and adjust the latency on your system</h3>
+
+<p>Usually when you record audio via a microphone you put on a (closed) headphone to avoid audio feedback. But for this test I would like you to deliberately record the output of your computer. You can use <a href="/heartbeat/examples/#!8._audio/record_audio">this example</a>. Make sure that the metronome is on, click on "start record" and record a few bars only the tick of the metronome. Now play back the recording you just made. You'll notice that the recorded metronome tick is not in sync with the live metronome tick. This is your latency. You can align the recording with the metronome by using the latency slider. You can use the waveform image for some visual guidance: if the first peak is aligned with the left side of waveform image then your recording should be in sync with the metronome.</p>
+
+<p>Note: soon an audio editor will be added to heartbeat, in this editor you will be able to drag the waveform back and forth to adjust the latency and the snap point (used for quantizing audio events).</p>
+
+<p><a name="Creating-waveforms"></a></p>
+
+<h3>Creating waveforms</h3>
+
+<p>As mentioned above, the recording object that is created after you've finished an audio recording also contains an array of one or more data URI's of waveform images. The waveform images are generated with default settings, but you can also control the how waveform images are created by passing a configuration object to the track:</p>
+
+<pre><code class="language-javascript">track.setWaveformConfig({
+    height: 200,
+    width: 800,
+    //density: 0.001,
+    sampleStep: 1,
+    color: '#71DE71',
+    bgcolor: '#000'
+});
+</code></pre>
+
+<p>Soon: explanation of these parameters and why the waveform images aren't generated in a webworker.</p>
         </div><!-- end of div container-->
     </div><!-- end of div main-->
     <div id="side">

@@ -9,15 +9,25 @@
         // import
         context, // defined in open_module.js
         encode64, // defined in util.js
-        getWaveformImageUrlFromBuffer, //defined in util.js
         dispatchEvent, // defined in song_event_listener.js
+        createWorker, // defined in audio_recorder_worker.js
+        getWaveformData, //defined in util.js
 
         microphoneAccessGranted = null,
         localMediaStream,
 
         bufferSize = 8192,
         millisPerSample,
-        bufferMillis;
+        bufferMillis,
+
+        waveformConfig = {
+            height: 200,
+            width: 800,
+            //density: 0.0001,
+            sampleStep: 1,
+            color: '#71DE71',
+            bgcolor: '#000'
+        };
 
 
     function AudioRecorder(track){
@@ -26,71 +36,92 @@
         this.audioEvents = {};
         this.callback = null; // callback after wav audio file of the recording has been created or updated
         this.worker = createWorker();
+        this.waveformConfig = track.waveformConfig || waveformConfig;
 
         var scope = this;
         this.worker.onmessage = function(e){
-            encodeAudioData(scope, e.data.ab, e.data.samples, e.data.id);
+            //createAudioBuffer(scope, e.data.wavArrayBuffer, e.data.interleavedSamples, e.data.planarSamples, e.data.id);
+            encodeAudioBuffer(scope, e.data.wavArrayBuffer, e.data.interleavedSamples, e.data.id);
         };
     }
 
 
-    function encodeAudioData(scope, arrayBuffer, samples, type){
-
-        context.decodeAudioData(arrayBuffer, function(audioBuffer){
-            //console.log(audioBuffer);
-            var
-            base64 = encode64(arrayBuffer),
+    function createAudioBuffer(scope, wavArrayBuffer, interleavedSamples, planarSamples, type){
+        var
+            i,
+            frameCount = planarSamples.length,
+            base64 = encode64(wavArrayBuffer),
+            audioBuffer = context.createBuffer(1, frameCount, context.sampleRate),
+            samples = audioBuffer.getChannelData(0),
             recording = {
                 id: scope.recordId,
-                audioBuffer: audioBuffer,
-                arrayBuffer: arrayBuffer,
+                audioBuffer: null,
+                wavArrayBuffer: wavArrayBuffer,
                 wav: {
-                    blob: new Blob([new Uint8Array(arrayBuffer)], {type: 'audio/wav'}),
+                    blob: new Blob([new Uint8Array(wavArrayBuffer)], {type: 'audio/wav'}),
                     base64: base64,
                     dataUrl: 'data:audio/wav;base64,' + base64
                 },
                 waveform: {}
             };
 
+        for(i = 0; i < frameCount; i++) {
+             samples[i] = planarSamples[i];
+        }
+        recording.audioBuffer = audioBuffer;
+
+        // keep a copy of the original samples for non-destructive editing
+        if(type === 'new'){
+            recording.planarSamples = planarSamples;
+            recording.interleavedSamples = interleavedSamples;
+        }else{
+            recording.planarSamples = sequencer.storage.audio.recordings[scope.recordId].planarSamples;
+            recording.interleavedSamples = sequencer.storage.audio.recordings[scope.recordId].interleavedSamples;
+        }
+
+        sequencer.storage.audio.recordings[scope.recordId] = recording;
+        //console.log('create took', window.performance.now() - scope.timestamp);
+
+        if(scope.callback !== null){
+            scope.callback(recording);
+            scope.callback = null;
+        }
+    }
+
+
+    function encodeAudioBuffer(scope, wavArrayBuffer, interleavedSamples, type){
+        //console.log(wavArrayBuffer, interleavedSamples, type);
+        context.decodeAudioData(wavArrayBuffer, function(audioBuffer){
+            var
+                base64 = encode64(wavArrayBuffer),
+                recording = {
+                    id: scope.recordId,
+                    audioBuffer: audioBuffer,
+                    wavArrayBuffer: wavArrayBuffer,
+                    wav: {
+                        blob: new Blob([new Uint8Array(wavArrayBuffer)], {type: 'audio/wav'}),
+                        base64: base64,
+                        dataUrl: 'data:audio/wav;base64,' + base64
+                    },
+                    waveform: {}
+                };
+
             // keep a copy of the original samples for non-destructive editing
             if(type === 'new'){
-                recording.samples = samples;
+                recording.interleavedSamples = interleavedSamples;
             }else{
-                recording.samples = sequencer.storage.audio.recordings[scope.recordId].samples;
+                recording.interleavedSamples = sequencer.storage.audio.recordings[scope.recordId].interleavedSamples;
             }
 
-            getWaveformImageUrlFromBuffer(
+            // create waveform images
+            getWaveformData(
                 audioBuffer,
-
-                {
-                    height: 200,
-                    //density: 0.0001,
-                    width: 800,
-                    sampleStep: 1,
-                    // density: 0.5,
-                    color: '#71DE71',
-                    bgcolor: '#000'
-                },
-
+                scope.waveformConfig,
                 //callback
-                function(urls){
-                    var image, images = [],
-                        i, maxi = urls.length;
-
-                    // create html image instances from the data-urls
-                    for(i = 0; i < maxi; i++){
-                        image = document.createElement('img');
-                        image.src = urls[i];
-                        image.origWidth = image.width;
-                        image.height = 100;
-                        images.push(image);
-                    }
-
-                    recording.waveform.images = images;
-                    recording.waveform.dataUrls = urls;
-
+                function(data){
+                    recording.waveform = {dataUrls: data};
                     sequencer.storage.audio.recordings[scope.recordId] = recording;
-
+                    //console.log('encode took', window.performance.now() - scope.timestamp);
                     if(scope.callback !== null){
                         scope.callback(recording);
                         scope.callback = null;
@@ -201,6 +232,7 @@
 
     AudioRecorder.prototype.stop = function(callback){
         this.stopRecordingTimestamp = context.currentTime * 1000;
+        this.timestamp = window.performance.now();
         if(this.sourceNode === undefined){
             callback();
             return;
@@ -222,7 +254,8 @@
             bufferIndexEnd = -1;
 
         this.worker.postMessage({
-            command: 'get_arraybuffer',
+            command: 'get_wavfile',
+            //command: 'get_wavfile2', // use this if you want to create the audio buffer instead of decoding it
             bufferIndexStart: bufferIndexStart,
             bufferIndexEnd: bufferIndexEnd
         });
@@ -237,8 +270,8 @@
 
         this.callback = callback;
         this.worker.postMessage({
-            command: 'update_arraybuffer',
-            samples: sequencer.storage.audio.recordings[recordId].samples,
+            command: 'update_wavfile',
+            samples: sequencer.storage.audio.recordings[recordId].interleavedSamples,
             bufferIndexStart: bufferIndexStart,
             bufferIndexEnd: bufferIndexEnd
         });
@@ -271,210 +304,12 @@
     sequencer.protectedScope.addInitMethod(function(){
         encode64 = sequencer.util.encode64;
         context = sequencer.protectedScope.context;
-        getWaveformImageUrlFromBuffer = sequencer.getWaveformImageUrlFromBuffer;
+        getWaveformData = sequencer.getWaveformData;
+        createWorker = sequencer.protectedScope.createAudioRecorderWorker;
         millisPerSample = (1/context.sampleRate) * 1000;
         dispatchEvent = sequencer.protectedScope.songDispatchEvent;
         bufferMillis = bufferSize * millisPerSample;
     });
-
-
-
-    // ============================== WEB WORKER ============================== //
-
-
-    function createWorker(){
-        var blobURL = URL.createObjectURL(new Blob(['(',
-
-            function(){
-                var
-                    data,
-                    bufferIndexStart,
-                    bufferIndexEnd,
-                    mergedBuffer,
-                    recLength,
-                    recBuffersL,
-                    recBuffersR,
-                    sampleRate,
-                    numberOfChannels;
-
-                self.onmessage = function(e){
-                    switch(e.data.command){
-                        case 'init':
-                            sampleRate = e.data.sampleRate;
-                            recLength = 0;
-                            recBuffersL = [];
-                            recBuffersR = [];
-                            break;
-                        case 'record_mono':
-                            numberOfChannels = 1;
-                            recBuffersL.push(e.data.buffer);
-                            recLength += e.data.buffer.length;
-                            break;
-                        case 'record_stereo':
-                            numberOfChannels = 2;
-                            recBuffersL.push(e.data.buffer[0]);
-                            recBuffersR.push(e.data.buffer[1]);
-                            recLength += e.data.buffer[0].length;
-                            break;
-                        case 'export_wav':
-                            this.postMessage(new Blob([getArrayBufferView()], {type: 'audio/wav'}));
-                            break;
-                        case 'get_arraybuffer':
-                            bufferIndexStart = e.data.bufferIndexStart;
-                            bufferIndexEnd = e.data.bufferIndexEnd;
-                            data = {};
-                            data.ab = getArrayBufferView().buffer;
-                            data.samples = mergedBuffer;
-                            data.id = 'new';
-                            this.postMessage(data, [data.ab, data.samples.buffer]);
-                            break;
-                        case 'update_arraybuffer':
-                            bufferIndexStart = e.data.bufferIndexStart;
-                            bufferIndexEnd = e.data.bufferIndexEnd;
-                            mergedBuffer = e.data.samples;
-                            data = {};
-                            data.ab = updateArrayBufferView().buffer;
-                            data.id = 'update';
-                            this.postMessage(data, [data.ab]);
-                            break;
-                    }
-                };
-
-
-                function getArrayBufferView(){
-                    var dataview, i, length, result, index = 0;
-
-                    if(numberOfChannels === 1){
-                        mergedBuffer = mergeBuffers(recBuffersL, recLength);
-                    }else if(numberOfChannels === 2){
-                        mergedBuffer = interleave(
-                            mergeBuffers(recBuffersL, recLength),
-                            mergeBuffers(recBuffersR, recLength)
-                        );
-                    }
-
-                    //console.log('1:' + mergedBuffer.length);
-                    if(bufferIndexEnd > 0 || bufferIndexStart > 0){
-                        if(bufferIndexEnd === -1){
-                            bufferIndexEnd = mergedBuffer.length;
-                        }
-                        result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-                        for(i = bufferIndexStart; i < bufferIndexEnd; i++){
-                            result[index++] = mergedBuffer[i];
-                        }
-                        mergedBuffer = result;
-                    }
-                    //console.log('2:' + mergedBuffer.length);
-
-                    dataview = encodeWAV(mergedBuffer);
-                    return dataview;
-                }
-
-
-                function updateArrayBufferView(){
-                    var dataview, i, length, result, index = 0;
-                    //console.log(bufferIndexStart + ':' + mergedBuffer.length);
-
-                    if(bufferIndexEnd === -1){
-                        bufferIndexEnd = mergedBuffer.length;
-                    }
-                    result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-                    for(i = bufferIndexStart; i < bufferIndexEnd; i++){
-                        result[index++] = mergedBuffer[i];
-                    }
-                    dataview = encodeWAV(result);
-                    return dataview;
-                }
-
-
-                function mergeBuffers(recBuffers, recLength){
-                    var result = new Float32Array(recLength);
-                    var offset = 0;
-                    for (var i = 0; i < recBuffers.length; i++){
-                        result.set(recBuffers[i], offset);
-                        offset += recBuffers[i].length;
-                    }
-                    return result;
-                }
-
-
-                function interleave(inputL, inputR){
-                    var length = inputL.length + inputR.length,
-                        result = new Float32Array(length),
-                        index = 0,
-                        inputIndex = 0;
-
-                    while(index < length){
-                        result[index++] = inputL[inputIndex];
-                        result[index++] = inputR[inputIndex];
-                        inputIndex++;
-                    }
-                    return result;
-                }
-
-
-                function floatTo16BitPCM(output, offset, input){
-                    for (var i = 0; i < input.length; i++, offset+=2){
-                        var s = Math.max(-1, Math.min(1, input[i]));
-                        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-                    }
-                }
-
-
-                function writeString(view, offset, string){
-                    for (var i = 0; i < string.length; i++){
-                        view.setUint8(offset + i, string.charCodeAt(i));
-                    }
-                }
-
-
-                // see: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
-                // samples is a Float32Array
-                function encodeWAV(samples){
-                    var bitsPerSample = 16,
-                        bytesPerSample = bitsPerSample/8,
-                        buffer = new ArrayBuffer(44 + samples.length * bytesPerSample),
-                        view = new DataView(buffer);
-
-                    /* RIFF identifier */
-                    writeString(view, 0, 'RIFF');
-                    /* RIFF chunk length */
-                    view.setUint32(4, 36 + samples.length * bytesPerSample, true);
-                    /* RIFF type */
-                    writeString(view, 8, 'WAVE');
-                    /* format chunk identifier */
-                    writeString(view, 12, 'fmt ');
-                    /* format chunk length */
-                    view.setUint32(16, 16, true);
-                    /* sample format (raw) */
-                    view.setUint16(20, 1, true);
-                    /* channel count */
-                    view.setUint16(22, numberOfChannels, true);
-                    /* sample rate */
-                    view.setUint32(24, sampleRate, true);
-                    /* byte rate (sample rate * block align) */
-                    view.setUint32(28, sampleRate * numberOfChannels * bytesPerSample, true);
-                    /* block align (channel count * bytes per sample) */
-                    view.setUint16(32, numberOfChannels * bytesPerSample, true);
-                    /* bits per sample */
-                    view.setUint16(34, bitsPerSample, true);
-                    /* data chunk identifier */
-                    writeString(view, 36, 'data');
-                    /* data chunk length */
-                    view.setUint32(40, samples.length * bytesPerSample, true);
-
-                    floatTo16BitPCM(view, 44, samples);
-
-                    return view;
-                }
-
-
-            }.toString(),
-
-        ')()' ], {type: 'application/javascript'}));
-
-        return new Worker(blobURL);
-    }
 
 }());
 
@@ -505,3 +340,45 @@
 */
 
 
+
+/*
+            getWaveformImageUrlFromBuffer(
+                audioBuffer,
+
+                {
+                    height: 200,
+                    //density: 0.0001,
+                    width: 800,
+                    sampleStep: 1,
+                    // density: 0.5,
+                    color: '#71DE71',
+                    bgcolor: '#000',
+                    samples: samples
+                },
+
+                //callback
+                function(urls){
+                    var image, images = [],
+                        i, maxi = urls.length;
+
+                    // create html image instances from the data-urls
+                    for(i = 0; i < maxi; i++){
+                        image = document.createElement('img');
+                        image.src = urls[i];
+                        image.origWidth = image.width;
+                        image.height = 100;
+                        images.push(image);
+                    }
+
+                    recording.waveform.images = images;
+                    recording.waveform.dataUrls = urls;
+
+                    sequencer.storage.audio.recordings[scope.recordId] = recording;
+                    console.log('took', window.performance.now() - scope.timestamp);
+                    if(scope.callback !== null){
+                        scope.callback(recording);
+                        scope.callback = null;
+                    }
+                }
+            );
+*/

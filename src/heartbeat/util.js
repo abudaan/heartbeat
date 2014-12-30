@@ -1200,36 +1200,40 @@
     }
 
 
-    function getWaveformImageUrlFromBuffer(buffer, data, callback){
-        var i,
+    function getWaveformData(buffer, config, callback){
+        var i, maxi,
             canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d'),
             pcmRight = buffer.getChannelData(0),
             pcmLeft = buffer.getChannelData(0),
             numSamples = pcmRight.length,
             width, // max width of a canvas on chrome/chromium is 32000
-            height = data.height || 100,
-            color = data.color || '#fff',
-            bgcolor = data.bgcolor || '#000',
+            height = config.height || 100,
+            color = config.color || '#fff',
+            bgcolor = config.bgcolor || '#000',
             density,
             scale = height / 2,
-            sampleStep = data.sampleStep || 50,
+            sampleStep = config.sampleStep || 50,
             height,
             lastWidth,
             numImages,
             currentImage,
             xPos = 0,
             offset = 0,
-            urls = [];
+            urls = [],
+            imgElement,
+            imgElements = [];
 
-        if(data.width !== undefined){
-            width = data.width;
+        //console.log(pcmRight.length, pcmLeft.length, config.samples.length);
+
+        if(config.width !== undefined){
+            width = config.width;
             density = width / numSamples;
         }else {
-            density = data.density || 1;
+            density = config.density || 1;
             width = 1000;
-            lastWidth = (numSamples * data.density) % width;
-            numImages = Math.ceil((numSamples * data.density)/width);
+            lastWidth = (numSamples * config.density) % width;
+            numImages = Math.ceil((numSamples * config.density)/width);
             currentImage = 0;
         }
 
@@ -1276,6 +1280,22 @@
         }
 
         callback(urls);
+
+        /*
+        // create html image elements from the data-urls
+        for(i = 0, maxi = urls.length; i < maxi; i++){
+            imgElement = document.createElement('img');
+            imgElement.src = urls[i];
+            imgElement.origWidth = imgElement.width;
+            imgElement.height = 100;
+            imgElements.push(imgElement);
+        }
+
+        callback({
+            dataURIs: urls,
+            imgElements: imgElements
+        });
+        */
     }
 
 
@@ -1526,5 +1546,5 @@
     sequencer.protectedScope.filterItemsByClassName = filterItemsByClassName;
 
     sequencer.getMicrosecondsFromBPM = getMicrosecondsFromBPM;
-    sequencer.getWaveformImageUrlFromBuffer = getWaveformImageUrlFromBuffer;
+    sequencer.getWaveformData = getWaveformData;
 }());

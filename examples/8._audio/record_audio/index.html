@@ -23,9 +23,11 @@
         <li>Move the latency compensation slider till you are satisfied.</li>
         <li>If a subsequent recording is not in sync with the MIDI tick, move the latency slider again till you are satisfied; earlier recordings are not affected.</li>
         <li>Usually the latency compensation of the first or second recording is a value that you can use for all consecutive recordings.</li>
-        <li>By using the latency slider you control the global audio recording latency of the song, this can also be done by setting the parameter "song.latencyCompensation".</li>
-        <li>You can also set the parameter "latencyCompensation" directly on an individual audio event.</li>
+        <li>By using the latency slider you control the latency compensation of the latest recording.</li>
+        <li>You can also set the parameter "latencyCompensation" directly on an individual audio event, however this doesn't update the recording nor the waveform.</li>
+        <li>You can also set latencyCompensation globally for all recordings in a song.</li>
         <li>Note that getUserMedia() is not supported in Safari (both OSX and iOS), therefor you can not record audio if you're using Safari.</li>
+        <li>More documentation can be found <a target="_parent" href="/heartbeat/docs/recording-audio/">here</a></li>
     </ul>
 
     <input type="button" id="play" value="play">

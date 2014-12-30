@@ -35,7 +35,7 @@
         createPanner, // defined in channel_effects.js
         addMidiEventListener, // defined in midi_system.js
         removeMidiEventListener, // defined in midi_system.js
-        encodeRecording, // defined in audio_recording_encoder.js
+        encodeAudio, // defined in audio_encoder.js
 
 
         findEvent, // → defined in find_event.js
@@ -1392,6 +1392,14 @@ return;
     };
 
 
+    Track.prototype.setWaveformConfig = function(config){
+        this.waveformConfig = config;
+        if(this.audio !== undefined){
+            this.audio.recorder.waveformConfig = config;
+        }
+    };
+
+
     Track.prototype.getAudioRecordingData = function(recordId){
         if(this.audio === undefined){
             return;
@@ -1406,11 +1414,25 @@ return;
     };
 
 
-    Track.prototype.encodeAudioRecording = function(recordId, type, bitrate){
+    Track.prototype.encodeAudioRecording = function(recordId, type, bitrate, callback){
         if(this.audio === undefined){
             return;
         }
-        return encodeRecording.apply(null, arguments);
+        if(recordId === undefined){
+            if(sequencer.debug >= sequencer.WARN){
+                console.warn('please provide a recording id');
+            }
+            if(callback){
+                callback(false);
+            }
+            return;
+        }
+
+        var recording = sequencer.storage.audio.recordings[recordId];
+        encodeAudio(recording.audioBuffer, type, bitrate, function(mp3Data){
+            recording.mp3 = mp3Data;
+            callback(recording);
+        });
     };
 
 
@@ -1556,7 +1578,7 @@ return;
         createMidiNote = sequencer.createMidiNote;
         createInstrument = sequencer.createInstrument;
         createPanner = sequencer.createPanner;
-        encodeRecording = sequencer.protectedScope.encodeRecording;
+        encodeAudio = sequencer.encodeAudio;
 
         context = protectedScope.context;
         findItem = protectedScope.findItem;
