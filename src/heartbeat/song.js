@@ -496,6 +496,7 @@
         if(song.doLoop && song.scheduler.looped && millis >= song.loopEnd){// && song.jump !== true){
             //console.log(song.prevMillis, song.millis);
             //song.scheduler.looped = false;
+            song.followEvent.resetAllListeners();
             song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
             song.followEvent.update();
             //console.log('-->', song.millis);
@@ -545,6 +546,7 @@
         //console.log('play', this.doLoop, this.illegalLoop, this.loop);
         // or should I move to loopStart here if loop is enabled?
         if(this.endOfSong){
+            this.followEvent.resetAllListeners();
             this.playhead.set('millis', 0);
             this.scheduler.setIndex(0);
         }
@@ -627,6 +629,8 @@
 
     Song.prototype.stop = function() {
         if(this.stopped){
+            // is this necessary?
+            this.followEvent.resetAllListeners();
             this.playhead.set('millis', 0);
             this.scheduler.setIndex(0);
             return;
@@ -650,6 +654,7 @@
         this.stopped = true;
         this.endOfSong = false;
 
+        this.followEvent.resetAllListeners();
         this.playhead.set('millis', 0);
         this.scheduler.setIndex(0);
         dispatchEvent(this, 'stop');

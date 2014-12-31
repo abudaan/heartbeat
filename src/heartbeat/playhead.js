@@ -177,6 +177,8 @@
 
         if(this.type.indexOf('events') !== -1 || this.type.indexOf('all') !== -1){
 
+            this.collectedEvents = collectedEvents;
+
             for(i = this.activeEvents.length - 1; i >= 0; i--){
                 event = this.activeEvents[i];
 
