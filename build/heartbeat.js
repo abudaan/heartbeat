@@ -1208,6 +1208,10 @@ if (typeof module !== "undefined" && module !== null) {
             this.logger.print = print;
         },
 */
+        getAudioContext: function(){
+            return context;
+        },
+
         getTime: function(){
             return context.currentTime;
         },
@@ -2943,6 +2947,15 @@ if (typeof module !== "undefined" && module !== null) {
                         interleavedSamples: interleavedSamples
                     };
                     self.postMessage(data, [data.wavArrayBuffer, data.interleavedSamples.buffer]);
+                    /*
+                    // funny: this is something different
+                    data = {
+                        id: 'new',
+                        wavArrayBuffer: getWavFile(),
+                        interleavedSamples: interleavedSamples.buffer
+                    };
+                    self.postMessage(data, [data.wavArrayBuffer, data.interleavedSamples]);
+                    */
                     break;
                 case 'get_wavfile2':
                     bufferIndexStart = e.data.bufferIndexStart;
@@ -22557,6 +22570,7 @@ return;
     sequencer.util.base64EncArr = base64EncArr;
     sequencer.util.UTF8ArrToStr = UTF8ArrToStr;
     sequencer.util.strToUTF8Arr = strToUTF8Arr;
+    sequencer.util.ajax = ajax;
 
 
     //sequencer.findItem = findItem;

@@ -1491,6 +1491,7 @@
     sequencer.util.base64EncArr = base64EncArr;
     sequencer.util.UTF8ArrToStr = UTF8ArrToStr;
     sequencer.util.strToUTF8Arr = strToUTF8Arr;
+    sequencer.util.ajax = ajax;
 
 
     //sequencer.findItem = findItem;

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script src="../../build/heartbeat.js"></script>
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../css/reset.css">
+    <link rel="stylesheet" type="text/css" href="../css/prism.css">
+    <link rel="stylesheet" type="text/css" href="../css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+<body>
+    <p>
+        This example shows that decoding a wav file is much faster than decoding a compressed format like mp3. Both the short track (8 seconds) and the long track (6 minutes and 25 seconds) are decoded about 2 times faster in uncompressed format.
+    </p>
+    <p>
+        Obviously, loading the wav files takes much longer. But if your application loads audio files locally (for instance if your application is a mobile app that uses persistent local storage) using wav files might be preferable.
+    </p>
+    <p>
+        The long track in wav form is about 68 MB, the short track is 1.4 MB. The mp3 versions are respectively 6.2 MB and 193 KB in file size. The loading and decoding durations are printed to the console of your browser.
+    </p>
+    <input type="button" id="wav" value="wav">
+    <input type="button" id="mp3" value="mp3">
+    <input type="button" id="stop" value="stop">
+    <select id="select_track">
+        <option id="short_track">short track</option>
+        <option id="long_track">long track</option>
+    </select>
+    <div id="console"></div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="../js/prism.js"></script>
+</body>
+</html>

@@ -290,6 +290,10 @@
             this.logger.print = print;
         },
 */
+        getAudioContext: function(){
+            return context;
+        },
+
         getTime: function(){
             return context.currentTime;
         },
