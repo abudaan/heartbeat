@@ -2,13 +2,13 @@
 
 	'use strict';
 
-	var 
+	var
 		//import
 		createNote, // → defined in note.js
 		typeString, // → defined in util.js
 		createMidiNote, // → defined in midi_note.js
 		midiEventNumberByName, // → defined in midi_event_names.js
-		
+
 		//local
 		patterns,
 		operators,
@@ -29,7 +29,7 @@
 			ticks: 1,
 			barsbeats: 1,
 			musical_time: 1,
-		
+
 			hour: 1,
 			minute: 1,
 			second: 1,
@@ -37,7 +37,7 @@
 			millis: 1,
 			time: 1,
 			linear_time: 1,
-			
+
 			id: 1,
 			type: 1,
 			data1: 1,
@@ -52,7 +52,7 @@
 		//public
 		findEvent,
 		findNote,
-		
+
 		//private
 		getEvents,
 		checkValue,
@@ -68,7 +68,7 @@
 	/*
 
 		(bar > 3 AND beat = 2 OR velocity = 60) => ((bar > 3 && beat === 2) || velocity === 60)
-		
+
 		(beat = 2 OR velocity = 60 AND bar > 3) => ((beat === 2 || velocity === 60) && bar > 3)
 
 		(beat == 2 XOR velocity == 60) -> all events that are on beat 2 and all events that have on velocity 60, but not the event that match both
@@ -78,14 +78,14 @@
 		step 3: remove all events that match both beat == 2 AND velocity == 60
 	*/
 
-	
+
 	findEvent = function(){
 		//console.time('find events');
 		var args = Array.prototype.slice.call(arguments),
 			i, maxi,
 			//j, maxj,
 			//k, maxk,
-			searchString, tmp, 
+			searchString, tmp,
 			operator, pattern,
 			prevPattern, prevOperator,
 			patternIndex, operatorIndex,
@@ -94,7 +94,7 @@
 			subResult1,
 			subResult2;
 
-		
+
 		//console.log(args[0])
 		events = getEvents(args[0]);
 		results = [];
@@ -143,59 +143,59 @@
 			operator = operators[operatorIndex++];
 			//console.log(operator,pattern,patternIndex,results.length);
 
-			
+
 			if(operator === 'AND'){
 				// perform search on the results of the former search
-				results = performSearch(results,pattern);			
+				results = performSearch(results,pattern);
 
 			}else if(operator === 'NOT'){
 				// perform search on the results of the former search
-				results = performSearch(results,pattern,true);			
+				results = performSearch(results,pattern,true);
 
 			}else if(operator === 'XOR'){
-/*				
+/*
 				//filter events from the previous results
 				if(prevOperator === 'OR' || prevOperator === 'XOR'){
 
 					subResult1 = performSearch(results,pattern,true);
-					subResult1 = performSearch(subResult1,prevPattern,true);				
+					subResult1 = performSearch(subResult1,prevPattern,true);
 
 				}else{
 					//filter results of the left part of the XOR expression by inversing the right part of the expression
-					subResult1 = performSearch(results,pattern,true);					
+					subResult1 = performSearch(results,pattern,true);
 				}
 
 				//filter events from all events (OR and XOR always operate on all events)
-				subResult2 = performSearch(events,pattern);	
-				subResult2 = performSearch(subResult2,prevPattern,true);	
+				subResult2 = performSearch(events,pattern);
+				subResult2 = performSearch(subResult2,prevPattern,true);
 
 				//combine the 2 result sets
 				results = subResult1.concat(subResult2);//subResult1.concat(subResult1,subResult2);
 */
 				//NEW APPROACH
 				//get from all events the events that match the pattern
-				subResult1 = performSearch(events,pattern);	
+				subResult1 = performSearch(events,pattern);
 				//and then remove all events that match both all previous patterns and the current pattern
 				results = removeMutualEvents(results,subResult1);
 
 			}else{
-				
-				lastResult = performSearch(events,pattern);			
+
+				lastResult = performSearch(events,pattern);
 				results = results.concat(lastResult);
-			
+
 			}
 
 			prevPattern = pattern;
 			prevOperator = operator;
 		}
-		
+
 		//console.log(patterns,operators);
 		//console.log(results.length);
 		//console.timeEnd('find events');
 		return removeDoubleEvents(results);
 	};
 
-	
+
 	removeMutualEvents = function(resultSet1,resultSet2){
 		var i,maxi = resultSet1.length,
 			j,maxj = resultSet2.length,
@@ -203,14 +203,14 @@
 			result = [];
 
 		for(i = 0; i < maxi; i++){
-			
+
 			addEvent = true;
 
 			event = resultSet1[i];
 			eventId = event.id;
-			
+
 			for(j = 0; j < maxj; j++){
-				
+
 				if(resultSet2[j].id === eventId){
 					addEvent = false;
 					break;
@@ -223,14 +223,14 @@
 		}
 
 		for(j = 0; j < maxj; j++){
-			
+
 			addEvent = true;
 
 			event = resultSet2[j];
 			eventId = event.id;
-			
+
 			for(i = 0; i < maxi; i++){
-				
+
 				if(resultSet1[i].id === eventId){
 					addEvent = false;
 					break;
@@ -241,7 +241,7 @@
 				result.push(event);
 			}
 		}
-		
+
 		return result;
 	};
 
@@ -268,7 +268,7 @@
 
 
 	performSearch = function(events,pattern,inverse){
-		var 
+		var
 			searchResult = [],
 			property = pattern.property,
 			operator1 = pattern.operator1,
@@ -285,12 +285,12 @@
 			operator2 = inverseOperator(operator2);
 		}
 
-		
+
 		for(i = 0; i < numEvents; i++){
-			
+
 			event = events[i];
 			condition = checkCondition(property, event[property], operator1, value1, operator2, value2);
-							
+
 			if(condition){
 				searchResult.push(event);
 			}
@@ -299,11 +299,11 @@
 		return searchResult;
 	};
 
-	
+
 	checkCondition = function(property,propValue,operator1,value1,operator2,value2){
 		var result = false,
 			isString = false;
-		
+
 
 		if(propValue === undefined){
 			return result;
@@ -311,7 +311,7 @@
 
 
 		switch(property){
-			
+
 			case 'noteName':
 				if(operator1 === '='){
 					//this situation occurs if you search for the first letter(s) of an note name, e.g C matches C#, C##, Cb and Cbb
@@ -339,17 +339,17 @@
 
 
 		if(typeString(propValue) === 'string'){
-			
+
 			if(typeString(value1) !== 'string'){
 				value1 = '\'' + value1 + '\'';
 			}
 			if(value2 && typeString(value2) !== 'string'){
 				value2 = '\'' + value2 + '\'';
 			}
-			isString = true; 
-		
+			isString = true;
+
 		}else if(typeString(propValue) === 'number'){
-		
+
 			if(typeString(value1) !== 'number'){
 				value1 = parseInt(value1);//don't use a radix because values can be both decimal and hexadecimal!
 			}
@@ -357,7 +357,7 @@
 				value2 = parseInt(value2);
 			}
 		}
-		
+
 
 		switch(operator1){
 
@@ -367,7 +367,7 @@
 				result = propValue === value1;
 				break;
 
-			
+
 			case '*=':
 				result = propValue.indexOf(value1) !== -1;
 				break;
@@ -388,7 +388,7 @@
 				}
 				break;
 
-			
+
 			case '!*=':
 				result = !(propValue.indexOf(value1) !== -1);
 				break;
@@ -409,7 +409,7 @@
 				}
 				break;
 
-			
+
 			case '!=':
 			case '!==':
 				if(isString){
@@ -462,15 +462,15 @@
 		return result;
 	};
 
-	
+
 	checkCondition2 = function(propValue,operator1,value1,operator2,value2){
 
 		var result = false;
 
 		switch(operator1){
-			
+
 			case '>':
-			
+
 				switch(operator2){
 					case '<':
 						result = propValue > value1 && propValue < value2;
@@ -483,7 +483,7 @@
 				break;
 
 			case '>=':
-			
+
 				switch(operator2){
 					case '<':
 						result = propValue >= value1 && propValue < value2;
@@ -492,11 +492,11 @@
 						result = propValue >= value1 && propValue <= value2;
 						break;
 
-				}			
+				}
 				break;
 
 			case '<':
-			
+
 				switch(operator2){
 					case '>':
 						result = propValue < value1 || propValue > value2;
@@ -505,11 +505,11 @@
 						result = propValue < value1 || propValue >= value2;
 						break;
 
-				}			
+				}
 				break;
 
 			case '<=':
-			
+
 				switch(operator2){
 					case '>':
 						result = propValue <= value1 || propValue > value2;
@@ -518,7 +518,7 @@
 						result = propValue <= value1 || propValue >= value2;
 						break;
 
-				}			
+				}
 				break;
 		}
 
@@ -528,24 +528,24 @@
 
 	getEvents = function(obj){
 		var i, numTracks, tracks, events = [];
-		
+
 		if(typeString(obj) === 'array'){
-			events = obj;		
+			events = obj;
 		}else if(obj.className === undefined){
 			console.warn(obj);
 		}else if(obj.className === 'Track' || obj.className === 'Part'){
 			events = obj.events;
-		
+
 		}else if(obj.className === 'Song'){
-/*		
+/*
 			tracks = obj.tracks;
 			numTracks = obj.numTracks;
 			for(i = 0; i < numTracks; i++){
 				events = events.concat(tracks[i].events);
 			}
-			events = events.concat(obj.timeEvents);	
+			events = events.concat(obj.timeEvents);
 */
-			events = obj.events;	
+			events = obj.eventsMidiTime;
 		}
 		//console.log(obj.className,events.length);
 		return events;
@@ -572,7 +572,7 @@
 			return false;
 		}
 
-		
+
 		pattern = checkOperators(pattern);
 
 
@@ -649,12 +649,12 @@
 				break;
 		}
 
-		return value;	
+		return value;
 	};
 
-	
+
 	checkOperators = function(pattern){
-		
+
 		var operator1 = pattern.operator1,
 			operator2 = pattern.operator2,
 			check = function(operator){
@@ -690,7 +690,7 @@
 		return pattern;
 	};
 
-	
+
 	inverseOperator = function(operator){
 		var inversedOperator;
 
@@ -738,26 +738,26 @@
 	};
 
 
-	findNote = function(){				
+	findNote = function(){
 		var results = findEvent.apply(this,arguments),
-			numEvents = results.length, 
-			i, event, 
-			noteOnEvent, noteOnEvents = {}, 
+			numEvents = results.length,
+			i, event,
+			noteOnEvent, noteOnEvents = {},
 			tmp, resultsFiltered = [];
-		
+
 		// loop over all events and filter the note on events that have a matching note off event
 		for(i = 0; i < numEvents; i++){
 			event = results[i];
-			
+
 			if(event.type === sequencer.NOTE_ON){
-				
+
 				if(noteOnEvents[event.noteNumber] === undefined){
 					noteOnEvents[event.noteNumber] = [];
 				}
 				noteOnEvents[event.noteNumber].push(event);
-			
+
 			}else if(event.type === sequencer.NOTE_OFF){
-			
+
 				tmp = noteOnEvents[event.noteNumber];
 				if(tmp){
 					noteOnEvent = tmp.shift();
@@ -770,19 +770,19 @@
 				}
 			}
 		}
-		
-		// put the events back into the right order 
+
+		// put the events back into the right order
 		resultsFiltered.sort(function(a,b){
 			return a.ticks - b.ticks;
 		});
 
 		return resultsFiltered;
 	};
-	
+
 	sequencer.findEvent = findEvent;
 	sequencer.findNote = findNote;
 	//sequencer.removeMutualEvents = removeMutualEvents;
-	sequencer.protectedScope.getEvents = getEvents;	
+	sequencer.protectedScope.getEvents = getEvents;
 
 	sequencer.protectedScope.addInitMethod(function(){
 		createNote = sequencer.createNote;

@@ -183,7 +183,8 @@
         event.sixteenth = sixteenth;
         event.tick = tick;
         //event.barsAsString = (bar + 1) + ':' + (beat + 1) + ':' + (sixteenth + 1) + ':' + tick;
-        event.barsAsString = bar + ':' + beat + ':' + sixteenth + ':' + tick;
+        var tickAsString = tick === 0 ? '000' : tick < 10 ? '00' + tick : tick < 100 ? '0' + tick : tick;
+        event.barsAsString = bar + ':' + beat + ':' + sixteenth + ':' + tickAsString;
         event.barsAsArray = [bar, beat, sixteenth, tick];
 
 

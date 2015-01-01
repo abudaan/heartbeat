@@ -17,7 +17,7 @@ window.onload = function(){
     // this is a simple example that only shows some basic events sent by the song
     // for a more complete example about midi recording see /examples/3._midi_in_&_out/midi_record
     sequencer.ready(function(){
-        var song, events, tmp = 0;
+        var song, events, i = 0, ticks = 0, bpm = 150;
 
         events = sequencer.util.getRandomNotes({
             minNoteNumber: 55,
@@ -25,14 +25,27 @@ window.onload = function(){
             minVelocity: 30,
             maxVelocity: 80,
             noteDuration: 384/4, //ticks
-            numNotes: 24
+            numNotes: 32
         });
 
         song = sequencer.createSong({
-            bpm: 150,
+            bpm: bpm,
             events: events,
             useMetronome: true
         });
+
+        // add an accelerando by adding tempo events to the first 8 beats
+        events = [];
+        while(i < 8){
+            bpm += 10;
+            events.push(sequencer.createMidiEvent(ticks, sequencer.TEMPO, bpm));
+            ticks += song.ppq; // increase the ticks value by a beat
+            i++;
+        }
+        // add a time signature event
+        events.push(sequencer.createMidiEvent(ticks, sequencer.TIME_SIGNATURE, 3, 4));
+
+        song.addTimeEvents(events);
 
         song.setLeftLocator('ticks', 0);
         song.setRightLocator('ticks', song.durationTicks);
@@ -130,6 +143,16 @@ window.onload = function(){
             output.innerHTML = '[' + event.barsAsString + '] event with id ' + event.id + ' is of type NOTE_OFF<br/>' + output.innerHTML;
         });
 
+        // listen for all TEMPO events
+        song.addEventListener('event', 'type = TEMPO', function(event){
+            output.innerHTML = '[' + event.barsAsString + '] event with id ' + event.id + ' is of type TEMPO (' + event.bpm + ')<br/>' + output.innerHTML;
+        });
+
+        // listen for all TIME_SIGNATURE events
+        song.addEventListener('event', 'type = TIME_SIGNATURE', function(event){
+            output.innerHTML = '[' + event.barsAsString + '] event with id ' + event.id + ' is of type TIME_SIGNATURE (' + event.nominator + '/' + event.denominator + ')<br/>' + output.innerHTML;
+        });
+
         // listen for all C4 notes, note that the song is generated randomly so this note is not always present
         song.addEventListener('event', 'noteNumber = 60', function(event){
             output.innerHTML = '[' + event.barsAsString + '] event with id ' + event.id + ' is the central C<br/>' + output.innerHTML;
@@ -139,5 +162,6 @@ window.onload = function(){
         song.addEventListener('event', song.events[3], function(event){
             output.innerHTML = '[' + event.barsAsString + '] event with id ' + event.id + ' is the 4th event of this song<br/>' + output.innerHTML;
         });
+
     });
 };
