@@ -211,7 +211,19 @@ console.log(latency + ' milliseconds') // prints 185.759637188 milliseconds
 });
 </code></pre>
 
-<p>Soon: explanation of these parameters and why the waveform images aren't generated in a webworker.</p>
+<p>The waveform image is created by plotting the PCM sample values on a canvas element and drawing lines between the dots. The <code class="language-javascript">density</code> parameter determines the distance in pixels between the dots. This means that the width of the waveform depends on the length of the wav file.</p>
+
+<p>However if you set a value for <code class="language-javascript">width</code> then the value of <code class="language-javascript">density</code> gets calculated by dividing the specified width by the number of samples; this way we get a fixed width that is independent of the length of a wav file. This means that the parameters <code class="language-javascript">width</code> and <code class="language-javascript">density</code> are mutual exclusive whereby the <code class="language-javascript">density</code> parameter will be overruled if both are set.</p>
+
+<p>The parameter <code class="language-javascript">height</code> sets the height of the generated image and behaves the same in both cases described above.</p>
+
+<p>Note that because the waveform is plotted on a canvas element, the value you set for <code class="language-javascript">width</code> and <code class="language-javascript">hight</code> must be less of equal then the maximum width and height of a canvas element which is 32767 pixels, see <a href="http://stackoverflow.com/questions/6081483/maximum-size-of-a-canvas-element">this post at Stackoverflow</a>.</p>
+
+<p>The parameter <code class="language-javascript">sampleStep</code> is the amount of samples that is skipped between two dots. If you set it to 1 then all samples are plotted, but if you set it for instance to 10 then only the samples 1, 11, 21, 31, and so on get plotted. Especially with long wav files it is recommended to set <code class="language-javascript">sampleStep</code> to a higher value to save processing time.</p>
+
+<p>The parameters <code class="language-javascript">color</code> and <code class="language-javascript">bgcolor</code> set the color of the waveform and the color of the background respectively.</p>
+
+<p>Because the images are generated in the main javascript thread, everything else has to wait for the process to complete. Fortunately in the future it will be possible to transfer a canvas object to a webworker so waveform images can be created in a background process. See the <a href="https://html.spec.whatwg.org/multipage/scripting.html#dom-canvas-transfercontroltoproxy">W3C specification</a>. Up to today, no browser has yet implemented it, see at the bottom of <a href="https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement">this MDN page</a>.</p>
         </div><!-- end of div container-->
     </div><!-- end of div main-->
     <div id="side">

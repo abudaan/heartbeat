@@ -22325,7 +22325,7 @@ return;
             numSamples = pcmRight.length,
             width, // max width of a canvas on chrome/chromium is 32000
             height = config.height || 100,
-            color = config.color || '#fff',
+            color = config.color || '#71DE71',
             bgcolor = config.bgcolor || '#000',
             density,
             scale = height / 2,
