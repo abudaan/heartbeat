@@ -34,7 +34,8 @@
         {label:'Find events and notes', hash: 'find-events-and-notes', url: prefix + '/docs/find-events-and-notes'},
         {label:'Statistics', hash: 'statistics', url: prefix + '/docs/statistics'},
         {label:'Quantize & fixed length', hash: 'quantize-and-fixed-length', url: prefix + '/docs/quantize-and-fixed-length'},
-        {label:'Recording audio', hash: 'recording-audio', url: prefix + '/docs/recording-audio'}
+        {label:'Recording audio', hash: 'recording-audio', url: prefix + '/docs/recording-audio'},
+        {label:'Decoding audio', hash: 'decoding-audio', url: prefix + '/docs/decoding-audio'}
     ];
 
     scope.navigation['tests'] = [];

@@ -8,6 +8,7 @@ window.onload = function(){
         console = window.console,
 
         btnWav = document.getElementById('wav'),
+        btnOgg = document.getElementById('ogg'),
         btnMp3 = document.getElementById('mp3'),
         btnStop = document.getElementById('stop'),
         divConsole = document.getElementById('console'),
@@ -68,6 +69,36 @@ window.onload = function(){
         }, false);
 
 
+        btnOgg.addEventListener('click', function(){
+            if(src !== undefined){
+                src.stop();
+            }
+            divConsole.innerHTML = 'loading ogg...';
+            console.time('loading ogg took');
+            sequencer.util.ajax({
+                url: track + '.ogg',
+                responseType: 'arraybuffer',
+                onError: function(e){
+                    console.log(e);
+                },
+                onSuccess: function(buffer){
+                    console.timeEnd('loading ogg took');
+                    divConsole.innerHTML = '';
+                    setTimeout(function(){
+                        console.time('decoding ogg took');
+                        context.decodeAudioData(buffer, function(buffer){
+                            console.timeEnd('decoding ogg took');
+                            src = context.createBufferSource();
+                            src.buffer = buffer;
+                            src.connect(context.destination);
+                            src.start();
+                        });
+                    },0);
+                }
+            });
+        }, false);
+
+
         btnMp3.addEventListener('click', function(){
             if(src !== undefined){
                 src.stop();
@@ -104,6 +135,9 @@ window.onload = function(){
 
 
         enableUI(true);
+
+        btnOgg.disabled = sequencer.ogg === false;
+        btnMp3.disabled = sequencer.mp3 === false;
     });
 
 
@@ -115,5 +149,6 @@ window.onload = function(){
             element = elements[i];
             element.disabled = !flag;
         }
+
     }
 };

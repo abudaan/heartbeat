@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/docs.css">
+    <script src="/heartbeat/js/open.js"></script>
+    <script src="/heartbeat/js/create_navigation.js"></script>
+    <script src="/heartbeat/js/create_tabs.js"></script>
+    <script src="/heartbeat/js/navigation_items.js"></script>
+    <script src="/heartbeat/js/util.js"></script>
+    <script src="/heartbeat/js/close.js"></script>
+    <script src="/heartbeat/js/main.js"></script>
+    <script>
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+        ga('require', 'displayfeatures');
+        ga('require', 'linkid', 'linkid.js');
+        ga('send', 'pageview');
+      }
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Decoding audio</h1>
+
+<p><a name="Background"></a></p>
+
+<h3>Background</h3>
+
+<p>Before you can play audio files via the <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext">AudioContext</a>, the audio files need to be parsed to the format that the AudioContext uses for internal processing. This format is non-interleaved 32-bit linear PCM. This means that every audio sample is a float value between -1.0 and 1.0 and that the samples are stored per channel.</p>
+
+<p>Linear PCM, or LPCM is a form of PCM sampling, more information can be found on <a href="http://en.wikipedia.org/wiki/Pulse-code_modulation">this wikipedia page</a>.</p>
+
+<p>You can convert an audio file to the required format by using <code class="language-javascript">WebAudioContext.decodeAudioBuffer(buffer)</code>. The buffer argument is the audio file in <a href="https://developer.mozilla.org/en-US/search?q=arraybuffer">ArrayBuffer</a> format. If you load the audio file via an XMLHttpRequest you have to set the response type to <code class="language-javascript">arraybuffer</code>. The decoding process returns an instance of <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer">AudioBuffer</a>.</p>
+
+<p>An AudioBuffer stores the samples per channel in an <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array">Float32Array</a>. You can easily access the ArrayBuffers of a specific channel with <code class="language-javascript">AudioBuffer.getChannelData(index)</code>. If your file is mono, the maximum channel index is 0. If your file is stereo channel index 0 will retrieve the samples of the left channel and channel index 1 will retrieve the samples of the right channel.</p>
+
+<p><a name="Compressed-audio-vs-uncompressed-audio"></a></p>
+
+<h3>Compressed audio vs uncompressed audio</h3>
+
+<p>A 16-bit wav file stores the audio samples as interleaved 32-bit PCM samples. Interleaved means that the first sample is the first sample of the left channel, the second sample is the first sample of the right channel. Then the third sample is the second sample of the left channel and the fourth sample is second sample of the right channel, and so on. The samples are stored as values between -32,768 and 32,767.</p>
+
+<p>Converting a wav file to the format that the AudioContext requires is quite straightforward; the samples need to be stored in a separate AudioBuffer for each channel, and the value of each sample needs to be remapped to a value between -1.0 and 1.0.</p>
+
+<p>Since the data type of a sample and the number of samples in a wav files is exact the same as in an AudioBuffer, the file size of a wav file is about the same as the memory used by an AudioBuffer once it has been loaded and decoded in your browser.</p>
+
+<p>Converting compressed formats like mp3 and ogg is a bit more complex; whereas a wav file already contains every sample in almost the required format, for mp3 and other compressed formats every sample literally needs to be decoded. For more information about decoding mp3 see <a href="http://blog.bjrn.se/2008/10/lets-build-mp3-decoder.html">this blog</a>.</p>
+
+<p>Therefor decoding compressed formats takes much longer than decoding uncompressed formats. In fact when you decode a wav file, no actual decoding takes place because a wav file actually is a slightly different organized kind of AudioBuffer.</p>
+
+<p>In this <a href="/heartbeat/examples/#!decode_audio_test">example</a> you can see how long it takes to decode a file in wav, ogg and mp3 format. As expected, wav decodes the fastest, then ogg, then mp3. Note that the time it takes to decode a compressed file is also dependent on the used encoder and the encoding settings.</p>
+
+<p>You can find more information about audio and the AudioContext on <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Basic_concepts_behind_Web_Audio_API">this MDN page</a>.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeat/js/prism.js"></script>
+</body>
+</html>
