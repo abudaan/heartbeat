@@ -4,7 +4,7 @@ heartbeat
 
 Heartbeat is a MIDI/Audio sequencer for your browser. Heartbeat has no GUI. It is intended to be used as an engine behind your application. Heartbeat is set up very flexible so you can make any kind of application on top of it; a game, an online DAW, artistic sites, music science experiments and so on. [Read more](http://abudaan.github.io/heartbeat/docs).
 
-So far heartbeat has been used in 2 projects:
+So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) projects:
 - [Groovy](https://musicfirst.com/groovy-music)
 - [Morton Subotnick’s Music Academy](https://musicfirst.com/msma)
 
@@ -13,7 +13,7 @@ So far heartbeat has been used in 2 projects:
 ####key features
 
 
-######MIDI:
+######MIDI
 - create MIDI file from scratch
 - import existing MIDI files
 - save MIDI data to a file (SMF 1.0)
@@ -25,6 +25,7 @@ So far heartbeat has been used in 2 projects:
 - support for tempo and time signature changes
 - multiple songs can be loaded and played back at the same time
 - MIDI data can be shared or moved across songs, tracks and parts very easily
+- import MusicXML files (in progress)
 
 
 ######Audio
@@ -36,7 +37,7 @@ So far heartbeat has been used in 2 projects:
 - transpose audio (experimental)
 
 
-######Instruments:
+######Instruments
 - support for multiple velocity layers
 - support for control change events: sustain pedal, volume and panning
 - sustained instruments (like organ, stings, pads)

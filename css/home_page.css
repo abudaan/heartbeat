@@ -48,7 +48,7 @@ h1{
 h2{
     font-weight: bold;
     font-size: 20px;
-    margin-top: 30px;
+    margin-top: 40px;
     margin-bottom: 20px;
     color: #333;
 }
@@ -56,14 +56,14 @@ h3{
     font-weight: bold;
     font-size: 18px;
     margin-top: 30px;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     color: #333;
 }
 h4{
     font-size: 15px;
     color: #555;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 #logo{
     margin-top: 30px;
@@ -160,4 +160,11 @@ a{
 a.black{
     color: #555;
     text-decoration: underline;
+}
+p.center{
+    font-size: 110%;
+    text-align: center;
+}
+p.center a{
+    /*text-decoration: underline;*/
 }
