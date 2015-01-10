@@ -9007,7 +9007,6 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     function Promise() {
-
     }
 
     Promise.prototype.then = function(accept, reject) {
@@ -9033,7 +9032,7 @@ if (typeof module !== "undefined" && module !== null) {
         this._promise = new Promise();
 
         reader.addEventListener('loadend', function() {
-           // reader.result contains the contents of blob as a typed array
+            // reader.result contains the contents of blob as a typed array
             parse({}, reader.result, function(midifile){
                 _onReady.call(scope, midifile);
             });
@@ -9049,6 +9048,10 @@ if (typeof module !== "undefined" && module !== null) {
                 reader.readAsArrayBuffer(config.blob);
             }else if(config.arraybuffer !== undefined){
                 parse({}, config.arraybuffer, function(midifile){
+                    _onReady.call(scope, midifile);
+                });
+            }else if(config.base64 !== undefined){
+                parse({}, base64ToBinary(config.base64), function(midifile){
                     _onReady.call(scope, midifile);
                 });
             }
