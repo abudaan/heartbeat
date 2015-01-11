@@ -49,7 +49,7 @@ window.onload = function(){
                 url: track + '.wav',
                 responseType: 'arraybuffer'
             }).then(
-                function onSuccess(buffer){
+                function onFulfilled(buffer){
                     console.timeEnd('loading wav took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -63,7 +63,7 @@ window.onload = function(){
                         });
                     },0);
                 },
-                function onError(e){
+                function onRejected(e){
                     console.log(e);
                 }
             );
@@ -80,7 +80,7 @@ window.onload = function(){
                 url: track + '.ogg',
                 responseType: 'arraybuffer'
             }).then(
-                function onSuccess(buffer){
+                function onFulfilled(buffer){
                     console.timeEnd('loading ogg took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -94,7 +94,7 @@ window.onload = function(){
                         });
                     },0);
                 },
-                function onError(e){
+                function onRejected(e){
                     console.log(e);
                 }
             );
@@ -111,7 +111,7 @@ window.onload = function(){
                 url: track + '.mp3',
                 responseType: 'arraybuffer'
             }).then(
-                function onSuccess(buffer){
+                function onFulfilled(buffer){
                     console.timeEnd('loading mp3 took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -125,7 +125,7 @@ window.onload = function(){
                         });
                     },0);
                 },
-                function onError(e){
+                function onRejected(e){
                     console.log(e);
                 }
             );

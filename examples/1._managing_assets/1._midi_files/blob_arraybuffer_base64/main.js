@@ -38,10 +38,10 @@ window.onload = function() {
             request.onload = function() {
                 // createMidiFile returns a Promise
                 sequencer.createMidiFile({blob: request.response}).then(
-                    function success(midifile){
+                    function onFulfilled(midifile){
                         createSong(midifile, 'blob');
                     },
-                    function fail(e){
+                    function onRejected(e){
                         divMessage.textContent = 'error: ' + e;
                     }
                 );
@@ -64,10 +64,10 @@ window.onload = function() {
             request.onload = function() {
                 // createMidiFile returns a Promise
                 sequencer.createMidiFile({arraybuffer: request.response}).then(
-                    function success(midifile){
+                    function onFulfilled(midifile){
                         createSong(midifile, 'arraybuffer');
                     },
-                    function fail(e){
+                    function onRejected(e){
                         divMessage.textContent = 'error: ' + e;
                     }
                 );
@@ -90,10 +90,10 @@ window.onload = function() {
             request.onload = function() {
                 // createMidiFile returns a Promise
                 sequencer.createMidiFile({base64: request.response}).then(
-                    function success(midifile){
+                    function onFulfilled(midifile){
                         createSong(midifile, 'base64');
                     },
-                    function fail(e){
+                    function onRejected(e){
                         divMessage.textContent = 'error: ' + e;
                     }
                 );

@@ -104,8 +104,7 @@ window.onload = function() {
         // createMidiFile returns a Promise
         sequencer.createMidiFile({arraybuffer: reader.result}).then(
 
-            // success
-            function(midifile){
+            function onFullfilled(midifile){
                 if(song){
                     sequencer.deleteSong(song);
                 }
@@ -121,8 +120,7 @@ window.onload = function() {
                 //console.log(sequencer.storage);
             },
 
-            // fail
-            function(e){
+            function onRejected(e){
                 console.log(e);
                 btnLoad.className = '';
                 divDrop.className = 'prompt';
