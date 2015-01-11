@@ -8621,9 +8621,6 @@ if (typeof module !== "undefined" && module !== null) {
         createPart, // defined in part.js
         createMidiEvent, // defined in midi_event.js
 
-        _onError,
-        _onReady,
-
         index = 0,
         MidiFile;
 
@@ -9005,66 +9002,38 @@ if (typeof module !== "undefined" && module !== null) {
     };
 
 
-
-    function Promise() {
-    }
-
-    Promise.prototype.then = function(accept, reject) {
-        this.accept = accept;
-        this.reject = reject;
-    };
-
-    Promise.prototype.succeed = function(data) {
-        if (this.accept)
-            this.accept(data);
-    };
-
-    Promise.prototype.fail = function(error) {
-        if (this.reject)
-            this.reject(error);
-    };
-
-
     function MidiFile2(config){
-        var reader = new FileReader(),
-            scope = this;
+        var reader = new FileReader();
 
-        this._promise = new Promise();
+        function executor(resolve, reject){
 
-        reader.addEventListener('loadend', function() {
-            // reader.result contains the contents of blob as a typed array
-            parse({}, reader.result, function(midifile){
-                _onReady.call(scope, midifile);
+            reader.addEventListener('loadend', function() {
+                // reader.result contains the contents of blob as a typed array
+                parse({}, reader.result, function(midifile){
+                    resolve(midifile);
+                });
             });
-        });
 
-        reader.addEventListener('error', function(e) {
-           _onError.call(scope, e);
-        });
+            reader.addEventListener('error', function(e) {
+               reject(e);
+            });
 
-        // break the thread
-        setTimeout(function(){
             if(config.blob !== undefined){
                 reader.readAsArrayBuffer(config.blob);
             }else if(config.arraybuffer !== undefined){
                 parse({}, config.arraybuffer, function(midifile){
-                    _onReady.call(scope, midifile);
+                    resolve(midifile);
                 });
             }else if(config.base64 !== undefined){
                 parse({}, base64ToBinary(config.base64), function(midifile){
-                    _onReady.call(scope, midifile);
+                    resolve(midifile);
                 });
             }
-        }, 0);
+        }
+
+        this._promise = new Promise(executor);
     }
 
-    _onReady = function(data){
-        this._promise.succeed(data);
-    };
-
-    _onError = function(e){
-        this._promise.fail(e);
-    };
 
     sequencer.createMidiFile = function(config){
         var mf = new MidiFile2(config);
@@ -21444,8 +21413,72 @@ return;
         return thisClass;
     }
 
+    function ajax(config){
+        var
+            request = new XMLHttpRequest(),
+            method = config.method === undefined ? 'GET' : config.method,
+            fileSize, promise;
 
-    function ajax(config) {
+        function executor(resolve, reject){
+
+            reject = reject || function(){};
+            resolve = resolve || function(){};
+
+            request.onload = function(){
+                if(request.status !== 200){
+                    reject(request.status);
+                    return;
+                }
+
+                if(config.responseType === 'json'){
+                    fileSize = request.response.length;
+                    resolve(JSON.parse(request.response), fileSize);
+                }else{
+                    resolve(request.response);
+                }
+            };
+
+            request.onerror = function(e){
+                config.onError(e);
+            };
+
+            request.open(method, config.url, true);
+
+            if(config.overrideMimeType){
+                request.overrideMimeType(config.overrideMimeType);
+            }
+
+            if(config.responseType){
+                if(config.responseType === 'json'){
+                    request.responseType = 'text';
+                }else{
+                    request.responseType = config.responseType;
+                }
+            }
+
+            if(method === 'POST') {
+                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            }
+
+            if(config.data){
+                request.send(config.data);
+            }else{
+                request.send();
+            }
+        }
+
+        promise = new Promise(executor);
+        //console.log(promise);
+
+        if(config.onSuccess !== undefined){
+            promise.then(config.onSuccess, config.onError);
+        }else{
+            return promise;
+        }
+    }
+
+
+    function ajax2(config) {
 
         var request = new XMLHttpRequest(),
             method = config.method === undefined ? 'GET' : config.method,
@@ -22678,6 +22711,7 @@ return;
     sequencer.util.UTF8ArrToStr = UTF8ArrToStr;
     sequencer.util.strToUTF8Arr = strToUTF8Arr;
     sequencer.util.ajax = ajax;
+    sequencer.util.ajax2 = ajax2;
 
 
     //sequencer.findItem = findItem;

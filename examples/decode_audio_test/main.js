@@ -47,11 +47,9 @@ window.onload = function(){
             console.time('loading wav took');
             sequencer.util.ajax({
                 url: track + '.wav',
-                responseType: 'arraybuffer',
-                onError: function(e){
-                    console.log(e);
-                },
-                onSuccess: function(buffer){
+                responseType: 'arraybuffer'
+            }).then(
+                function onSuccess(buffer){
                     console.timeEnd('loading wav took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -64,8 +62,11 @@ window.onload = function(){
                             src.start();
                         });
                     },0);
-                 }
-            });
+                },
+                function onError(e){
+                    console.log(e);
+                }
+            );
         }, false);
 
 
@@ -77,11 +78,9 @@ window.onload = function(){
             console.time('loading ogg took');
             sequencer.util.ajax({
                 url: track + '.ogg',
-                responseType: 'arraybuffer',
-                onError: function(e){
-                    console.log(e);
-                },
-                onSuccess: function(buffer){
+                responseType: 'arraybuffer'
+            }).then(
+                function onSuccess(buffer){
                     console.timeEnd('loading ogg took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -94,8 +93,11 @@ window.onload = function(){
                             src.start();
                         });
                     },0);
+                },
+                function onError(e){
+                    console.log(e);
                 }
-            });
+            );
         }, false);
 
 
@@ -107,11 +109,9 @@ window.onload = function(){
             console.time('loading mp3 took');
             sequencer.util.ajax({
                 url: track + '.mp3',
-                responseType: 'arraybuffer',
-                onError: function(e){
-                    console.log(e);
-                },
-                onSuccess: function(buffer){
+                responseType: 'arraybuffer'
+            }).then(
+                function onSuccess(buffer){
                     console.timeEnd('loading mp3 took');
                     divConsole.innerHTML = '';
                     setTimeout(function(){
@@ -124,8 +124,11 @@ window.onload = function(){
                             src.start();
                         });
                     },0);
+                },
+                function onError(e){
+                    console.log(e);
                 }
-            });
+            );
         }, false);
 
 

@@ -258,8 +258,72 @@
         return thisClass;
     }
 
+    function ajax(config){
+        var
+            request = new XMLHttpRequest(),
+            method = config.method === undefined ? 'GET' : config.method,
+            fileSize, promise;
 
-    function ajax(config) {
+        function executor(resolve, reject){
+
+            reject = reject || function(){};
+            resolve = resolve || function(){};
+
+            request.onload = function(){
+                if(request.status !== 200){
+                    reject(request.status);
+                    return;
+                }
+
+                if(config.responseType === 'json'){
+                    fileSize = request.response.length;
+                    resolve(JSON.parse(request.response), fileSize);
+                }else{
+                    resolve(request.response);
+                }
+            };
+
+            request.onerror = function(e){
+                config.onError(e);
+            };
+
+            request.open(method, config.url, true);
+
+            if(config.overrideMimeType){
+                request.overrideMimeType(config.overrideMimeType);
+            }
+
+            if(config.responseType){
+                if(config.responseType === 'json'){
+                    request.responseType = 'text';
+                }else{
+                    request.responseType = config.responseType;
+                }
+            }
+
+            if(method === 'POST') {
+                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            }
+
+            if(config.data){
+                request.send(config.data);
+            }else{
+                request.send();
+            }
+        }
+
+        promise = new Promise(executor);
+        //console.log(promise);
+
+        if(config.onSuccess !== undefined){
+            promise.then(config.onSuccess, config.onError);
+        }else{
+            return promise;
+        }
+    }
+
+
+    function ajax2(config) {
 
         var request = new XMLHttpRequest(),
             method = config.method === undefined ? 'GET' : config.method,
@@ -1492,6 +1556,7 @@
     sequencer.util.UTF8ArrToStr = UTF8ArrToStr;
     sequencer.util.strToUTF8Arr = strToUTF8Arr;
     sequencer.util.ajax = ajax;
+    sequencer.util.ajax2 = ajax2;
 
 
     //sequencer.findItem = findItem;

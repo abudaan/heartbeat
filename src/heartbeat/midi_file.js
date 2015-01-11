@@ -25,9 +25,6 @@
         createPart, // defined in part.js
         createMidiEvent, // defined in midi_event.js
 
-        _onError,
-        _onReady,
-
         index = 0,
         MidiFile;
 
@@ -409,66 +406,38 @@
     };
 
 
-
-    function Promise() {
-    }
-
-    Promise.prototype.then = function(accept, reject) {
-        this.accept = accept;
-        this.reject = reject;
-    };
-
-    Promise.prototype.succeed = function(data) {
-        if (this.accept)
-            this.accept(data);
-    };
-
-    Promise.prototype.fail = function(error) {
-        if (this.reject)
-            this.reject(error);
-    };
-
-
     function MidiFile2(config){
-        var reader = new FileReader(),
-            scope = this;
+        var reader = new FileReader();
 
-        this._promise = new Promise();
+        function executor(resolve, reject){
 
-        reader.addEventListener('loadend', function() {
-            // reader.result contains the contents of blob as a typed array
-            parse({}, reader.result, function(midifile){
-                _onReady.call(scope, midifile);
+            reader.addEventListener('loadend', function() {
+                // reader.result contains the contents of blob as a typed array
+                parse({}, reader.result, function(midifile){
+                    resolve(midifile);
+                });
             });
-        });
 
-        reader.addEventListener('error', function(e) {
-           _onError.call(scope, e);
-        });
+            reader.addEventListener('error', function(e) {
+               reject(e);
+            });
 
-        // break the thread
-        setTimeout(function(){
             if(config.blob !== undefined){
                 reader.readAsArrayBuffer(config.blob);
             }else if(config.arraybuffer !== undefined){
                 parse({}, config.arraybuffer, function(midifile){
-                    _onReady.call(scope, midifile);
+                    resolve(midifile);
                 });
             }else if(config.base64 !== undefined){
                 parse({}, base64ToBinary(config.base64), function(midifile){
-                    _onReady.call(scope, midifile);
+                    resolve(midifile);
                 });
             }
-        }, 0);
+        }
+
+        this._promise = new Promise(executor);
     }
 
-    _onReady = function(data){
-        this._promise.succeed(data);
-    };
-
-    _onError = function(e){
-        this._promise.fail(e);
-    };
 
     sequencer.createMidiFile = function(config){
         var mf = new MidiFile2(config);
