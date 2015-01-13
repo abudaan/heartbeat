@@ -7,6 +7,9 @@
         sequencer = window.sequencer,
         console = window.console,
 
+        // import
+        context, // defined in open_module.js
+
         slice = Array.prototype.slice,
 
         mPow = Math.pow,
@@ -685,6 +688,63 @@
         }
         return true;
     }
+
+
+    function parseSample(id, sample){
+        return new Promise(function(resolve, reject){
+            try{
+                context.decodeAudioData(sample,
+                    function onSuccess(buffer){
+                        resolve({'id': id, 'buffer': buffer});
+                    },
+                    function onError(e){
+                        console.log('error decoding audiodata', id, e);
+                        //reject(e); // don't use reject because we don't want the parent promise to reject
+                        resolve({'id': id, 'buffer': undefined});
+                    }
+                );
+            }catch(e){
+                console.log('error decoding audiodata', id, e);
+                //reject(e);
+                resolve({'id': id, 'buffer': undefined});
+            }
+        });
+    }
+
+
+    function parseSamples(mapping){
+        var key, sample,
+            samples = [],
+            urls = [];
+
+        for(key in mapping){
+            if(mapping.hasOwnProperty(key)){
+                sample = mapping[key];
+                if(sample.indexOf('http://') === -1){
+                    samples.push(parseSample(key, base64ToBinary(sample)));
+                }else{
+                    urls.push(sample);
+                }
+            }
+        }
+
+        return new Promise(function(resolve, reject){
+            Promise.all(samples).then(
+                function onFulfilled(values){
+                    var mapping = {};
+
+                    values.forEach(function(value){
+                        mapping[value.id] = value.buffer;
+                    });
+                    resolve(mapping);
+                },
+                function onRejected(e){
+                    reject(e);
+                }
+            );
+        });
+    }
+
 
     // use xhr.overrideMimeType('text/plain; charset=x-user-defined');
     // all credits: https://github.com/gasman/jasmid
@@ -1548,6 +1608,10 @@
 
     }
 
+    sequencer.protectedScope.addInitMethod(function(){
+        context = sequencer.protectedScope.context;
+    });
+
     // mozilla tools
     sequencer.util.b64ToUint6 = b64ToUint6;
     sequencer.util.base64DecToArr = base64DecToArr;
@@ -1557,6 +1621,7 @@
     sequencer.util.strToUTF8Arr = strToUTF8Arr;
     sequencer.util.ajax = ajax;
     sequencer.util.ajax2 = ajax2;
+    sequencer.util.parseSamples = parseSamples;
 
 
     //sequencer.findItem = findItem;

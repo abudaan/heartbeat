@@ -950,7 +950,7 @@
             config,
             instrument;
 
-        //console.log(arg, type);
+        //console.log(arg, type, arg.className);
 
         if(type === 'object'){
             if(arg.className === 'Instrument'){

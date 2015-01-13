@@ -257,6 +257,7 @@
             track = event.track;
 
             if(
+                track === undefined ||
                 event.mute === true ||
                 event.part.mute === true ||
                 event.track.mute === true ||
@@ -277,6 +278,7 @@
                     // }
                     event.time /= 1000;
                     //console.log('scheduled', event.type, event.time, event.midiNote.id);
+                    //console.log(track.instrument.processEvent);
                     track.instrument.processEvent(event);
                 }else{
                     channel = track.channel;

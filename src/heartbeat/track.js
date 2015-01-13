@@ -1206,12 +1206,14 @@ return;
 
 
     Track.prototype.setInstrument = function(arg){
-        //console.log('Track.setInstrument()', arg, this.name);
+        //console.log('Track.setInstrument()', arg.name, this.name);
         if(arg === '' || arg === undefined || arg === false){
             arg = getDefaultInstrumentConfig(this);
             //console.log('default', arg);
         }
         var instrument = createInstrument(arg);
+
+        //console.log(instrument);
 
         if(instrument === false){
             instrument = createInstrument(getDefaultInstrumentConfig(this));
