@@ -17406,12 +17406,12 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Song.prototype.addEventListener = function(){
-        addEventListener.apply(this, arguments);
+        return addEventListener.apply(this, arguments);
     };
 
 
     Song.prototype.removeEventListener = function(){
-        addEventListener.apply(this, arguments);
+        removeEventListener.apply(this, arguments);
     };
 
 
@@ -18318,25 +18318,26 @@ if (typeof module !== "undefined" && module !== null) {
 
 }());(function(){
 
-	'use strict';
+    'use strict';
 
-	var
+    var
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
-        AP = Array.prototype,
+        slice = Array.prototype.slice,
 
-        supportedEvents = 'play stop pause end loop record_start record_stop recorded_events, latency_adjusted, sustain_pedal',
+        // import
+        typeString, // defined in util.js
         listenerIndex = 0,
 
         addEventListener,
         removeEventListener,
-		dispatchEvent;
+        dispatchEvent;
 
 
     dispatchEvent = function() {
         var i, tmp, listener,
-            args = AP.slice.call(arguments),
+            args = slice.call(arguments),
             numArgs = args.length,
             song = args[0],
             type = args[1],
@@ -18368,7 +18369,7 @@ if (typeof module !== "undefined" && module !== null) {
     //@param: type, callback
     //@param: type, data, callback
     addEventListener = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             listenerId,
             type = args[0];
 
@@ -18397,15 +18398,19 @@ if (typeof module !== "undefined" && module !== null) {
                 });
                 //console.log(type, listenerId);
                 return listenerId;
-           default:
+            case 'note':
+            case 'event':
+            case 'position':
                 //console.log(type, args[1], args[2]);
                 return this.followEvent.addEventListener(type, args[1], args[2]);
+           default:
+                console.log(type, 'is not a supported event');
         }
     };
 
 
     removeEventListener = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             tmp,
             arg0 = args[0],
             callback = args[1],
@@ -18421,8 +18426,8 @@ if (typeof module !== "undefined" && module !== null) {
             type = arg0;
         }
 
-        // not a transport event, so handled by FollowEvent
-        if(supportedEvents.indexOf(type) === -1){
+        // an array of listener ids is provided so this is not a transport event -> send to FollowEvent
+        if(typeString(type) === 'array'){
             return this.followEvent.removeEventListener(args);
         }
 
@@ -18457,6 +18462,10 @@ if (typeof module !== "undefined" && module !== null) {
                 }
                 this.listeners[type] = [].concat(filteredListeners);
                 break;
+            case 'note':
+            case 'event':
+            case 'position':
+                return this.followEvent.removeEventListener(args);
             default:
                 console.error('unsupported event');
         }
@@ -18468,6 +18477,7 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.protectedScope.songDispatchEvent = dispatchEvent;
 
     sequencer.protectedScope.addInitMethod(function(){
+        typeString = sequencer.protectedScope.typeString;
     });
 
 }());(function(){
@@ -19333,11 +19343,10 @@ if (typeof module !== "undefined" && module !== null) {
             removedListenerIds = [],
             dataType;
 
-        args = Array.prototype.slice.call(args[0]);
+        //console.log(args);
+        //args = Array.prototype.slice.call(args[0]);
         arg0 = args[0];
         numArgs = args.length;
-
-        //console.log(arguments,args);
 
         if(numArgs === 1){
             if(typeString(arg0) === 'array'){
@@ -19414,7 +19423,7 @@ if (typeof module !== "undefined" && module !== null) {
 */
                     }
 
-                    console.log(this.allListenersById,this.allListenersByType);
+                    //console.log(this.allListenersById,this.allListenersByType);
 
                 }else{
                     console.warn('no event listener found with id', id);

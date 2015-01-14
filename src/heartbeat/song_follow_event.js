@@ -861,11 +861,10 @@
             removedListenerIds = [],
             dataType;
 
-        args = Array.prototype.slice.call(args[0]);
+        //console.log(args);
+        //args = Array.prototype.slice.call(args[0]);
         arg0 = args[0];
         numArgs = args.length;
-
-        //console.log(arguments,args);
 
         if(numArgs === 1){
             if(typeString(arg0) === 'array'){
@@ -942,7 +941,7 @@
 */
                     }
 
-                    console.log(this.allListenersById,this.allListenersByType);
+                    //console.log(this.allListenersById,this.allListenersByType);
 
                 }else{
                     console.warn('no event listener found with id', id);

@@ -1,0 +1,13 @@
+#console{
+    width: 80%;
+    max-height: 850px;
+    overflow: auto;
+}
+
+input[type="input"]{
+    height: 20px;
+    width: 300px;
+    padding: 2px;
+    font: monospace;
+    font-size: 14px;
+}

@@ -1036,12 +1036,12 @@
 
 
     Song.prototype.addEventListener = function(){
-        addEventListener.apply(this, arguments);
+        return addEventListener.apply(this, arguments);
     };
 
 
     Song.prototype.removeEventListener = function(){
-        addEventListener.apply(this, arguments);
+        removeEventListener.apply(this, arguments);
     };
 
 

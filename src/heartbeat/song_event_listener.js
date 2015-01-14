@@ -1,24 +1,25 @@
 (function(){
 
-	'use strict';
+    'use strict';
 
-	var
+    var
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
-        AP = Array.prototype,
+        slice = Array.prototype.slice,
 
-        supportedEvents = 'play stop pause end loop record_start record_stop recorded_events, latency_adjusted, sustain_pedal',
+        // import
+        typeString, // defined in util.js
         listenerIndex = 0,
 
         addEventListener,
         removeEventListener,
-		dispatchEvent;
+        dispatchEvent;
 
 
     dispatchEvent = function() {
         var i, tmp, listener,
-            args = AP.slice.call(arguments),
+            args = slice.call(arguments),
             numArgs = args.length,
             song = args[0],
             type = args[1],
@@ -50,7 +51,7 @@
     //@param: type, callback
     //@param: type, data, callback
     addEventListener = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             listenerId,
             type = args[0];
 
@@ -79,15 +80,19 @@
                 });
                 //console.log(type, listenerId);
                 return listenerId;
-           default:
+            case 'note':
+            case 'event':
+            case 'position':
                 //console.log(type, args[1], args[2]);
                 return this.followEvent.addEventListener(type, args[1], args[2]);
+           default:
+                console.log(type, 'is not a supported event');
         }
     };
 
 
     removeEventListener = function(){
-        var args = Array.prototype.slice.call(arguments),
+        var args = slice.call(arguments),
             tmp,
             arg0 = args[0],
             callback = args[1],
@@ -103,8 +108,8 @@
             type = arg0;
         }
 
-        // not a transport event, so handled by FollowEvent
-        if(supportedEvents.indexOf(type) === -1){
+        // an array of listener ids is provided so this is not a transport event -> send to FollowEvent
+        if(typeString(type) === 'array'){
             return this.followEvent.removeEventListener(args);
         }
 
@@ -139,6 +144,10 @@
                 }
                 this.listeners[type] = [].concat(filteredListeners);
                 break;
+            case 'note':
+            case 'event':
+            case 'position':
+                return this.followEvent.removeEventListener(args);
             default:
                 console.error('unsupported event');
         }
@@ -150,6 +159,7 @@
     sequencer.protectedScope.songDispatchEvent = dispatchEvent;
 
     sequencer.protectedScope.addInitMethod(function(){
+        typeString = sequencer.protectedScope.typeString;
     });
 
 }());
