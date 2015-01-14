@@ -15,7 +15,6 @@ window.onload = function(){
         selectTrack = document.getElementById('select_track'),
 
         path = 'http://abumarkub.net/heartbeat/assets/';
-        //path = '../../assets/';
 
 
     // disable ui until sequencer is initialized

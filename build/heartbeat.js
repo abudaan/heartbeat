@@ -22819,6 +22819,7 @@ return;
             try{
                 context.decodeAudioData(sample,
                     function onSuccess(buffer){
+                        //console.log(id, buffer);
                         resolve({'id': id, 'buffer': buffer});
                     },
                     function onError(e){
@@ -22836,24 +22837,37 @@ return;
     }
 
 
+    function loadAndParseSample(id, url){
+        return new Promise(function(resolve, reject){
+            ajax({url: url, responseType: 'arraybuffer'}).then(
+                function onFulfilled(data){
+                    parseSample(id, data).then(resolve, reject);
+                },
+                function onRejected(){
+                    resolve({'id': id, 'buffer': undefined});
+                }
+            );
+        });
+    }
+
+
     function parseSamples(mapping){
         var key, sample,
-            samples = [],
-            urls = [];
+            promises = [];
 
         for(key in mapping){
             if(mapping.hasOwnProperty(key)){
                 sample = mapping[key];
                 if(sample.indexOf('http://') === -1){
-                    samples.push(parseSample(key, base64ToBinary(sample)));
+                    promises.push(parseSample(key, base64ToBinary(sample)));
                 }else{
-                    urls.push(sample);
+                    promises.push(loadAndParseSample(key, sample));
                 }
             }
         }
 
         return new Promise(function(resolve, reject){
-            Promise.all(samples).then(
+            Promise.all(promises).then(
                 function onFulfilled(values){
                     var mapping = {};
 
