@@ -77,16 +77,27 @@
         this.input = context.createGainNode();
         this.input.gain.value = 1;
 
-
         this.output = context.createGainNode();
         this.output.gain.value = this.volume;
+
+///*
         this.panner = createPanner();
         // input to panner
         this.input.connect(this.panner.node);
         // panner to output, and output to song.gain as soon as the track gets added to a song
         this.panner.node.connect(this.output);
-        this.lastEffect = this.input;
+//*/
 
+/*
+        this.panner = context.createPanner();
+        this.panner.panningModel = 'equalpower';
+        this.panner.setPosition(0, 0, 0);
+
+        this.input.connect(this.panner);
+        this.panner.connect(this.output);
+*/
+
+        this.lastEffect = this.input;
 
         this.midiInputs = {};
         this.midiOutputs = {};
@@ -1164,7 +1175,9 @@ return;
             }
         }else{
             this.volume = value;
-            this.output.gain.value = this.volume;
+            //console.log(value);
+            //this.output.gain.value = this.volume; -> this doesn't work which is weird
+            this.input.gain.value = this.volume;
         }
     };
 
