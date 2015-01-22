@@ -355,8 +355,12 @@
             gainNode.gain.value = 0;
             src.connect(gainNode);
             gainNode.connect(context.destination);
-            src.noteOn(0);
-            src.noteOff(0.001);
+            if(src.noteOn !== undefined){
+                src.start = src.noteOn;
+                src.stop = src.noteOff;
+            }
+            src.start(0);
+            src.stop(0.001);
             webaudioUnlocked = true;
         }
 
