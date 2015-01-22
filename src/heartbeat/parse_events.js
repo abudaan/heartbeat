@@ -45,7 +45,7 @@
         numEvents = events.length;
         //console.log('parseEvents', numEvents);
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         getDataFromEvent(song.timeEvents[0]);

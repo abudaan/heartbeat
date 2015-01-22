@@ -43,11 +43,13 @@
             events, event, ticks, tmpTicks, channel,
             parsed, timeEvents, noteNumber, bpm,
             lastNoteOn, lastNoteOff, ppqFactor,
-            type, lastType, lastData1, lastData2;
+            type, lastType, lastData1, lastData2,
+            numNoteOn, numNoteOff, numOther, noteOns, noteOffs;
 
         // buffer is ArrayBuffer, so convert it
         buffer = new Uint8Array(buffer);
         data = parseMidiFile(buffer);
+        //console.log(data);
         //console.log(data.header.ticksPerBeat);
 
         // save some memory
@@ -77,6 +79,11 @@
             track = createTrack();
             parsed = [];
             j = 0;
+            numNoteOn = 0;
+            numNoteOff = 0;
+            numOther = 0;
+            noteOns = {};
+            noteOffs = {};
 
             for(j = 0; j < numEvents; j++){
 
@@ -92,11 +99,19 @@
 
                 type = event.subtype;
 
+                if(type === 'noteOn'){
+                    numNoteOn++;
+                }else if(type === 'noteOff'){
+                    numNoteOff++;
+                }else{
+                    numOther++;
+                }
+
                 switch(event.subtype){
 
                     case 'trackName':
                         track.name = event.text;
-                        //console.log('name', track.name);
+                        //console.log('name', track.name, numTracks);
                         break;
 
                     case 'instrumentName':
@@ -107,28 +122,48 @@
 
                     case 'noteOn':
                         //track.isUseful = true;
+                        /*
                         noteNumber = event.noteNumber;
                         if(tmpTicks === ticks && lastType === type && noteNumber === lastNoteOn){
                             if(sequencer.debug >= 3){
-                                console.info('note on events on the same tick', j, tmpTicks, lastNoteOn);
+                                console.info('note on events on the same tick', j, tmpTicks, noteNumber, lastNoteOn, numTracks, parsed.length);
                             }
-                            parsed.pop();
+                            //parsed.pop();
                         }
                         lastNoteOn = noteNumber;
-                        parsed.push(createMidiEvent(tmpTicks,0x90,noteNumber,event.velocity));
+                        parsed.push(createMidiEvent(tmpTicks, 0x90, noteNumber, event.velocity));
+                        */
+                        /*
+                        noteNumber = event.noteNumber;
+                        if(noteOns[noteNumber] === undefined){
+                            noteOns[noteNumber] = [];
+                        }
+                        noteOns[noteNumber].push(event);
+                        */
+                        parsed.push(createMidiEvent(tmpTicks, 0x90, event.noteNumber, event.velocity));
                         break;
 
                     case 'noteOff':
                         //track.isUseful = true;
+                        /*
                         noteNumber = event.noteNumber;
                         if(tmpTicks === ticks && lastType === type && noteNumber === lastNoteOff){
                             if(sequencer.debug >= 3){
-                                console.info('note off events on the same tick', j, tmpTicks, lastNoteOff);
+                                console.info('note off events on the same tick', j, tmpTicks, noteNumber, lastNoteOff, numTracks, parsed.length);
                             }
-                            parsed.pop();
+                            //parsed.pop();
                         }
                         lastNoteOff = noteNumber;
-                        parsed.push(createMidiEvent(tmpTicks,0x80,noteNumber,event.velocity));
+                        parsed.push(createMidiEvent(tmpTicks, 0x80, noteNumber, event.velocity));
+                        */
+                        /*
+                        noteNumber = event.noteNumber;
+                        if(noteOffs[noteNumber] === undefined){
+                            noteOffs[noteNumber] = [];
+                        }
+                        noteOns[noteNumber].push(event);
+                        */
+                        parsed.push(createMidiEvent(tmpTicks, 0x80, event.noteNumber, event.velocity));
                         break;
 
                     case 'endOfTrack':
@@ -222,6 +257,7 @@
                 ticks = tmpTicks;
             }
 
+            //console.log('NOTE ON', numNoteOn, 'NOTE OFF', numNoteOff, 'OTHER', numOther);
             if(parsed.length > 0){
                 track.addPart(part);
                 part.addEvents(parsed);

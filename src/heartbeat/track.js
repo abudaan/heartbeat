@@ -993,7 +993,7 @@
         });
 
         this.events.sort(function(a,b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
 
@@ -1176,8 +1176,8 @@ return;
         }else{
             this.volume = value;
             //console.log(value);
-            //this.output.gain.value = this.volume; -> this doesn't work which is weird
-            this.input.gain.value = this.volume;
+            //this.output.gain.value = this.volume; //-> this doesn't work which is weird
+            this.input.gain.value = this.volume; // this does work
         }
     };
 

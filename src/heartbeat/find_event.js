@@ -773,7 +773,7 @@
 
 		// put the events back into the right order
 		resultsFiltered.sort(function(a,b){
-			return a.ticks - b.ticks;
+			return a.sortIndex - b.sortIndex;
 		});
 
 		return resultsFiltered;

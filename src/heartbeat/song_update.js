@@ -240,7 +240,7 @@
         }
 
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         notes.sort(function(a, b){
@@ -326,12 +326,12 @@
 
         eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
         eventsMidiAudioMetronome.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         eventsMidiTime = [].concat(events, song.timeEvents);
         eventsMidiTime.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
@@ -446,7 +446,7 @@
 
         events = events.concat(song.events);
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
         //console.log(1,song.allEvents.length);
         song.eventsMidiAudioMetronome = [].concat(events);
@@ -575,6 +575,7 @@
     }
 
 
+    // not in use!
     function sortEvents(events){
         var maxi = events.length,
             i, event, lastTick = -100000,

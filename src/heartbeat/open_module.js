@@ -10,6 +10,7 @@
         protectedScope,
         initMethods = [],
 
+        webaudioUnlocked = true,
         src,
         context,
         gainNode,
@@ -25,6 +26,7 @@
 
     if(ua.match(/(iPad|iPhone|iPod)/g)){
         os = 'ios';
+        webaudioUnlocked = false;
     }else if(ua.indexOf('Android') !== -1){
         os = 'android';
     }else if(ua.indexOf('Linux') !== -1){
@@ -341,7 +343,23 @@
                     compressor[param].value = cfg[param];
                 }
             }
+        },
+
+        unlockWebAudio: function(){
+            if(webaudioUnlocked === true){
+                //console.log('already unlocked');
+                return;
+            }
+            var src = context.createOscillator(),
+                gainNode = context.createGainNode();
+            gainNode.gain.value = 0;
+            src.connect(gainNode);
+            gainNode.connect(context.destination);
+            src.noteOn(0);
+            src.noteOff(0.001);
+            webaudioUnlocked = true;
         }
+
 
     };
 

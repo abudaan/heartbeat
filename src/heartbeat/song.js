@@ -318,6 +318,7 @@
 
 
     addTracks = function(newTracks, song){
+        //console.log('addTracks');
         var tracksById = song.tracksById,
             tracksByName = song.tracksByName,
             addedIds = [],
@@ -328,6 +329,7 @@
             if(track === false){
                 continue;
             }
+            //console.log(track.song);
             if(track.song !== undefined && track.song !== null){
                 track = track.copy();
             }
@@ -531,6 +533,7 @@
 
 
     Song.prototype.play = function() {
+        sequencer.unlockWebAudio();
         var song, playstart;
 
         //console.log(this.playing);

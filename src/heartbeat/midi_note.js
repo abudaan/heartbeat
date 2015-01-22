@@ -105,6 +105,10 @@
 
 
     MidiNote.prototype.addNoteOff = function(off){
+        if(this.noteOff !== undefined){
+            console.log(off.ticks, off.noteNumber, this.id, 'override note off event');
+            this.noteOff.midiNote = undefined;
+        }
         var on = this.noteOn;
         off.midiNote = this;
         this.endless = false;

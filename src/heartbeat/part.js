@@ -550,9 +550,11 @@
     Part.prototype.update = function(){
         //console.log('part update');
 
-        var i, maxi, j, maxj, id, event, noteNumber, note, noteOns,
+        var i, maxi, j, maxj, id, event, noteNumber, note, onEvents, onEvent,
             firstEvent, lastEvent, stats,
             noteOnEvents = [],
+            notes = [],
+            numNotes = 0,
             part = this,
             partId = this.id,
             track = this.track,
@@ -582,7 +584,7 @@
         }
 
         this.events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
 
@@ -599,6 +601,7 @@
             }
         }
 
+        //console.log('part', this.events.length);
 
         for(i = 0, maxi = this.events.length; i < maxi; i++){
             event = this.events[i];
@@ -606,10 +609,16 @@
 
             if(event.type === sequencer.NOTE_ON){
                 if(event.midiNote === undefined){
+
+                    /*
                     if(noteOnEvents[noteNumber] === undefined){
                         noteOnEvents[noteNumber] = [];
                     }
                     noteOnEvents[noteNumber].push(event);
+                    */
+
+
+                    //console.log(i, 'NOTE_ON', event.eventNumber, noteNumber, noteOnEvents[noteNumber]);
                     note = createMidiNote(event);
                     note.part = part;
                     note.partId = partId;
@@ -618,16 +627,74 @@
                     note.state = 'new';
                     this.notesById[note.id] = note;
                     this.dirtyNotes[note.id] = note;
+                    if(notes[noteNumber] === undefined){
+                        notes[noteNumber] = [];
+                    }
+                    notes[noteNumber].push(note);
+                    //console.log('create note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks);
                 }
             }else if(event.type === sequencer.NOTE_OFF){
+                //console.log(event.midiNote);
                 if(event.midiNote === undefined){
-                    noteOns = noteOnEvents[noteNumber];
-                    if(noteOns){
-                        note = noteOns.shift();
-                        if(note && note.midiNote){
-                            note.state = 'changed';
-                            this.dirtyNotes[note.midiNote.id] = note.midiNote;
-                            note.midiNote.addNoteOff(event);
+                    if(notes[noteNumber] === undefined){
+                        //console.log('no note!', noteNumber);
+                        continue;
+                    }
+
+                    var l = notes[noteNumber].length - 1;
+                    note = notes[noteNumber][l];
+                    if(note.noteOff !== undefined && note.durationTicks > 0){
+                        //console.log('has already a note off event!', noteNumber, note.durationTicks, note.noteOff.ticks, event.ticks);
+                        continue;
+                    }
+/*
+                    // get the lastly added note
+                    var l = notes[noteNumber].length - 1;
+                    var t = 0;
+                    note = null;
+
+                    while(t <= l){
+                        note = notes[noteNumber][t];
+                        if(note.noteOff === undefined){
+                            break;
+                        }
+                        t++
+                    }
+*/
+                    if(note === null){
+                        continue;
+                    }
+
+                    //console.log('add note off to note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks, 'num note on:', l, 'index:', t);
+                    if(note.noteOn === undefined){
+                        //console.log('no NOTE ON');
+                        continue;
+                    }
+                    if(note.state !== 'new'){
+                        note.state = 'changed';
+                    }
+                    this.dirtyNotes[note.id] = note;
+                    note.addNoteOff(event);
+
+
+                    /*
+                    onEvents = noteOnEvents[noteNumber];
+                    if(onEvents){
+                        onEvent = onEvents.shift();
+                        //console.log(note.midiNote);
+                        if(onEvent && onEvent.midiNote){
+                            note = onEvent.midiNote;
+                            if(note.state !== 'new'){
+                                note.state = 'changed';
+                            }
+                            this.dirtyNotes[note.id] = note;
+                            if(event.ticks - note.noteOn.ticks === 0){
+                                console.log(note.noteOn.ticks, event.ticks);
+                                note.adjusted = true;
+                                //event.ticks += 120;
+                            }
+                            note.addNoteOff(event);
+                            //console.log(i, 'NOTE_OFF', event.midiNote);
                         }
                     }else{
                         maxj = this.notes.length;
@@ -642,7 +709,10 @@
                             }
                         }
                     }
+                    */
+
                 }else if(this.notesById[event.midiNote.id] === undefined){
+                    console.log('not here');
                     // note is recorded and has already a duration
                     note = event.midiNote;
                     //console.log('recorded notes', note.id);
@@ -653,11 +723,14 @@
                     note.trackId = trackId;
                     //this.dirtyNotes[note.id] = note;
                     this.notesById[note.id] = note;
+                }else{
+                    console.log('certainly not here');
                 }
             }
         }
 
         this.notes = [];
+        notes = null;
         for(id in this.notesById){
             if(this.notesById.hasOwnProperty(id)){
                 note = this.notesById[id];

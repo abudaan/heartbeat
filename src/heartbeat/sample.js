@@ -105,7 +105,7 @@
 
     // called on a NOTE ON event
     Sample.prototype.start = function(event){
-        //console.log('NOTE ON', time, velocity);
+        //console.log('NOTE ON', event.velocity, legacy);
         if(this.source !== undefined){
             console.error('this should never happen');
             return;
@@ -128,6 +128,8 @@
             //     console.log(event.offset);
             // }
             this.source.start(event.time, event.offset || 0, event.duration || this.duration);
+            //alert(event.offset + ':' + event.duration);
+            //this.source.start(event.time, 0, 0);
             //this.source.start(event.time);
             //console.log('start', event.time, event.offset, event.duration, sequencer.getTime());
             //console.log('start', time, sequencer.getTime());
@@ -390,6 +392,7 @@
                 this.source.connect(this.panner.node);
                 this.panner.node.connect(this.output);
             }else{
+                //alert(this.source + ':' + this.output.gain.value);
                 this.source.connect(this.output);
             }
         };

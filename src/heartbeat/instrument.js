@@ -589,7 +589,7 @@
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
     Instrument.prototype.processEvent = function(midiEvent){
-        //console.log(midiEvent.type, midiEvent.velocity);
+        //console.log(midiEvent.type + ' : ' + midiEvent.velocity);
         var type = midiEvent.type,
             data1, data2, track, output;
 
@@ -603,8 +603,10 @@
                 if(this.sustainPedalDown === true){
                     midiEvent.sustainPedalDown = true;
                 }
+                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.id);
                 this.stopNote(midiEvent);
             }else{
+                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.noteOff.ticks, midiEvent.midiNote.id);
                 this.playNote(midiEvent);
             }
         }else if(midiEvent.type === 176){
@@ -714,7 +716,7 @@
     Instrument.prototype.stopNote = function(midiEvent){
         if(midiEvent.midiNote === undefined){
             if(sequencer.debug){
-                console.warn('stopNote() no midi note');
+                console.warn('stopNote() no midi note', midiEvent.ticks, midiEvent.noteNumber);
             }
             return;
         }

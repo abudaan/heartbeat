@@ -52,7 +52,7 @@ window.onload = function(){
     });
 
 
-    // load a json file that contains all groovy instruments so we can populate the dropdown menu
+    // load a json file that contains all instruments so we can populate the dropdown menu
     function load(){
         var request = new XMLHttpRequest(),
             url = sequencer.ogg === true ? basePath + '/ir/VS8F.ogg.4.json' : basePath + '/ir/VS8F.mp3.128.json';

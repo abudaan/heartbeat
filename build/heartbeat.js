@@ -928,6 +928,7 @@ if (typeof module !== "undefined" && module !== null) {
         protectedScope,
         initMethods = [],
 
+        webaudioUnlocked = true,
         src,
         context,
         gainNode,
@@ -943,6 +944,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     if(ua.match(/(iPad|iPhone|iPod)/g)){
         os = 'ios';
+        webaudioUnlocked = false;
     }else if(ua.indexOf('Android') !== -1){
         os = 'android';
     }else if(ua.indexOf('Linux') !== -1){
@@ -1259,7 +1261,23 @@ if (typeof module !== "undefined" && module !== null) {
                     compressor[param].value = cfg[param];
                 }
             }
+        },
+
+        unlockWebAudio: function(){
+            if(webaudioUnlocked === true){
+                //console.log('already unlocked');
+                return;
+            }
+            var src = context.createOscillator(),
+                gainNode = context.createGainNode();
+            gainNode.gain.value = 0;
+            src.connect(gainNode);
+            gainNode.connect(context.destination);
+            src.noteOn(0);
+            src.noteOff(0.001);
+            webaudioUnlocked = true;
         }
+
 
     };
 
@@ -4526,7 +4544,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 		// put the events back into the right order
 		resultsFiltered.sort(function(a,b){
-			return a.ticks - b.ticks;
+			return a.sortIndex - b.sortIndex;
 		});
 
 		return resultsFiltered;
@@ -5135,7 +5153,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
     Instrument.prototype.processEvent = function(midiEvent){
-        //console.log(midiEvent.type, midiEvent.velocity);
+        //console.log(midiEvent.type + ' : ' + midiEvent.velocity);
         var type = midiEvent.type,
             data1, data2, track, output;
 
@@ -5149,8 +5167,10 @@ if (typeof module !== "undefined" && module !== null) {
                 if(this.sustainPedalDown === true){
                     midiEvent.sustainPedalDown = true;
                 }
+                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.id);
                 this.stopNote(midiEvent);
             }else{
+                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.noteOff.ticks, midiEvent.midiNote.id);
                 this.playNote(midiEvent);
             }
         }else if(midiEvent.type === 176){
@@ -5260,7 +5280,7 @@ if (typeof module !== "undefined" && module !== null) {
     Instrument.prototype.stopNote = function(midiEvent){
         if(midiEvent.midiNote === undefined){
             if(sequencer.debug){
-                console.warn('stopNote() no midi note');
+                console.warn('stopNote() no midi note', midiEvent.ticks, midiEvent.noteNumber);
             }
             return;
         }
@@ -9110,6 +9130,10 @@ if (typeof module !== "undefined" && module !== null) {
             this.channel = data[4] || 'any';
         }
 
+        //this.sortIndex = parseInt(this.type, 10) + parseInt(this.ticks, 10); // note off events come before note on events
+        this.sortIndex = this.type + this.ticks; // note off events come before note on events
+        //console.log(this.sortIndex);
+
         //console.log(this.status, this.type, this.channel);
 
         switch(this.type){
@@ -9595,11 +9619,13 @@ if (typeof module !== "undefined" && module !== null) {
             events, event, ticks, tmpTicks, channel,
             parsed, timeEvents, noteNumber, bpm,
             lastNoteOn, lastNoteOff, ppqFactor,
-            type, lastType, lastData1, lastData2;
+            type, lastType, lastData1, lastData2,
+            numNoteOn, numNoteOff, numOther, noteOns, noteOffs;
 
         // buffer is ArrayBuffer, so convert it
         buffer = new Uint8Array(buffer);
         data = parseMidiFile(buffer);
+        //console.log(data);
         //console.log(data.header.ticksPerBeat);
 
         // save some memory
@@ -9629,6 +9655,11 @@ if (typeof module !== "undefined" && module !== null) {
             track = createTrack();
             parsed = [];
             j = 0;
+            numNoteOn = 0;
+            numNoteOff = 0;
+            numOther = 0;
+            noteOns = {};
+            noteOffs = {};
 
             for(j = 0; j < numEvents; j++){
 
@@ -9644,11 +9675,19 @@ if (typeof module !== "undefined" && module !== null) {
 
                 type = event.subtype;
 
+                if(type === 'noteOn'){
+                    numNoteOn++;
+                }else if(type === 'noteOff'){
+                    numNoteOff++;
+                }else{
+                    numOther++;
+                }
+
                 switch(event.subtype){
 
                     case 'trackName':
                         track.name = event.text;
-                        //console.log('name', track.name);
+                        //console.log('name', track.name, numTracks);
                         break;
 
                     case 'instrumentName':
@@ -9659,28 +9698,48 @@ if (typeof module !== "undefined" && module !== null) {
 
                     case 'noteOn':
                         //track.isUseful = true;
+                        /*
                         noteNumber = event.noteNumber;
                         if(tmpTicks === ticks && lastType === type && noteNumber === lastNoteOn){
                             if(sequencer.debug >= 3){
-                                console.info('note on events on the same tick', j, tmpTicks, lastNoteOn);
+                                console.info('note on events on the same tick', j, tmpTicks, noteNumber, lastNoteOn, numTracks, parsed.length);
                             }
-                            parsed.pop();
+                            //parsed.pop();
                         }
                         lastNoteOn = noteNumber;
-                        parsed.push(createMidiEvent(tmpTicks,0x90,noteNumber,event.velocity));
+                        parsed.push(createMidiEvent(tmpTicks, 0x90, noteNumber, event.velocity));
+                        */
+                        /*
+                        noteNumber = event.noteNumber;
+                        if(noteOns[noteNumber] === undefined){
+                            noteOns[noteNumber] = [];
+                        }
+                        noteOns[noteNumber].push(event);
+                        */
+                        parsed.push(createMidiEvent(tmpTicks, 0x90, event.noteNumber, event.velocity));
                         break;
 
                     case 'noteOff':
                         //track.isUseful = true;
+                        /*
                         noteNumber = event.noteNumber;
                         if(tmpTicks === ticks && lastType === type && noteNumber === lastNoteOff){
                             if(sequencer.debug >= 3){
-                                console.info('note off events on the same tick', j, tmpTicks, lastNoteOff);
+                                console.info('note off events on the same tick', j, tmpTicks, noteNumber, lastNoteOff, numTracks, parsed.length);
                             }
-                            parsed.pop();
+                            //parsed.pop();
                         }
                         lastNoteOff = noteNumber;
-                        parsed.push(createMidiEvent(tmpTicks,0x80,noteNumber,event.velocity));
+                        parsed.push(createMidiEvent(tmpTicks, 0x80, noteNumber, event.velocity));
+                        */
+                        /*
+                        noteNumber = event.noteNumber;
+                        if(noteOffs[noteNumber] === undefined){
+                            noteOffs[noteNumber] = [];
+                        }
+                        noteOns[noteNumber].push(event);
+                        */
+                        parsed.push(createMidiEvent(tmpTicks, 0x80, event.noteNumber, event.velocity));
                         break;
 
                     case 'endOfTrack':
@@ -9774,6 +9833,7 @@ if (typeof module !== "undefined" && module !== null) {
                 ticks = tmpTicks;
             }
 
+            //console.log('NOTE ON', numNoteOn, 'NOTE OFF', numNoteOff, 'OTHER', numOther);
             if(parsed.length > 0){
                 track.addPart(part);
                 part.addEvents(parsed);
@@ -10118,6 +10178,10 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     MidiNote.prototype.addNoteOff = function(off){
+        if(this.noteOff !== undefined){
+            console.log(off.ticks, off.noteNumber, this.id, 'override note off event');
+            this.noteOff.midiNote = undefined;
+        }
         var on = this.noteOn;
         off.midiNote = this;
         this.endless = false;
@@ -10330,9 +10394,9 @@ if (typeof module !== "undefined" && module !== null) {
                         event.data = stream.read(length);
                         return event;
                     default:
-                        if(sequencer.debug >= 2){
-                            console.warn('Unrecognised meta event subtype: ' + subtypeByte);
-                        }
+                        //if(sequencer.debug >= 2){
+                        //    console.warn('Unrecognised meta event subtype: ' + subtypeByte);
+                        //}
                         event.subtype = 'unknown';
                         event.data = stream.read(length);
                         return event;
@@ -12213,7 +12277,7 @@ if (typeof module !== "undefined" && module !== null) {
         numEvents = events.length;
         //console.log('parseEvents', numEvents);
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         getDataFromEvent(song.timeEvents[0]);
@@ -13275,9 +13339,11 @@ if (typeof module !== "undefined" && module !== null) {
     Part.prototype.update = function(){
         //console.log('part update');
 
-        var i, maxi, j, maxj, id, event, noteNumber, note, noteOns,
+        var i, maxi, j, maxj, id, event, noteNumber, note, onEvents, onEvent,
             firstEvent, lastEvent, stats,
             noteOnEvents = [],
+            notes = [],
+            numNotes = 0,
             part = this,
             partId = this.id,
             track = this.track,
@@ -13307,7 +13373,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         this.events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
 
@@ -13324,6 +13390,7 @@ if (typeof module !== "undefined" && module !== null) {
             }
         }
 
+        //console.log('part', this.events.length);
 
         for(i = 0, maxi = this.events.length; i < maxi; i++){
             event = this.events[i];
@@ -13331,10 +13398,16 @@ if (typeof module !== "undefined" && module !== null) {
 
             if(event.type === sequencer.NOTE_ON){
                 if(event.midiNote === undefined){
+
+                    /*
                     if(noteOnEvents[noteNumber] === undefined){
                         noteOnEvents[noteNumber] = [];
                     }
                     noteOnEvents[noteNumber].push(event);
+                    */
+
+
+                    //console.log(i, 'NOTE_ON', event.eventNumber, noteNumber, noteOnEvents[noteNumber]);
                     note = createMidiNote(event);
                     note.part = part;
                     note.partId = partId;
@@ -13343,16 +13416,74 @@ if (typeof module !== "undefined" && module !== null) {
                     note.state = 'new';
                     this.notesById[note.id] = note;
                     this.dirtyNotes[note.id] = note;
+                    if(notes[noteNumber] === undefined){
+                        notes[noteNumber] = [];
+                    }
+                    notes[noteNumber].push(note);
+                    //console.log('create note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks);
                 }
             }else if(event.type === sequencer.NOTE_OFF){
+                //console.log(event.midiNote);
                 if(event.midiNote === undefined){
-                    noteOns = noteOnEvents[noteNumber];
-                    if(noteOns){
-                        note = noteOns.shift();
-                        if(note && note.midiNote){
-                            note.state = 'changed';
-                            this.dirtyNotes[note.midiNote.id] = note.midiNote;
-                            note.midiNote.addNoteOff(event);
+                    if(notes[noteNumber] === undefined){
+                        //console.log('no note!', noteNumber);
+                        continue;
+                    }
+
+                    var l = notes[noteNumber].length - 1;
+                    note = notes[noteNumber][l];
+                    if(note.noteOff !== undefined && note.durationTicks > 0){
+                        //console.log('has already a note off event!', noteNumber, note.durationTicks, note.noteOff.ticks, event.ticks);
+                        continue;
+                    }
+/*
+                    // get the lastly added note
+                    var l = notes[noteNumber].length - 1;
+                    var t = 0;
+                    note = null;
+
+                    while(t <= l){
+                        note = notes[noteNumber][t];
+                        if(note.noteOff === undefined){
+                            break;
+                        }
+                        t++
+                    }
+*/
+                    if(note === null){
+                        continue;
+                    }
+
+                    //console.log('add note off to note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks, 'num note on:', l, 'index:', t);
+                    if(note.noteOn === undefined){
+                        //console.log('no NOTE ON');
+                        continue;
+                    }
+                    if(note.state !== 'new'){
+                        note.state = 'changed';
+                    }
+                    this.dirtyNotes[note.id] = note;
+                    note.addNoteOff(event);
+
+
+                    /*
+                    onEvents = noteOnEvents[noteNumber];
+                    if(onEvents){
+                        onEvent = onEvents.shift();
+                        //console.log(note.midiNote);
+                        if(onEvent && onEvent.midiNote){
+                            note = onEvent.midiNote;
+                            if(note.state !== 'new'){
+                                note.state = 'changed';
+                            }
+                            this.dirtyNotes[note.id] = note;
+                            if(event.ticks - note.noteOn.ticks === 0){
+                                console.log(note.noteOn.ticks, event.ticks);
+                                note.adjusted = true;
+                                //event.ticks += 120;
+                            }
+                            note.addNoteOff(event);
+                            //console.log(i, 'NOTE_OFF', event.midiNote);
                         }
                     }else{
                         maxj = this.notes.length;
@@ -13367,7 +13498,10 @@ if (typeof module !== "undefined" && module !== null) {
                             }
                         }
                     }
+                    */
+
                 }else if(this.notesById[event.midiNote.id] === undefined){
+                    console.log('not here');
                     // note is recorded and has already a duration
                     note = event.midiNote;
                     //console.log('recorded notes', note.id);
@@ -13378,11 +13512,14 @@ if (typeof module !== "undefined" && module !== null) {
                     note.trackId = trackId;
                     //this.dirtyNotes[note.id] = note;
                     this.notesById[note.id] = note;
+                }else{
+                    console.log('certainly not here');
                 }
             }
         }
 
         this.notes = [];
+        notes = null;
         for(id in this.notesById){
             if(this.notesById.hasOwnProperty(id)){
                 note = this.notesById[id];
@@ -14519,7 +14656,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     // called on a NOTE ON event
     Sample.prototype.start = function(event){
-        //console.log('NOTE ON', time, velocity);
+        //console.log('NOTE ON', event.velocity, legacy);
         if(this.source !== undefined){
             console.error('this should never happen');
             return;
@@ -14542,6 +14679,8 @@ if (typeof module !== "undefined" && module !== null) {
             //     console.log(event.offset);
             // }
             this.source.start(event.time, event.offset || 0, event.duration || this.duration);
+            //alert(event.offset + ':' + event.duration);
+            //this.source.start(event.time, 0, 0);
             //this.source.start(event.time);
             //console.log('start', event.time, event.offset, event.duration, sequencer.getTime());
             //console.log('start', time, sequencer.getTime());
@@ -14804,6 +14943,7 @@ if (typeof module !== "undefined" && module !== null) {
                 this.source.connect(this.panner.node);
                 this.panner.node.connect(this.output);
             }else{
+                //alert(this.source + ':' + this.output.gain.value);
                 this.source.connect(this.output);
             }
         };
@@ -15479,12 +15619,13 @@ if (typeof module !== "undefined" && module !== null) {
                 // }
                 event.time = this.startTime + event.millis - this.songStartMillis;
 
-                if(event.midiNote !== undefined){
+                if(event.midiNote !== undefined && event.midiNote.noteOff !== undefined){
                     if(event.type === 144){
                         this.notes[event.midiNote.id] = event.midiNote;
                     }else if(event.type === 128){
                         delete this.notes[event.midiNote.id];
                     }
+                    events.push(event);
                 }else if(event.type === 'audio'){
                     if(this.scheduledAudioEvents[event.id] !== undefined){
                         // @TODO: delete the entry in this.scheduledAudioEvents after the sample has finished
@@ -15502,9 +15643,8 @@ if (typeof module !== "undefined" && module !== null) {
                     //console.log('scheduling', event.id);
                     // the scheduling time has to be compensated with the playheadOffset (in millis)
                     event.time = event.time + (event.playheadOffset * 1000);
+                    events.push(event);
                 }
-
-                events.push(event);
                 this.index++;
             }else{
                 break;
@@ -15554,7 +15694,7 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = 0; i < numEvents; i++){
             event = events[i];
             track = event.track;
-
+            //console.log(track);
             if(
                 track === undefined ||
                 event.mute === true ||
@@ -16688,6 +16828,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     addTracks = function(newTracks, song){
+        //console.log('addTracks');
         var tracksById = song.tracksById,
             tracksByName = song.tracksByName,
             addedIds = [],
@@ -16698,6 +16839,7 @@ if (typeof module !== "undefined" && module !== null) {
             if(track === false){
                 continue;
             }
+            //console.log(track.song);
             if(track.song !== undefined && track.song !== null){
                 track = track.copy();
             }
@@ -16901,6 +17043,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Song.prototype.play = function() {
+        sequencer.unlockWebAudio();
         var song, playstart;
 
         //console.log(this.playing);
@@ -20108,7 +20251,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         notes.sort(function(a, b){
@@ -20194,12 +20337,12 @@ if (typeof module !== "undefined" && module !== null) {
 
         eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
         eventsMidiAudioMetronome.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         eventsMidiTime = [].concat(events, song.timeEvents);
         eventsMidiTime.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
@@ -20314,7 +20457,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         events = events.concat(song.events);
         events.sort(function(a, b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
         //console.log(1,song.allEvents.length);
         song.eventsMidiAudioMetronome = [].concat(events);
@@ -20443,6 +20586,7 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
 
+    // not in use!
     function sortEvents(events){
         var maxi = events.length,
             i, event, lastTick = -100000,
@@ -20611,9 +20755,9 @@ if (typeof module !== "undefined" && module !== null) {
 
 ///*
         this.panner = createPanner();
-        //input to panner
+        // input to panner
         this.input.connect(this.panner.node);
-        //panner to output, and output to song.gain as soon as the track gets added to a song
+        // panner to output, and output to song.gain as soon as the track gets added to a song
         this.panner.node.connect(this.output);
 //*/
 
@@ -21522,7 +21666,7 @@ if (typeof module !== "undefined" && module !== null) {
         });
 
         this.events.sort(function(a,b){
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
 
@@ -21705,8 +21849,8 @@ return;
         }else{
             this.volume = value;
             //console.log(value);
-            //this.output.gain.value = this.volume; -> this doesn't work which is weird
-            this.input.gain.value = this.volume;
+            //this.output.gain.value = this.volume; //-> this doesn't work which is weird
+            this.input.gain.value = this.volume; // this does work
         }
     };
 

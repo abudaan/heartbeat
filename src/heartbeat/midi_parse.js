@@ -130,9 +130,9 @@
                         event.data = stream.read(length);
                         return event;
                     default:
-                        if(sequencer.debug >= 2){
-                            console.warn('Unrecognised meta event subtype: ' + subtypeByte);
-                        }
+                        //if(sequencer.debug >= 2){
+                        //    console.warn('Unrecognised meta event subtype: ' + subtypeByte);
+                        //}
                         event.subtype = 'unknown';
                         event.data = stream.read(length);
                         return event;

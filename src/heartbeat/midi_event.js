@@ -104,6 +104,10 @@
             this.channel = data[4] || 'any';
         }
 
+        //this.sortIndex = parseInt(this.type, 10) + parseInt(this.ticks, 10); // note off events come before note on events
+        this.sortIndex = this.type + this.ticks; // note off events come before note on events
+        //console.log(this.sortIndex);
+
         //console.log(this.status, this.type, this.channel);
 
         switch(this.type){
