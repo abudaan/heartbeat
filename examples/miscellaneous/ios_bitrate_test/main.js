@@ -37,6 +37,7 @@ window.onload = function() {
         return;
     }
 
+    divLog.innerHTML = 'AudioContext running at ' + context.sampleRate + 'Hz';
 
 
     // load an mp3
