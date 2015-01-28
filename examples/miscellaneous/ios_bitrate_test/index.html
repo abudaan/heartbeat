@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+
+    <script>
+      // you can remove this in your own code
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'auto');
+        ga('send', 'pageview');
+      }
+    </script>
+
+    <script src="main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+    </head>
+<body>
+    <p>This example shows the possible issues you'll experience on iOS if you use mp3 files with different bitrates.</p>
+    <p>The example loads a 128kbps mp3 of a short loop. You can add convolution reverb by using a 112kpbs mp3 of an impulse response (IR), by using the same IR at a bitrate of 128kbps, or by using the IR in wav format.</p>
+    <p>If you use the 112kbps IR, this sometimes results in a very distorted, crackeled sound, probably caused by the mix of sample rates.</p>
+    <p>It doesn't happen if you use the 128kbps IR which has the same bitrate as the file of the loop, or if you use the IR in wav format.</p>
+    <p>This bug is not documented and possible only temporal, but just to be on the safe side it is best to stick with 1 single bitrate when targeting iOS.</p>
+    <br>
+
+    <input type="button" id="stop" value="stop" disabled>
+    <input type="button" id="without-reverb" value="no reverb" disabled>
+    <input type="button" id="with-reverb-112" value="reverb IR mp3 @ 112kbps" disabled>
+    <input type="button" id="with-reverb-128" value="reverb IR mp3 @ 128kbps" disabled>
+    <input type="button" id="with-reverb-wav" value="reverb IR wav" disabled>
+    <div id="log"></div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="/heartbeat/examples/js/prism.js"></script>
+</body>
+</html>

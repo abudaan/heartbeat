@@ -1,0 +1,38 @@
+#drop-file{
+    width: 200px;
+    height: 100px;
+    line-height: 20px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.hidden{
+    display: none;
+}
+#load{
+    margin-top: 20px;
+}
+.prompt{
+    background-color: #ffffff;
+    border: 1px dotted #1BB2E0;
+    color: #1BB2E0;
+}
+.hover{
+    background-color: #1BB2E0;
+    border: 1px dotted #ffffff;
+    color: #ffffff;
+}
+.processing{
+    background-color: #71DE71;
+    border: 1px dotted #ffffff;
+    color: #ffffff;
+}
+#loaded-midifile{
+    margin-bottom: 10px;
+}
+
+#playhead{
+    width: 80%;
+}

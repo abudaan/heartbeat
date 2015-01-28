@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/docs.css">
+    <script src="/heartbeat/js/open.js"></script>
+    <script src="/heartbeat/js/create_navigation.js"></script>
+    <script src="/heartbeat/js/create_tabs.js"></script>
+    <script src="/heartbeat/js/navigation_items.js"></script>
+    <script src="/heartbeat/js/util.js"></script>
+    <script src="/heartbeat/js/close.js"></script>
+    <script src="/heartbeat/js/main.js"></script>
+    <script>
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+        ga('require', 'displayfeatures');
+        ga('require', 'linkid', 'linkid.js');
+        ga('send', 'pageview');
+      }
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Remarks for iOS</h1>
+
+<p>You can use heartbeat on iOS but there are a few things that you have to know.</p>
+
+<p><a name="Unmute-WebAudio-context"></a></p>
+
+<h3>Unmute WebAudio context</h3>
+
+<p>On iOS the WebAudio context is initially muted and needs to be unmuted by user interaction, for instance when the user clicks on a button or taps on the screen. In the eventlistener of such a user interaction you can unmute the WebAudio context, see <a href="http://paulbakaus.com/tutorials/html5/web-audio-on-ios/">this article</a> of Paul Bakaus for more details.</p>
+
+<p>In heartbeat there is a special function <code class="language-javascript">sequencer.unlockWebAudio()</code>. It is called when you call <code class="language-javascript">song.play()</code>, which means that if you are calling <code class="language-javascript">song.play()</code> in the eventlistener of a user interaction, the WebAudio context will be unmuted automatically and you don't need to worry about anything.</p>
+
+<p>However if you want to start your song by code, you should call <code class="language-javascript">sequencer.unlockWebAudio()</code> on beforehand. This also applies if you call <code class="language-javascript">sequencer.processEvent()</code> by code.</p>
+
+<p><a name="Using-multiple-bitrates"></a></p>
+
+<h3>Using multiple bitrates</h3>
+
+<p>Another issue that you should be aware of is that iOS doesn't seem to like it when you use mp3 files in different bitrates. You should stick to one bitrate for all mp3 files you use in your project. However you can combine mp3 files and wav files. See this <a href="http://abudaan.github.io/heartbeat/examples/#!miscellaneous/ios_bitrate_test">example</a>.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeat/js/prism.js"></script>
+</body>
+</html>
