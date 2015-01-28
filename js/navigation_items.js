@@ -9,7 +9,7 @@
     scope.navigation.main = [
         {label: 'api', hash: 'api', url: prefix + '/api'},
         {label: 'docs', hash: 'docs', url: prefix + '/docs'},
-        {label: 'code', hash:'extern', url: 'https://github.com/abudaan/heartbeat'},
+        {label: 'github', hash:'extern', url: 'https://github.com/abudaan/heartbeat'},
         {label: 'examples', hash: 'examples', url: prefix + '/examples'}
     ];
 
