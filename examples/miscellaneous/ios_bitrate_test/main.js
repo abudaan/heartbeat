@@ -115,7 +115,7 @@ window.onload = function() {
 
         btnStop.addEventListener('click', function(){
             btnStop.disabled = true;
-            divLog.innerHTML = '';
+            divLog.innerHTML = 'AudioContext running at ' + context.sampleRate + 'Hz';
             stopSong();
         });
 
