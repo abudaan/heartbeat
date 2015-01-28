@@ -35,7 +35,8 @@
         {label:'Statistics', hash: 'statistics', url: prefix + '/docs/statistics'},
         {label:'Quantize & fixed length', hash: 'quantize-and-fixed-length', url: prefix + '/docs/quantize-and-fixed-length'},
         {label:'Recording audio', hash: 'recording-audio', url: prefix + '/docs/recording-audio'},
-        {label:'Decoding audio', hash: 'decoding-audio', url: prefix + '/docs/decoding-audio'}
+        {label:'Decoding audio', hash: 'decoding-audio', url: prefix + '/docs/decoding-audio'},
+        {label:'Remarks for iOS', hash: 'remarks-for-ios', url: prefix + '/docs/remarks-for-ios'}
     ];
 
     scope.navigation['tests'] = [];
