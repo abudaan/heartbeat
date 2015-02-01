@@ -38,9 +38,10 @@
         params.push(song);
 
         tmp = song.listeners[type];
-        if(tmp === undefined){
+        if(tmp === undefined || tmp.length === undefined){
             return;
         }
+
         for (i = tmp.length - 1; i >= 0; i--) {
             listener = tmp[i];
             listener.callback.apply(null, params);

@@ -233,7 +233,7 @@
                         lastData2 = event.value;
                         */
                         parsed.push(createMidiEvent(tmpTicks, 0xB0, event.controllerType, event.value));
-                        //console.log('controller:', event.type, event.controllerType, event.value);
+                        //console.log('controller:', tmpTicks, event.type, event.controllerType, event.value);
                         break;
 
                     case 'programChange':

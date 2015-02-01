@@ -180,13 +180,15 @@
                 // }
                 event.time = this.startTime + event.millis - this.songStartMillis;
 
-                if(event.midiNote !== undefined && event.midiNote.noteOff !== undefined){
-                    if(event.type === 144){
-                        this.notes[event.midiNote.id] = event.midiNote;
-                    }else if(event.type === 128){
-                        delete this.notes[event.midiNote.id];
+                if(event.type === 144 || event.type === 128){
+                    if(event.midiNote !== undefined && event.midiNote.noteOff !== undefined){
+                        if(event.type === 144){
+                            this.notes[event.midiNote.id] = event.midiNote;
+                        }else if(event.type === 128){
+                            delete this.notes[event.midiNote.id];
+                        }
+                        events.push(event);
                     }
-                    events.push(event);
                 }else if(event.type === 'audio'){
                     if(this.scheduledAudioEvents[event.id] !== undefined){
                         // @TODO: delete the entry in this.scheduledAudioEvents after the sample has finished
@@ -204,6 +206,9 @@
                     //console.log('scheduling', event.id);
                     // the scheduling time has to be compensated with the playheadOffset (in millis)
                     event.time = event.time + (event.playheadOffset * 1000);
+                    events.push(event);
+                }else{
+                    // controller events
                     events.push(event);
                 }
                 this.index++;

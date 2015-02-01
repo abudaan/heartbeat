@@ -5185,7 +5185,7 @@ if (typeof module !== "undefined" && module !== null) {
                 //console.log(this.sustainPedalDown, data1, data2)
                 if(data2 === 127){
                     this.sustainPedalDown = true;
-                    //console.log('sustain pedal down');
+                    //console.log('sustain pedal down', this.track.song.id);
                     dispatchEvent(this.track.song, 'sustain_pedal', 'down');
                 }else if(data2 === 0){
                     this.sustainPedalDown = false;
@@ -6387,7 +6387,7 @@ if (typeof module !== "undefined" && module !== null) {
             }else{
                 this.playNote(midiEvent);
             }
-        }else if(midiEvent.type === 176){
+        }else if(type === 176){
             //return;
             data1 = midiEvent.data1;
             data2 = midiEvent.data2;
@@ -6395,7 +6395,7 @@ if (typeof module !== "undefined" && module !== null) {
                 //console.log(this.sustainPedalDown, data1, data2)
                 if(data2 === 127){
                     this.sustainPedalDown = true;
-                    //console.log('sustain pedal down');
+                    //console.log('sustain pedal down',this.track.song.id);
                     dispatchEvent(this.track.song, 'sustain_pedal', 'down');
                 }else if(data2 === 0){
                     this.sustainPedalDown = false;
@@ -9813,7 +9813,7 @@ if (typeof module !== "undefined" && module !== null) {
                         lastData2 = event.value;
                         */
                         parsed.push(createMidiEvent(tmpTicks, 0xB0, event.controllerType, event.value));
-                        //console.log('controller:', event.type, event.controllerType, event.value);
+                        //console.log('controller:', tmpTicks, event.type, event.controllerType, event.value);
                         break;
 
                     case 'programChange':
@@ -15623,13 +15623,15 @@ if (typeof module !== "undefined" && module !== null) {
                 // }
                 event.time = this.startTime + event.millis - this.songStartMillis;
 
-                if(event.midiNote !== undefined && event.midiNote.noteOff !== undefined){
-                    if(event.type === 144){
-                        this.notes[event.midiNote.id] = event.midiNote;
-                    }else if(event.type === 128){
-                        delete this.notes[event.midiNote.id];
+                if(event.type === 144 || event.type === 128){
+                    if(event.midiNote !== undefined && event.midiNote.noteOff !== undefined){
+                        if(event.type === 144){
+                            this.notes[event.midiNote.id] = event.midiNote;
+                        }else if(event.type === 128){
+                            delete this.notes[event.midiNote.id];
+                        }
+                        events.push(event);
                     }
-                    events.push(event);
                 }else if(event.type === 'audio'){
                     if(this.scheduledAudioEvents[event.id] !== undefined){
                         // @TODO: delete the entry in this.scheduledAudioEvents after the sample has finished
@@ -15647,6 +15649,9 @@ if (typeof module !== "undefined" && module !== null) {
                     //console.log('scheduling', event.id);
                     // the scheduling time has to be compensated with the playheadOffset (in millis)
                     event.time = event.time + (event.playheadOffset * 1000);
+                    events.push(event);
+                }else{
+                    // controller events
                     events.push(event);
                 }
                 this.index++;
@@ -18503,9 +18508,10 @@ if (typeof module !== "undefined" && module !== null) {
         params.push(song);
 
         tmp = song.listeners[type];
-        if(tmp === undefined){
+        if(tmp === undefined || tmp.length === undefined){
             return;
         }
+
         for (i = tmp.length - 1; i >= 0; i--) {
             listener = tmp[i];
             listener.callback.apply(null, params);

@@ -617,7 +617,7 @@
                 //console.log(this.sustainPedalDown, data1, data2)
                 if(data2 === 127){
                     this.sustainPedalDown = true;
-                    //console.log('sustain pedal down');
+                    //console.log('sustain pedal down', this.track.song.id);
                     dispatchEvent(this.track.song, 'sustain_pedal', 'down');
                 }else if(data2 === 0){
                     this.sustainPedalDown = false;
