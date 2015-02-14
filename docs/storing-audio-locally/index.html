@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/fonts/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/css/docs.css">
+    <script src="/heartbeat/js/open.js"></script>
+    <script src="/heartbeat/js/create_navigation.js"></script>
+    <script src="/heartbeat/js/create_tabs.js"></script>
+    <script src="/heartbeat/js/navigation_items.js"></script>
+    <script src="/heartbeat/js/util.js"></script>
+    <script src="/heartbeat/js/close.js"></script>
+    <script src="/heartbeat/js/main.js"></script>
+    <script>
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'heartbeatjs.org');
+        ga('require', 'displayfeatures');
+        ga('require', 'linkid', 'linkid.js');
+        ga('send', 'pageview');
+      }
+    </script>
+</head>
+<body>
+    <div id='tab_buttons'>
+        <ul>
+            <li id='tab_close' class='tab_active'>&#8593;</li>
+            <li id='tab_properties' class='tab_active'>properties</li>
+            <li id='tab_methods' class='tab_active'>methods</li>
+        </ul>
+    </div>
+    <div id='tab_content'>
+        <div id='tab_column_container'></div>
+    </div>
+    <div id="main">
+        <div id="content">
+<h1>Storing parsed audio locally in an indexedDB</h1>
+
+<p>Loading and parsing the samples of multiple instruments can take quite a while. <a href="http://www.sonicworks.co.uk/">Tim Venison</a> suggested to store samples as parsed audio data locally in an indexedDB. Ideally, we then only have to retrieve the parsed audio data as AudioBuffer instance from the local database and add it as buffer to an AudioBufferSourceNode instance.</p>
+
+<p>Unfortunately that isn't possible because we can't store an AudioBuffer instance in the indexedDB; we have to convert it to something that we can store in the database. I have tested two options:</p>
+
+<ul>
+<li>store only the channel data of the AudioBuffer instance as Float32Array in the database</li>
+<li>convert the AudioBuffer instance to a wav file and store it as Blob in the database</li>
+</ul>
+
+<p>Both options work in all browsers that heartbeat supports, except Chrome for iOS because indexedDB has not yet been implemented in Chrome for iOS.</p>
+
+<p><a name="Option-1"></a></p>
+
+<h3>Option 1</h3>
+
+<p>First we have to get the channel data from the AudioBuffer by using <code class="language-javascript">getChannelData()</code>. This method returns a Float32Array instance per channel containing the samples in float values between -1.0 and 1.0. We can store theses arrays directly in the database.</p>
+
+<p>If we want to playback a sample that is stored this way in the database, we query the channel data from the database and add it as buffer to an AudioBufferSourceNode instance.</p>
+
+<p>In Firefox we can use <code class="language-javascript">AudioBuffer.copyToChannel()</code> which is very fast. Other browsers don't have this method implemented so we have to loop over the channel data and add the samples one by one:</p>
+
+<pre><code class="language-javascript">javascript
+var buffer = context.createBuffer(2, numFrames, context.sampleRate);
+var samplesLeftChannel; // a Float32Array that we retrieved from the database
+var samplesRightChannel; // a Float32Array that we retrieved from the database
+
+if(buffer.copyToChannel !== undefined){
+    // Firefox -> about 50% faster than decoding
+    buffer.copyToChannel(samplesLeftChannel, 0, 0);
+    buffer.copyToChannel(samplesRightChannel, 1, 0);
+}else{
+    // Other browsers -> about 20 - 70% slower than decoding
+    var leftChannel = buffer.getChannelData(0);
+    var rightChannel = buffer.getChannelData(1);
+    var i;
+    for(i = 0; i < numFrames; i++){
+        leftChannel[i] = samplesLeftChannel[i];
+        rightChannel[i] = samplesRightChannel[i];
+    }
+}
+</code></pre>
+
+<p>It isn't possible to add the channel data in a web worker because the Float32Array instances that hold the channel data get copied to a new instance in the web worker. Also when using <a href="http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast">transferable objects</a> you loose reference to the original channel data arrays.</p>
+
+<p>You can test this example and read the code <a href="/heartbeat/examples/#!miscellaneous/store_parsed_audio_locally">here</a>.</p>
+
+<p><a name="Option-2"></a></p>
+
+<h3>Option 2</h3>
+
+<p>For this option we have to convert the AudioBuffer to a wav file. We have to loop over every sample to remap the sample value from a -1.0 to 1.0 range to a -32,768 and 32,767 range, and we have to interleave the samples.</p>
+
+<p>Fortunately we can do this in a web worker. Because it isn't possible to access the database from a web worker, the web worker returns the generated binary wav file as an ArrayBuffer to the main thread where it is stored in the database as a Blob.</p>
+
+<p>Some browsers don't yet support Blobs to be stored in the database. For these browsers we use FileReader to store the Blob as DataURL, which makes storing the Blob a bit slower.</p>
+
+<p>To playback the stored wav, we have to convert the Blob back to an ArrayBuffer using the FileReader. If the wav file was stored as DataURL we have to convert the DataURL back to a Blob before we can pass it to the FileReader.</p>
+
+<p>In browsers that support storing Blobs in the indexedDB (Chrome, Firefox) this method is faster that decoding, and even a bit faster than option 1.</p>
+
+<p>For browsers that don't support storing Blobs (Safari iOS, Chromium) this method is a slower than decoding and slower than option 1.</p>
+
+<p>You can test this example and read the code <a href="/heartbeat/examples/#!miscellaneous/store_parsed_audio_locally_2">here</a>.</p>
+
+<p><a name="Conclusion"></a></p>
+
+<h3>Conclusion</h3>
+
+<p>Both options work but dependent on your target audience you can choose one or the other.</p>
+
+<p>On my iPad 4th generation option 1 is sometimes faster than decoding and sometimes about 30% slower. Option 2 is 200 - 250% slower than decoding. So if your target audience is iOS users, you should choose option 1. Option 1 is also less and simpler code, and uses slightly less database storage.</p>
+
+<p>Option 2 on the other hand is the fastest on Firefox and Chrome, both on desktop and Android. So if your target audience is desktop user and/or Android users, option 2 is the better choice.</p>
+
+<p>Note that probably all browsers will eventually support storing Blobs in an indexedDB and AudioBuffer.copyToChannel, so both options will become faster in browsers that currently don't support these functions.</p>
+        </div><!-- end of div container-->
+    </div><!-- end of div main-->
+    <div id="side">
+        <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+        <nav></nav>
+    </div>
+    <script src="/heartbeat/js/prism.js"></script>
+</body>
+</html>
