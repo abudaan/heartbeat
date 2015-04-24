@@ -6,52 +6,139 @@ window.onload = function(){
         divLog = document.getElementById('log'),
         divInputs = document.getElementById('inputs'),
         divOutputs = document.getElementById('outputs'),
-        inputs,
-        outputs,
-        legacyWebMIDI = false,
+        MIDIAccess,
+        activeInputs = {},
         activeOutputs = {};
 
-    function init(cb){
-        if(navigator.requestMIDIAccess !== undefined){
-            navigator.requestMIDIAccess().then(
-                // on success
-                function midiAccessOnSuccess(midi){
-                    if(typeof midi.inputs === 'function'){
-                        inputs = midi.inputs();
-                        outputs = midi.outputs();
-                        legacyWebMIDI = true;
-                    }else{
-                        inputs = midi.inputs;
-                        outputs = midi.outputs;
-                    }
-                    //console.log(legacyWebMIDI, midi.inputs, midi.addEventListener);
-                    midi.addEventListener('onconnect', function(e){
-                        console.log('device connected', e);
-                    }, false);
 
-                    midi.addEventListener('ondisconnect', function(e){
-                        console.log('device disconnected', e);
-                    }, false);
+    if(navigator.requestMIDIAccess !== undefined){
+        navigator.requestMIDIAccess().then(
 
-                    cb();
-                },
+            function onFulfilled(access, options){
+                MIDIAccess = access;
+                MIDIAccess.onstatechange = function(e){
+                   showMIDIPorts();
+                };
+                showMIDIPorts();
+             },
 
-                // on error
-                function midiAccessOnError(e){
-                    divInputs.innerHTML = 'MIDI could not be initialized:' + e;
-                    divOutputs.innerHTML = '';
-                    cb();
-                }
-            );
-        }
-
-        // browsers without WebMIDI API or Jazz plugin
-        else{
-            divInputs.innerHTML = 'No MIDI I/O';
-            divOutputs.innerHTML = '';
-            cb();
-        }
+            function onRejected(e){
+                divInputs.innerHTML = 'No access to MIDI devices:' + e;
+                divOutputs.innerHTML = '';
+            }
+        );
     }
+
+    // browsers without WebMIDI API or Jazz plugin
+    else{
+        divInputs.innerHTML = 'No access to MIDI devices';
+        divOutputs.innerHTML = '';
+    }
+
+
+    function showMIDIPorts(){
+        var checkbox,
+            checkboxes,
+            inputs, outputs,
+            i, maxi, id, port;
+
+        inputs = MIDIAccess.inputs;
+        divInputs.innerHTML = '';
+        inputs.forEach(function(port){
+            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + '(' + port.state + ', ' +  port.connection + ')</label>';
+            divInputs.innerHTML += checkbox + '<br>';
+        });
+
+
+        outputs = MIDIAccess.outputs;
+        divOutputs.innerHTML = '';
+        outputs.forEach(function(port){
+            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + '(' + port.state + ', ' +  port.connection + ')</label>';
+            divOutputs.innerHTML += checkbox + '<br>';
+        });
+
+        /*
+        ECMA6
+
+        for(port of inputs.values()){
+            checkbox = '<label><input type="checkbox" name="input_' + i + '" value="' + port.id + '">' + port.name + ' ' + port.id + '</label>';
+            divInputs.innerHTML += checkbox + '<br>';
+        }
+
+        for(port of outputs.values()){
+            checkbox = '<label><input type="checkbox" name="output_' + i + '" value="' + port.id + '">' + port.name + ' ' + port.id + '</label>';
+            divOutputs.innerHTML += checkbox + '<br>';
+        }
+        */
+
+        checkboxes = document.querySelectorAll('#inputs input[type="checkbox"]');
+
+        for(i = 0, maxi = checkboxes.length; i < maxi; i++){
+            checkbox = checkboxes[i];
+            checkbox.addEventListener('change', function(){
+                // get port by id
+                id = this.id;
+                port = inputs.get(id);
+                if(this.checked === true){
+                    activeInputs[id] = port;
+                    // implicitly open port by adding a listener
+                    port.onmidimessage = inputListener;
+                }else{
+                    delete activeInputs[id];
+                    port.close();
+                }
+                //console.log(activeInputs);
+            }, false);
+        }
+
+
+        checkboxes = document.querySelectorAll('#outputs input[type="checkbox"]');
+
+        for(i = 0, maxi = checkboxes.length; i < maxi; i++){
+            checkbox = checkboxes[i];
+            checkbox.addEventListener('change', function(){
+                // get port by id
+                id = this.id;
+                port = outputs.get(id);
+                if(this.checked === true){
+                    activeOutputs[id] = port;
+                    port.open();
+                }else{
+                    delete activeOutputs[id];
+                    port.close();
+                }
+            }, false);
+        }
+
+
+        for(id in activeOutputs){
+            if(activeOutputs.hasOwnProperty(id)){
+                if(outputs.has(id)){
+                    checkbox = document.getElementById(id);
+                    checkbox.checked = true;
+                }else{
+                    port = activeOutputs[id];
+                    delete activeOutputs[id];
+                    port.close();
+                }
+            }
+        }
+
+        for(id in activeInputs){
+            if(activeInputs.hasOwnProperty(id)){
+                if(inputs.has(id)){
+                    checkbox = document.getElementById(id);
+                    checkbox.checked = true;
+                }else{
+                    port = activeInputs[id];
+                    delete activeInputs[id];
+                    port.close();
+                }
+            }
+        }
+
+    }
+
 
 
     function inputListener(midimessageEvent){
@@ -72,116 +159,4 @@ window.onload = function(){
         }
     }
 
-
-    init(function(){
-        var checkbox, checkboxes, i, maxi, iterator, data, id, port;
-
-        if(legacyWebMIDI === false){
-
-            // Chrome
-            i = 0;
-            iterator = inputs.entries();
-            while((data = iterator.next()).done === false){
-                //console.log('data', data);
-                id = data.value[0];
-                port = data.value[1];
-                checkbox = '<label><input type="checkbox" name="input_' + i++ + '" value="' + id + '">' + port.name + '</label>';
-                divInputs.innerHTML += checkbox + '<br>';
-            }
-
-            i = 0;
-            iterator = outputs.entries();
-            while((data = iterator.next()).done === false){
-                id = data.value[0];
-                port = data.value[1];
-                checkbox = '<label><input type="checkbox" name="output_' + i++ + '" value="' + id + '">' + port.name + '</label>';
-                divOutputs.innerHTML += checkbox + '<br>';
-            }
-
-            /*
-            ECMA6
-
-            for(port of inputs.values()){
-                checkbox = '<label><input type="checkbox" name="input_' + i + '" value="' + port.id + '">' + port.name + ' ' + port.id + '</label>';
-                divInputs.innerHTML += checkbox + '<br>';
-            }
-
-            for(port of outputs.values()){
-                checkbox = '<label><input type="checkbox" name="output_' + i + '" value="' + port.id + '">' + port.name + ' ' + port.id + '</label>';
-                divOutputs.innerHTML += checkbox + '<br>';
-            }
-            */
-
-            checkboxes = document.querySelectorAll('#inputs input[type="checkbox"]');
-
-            for(i = 0, maxi = checkboxes.length; i < maxi; i++){
-                checkbox = checkboxes[i];
-                checkbox.addEventListener('change', function(){
-                    port = inputs.get(this.value);
-                    if(this.checked === true){
-                        port.addEventListener('midimessage', inputListener);
-                    }else{
-                        port.removeEventListener('midimessage', inputListener);
-                    }
-                }, false);
-            }
-
-
-            checkboxes = document.querySelectorAll('#outputs input[type="checkbox"]');
-
-            for(i = 0, maxi = checkboxes.length; i < maxi; i++){
-                checkbox = checkboxes[i];
-                checkbox.addEventListener('change', function(){
-                    port = outputs.get(this.value);
-                    if(this.checked === true){
-                        activeOutputs[port.name + port.id] = port;
-                    }else{
-                        delete activeOutputs[port.name + port.id];
-                    }
-                }, false);
-            }
-
-        }else{
-
-            //Chromium
-            inputs.forEach(function(input, i){
-                checkbox = '<label><input type="checkbox" name="input_' + i + '" value="' + i + '">' + input.name + ' ' + input.id + '</label>';
-                divInputs.innerHTML += checkbox + '<br>';
-            });
-
-            outputs.forEach(function(output, i){
-                checkbox = '<label><input type="checkbox" name="output_' + i + '" value="' + i + '">' + output.name + ' ' + output.id + '</label>';
-                divOutputs.innerHTML += checkbox + '<br>';
-            });
-
-            checkboxes = document.querySelectorAll('#inputs input[type="checkbox"');
-
-            for(i = 0, maxi = checkboxes.length; i < maxi; i++){
-                checkbox = checkboxes[i];
-                checkbox.addEventListener('change', function(){
-                    port = inputs[this.value];
-                    if(this.checked === true){
-                        port.addEventListener('midimessage', inputListener);
-                    }else{
-                        port.removeEventListener('midimessage', inputListener);
-                    }
-                }, false);
-            }
-
-
-            checkboxes = document.querySelectorAll('#outputs input[type="checkbox"');
-
-            for(i = 0, maxi = checkboxes.length; i < maxi; i++){
-                checkbox = checkboxes[i];
-                checkbox.addEventListener('change', function(){
-                    port = outputs[this.value];
-                    if(this.checked === true){
-                        activeOutputs[port.name + port.id] = port;
-                    }else{
-                        delete activeOutputs[port.name + port.id];
-                    }
-                }, false);
-            }
-        }
-    });
 };
