@@ -65,7 +65,7 @@ window.onload = function(){
             label.setAttribute('for', port.id);
             form.appendChild(label);
             label.appendChild(checkbox);
-            label.innerHTML += port.label;
+            label.innerHTML += port.name;
 
             document.getElementById(checkbox.id).addEventListener('click', function(e){
                 var cb = e.target;

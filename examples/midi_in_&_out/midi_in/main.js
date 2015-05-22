@@ -17,16 +17,19 @@ window.onload = function(){
 
     sequencer.ready(function(){
         // as soon as the sequencer is ready we know if the browser supports ogg and/or mp3
-        url = sequencer.ogg === true ? path + '/sso/strings/violin.ogg.4.json' : path + '/sso/strings/violin.mp3.128.json';
+        //url = sequencer.ogg === true ? path + '/sso/strings/violin.ogg.4.json' : path + '/sso/strings/violin.mp3.128.json';
 
         // load asset pack; this pack contains a violin
-        sequencer.addAssetPack({url: url}, init);
+        //sequencer.addAssetPack({url: url}, init);
+        // load a piano
+        sequencer.addAssetPack({url: path + '/examples/asset_pack_basic.json'}, init);
 
         function init(){
             var track, song;
 
             track = sequencer.createTrack();
-            track.setInstrument('Violin');
+            //track.setInstrument('Violin');
+            track.setInstrument('piano');
             // set monitor to true to route the incoming midi events to the track
             track.monitor = true;
             track.setMidiInput('all');

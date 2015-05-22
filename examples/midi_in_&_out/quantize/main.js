@@ -48,7 +48,7 @@ window.onload = function(){
         track.monitor = true;
         track.setMidiInput('all');
         // enable the track for recording
-        track.recordEnabled = true;
+        track.recordEnabled = 'midi';
         track.setInstrument('piano');
 
         song = sequencer.createSong({
@@ -75,13 +75,15 @@ window.onload = function(){
             sliderPosition.elem.className = 'recording';
         });
 
-        song.addEventListener('record_stop', function(recording){
+        song.addEventListener('record_stop', function(){
             // handle some ui stuff
             sliderPosition.elem.className = '';
             btnStartRecording.value = 'start recording';
             btnDeleteRecording.disabled = false;
             btnQuantize.disabled = false;
+        });
 
+        song.addEventListener('recorded_events', function(recording){
             showRecordedEvents(recording);
             showSongEvents();
         });

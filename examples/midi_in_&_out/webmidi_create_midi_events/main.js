@@ -316,6 +316,7 @@ window.onload = function(){
     function sendMidiEvent(){
         var port, portId;
         //console.log(channel, type, data1, data2);
+        divLog.innerHTML = type + ' ' + data1 + ' ' + data2 + '<br>' + divLog.innerHTML;
 
         for(portId in activeOutputs){
             if(activeOutputs.hasOwnProperty(portId)){

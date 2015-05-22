@@ -1022,7 +1022,7 @@
 
             //console.log(this.config);
             this.name = 'SineWave';
-            this.waveForm = config.wave_form || 0;
+            this.waveForm = config.wave_form || 'sine';
             this.autopan = config.autopan || false;
             this.folder = config.folder || 'heartbeat';
             this.releaseDuration = config.release_duration || 1500;

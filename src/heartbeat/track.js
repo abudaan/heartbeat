@@ -1331,7 +1331,7 @@ return;
 
 
     Track.prototype.prepareForRecording = function(recordId, callback){
-        //console.log('prepare', this.recordEnabled);
+        //console.log('prepare', this.recordEnabled, recordId);
         if(this.recordEnabled !== 'midi' && this.recordEnabled !== 'audio'){
             return;
         }

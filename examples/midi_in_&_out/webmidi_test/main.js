@@ -17,7 +17,8 @@ window.onload = function(){
             function onFulfilled(access, options){
                 MIDIAccess = access;
                 MIDIAccess.onstatechange = function(e){
-                   showMIDIPorts();
+                    console.log('MIDIAccess.statechange', e);
+                    showMIDIPorts();
                 };
                 showMIDIPorts();
              },
@@ -43,17 +44,17 @@ window.onload = function(){
             i, maxi, id, port;
 
         inputs = MIDIAccess.inputs;
-        divInputs.innerHTML = '';
+        divInputs.innerHTML = '<h4>midi inputs:</h4>';
         inputs.forEach(function(port){
-            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + '(' + port.state + ', ' +  port.connection + ')</label>';
+            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + ' (' + port.state + ', ' +  port.connection + ')</label>';
             divInputs.innerHTML += checkbox + '<br>';
         });
 
 
         outputs = MIDIAccess.outputs;
-        divOutputs.innerHTML = '';
+        divOutputs.innerHTML = '<h4>midi outputs:</h4>';
         outputs.forEach(function(port){
-            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + '(' + port.state + ', ' +  port.connection + ')</label>';
+            checkbox = '<label><input type="checkbox" id="' + port.id + '">' + port.name + ' (' + port.state + ', ' +  port.connection + ')</label>';
             divOutputs.innerHTML += checkbox + '<br>';
         });
 
@@ -83,6 +84,13 @@ window.onload = function(){
                     activeInputs[id] = port;
                     // implicitly open port by adding a listener
                     port.onmidimessage = inputListener;
+                    port.open();
+                    // port.addEventListener('midimessage', function(e){
+                    //     inputListener(e);
+                    // });
+                    port.addEventListener('statechange', function(e){
+                        console.log('port.statechange', e);
+                    });
                 }else{
                     delete activeInputs[id];
                     port.close();
@@ -136,7 +144,6 @@ window.onload = function(){
                 }
             }
         }
-
     }
 
 

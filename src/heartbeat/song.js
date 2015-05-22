@@ -692,6 +692,7 @@
 
 
     Song.prototype.startRecording = Song.prototype.record = function(precount){
+        //console.log(this.recording, this.precounting, precount);
         if(this.recording === true || this.precounting === true){
             this.stop();
             return;
@@ -1823,6 +1824,9 @@
     Song.prototype.resetExternalMidiDevices = function(){
         //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
         var time = this.scheduler.lastEventTime + 100;
+        if(isNaN(time)){
+            time  = 100;
+        }
         //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
         objectForEach(this.midiOutputs, function(output){
             //console.log(output);

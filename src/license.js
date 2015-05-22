@@ -1,7 +1,7 @@
 /*
 
 heartbeat
-(c) 2013 - 2014 abudaan
+(c) 2013 - 2015 abudaan
 https://github.com/abudaan/heartbeat/wiki/license
 
 

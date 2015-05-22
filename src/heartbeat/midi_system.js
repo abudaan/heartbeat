@@ -17,14 +17,14 @@
 
         songMidiEventListener,
 
-        midiInputsOrder = [],
-        midiOutputsOrder = [],
+        midiAccess,
+        midiInputsOrder,
+        midiOutputsOrder,
         midiInitialized = false,
         midiEventListenerId = 0;
 
 
     function initMidi(cb){
-        var iterator, data, port, name, doubleNames;
 
         //console.log(midiInitialized, navigator.requestMIDIAccess);
 
@@ -46,113 +46,11 @@
                         sequencer.webmidi = true;
                         sequencer.midi = true;
                     }
-                    iterator = midi.inputs.values();
-                    //console.time('parse ports');
-                    //console.log(ports);
-                    doubleNames = {};
-                    //midiInputsOrder = [];
+                    midiAccess = midi;
+                    midiAccess.onstatechange = getDevices;
+                    getDevices();
+                    //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
 
-                    while((data = iterator.next()).done === false){
-                        port = data.value;
-                        name = port.name;
-                        if(doubleNames[name] === undefined){
-                            doubleNames[name] = [];
-                        }
-                        doubleNames[name].push(port);
-                    }
-
-                    objectForEach(doubleNames, function(obj, name){
-                        var i, port, numPorts = obj.length;
-                        //console.log(numPorts);
-                        if(numPorts === 1){
-                            port = obj[0];
-                            port.label = name;
-                            midiInputsOrder.push({label: port.label, id: port.id});
-                            sequencer.midiInputs[port.id] = port;
-                        }else{
-                            for(i = 0; i < numPorts; i++){
-                                port = obj[i];
-                                port.label = name + ' port ' + i;//(i + 1);
-                                //console.log(port.id, port.label, name);
-                                midiInputsOrder.push({label: port.label, id: port.id});
-                                sequencer.midiInputs[port.id] = port;
-                            }
-                        }
-                    });
-
-                    midiInputsOrder.sort(function(a, b){
-                        var nameA = a.label.toLowerCase(),
-                            nameB = b.label.toLowerCase();
-                        if(nameA < nameB){ //sort string ascending
-                            return -1;
-                        }else if (nameA > nameB){
-                            return 1;
-                        }
-                        return 0; //default return value (no sorting)
-                    });
-
-                    sequencer.numMidiInputs = midiInputsOrder.length;
-
-
-
-                    iterator = midi.outputs.values();
-                    doubleNames = {};
-                    //midiOutputsOrder = [];
-
-                    while((data = iterator.next()).done === false){
-                        port = data.value;
-                        name = port.name;
-                        if(doubleNames[name] === undefined){
-                            doubleNames[name] = [];
-                        }
-                        doubleNames[name].push(port);
-                    }
-
-                    objectForEach(doubleNames, function(obj, name){
-                        var i, port, numPorts = obj.length;
-                        //console.log(numPorts);
-                        if(numPorts === 1){
-                            port = obj[0];
-                            port.label = name;
-                            midiOutputsOrder.push({label: port.label, id: port.id});
-                            sequencer.midiOutputs[port.id] = port;
-                        }else{
-                            for(i = 0; i < numPorts; i++){
-                                port = obj[i];
-                                port.label = name + ' port ' + i;//(i + 1);
-                                //console.log(port.id, port.label, name);
-                                midiOutputsOrder.push({label: port.label, id: port.id});
-                                sequencer.midiOutputs[port.id] = port;
-                            }
-                        }
-                    });
-
-                    midiOutputsOrder.sort(function(a, b){
-                        var nameA = a.label.toLowerCase(),
-                            nameB = b.label.toLowerCase();
-                        if(nameA < nameB){ //sort string ascending
-                            return -1;
-                        }else if (nameA > nameB){
-                            return 1;
-                        }
-                        return 0; //default return value (no sorting)
-                    });
-
-                    sequencer.numMidiOutputs = midiOutputsOrder.length;
-
-                    //console.log(sequencer.midiInputs, sequencer.midiOutputs);
-                    //console.log(midiInputsOrder, midiOutputsOrder);
-                    //console.timeEnd('parse ports');
-/*
-                    // onconnect and ondisconnect are not yet implemented in Chrome and Chromium
-                    midi.addEventListener('onconnect', function(e){
-                        console.log('device connected', e);
-                    }, false);
-
-                    midi.addEventListener('ondisconnect', function(e){
-                        console.log('device disconnected', e);
-                    }, false);
-*/
                     cb();
                 },
                 // on error
@@ -173,6 +71,56 @@
     }
 
 
+    function getDevices(e){
+        //console.log('getDevices', e);
+        var inputs, outputs;
+        midiInputsOrder = [];
+        midiOutputsOrder = [];
+
+        inputs = midiAccess.inputs;
+
+        inputs.forEach(function(input){
+            midiInputsOrder.push({name: input.name, id: input.id});
+            sequencer.midiInputs[input.id] = input;
+        });
+
+        midiInputsOrder.sort(function(a, b){
+            var nameA = a.name.toLowerCase(),
+                nameB = b.name.toLowerCase();
+            if(nameA < nameB){ //sort string ascending
+                return -1;
+            }else if (nameA > nameB){
+                return 1;
+            }
+            return 0; //default return value (no sorting)
+        });
+
+        sequencer.numMidiInputs = midiInputsOrder.length;
+
+
+        outputs = midiAccess.outputs;
+
+        outputs.forEach(function(output){
+            midiOutputsOrder.push({name: output.name, id: output.id});
+            sequencer.midiOutputs[output.id] = output;
+        });
+
+
+        midiOutputsOrder.sort(function(a, b){
+            var nameA = a.name.toLowerCase(),
+                nameB = b.name.toLowerCase();
+            if(nameA < nameB){ //sort string ascending
+                return -1;
+            }else if (nameA > nameB){
+                return 1;
+            }
+            return 0; //default return value (no sorting)
+        });
+
+        sequencer.numMidiOutputs = midiOutputsOrder.length;
+    }
+
+
     function initMidiSong(song){
         songMidiEventListener = function(e){
             //console.log(e);
@@ -181,7 +129,8 @@
 
         // by default a song listens to all available midi-in ports
         objectForEach(sequencer.midiInputs, function(port){
-            port.addEventListener('midimessage', songMidiEventListener);
+            //port.addEventListener('midimessage', songMidiEventListener, false);
+            port.onmidimessage = songMidiEventListener;
             song.midiInputs[port.id] = port;
             //console.log(port);
         });
@@ -213,11 +162,13 @@
 
         if(flag === false){
             delete song.midiInputs[id];
-            input.removeEventListener('midimessage', songMidiEventListener);
+            //input.removeEventListener('midimessage', songMidiEventListener, false);
+            input.onmidimessage = null;
             song.numMidiInputs--;
         }else if(input !== undefined){
             song.midiInputs[id] = input;
-            input.addEventListener('midimessage', songMidiEventListener);
+            //input.addEventListener('midimessage', songMidiEventListener, false);
+            input.onmidimessage = songMidiEventListener;
             song.numMidiInputs++;
         }
 
@@ -477,7 +428,7 @@
         objectForEach(ports, function(port){
             option = document.createElement('option');
             option.value = port.id;
-            option.innerHTML = port.label;
+            option.innerHTML = port.name;
             select.appendChild(option);
         });
 

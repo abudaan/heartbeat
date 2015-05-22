@@ -234,8 +234,8 @@
         overrulePPQ: true,
         precision: 3, // means float with precision 3, e.g. 10.437
 
-        midiInputs: [],
-        midiOutputs: [],
+        midiInputs: {},
+        midiOutputs: {},
 /*
         logger: {
             clear: function(){console.log('create a logger first with sequencer.createLogger()');},
