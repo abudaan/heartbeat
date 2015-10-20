@@ -16,6 +16,8 @@
         id = 0,
         context,
 
+        zeroValue = 0.00000000000000001,
+
         createClass, // defined in util.js
         getSample, // defined in instrument_manager.js
 
@@ -160,13 +162,13 @@
         Panner = createClass(Effect, function(config){
             this.node = context.createPanner();
             this.node.panningModel = 'equalpower';
-            this.node.setPosition(0, 0, 0);
+            this.node.setPosition(zeroValue, zeroValue, zeroValue);
         });
 
         Panner2 = createClass(Effect, function(config){
             this.node = context.createPanner();
             this.node.panningModel = 'HRTF';
-            this.node.setPosition(0, 0, 0);
+            this.node.setPosition(zeroValue, zeroValue, zeroValue);
         });
 
         Delay = createClass(Effect, function(config){
@@ -196,21 +198,31 @@
 
         Panner.prototype.setPosition = function(value){
             var x = value,
+                y = 0,
                 z = 1 - Math.abs(x);
-            this.node.setPosition(x, 0, z);
-            //console.log(x,z);
+
+            x = x === 0 ? zeroValue : x;
+            y = y === 0 ? zeroValue : y;
+            z = z === 0 ? zeroValue : z;
+            this.node.setPosition(x, y, z);
+            //console.log(1,x,y,z);
         };
 
         Panner2.prototype.setPosition = function(value){
             var xDeg = parseInt(value),
                 zDeg = xDeg + 90,
-                x, z;
+                x, y, z;
             if (zDeg > 90) {
                 zDeg = 180 - zDeg;
             }
             x = Math.sin(xDeg * (Math.PI / 180));
+            y = 0;
             z = Math.sin(zDeg * (Math.PI / 180));
-            this.node.setPosition(x, 0, z);
+            x = x === 0 ? zeroValue : x;
+            y = y === 0 ? zeroValue : y;
+            z = z === 0 ? zeroValue : z;
+            this.node.setPosition(x, y, z);
+            //console.log(2,x,y,z);
         };
 
         Delay.prototype.setTime = function(value){
