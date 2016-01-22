@@ -13,7 +13,7 @@ var
     args = process.argv,
 
     files = [
-        'chris-wilson/WebMIDIAPIShim.js',
+        'chris-wilson/WebMIDIAPI.js',
         'w3c-polyfill/saveAs.js',
         'heartbeat/open_module.js',
         'heartbeat/asset_manager.js',
@@ -59,6 +59,7 @@ var
         'heartbeat/track.js',
         'heartbeat/transpose.js',
         'heartbeat/util.js',
+        'heartbeat/quantize_fixed-length.js',
         'heartbeat/close_module.js'
     ],
     numFiles = files.length,

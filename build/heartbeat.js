@@ -16377,7 +16377,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.panPosition = 0;
             this.autopan = config.autopan || false;
             this.frequency = config.event.frequency;
-            this.waveForm = config.wave_form || 0;
+            this.waveForm = config.wave_form || 0;//'sine';
             this.releaseDuration = config.release_duration/1000 || 1.5;
             this.releaseEnvelope = config.release_envelope || 'equal power';
             //console.log(config);
