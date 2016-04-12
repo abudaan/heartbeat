@@ -18573,8 +18573,9 @@ if (typeof module !== "undefined" && module !== null) {
 
         song = this;
 
-            song.playhead.update('millis', 0);
-            song.followEvent.update();
+        // fixes bug: when an event listener is added to a midi note, the listener sometimes misses the first note
+        song.playhead.update('millis', 0);
+        song.followEvent.update();
 
         repetitiveTasks[this.id] = function(){
             pulse(song);
