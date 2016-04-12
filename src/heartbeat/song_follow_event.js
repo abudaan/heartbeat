@@ -187,7 +187,7 @@
         //call event listeners registered to specific midi events
         for(i = 0; i < numEvents; i++){
             event = events[i];
-            //console.log(event.ticks);
+            //console.log(event, event.ticks);
             this.callEventListeners(event.id, event);
         }
 

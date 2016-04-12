@@ -18570,7 +18570,12 @@ if (typeof module !== "undefined" && module !== null) {
 
         // make first call right after setting a time stamp to avoid delay
         //pulse(this);
+
         song = this;
+
+            song.playhead.update('millis', 0);
+            song.followEvent.update();
+
         repetitiveTasks[this.id] = function(){
             pulse(song);
         };
@@ -20279,7 +20284,7 @@ if (typeof module !== "undefined" && module !== null) {
         //call event listeners registered to specific midi events
         for(i = 0; i < numEvents; i++){
             event = events[i];
-            //console.log(event.ticks);
+            //console.log(event, event.ticks);
             this.callEventListeners(event.id, event);
         }
 
