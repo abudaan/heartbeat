@@ -132,6 +132,7 @@
 
 
     Metronome.prototype.update = function(startBar, endBar){
+        //console.time('metronome update')
         if(startBar === 0){
             startBar = 1;
         }
@@ -142,6 +143,7 @@
         }else{
             this.init('update', 1, this.song.bars);
         }
+        //console.timeEnd('metronome update')
 
         //this.allNotesOff();
         //this.song.scheduler.updateSong();

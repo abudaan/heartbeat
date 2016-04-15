@@ -261,6 +261,7 @@
             event = events[i];
             track = event.track;
             //console.log(track);
+            //console.log(event.ticks, event.track.type)
             if(
                 track === undefined ||
                 event.mute === true ||

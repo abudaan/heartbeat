@@ -10333,6 +10333,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Metronome.prototype.update = function(startBar, endBar){
+        //console.time('metronome update')
         if(startBar === 0){
             startBar = 1;
         }
@@ -10343,6 +10344,7 @@ if (typeof module !== "undefined" && module !== null) {
         }else{
             this.init('update', 1, this.song.bars);
         }
+        //console.timeEnd('metronome update')
 
         //this.allNotesOff();
         //this.song.scheduler.updateSong();
@@ -14638,7 +14640,13 @@ if (typeof module !== "undefined" && module !== null) {
 
     Part.prototype.moveEvent = Part.prototype.moveEvents = function(){//events, ticks
         var args = getEventsAndConfig(arguments, this);
+        //console.log(args)
         moveEvents(args, this);
+    };
+
+    Part.prototype.moveAllEvents = function(ticks){//events, ticks
+        //console.log(args)
+        moveEvents({events: this.events, config:[ticks]}, this);
     };
 
 
@@ -17157,6 +17165,7 @@ if (typeof module !== "undefined" && module !== null) {
             event = events[i];
             track = event.track;
             //console.log(track);
+            //console.log(event.ticks, event.track.type)
             if(
                 track === undefined ||
                 event.mute === true ||
@@ -21807,15 +21816,17 @@ if (typeof module !== "undefined" && module !== null) {
         }else if(updateTimeEvents === true){
             song.metronome.update();
         }
-
         eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
         eventsMidiAudioMetronome.sort(function(a, b){
-            return a.sortIndex - b.sortIndex;
+            //return a.sortIndex - b.sortIndex;
+            return a.ticks - b.ticks;
         });
+
 
         eventsMidiTime = [].concat(events, song.timeEvents);
         eventsMidiTime.sort(function(a, b){
-            return a.sortIndex - b.sortIndex;
+            return a.ticks - b.ticks;
+            //return a.sortIndex - b.sortIndex;
         });
 
         song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
@@ -21875,6 +21886,7 @@ if (typeof module !== "undefined" && module !== null) {
                 removedParts: removedParts
             });
         }
+        //console.timeEnd('update song')
     };
 
 
@@ -22768,8 +22780,8 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     Track.prototype.movePartTo = Track.prototype.movePartsTo = function(){//selectedParts, position
-        console.log('movePartTo', arguments);
         var args = getPartsAndConfig(arguments, this);
+        //console.log('movePartTo', args);
         movePartsTo(args, this);
     };
 

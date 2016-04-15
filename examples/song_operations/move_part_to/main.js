@@ -52,11 +52,12 @@ window.onload = function(){
 
 
         divPosition.addEventListener('change', function(){
-            var args = [part, 'barsbeats'];
-            console.log(divPosition.value.split(','))
+            var args = ['barsbeats'];
+            //console.log(divPosition.value.split(','))
             args = args.concat(divPosition.value.split(','));
             //track.movePartTo.apply(null, args);
-            track.movePartTo(part, ['barsbeats', 4, 1, 1, 0]);
+            track.movePartTo(part, args);
+            song.update();
         });
     });
 

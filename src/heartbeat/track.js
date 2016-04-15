@@ -622,8 +622,8 @@
 
 
     Track.prototype.movePartTo = Track.prototype.movePartsTo = function(){//selectedParts, position
-        console.log('movePartTo', arguments);
         var args = getPartsAndConfig(arguments, this);
+        //console.log('movePartTo', args);
         movePartsTo(args, this);
     };
 

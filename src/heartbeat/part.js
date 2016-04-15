@@ -392,7 +392,13 @@
 
     Part.prototype.moveEvent = Part.prototype.moveEvents = function(){//events, ticks
         var args = getEventsAndConfig(arguments, this);
+        //console.log(args)
         moveEvents(args, this);
+    };
+
+    Part.prototype.moveAllEvents = function(ticks){//events, ticks
+        //console.log(args)
+        moveEvents({events: this.events, config:[ticks]}, this);
     };
 
 
