@@ -36,6 +36,7 @@
         addMidiEventListener, // defined in midi_system.js
         removeMidiEventListener, // defined in midi_system.js
         encodeAudio, // defined in audio_encoder.js
+        handleMidiMessageTrack, // defined in midi_system.js
 
 
         findEvent, // → defined in find_event.js
@@ -1556,6 +1557,11 @@ return;
         }
     };
 
+
+    Track.prototype.processMidiEvent = function(event){
+        handleMidiMessageTrack(event, this)
+    }
+
 /*
     Track.prototype.addReverb = function(id, amount){
         var reverb = sequencer.getReverb(id);
@@ -1604,6 +1610,7 @@ return;
         objectForEach = protectedScope.objectForEach;
         typeString = protectedScope.typeString;
         copyName = protectedScope.copyName;
+        handleMidiMessageTrack = protectedScope.handleMidiMessageTrack;
     });
 
 }());

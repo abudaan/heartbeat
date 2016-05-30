@@ -1,0 +1,16 @@
+#loading{
+  color: red;
+}
+div{
+  margin-bottom: 10px;
+}
+#keyboard button{
+  margin-top: 30px;
+  float: left;
+}
+.key-up{
+  color: black;
+}
+.key-down{
+  color: red;
+}

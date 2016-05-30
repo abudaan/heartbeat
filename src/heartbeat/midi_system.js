@@ -520,6 +520,7 @@
     sequencer.protectedScope.getMidiPortsAsDropdown = getMidiPortsAsDropdown;
     sequencer.protectedScope.removeMidiEventListener = removeMidiEventListener;
     sequencer.protectedScope.removeMidiEventListeners = removeMidiEventListeners;
+    sequencer.protectedScope.handleMidiMessageTrack = handleMidiMessageTrack;
 
 }());
 

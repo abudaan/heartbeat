@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>heartbeat</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <script>
+      // you can remove this in your own code
+      if(window.location.hostname === 'abudaan.github.io'){
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-5081547-9', 'auto');
+        ga('send', 'pageview');
+      }
+    </script>
+    <script src="/heartbeat/build/heartbeat.js"></script>
+    <script src="main.js"></script>
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/prism.css">
+    <link rel="stylesheet" type="text/css" href="/heartbeat/examples/css/examples.css">
+    <link rel="stylesheet" type="text/css" href="main.css">
+ </head>
+  <body>
+    <div id="app">
+      <button id="play" disabled>play</button>
+      <button id="pause" disabled>pause</button>
+      <button id="stop" disabled>stop</button>
+      <div class="cf" id="keyboard">
+        <button id='C4' disabled>C</button>
+        <button id='D4' disabled>D</button>
+        <button id='E4' disabled>E</button>
+        <button id='F4' disabled>F</button>
+        <button id='G4' disabled>G</button>
+        <button id='A4' disabled>A</button>
+        <button id='B4' disabled>B</button>
+      </div>
+    </div>
+    <pre class="line-numbers" data-src="main.js"></pre>
+    <script src="/heartbeat/examples/js/prism.js"></script>
+  </body>
+</html>
