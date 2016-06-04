@@ -3,8 +3,9 @@
 var mdFiles = [],
     fs = require('fs'),
     path = require('path'),
+    jsdom = require('jsdom'),
     exec = require('child_process').exec,child,
-    pagedown = require(path.resolve('../site/node_modules/pagedown')),
+    pagedown = require('pagedown'),
     converter = new pagedown.Converter(),
     safeConverter = pagedown.getSanitizingConverter(),
 
@@ -34,6 +35,7 @@ function walk(dir, files, indent){
                     walk(file, files, indent + '_');
                 }else{
                     if(file.indexOf('.md') !== -1){
+                        //console.log(file);
                         files.push(file);
                     }
                 }
@@ -67,7 +69,7 @@ cleanup(0, 2, function(){
 function parse(){
     var i,
         numFiles = mdFiles.length,
-        p,        
+        p,
         name,
         dirName,
         extension,
@@ -83,7 +85,7 @@ function parse(){
         htmlFile = mdFile.replace('site' + path.sep + 'md' + path.sep, '');
         htmlFile = htmlFile.replace('.md', '.html');
         htmlFile = path.resolve(htmlFile);
-        
+
         //console.log(mdFile, htmlFile);
         //console.log(path.extname(htmlFile), path.basename(htmlFile), path.dirname(htmlFile));
 
@@ -93,7 +95,6 @@ function parse(){
 
         fs.mkdirSync(dirName);
         htmlFile = dirName + path.sep + 'index.html';
-        //console.log(htmlFile);
 
         mdData = fs.readFileSync(mdFile);
         mdData = mdData.toString();
@@ -105,6 +106,32 @@ function parse(){
         htmlData += footer;
 
         fs.writeFileSync(htmlFile, htmlData, 'utf-8');
+
+        if(dirName.indexOf('/api/') !== -1){
+            jsdom.env({
+                file: htmlFile,
+                done: function(errors, window){
+                    var document = window.document;
+                    var nodes = document.querySelectorAll('*');
+                    var node, i, maxi = nodes.length;
+                    for(i = 0; i < maxi; i++){
+                        node = nodes[i];
+                        if(node.firstChild !== null){
+                            if(node.firstChild.nodeType === 3){
+                                if(node.firstChild.nodeValue === 'properties'){
+                                    //console.log('properties');
+                                    // add properties to navigation items objects
+                                }else if(node.firstChild.nodeValue === 'methods'){
+                                    //console.log('methods');
+                                    // add methods to navigation items objects
+                                }
+                            }
+                        }
+                    }
+                    //console.log(errors);
+                }
+            })
+        }
     }
 }
 

@@ -140,10 +140,13 @@ function parse(sox, sfz, cfg, callback){
 
 
     if(keyscalingRelease !== true){
+        //console.log(sfz);
         if(config.release_duration !== undefined){
             instrument.release_duration = config.release_duration;
+            //releaseDuration = config.release_duration;
         }else if(sfz.global.ampeg_release !== undefined){
             instrument.release_duration = sfz.global.ampeg_release * 1000;
+            //releaseDuration = sfz.global.ampeg_release * 1000;
         }else{
             for(i = numElements - 1; i >= 0; i--){
                 element = elements[i];
@@ -151,20 +154,20 @@ function parse(sox, sfz, cfg, callback){
                 if(element.type === 'group'){
                     if(element.ampeg_release !== undefined){
                         groups.push({
-                            release: element.ampeg_release
+                            release: element.ampeg_release * 1000
                         });
                         //console.log(element.ampeg_release, element.ampeg_release === undefined);
-                        if(releaseDuration !== undefined && releaseDuration !== element.ampeg_release){
+                        if(releaseDuration !== undefined && releaseDuration !== element.ampeg_release * 1000){
                             // we can't set a release value for the entire instrument so set diff to true
                             diff = true;
                         }else{
-                            releaseDuration = element.ampeg_release;
+                            releaseDuration = element.ampeg_release * 1000;
                         }
                     }
                 }
             }
             if(diff !== true){
-                releaseDuration *= 1000;
+                //releaseDuration *= 1000;
                 instrument.release_duration = releaseDuration;
             }else{
                 releaseDuration = undefined;
@@ -278,7 +281,7 @@ function loopElements(index, callback){
             groupLovel = element.lovel;
             groupHivel = element.hivel;
             if(releaseDuration === undefined){
-                groupRelease = element.ampeg_release;
+                groupRelease = element.ampeg_release * 1000;
             }
             //console.log(releaseDuration, groupRelease);
             //console.log(groupLovel, groupHivel);
@@ -501,6 +504,8 @@ function addToSamplePack(id, base64){
     if(hasSustainLoop !== false){
         samplepack.mapping[id].s = sustainLoop;
     }
+
+    //console.log(groupRelease, releaseDuration);
 
     if(groupRelease !== undefined){
         samplepack.mapping[id].g = groupIndex;
