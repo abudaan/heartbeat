@@ -10,10 +10,10 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 
 
 
-####key features
+#### key features
 
 
-######MIDI
+###### MIDI
 - create MIDI file from scratch
 - import existing MIDI files
 - save MIDI data to a file (SMF 1.0)
@@ -28,7 +28,7 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 - import MusicXML files (in progress)
 
 
-######Audio
+###### Audio
 - volume and panning controller per track
 - volume controller per song and one master volume output with compression
 - channel effects per track: reverb, panning, autopan and more to come
@@ -37,7 +37,7 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 - transpose audio (experimental)
 
 
-######Instruments
+###### Instruments
 - support for multiple velocity layers
 - support for control change events: sustain pedal, volume and panning
 - sustained instruments (like organ, stings, pads)

@@ -4,7 +4,7 @@
     http://abumarkub.net/abublog/?page_id=399#midi-out
 */
 
-window.onload = function(){
+window.onload = function () {
 
     'use strict';
 
@@ -32,9 +32,9 @@ window.onload = function(){
 
         after the loading has completed, the init method is called
     */
-    sequencer.addAssetPack({url: path + '/examples/asset_pack_basic.json'}, init);
+    sequencer.addAssetPack({ url: path + '/examples/asset_pack_basic.json' }, init);
 
-    function init(){
+    function init() {
         var song, midiFile;
 
         // get the midi file from sequencer.storage
@@ -42,7 +42,7 @@ window.onload = function(){
         midiFile.useMetronome = true;
         song = sequencer.createSong(midiFile);
 
-        if(sequencer.midi === false){
+        if (sequencer.midi === false) {
             form.innerHTML = '<div>No MIDI I/O<div>';
             return;
         }
@@ -52,38 +52,39 @@ window.onload = function(){
 
 
         // get all midi outputs from this song
-        song.getMidiOutputs(function(port){
+        song.getMidiOutputs(function (port) {
             var
-            checkbox = document.createElement('input');
+                checkbox = document.createElement('input');
             checkbox.setAttribute('type', 'checkbox');
             checkbox.setAttribute('value', port.id);
             checkbox.id = port.id;
 
             var
-            label = document.createElement('label');
+                label = document.createElement('label');
             label.setAttribute('for', port.id);
             form.appendChild(label);
             label.appendChild(checkbox);
             label.innerHTML += port.name;
 
-            document.getElementById(checkbox.id).addEventListener('click', function(e){
+            document.getElementById(checkbox.id).addEventListener('click', function (e) {
                 var cb = e.target;
-                song.tracks.forEach(function(track){
+                song.tracks.forEach(function (track) {
                     track.setMidiOutput(cb.value, cb.checked);
+                    // track.audioLatency = 300;
                 });
             }, false);
         });
 
 
-        song.setLeftLocator('barsbeats', 2,1,0,0);
-        song.setRightLocator('barsbeats', 4,1,0,0);
+        song.setLeftLocator('barsbeats', 2, 1, 0, 0);
+        song.setRightLocator('barsbeats', 4, 1, 0, 0);
         //song.loop = true;
 
-        btnStart.addEventListener('click', function(e){
+        btnStart.addEventListener('click', function (e) {
             song.play();
         });
 
-        btnStop.addEventListener('click', function(e){
+        btnStop.addEventListener('click', function (e) {
             song.stop();
         });
 
@@ -91,11 +92,11 @@ window.onload = function(){
     }
 
 
-    function enableUI(flag){
+    function enableUI(flag) {
         var elements = document.querySelectorAll('input, select'),
             i, element, maxi = elements.length;
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             element = elements[i];
             element.disabled = !flag;
         }
