@@ -1,6 +1,6 @@
 #!/bin/bash
 files="../src/license.js
-    ../src/chris-wilson/WebMIDIAPI.js
+    ../src/jzz/JZZ.js
     ../src/w3c-polyfill/saveAs.js
     ../src/heartbeat/open_module.js
     ../src/heartbeat/asset_manager.js
