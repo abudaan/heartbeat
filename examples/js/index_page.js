@@ -5,8 +5,10 @@ window.onload = function(){
     var ua = navigator.userAgent;
     if (ua.indexOf('Chrome') === -1) {
       var hash = window.location.hash;
-      window.location = hash.replace('#!','');
-      return;
+      if (hash) {
+        window.location = hash.replace('#!','');
+        return;
+      }
     }
 
     var
