@@ -2,6 +2,13 @@ window.onload = function(){
 
     'use strict';
 
+    var ua = navigator.userAgent;
+    if (ua.indexOf('Chrome') === -1) {
+      var hash = window.location.hash;
+      window.location = hash.replace('#!','');
+      return;
+    }
+
     var
         listItems = document.querySelectorAll('li>span'),
         logo = document.getElementById('logo'),
@@ -163,23 +170,30 @@ window.onload = function(){
             window.alert(message);
         }
 
-        if(browser !== 'Internet Explorer'){
-            for(i = 0; i < numItems; i++){
-                item = listItems[i];
-                item.addEventListener('click', function(){
-                    window.location.hash = '!' + this.parentNode.id.replace(/:/g, '/');
-                }, false);
-            }
-            window.addEventListener('resize', resize, false);
-            window.addEventListener('hashchange', gotoHash, false);
-            gotoHash();
-        }else{
-            listItems = document.querySelectorAll('li');
-            for(i = listItems.length - 1; i >= 0; i--){
-                item = listItems[i];
-                item.className = 'disabled';
-            }
+        for(i = 0; i < numItems; i++){
+          item = listItems[i];
+          item.addEventListener('click', function(){
+              window.location = this.parentNode.id.replace(/:/g, '/');
+          }, false);
         }
+
+        // if(browser !== 'Internet Explorer'){
+        //     for(i = 0; i < numItems; i++){
+        //         item = listItems[i];
+        //         item.addEventListener('click', function(){
+        //             window.location.hash = '!' + this.parentNode.id.replace(/:/g, '/');
+        //         }, false);
+        //     }
+        //     window.addEventListener('resize', resize, false);
+        //     window.addEventListener('hashchange', gotoHash, false);
+        //     gotoHash();
+        // }else{
+        //     listItems = document.querySelectorAll('li');
+        //     for(i = listItems.length - 1; i >= 0; i--){
+        //         item = listItems[i];
+        //         item.className = 'disabled';
+        //     }
+        // }
 
     }());
 };
