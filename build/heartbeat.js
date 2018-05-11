@@ -324,8 +324,6 @@ if (typeof module !== "undefined" && module !== null) {
         browser,
         legacy = false;
 
-    console.log('I am New!');
-
     if(ua.match(/(iPad|iPhone|iPod)/g)){
         os = 'ios';
         // webaudioUnlocked = false;
