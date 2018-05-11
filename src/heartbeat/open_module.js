@@ -10,7 +10,7 @@
         protectedScope,
         initMethods = [],
 
-        webaudioUnlocked = true,
+        webaudioUnlocked = false,
         src,
         context,
         gainNode,
@@ -23,10 +23,9 @@
         browser,
         legacy = false;
 
-
     if(ua.match(/(iPad|iPhone|iPod)/g)){
         os = 'ios';
-        webaudioUnlocked = false;
+        // webaudioUnlocked = false;
     }else if(ua.indexOf('Android') !== -1){
         os = 'android';
     }else if(ua.indexOf('Linux') !== -1){
