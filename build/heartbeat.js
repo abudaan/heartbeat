@@ -369,6 +369,8 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
     //console.log(os, browser, '---', ua);
+    console.log('heartbeat v0.0.2');
+
 
     if(window.AudioContext){
         context = new window.AudioContext();
@@ -649,6 +651,9 @@ if (typeof module !== "undefined" && module !== null) {
             if(webaudioUnlocked === true){
                 //console.log('already unlocked');
                 return;
+            }
+            if(typeof context.resume === 'function'){
+              context.resume();
             }
             var src = context.createOscillator(),
                 gainNode = context.createGainNode();

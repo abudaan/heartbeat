@@ -176,6 +176,7 @@ window.onload = function(){
           item = listItems[i];
           item.addEventListener('click', function(){
               window.location = this.parentNode.id.replace(/:/g, '/');
+              // window.open('http://localhost:8000/examples/' + this.parentNode.id.replace(/:/g, '/'));
           }, false);
         }
 
