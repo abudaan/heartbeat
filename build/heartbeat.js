@@ -13964,27 +13964,33 @@ if (typeof module !== "undefined" && module !== null) {
             values,
             i, maxi;
 
-        //console.log(sample.releaseEnvelope);
-        switch(sample.releaseEnvelope){
+        if(sample.release_duration > 0) {
+          //console.log(sample.releaseEnvelope);
+          try {
+            switch(sample.releaseEnvelope){
 
-            case 'linear':
-                sample.output.gain.linearRampToValueAtTime(sample.volume, now);
-                sample.output.gain.linearRampToValueAtTime(0, now + sample.releaseDuration);
-                break;
+                case 'linear':
+                    sample.output.gain.linearRampToValueAtTime(sample.volume, now);
+                    sample.output.gain.linearRampToValueAtTime(0, now + sample.releaseDuration);
+                    break;
 
-            case 'equal power':
-                values = getEqualPowerCurve(100, 'fadeOut', sample.volume);
-                sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
-                break;
+                case 'equal power':
+                    values = getEqualPowerCurve(100, 'fadeOut', sample.volume);
+                    sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
+                    break;
 
-            case 'array':
-                maxi = sample.releaseEnvelopeArray.length;
-                values = new Float32Array(maxi);
-                for(i = 0; i < maxi; i++){
-                    values[i] = sample.releaseEnvelopeArray[i] * sample.volume;
-                }
-                sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
-                break;
+                case 'array':
+                    maxi = sample.releaseEnvelopeArray.length;
+                    values = new Float32Array(maxi);
+                    for(i = 0; i < maxi; i++){
+                        values[i] = sample.releaseEnvelopeArray[i] * sample.volume;
+                    }
+                    sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
+                    break;
+            }
+          } catch(e) {
+            console.error(sample.id, e);
+          }
         }
     };
 
@@ -17967,19 +17973,21 @@ if (typeof module !== "undefined" && module !== null) {
             case 'loop': // the playhead jumps from the loop end position to the loop start position
             case 'sustain_pedal':
                 tmp = this.listeners[type];
-                for(i = tmp.length - 1; i >= 0; i--){
-                    listener = tmp[i];
-                    // remove by id
-                    if(id !== undefined){
-                        if(listener.id !== id){
-                            filteredListeners.push(listener);
-                        }
-                    // remove by callback
-                    }else if(callback !== undefined && listener.callback !== callback){
-                        filteredListeners.push(listener);
-                    }
+                if (tmp && tmp.length > 0) {
+                  for(i = tmp.length - 1; i >= 0; i--){
+                      listener = tmp[i];
+                      // remove by id
+                      if(id !== undefined){
+                          if(listener.id !== id){
+                              filteredListeners.push(listener);
+                          }
+                      // remove by callback
+                      }else if(callback !== undefined && listener.callback !== callback){
+                          filteredListeners.push(listener);
+                      }
+                  }
+                  this.listeners[type] = [].concat(filteredListeners);
                 }
-                this.listeners[type] = [].concat(filteredListeners);
                 break;
             case 'note':
             case 'event':

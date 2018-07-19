@@ -131,19 +131,21 @@
             case 'loop': // the playhead jumps from the loop end position to the loop start position
             case 'sustain_pedal':
                 tmp = this.listeners[type];
-                for(i = tmp.length - 1; i >= 0; i--){
-                    listener = tmp[i];
-                    // remove by id
-                    if(id !== undefined){
-                        if(listener.id !== id){
-                            filteredListeners.push(listener);
-                        }
-                    // remove by callback
-                    }else if(callback !== undefined && listener.callback !== callback){
-                        filteredListeners.push(listener);
-                    }
+                if (tmp && tmp.length > 0) {
+                  for(i = tmp.length - 1; i >= 0; i--){
+                      listener = tmp[i];
+                      // remove by id
+                      if(id !== undefined){
+                          if(listener.id !== id){
+                              filteredListeners.push(listener);
+                          }
+                      // remove by callback
+                      }else if(callback !== undefined && listener.callback !== callback){
+                          filteredListeners.push(listener);
+                      }
+                  }
+                  this.listeners[type] = [].concat(filteredListeners);
                 }
-                this.listeners[type] = [].concat(filteredListeners);
                 break;
             case 'note':
             case 'event':

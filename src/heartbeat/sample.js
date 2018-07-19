@@ -60,27 +60,33 @@
             values,
             i, maxi;
 
-        //console.log(sample.releaseEnvelope);
-        switch(sample.releaseEnvelope){
+        if(sample.release_duration > 0) {
+          //console.log(sample.releaseEnvelope);
+          try {
+            switch(sample.releaseEnvelope){
 
-            case 'linear':
-                sample.output.gain.linearRampToValueAtTime(sample.volume, now);
-                sample.output.gain.linearRampToValueAtTime(0, now + sample.releaseDuration);
-                break;
+                case 'linear':
+                    sample.output.gain.linearRampToValueAtTime(sample.volume, now);
+                    sample.output.gain.linearRampToValueAtTime(0, now + sample.releaseDuration);
+                    break;
 
-            case 'equal power':
-                values = getEqualPowerCurve(100, 'fadeOut', sample.volume);
-                sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
-                break;
+                case 'equal power':
+                    values = getEqualPowerCurve(100, 'fadeOut', sample.volume);
+                    sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
+                    break;
 
-            case 'array':
-                maxi = sample.releaseEnvelopeArray.length;
-                values = new Float32Array(maxi);
-                for(i = 0; i < maxi; i++){
-                    values[i] = sample.releaseEnvelopeArray[i] * sample.volume;
-                }
-                sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
-                break;
+                case 'array':
+                    maxi = sample.releaseEnvelopeArray.length;
+                    values = new Float32Array(maxi);
+                    for(i = 0; i < maxi; i++){
+                        values[i] = sample.releaseEnvelopeArray[i] * sample.volume;
+                    }
+                    sample.output.gain.setValueCurveAtTime(values, now, sample.releaseDuration);
+                    break;
+            }
+          } catch(e) {
+            console.error(sample.id, e);
+          }
         }
     };
 
