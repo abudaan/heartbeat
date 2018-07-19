@@ -18,7 +18,6 @@ files="../src/license.js
     ../src/heartbeat/instrument_config.js
     ../src/heartbeat/instrument_methods.js
     ../src/heartbeat/key_editor.js
-    ../src/heartbeat/key_editor_2.js
     ../src/heartbeat/key_editor_iterator_factory.js
     ../src/heartbeat/metronome.js
     ../src/heartbeat/midi_event.js

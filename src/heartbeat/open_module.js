@@ -131,7 +131,8 @@
     gainNode = context.createGainNode();
     //gainNode.connect(compressor);
     gainNode.connect(context.destination);
-    gainNode.gain.value = 1;
+    // gainNode.gain.value = 1;
+    gainNode.gain.setValueAtTime(1, context.currentTime);
 
 
     protectedScope = {
@@ -303,7 +304,8 @@
 
         setMasterVolume: function(value){
             value = value < 0 ? 0 : value > 1 ? 1 : value;
-            gainNode.gain.value = value;
+            // gainNode.gain.value = value;
+            gainNode.gain.setValueAtTime(value, context.currentTime);
         },
 
         getMasterVolume: function(){
@@ -356,7 +358,8 @@
             }
             var src = context.createOscillator(),
                 gainNode = context.createGainNode();
-            gainNode.gain.value = 0;
+            // gainNode.gain.value = 0;
+            gainNode.gain.setValueAtTime(0, context.currentTime);
             src.connect(gainNode);
             gainNode.connect(context.destination);
             if(src.noteOn !== undefined){

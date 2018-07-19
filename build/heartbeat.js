@@ -432,7 +432,8 @@ if (typeof module !== "undefined" && module !== null) {
     gainNode = context.createGainNode();
     //gainNode.connect(compressor);
     gainNode.connect(context.destination);
-    gainNode.gain.value = 1;
+    // gainNode.gain.value = 1;
+    gainNode.gain.setValueAtTime(1, context.currentTime);
 
 
     protectedScope = {
@@ -604,7 +605,8 @@ if (typeof module !== "undefined" && module !== null) {
 
         setMasterVolume: function(value){
             value = value < 0 ? 0 : value > 1 ? 1 : value;
-            gainNode.gain.value = value;
+            // gainNode.gain.value = value;
+            gainNode.gain.setValueAtTime(value, context.currentTime);
         },
 
         getMasterVolume: function(){
@@ -657,7 +659,8 @@ if (typeof module !== "undefined" && module !== null) {
             }
             var src = context.createOscillator(),
                 gainNode = context.createGainNode();
-            gainNode.gain.value = 0;
+            // gainNode.gain.value = 0;
+            gainNode.gain.setValueAtTime(0, context.currentTime);
             src.connect(gainNode);
             gainNode.connect(context.destination);
             if(src.noteOn !== undefined){
@@ -2753,9 +2756,15 @@ if (typeof module !== "undefined" && module !== null) {
         this.output = context.createGainNode();
         this.wetGain = context.createGainNode();
         this.dryGain = context.createGainNode();
-        this.output.gain.value = 1;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
+
+        // this.output.gain.value = 1;
+        this.output.gain.setValueAtTime(1, context.currentTime);
+
+        // this.wetGain.gain.value = this.amount;
+        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
+
+        // this.dryGain.gain.value = 1 - this.amount;
+        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
     }
 
 
@@ -2789,8 +2798,11 @@ if (typeof module !== "undefined" && module !== null) {
         */
 
         this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
+        // this.wetGain.gain.value = this.amount;
+        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
+
+        // this.dryGain.gain.value = 1 - this.amount;
+        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
         //console.log('wet',this.wetGain.gain.value,'dry',this.dryGain.gain.value);
     };
 
@@ -2897,7 +2909,8 @@ if (typeof module !== "undefined" && module !== null) {
             this.node = context.createBiquadFilter();
             this.node.type = 0;
             this.node.Q.value = 4;
-            this.node.frequency.value = 1600;
+            // this.node.frequency.value = 1600;
+            this.node.frequency.setValueAtTime(1600, context.currentTime);
         });
 
         /*
@@ -7556,34 +7569,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        //import
-        typeString; // defined in util.js
-
-    /*
-        config:
-            - song
-
-    */
-    function createKeyEditor2(config){
-
-
-    }
-
-    sequencer.createKeyEditor2 = createKeyEditor2;
-
-    sequencer.protectedScope.addInitMethod(function(){
-        typeString = sequencer.protectedScope.typeString;
-    });
-
-}());(function(){
-
-    'use strict';
-
-    var
         sequencer = window.sequencer,
 
         minWidthSixteenth = 0.042,
@@ -9683,6 +9668,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         lastEventTypeByte,
         trackName,
+        instrumentName,
 
         //import
         createStream; // defined in midi_stream.js
@@ -9736,6 +9722,7 @@ if (typeof module !== "undefined" && module !== null) {
                     case 0x04:
                         event.subtype = 'instrumentName';
                         event.text = stream.read(length);
+                        instrumentName = event.text;
                         return event;
                     case 0x05:
                         event.subtype = 'lyrics';
@@ -9907,6 +9894,7 @@ if (typeof module !== "undefined" && module !== null) {
     function parseStream(stream) {
         var formatType, trackCount, timeDivision, ticksPerBeat,
             tracks = [], i,
+            trackNames = [],
             trackChunk, trackStream,
             headerChunk, headerStream;
 
@@ -9935,6 +9923,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         for (i = 0; i < trackCount; i++) {
             tracks[i] = [];
+            trackNames[i] = trackName;
             trackChunk = readChunk(stream);
             if (trackChunk.id !== 'MTrk') {
                 throw 'Unexpected chunk - expected MTrk, got '+ trackChunk.id;
@@ -9948,7 +9937,8 @@ if (typeof module !== "undefined" && module !== null) {
 
         return {
             'header': header,
-            'tracks': tracks
+            'tracks': tracks,
+            'trackNames': trackNames
         };
     }
 
@@ -14026,7 +14016,8 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         this.volume = event.velocity/127;
-        this.output.gain.value = this.volume;
+        // this.output.gain.value = this.volume;
+        this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
         this.createSource();
         this.phase = 'decay'; // -> naming of phases is not completely correct, we skip attack
@@ -14292,13 +14283,15 @@ if (typeof module !== "undefined" && module !== null) {
         SampleSynth.prototype.createSource = function(){
             this.source = context.createOscillator();
             this.source.type = this.waveForm;
-            this.source.frequency.value = this.frequency;
+            // this.source.frequency.value = this.frequency;
+            this.source.frequency.setValueAtTime(this.frequency, context.currentTime);
         };
 
         SampleSynth.prototype.route = function(){
             //create some headroom for multi-timbrality
             this.volume *= 0.3;
-            this.output.gain.value = this.volume;
+            // this.output.gain.value = this.volume;
+            this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
             if(this.autopan){
                 this.panner = createPanner();
@@ -16110,7 +16103,8 @@ if (typeof module !== "undefined" && module !== null) {
 
         this.volume = 1;
         this.gainNode = context.createGainNode();
-        this.gainNode.gain.value = this.volume;
+        // this.gainNode.gain.value = this.volume;
+        this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
         this.metronome = createMetronome(this, dispatchEvent);
         this.connect();
 
@@ -17601,7 +17595,8 @@ if (typeof module !== "undefined" && module !== null) {
                 return;
             }
             this.volume = value < 0 ? 0 : value > 1 ? 1 : value;
-            this.gainNode.gain.value = this.volume;
+            // this.gainNode.gain.value = this.volume;
+            this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
         }else{
             loop(args, 0, numArgs);
             for(i = tracks.length - 1; i >= 0; i--){
@@ -20134,10 +20129,12 @@ if (typeof module !== "undefined" && module !== null) {
         this.volume = 1;
 
         this.input = context.createGainNode();
-        this.input.gain.value = 1;
+        // this.input.gain.value = 1;
+        this.input.gain.setValueAtTime(1, context.currentTime);
 
         this.output = context.createGainNode();
-        this.output.gain.value = this.volume;
+        // this.output.gain.value = this.volume;
+        this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
         ///*
         this.panner = createPanner();
@@ -20151,7 +20148,7 @@ if (typeof module !== "undefined" && module !== null) {
                 this.panner = context.createPanner();
                 this.panner.panningModel = 'equalpower';
                 this.panner.setPosition(0, 0, 0);
-        
+
                 this.input.connect(this.panner);
                 this.panner.connect(this.output);
         */
@@ -20575,7 +20572,7 @@ if (typeof module !== "undefined" && module !== null) {
             var args = Array.prototype.slice.call(arguments),
                 loop, arg,
                 type, events = [];
-    
+
             loop = function(data, i, maxi){
                 var midiData;
                 for(i = 0; i < maxi; i++){
@@ -20593,7 +20590,7 @@ if (typeof module !== "undefined" && module !== null) {
                     }
                 }
             };
-    
+
             loop(args, 0, args.length);
             return events;
         };
@@ -20657,17 +20654,17 @@ if (typeof module !== "undefined" && module !== null) {
         Track.prototype.addPartAt = function(part, position){
             var ticks = getTicksAtPosition(position);
             part = getPart(part, this);
-    
+
             if(ticks === false){
                 console.error('please provide a valid position');
                 return false;
             }
-    
+
             if(part === false){
                 console.error('please provide a valid part');
                 return false;
             }
-    
+
             part.ticks += ticks;
             //console.log(ticks);
             addParts({parts:[part], config:[]}, this);
@@ -20904,64 +20901,64 @@ if (typeof module !== "undefined" && module !== null) {
             var args = getEventsAndConfig(arguments);
             moveEvents(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.moveEventTo = Track.prototype.moveEventsTo = function(){//events, position
             var args = getEventsAndConfig(arguments);
             moveEventsTo(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.moveAllEvents = function(ticks){
             moveEvents(ticks, this.events, this);
         };
-    
-    
+
+
         Track.prototype.moveAllEventsTo = function(position){
             moveEventsTo(position, this.events, this);
         };
-    
-    
+
+
         // copy events
-    
+
         Track.prototype.copyEvent = Track.prototype.copyEvents = function(){//events
             var args = getEventsAndConfig(arguments);
             return copyEvents(args.events);
         };
-    
-    
+
+
         Track.prototype.copyAllEvents = function(){
             return copyEvents(this.events);
         };
-    
-    
+
+
         Track.prototype.copyEventTo = Track.prototype.copyEventsTo = function(){//events, position
             var args = getEventsAndConfig(arguments);
             copyEventsTo(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.copyAllEventsTo = function(position){
             copyEventsTo(position, this.events, this);
         };
-    
-    
+
+
         // repeat events
-    
+
         Track.prototype.repeatEvent = Track.prototype.repeatEvents = function(){//events, config
             var args = getEventsAndConfig(arguments);
             repeatEvents(args.config[0], args.events, this);
         };
-    
-    
+
+
         // transpose events
-    
+
         Track.prototype.transposeEvent = Track.prototype.transposeEvents = function(){//events, semi
             var args = getEventsAndConfig(arguments);
             transposeEvents(args.config[0], args.events);
         };
-    
-    
+
+
         Track.prototype.transpose = Track.prototype.transposeAllEvents = function(semi){
             transposeEvents(semi, this.events);
         };
@@ -21131,7 +21128,7 @@ if (typeof module !== "undefined" && module !== null) {
                 }
                 effect.setInput(this.input);
                 effect.node.connect(this.panner.node);
-        
+
         //CONNNECT
         return;
         */
@@ -21236,7 +21233,8 @@ if (typeof module !== "undefined" && module !== null) {
             this.volume = value;
             //console.log(value);
             //this.output.gain.value = this.volume; //-> this doesn't work which is weird
-            this.input.gain.value = this.volume; // this does work
+            // this.input.gain.value = this.volume; // this does work
+            this.input.gain.setValueAtTime(this.volume, context.currentTime);
         }
     };
 
@@ -21293,13 +21291,13 @@ if (typeof module !== "undefined" && module !== null) {
 
         /*
                 var instrument;
-        
+
                 if(arg === '' || arg === undefined || arg === false){
                     getDefaultInstrumentConfig(this);
                 }else{
                     instrument = createInstrument(arg);
                 }
-        
+
         */
         instrument.track = this;
         // stop possible scheduled notes by the previous instrument
@@ -21629,12 +21627,12 @@ if (typeof module !== "undefined" && module !== null) {
                 this.effects.push(reverb);
             }
         };
-    
-    
+
+
         Track.prototype.setReverb = function(id, amount){
         };
-    
-    
+
+
         Track.prototype.removeReverb = function(id, amount){
         };
     */

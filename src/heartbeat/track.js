@@ -77,10 +77,12 @@
         this.volume = 1;
 
         this.input = context.createGainNode();
-        this.input.gain.value = 1;
+        // this.input.gain.value = 1;
+        this.input.gain.setValueAtTime(1, context.currentTime);
 
         this.output = context.createGainNode();
-        this.output.gain.value = this.volume;
+        // this.output.gain.value = this.volume;
+        this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
         ///*
         this.panner = createPanner();
@@ -94,7 +96,7 @@
                 this.panner = context.createPanner();
                 this.panner.panningModel = 'equalpower';
                 this.panner.setPosition(0, 0, 0);
-        
+
                 this.input.connect(this.panner);
                 this.panner.connect(this.output);
         */
@@ -518,7 +520,7 @@
             var args = Array.prototype.slice.call(arguments),
                 loop, arg,
                 type, events = [];
-    
+
             loop = function(data, i, maxi){
                 var midiData;
                 for(i = 0; i < maxi; i++){
@@ -536,7 +538,7 @@
                     }
                 }
             };
-    
+
             loop(args, 0, args.length);
             return events;
         };
@@ -600,17 +602,17 @@
         Track.prototype.addPartAt = function(part, position){
             var ticks = getTicksAtPosition(position);
             part = getPart(part, this);
-    
+
             if(ticks === false){
                 console.error('please provide a valid position');
                 return false;
             }
-    
+
             if(part === false){
                 console.error('please provide a valid part');
                 return false;
             }
-    
+
             part.ticks += ticks;
             //console.log(ticks);
             addParts({parts:[part], config:[]}, this);
@@ -847,64 +849,64 @@
             var args = getEventsAndConfig(arguments);
             moveEvents(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.moveEventTo = Track.prototype.moveEventsTo = function(){//events, position
             var args = getEventsAndConfig(arguments);
             moveEventsTo(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.moveAllEvents = function(ticks){
             moveEvents(ticks, this.events, this);
         };
-    
-    
+
+
         Track.prototype.moveAllEventsTo = function(position){
             moveEventsTo(position, this.events, this);
         };
-    
-    
+
+
         // copy events
-    
+
         Track.prototype.copyEvent = Track.prototype.copyEvents = function(){//events
             var args = getEventsAndConfig(arguments);
             return copyEvents(args.events);
         };
-    
-    
+
+
         Track.prototype.copyAllEvents = function(){
             return copyEvents(this.events);
         };
-    
-    
+
+
         Track.prototype.copyEventTo = Track.prototype.copyEventsTo = function(){//events, position
             var args = getEventsAndConfig(arguments);
             copyEventsTo(args.config[0], args.events, this);
         };
-    
-    
+
+
         Track.prototype.copyAllEventsTo = function(position){
             copyEventsTo(position, this.events, this);
         };
-    
-    
+
+
         // repeat events
-    
+
         Track.prototype.repeatEvent = Track.prototype.repeatEvents = function(){//events, config
             var args = getEventsAndConfig(arguments);
             repeatEvents(args.config[0], args.events, this);
         };
-    
-    
+
+
         // transpose events
-    
+
         Track.prototype.transposeEvent = Track.prototype.transposeEvents = function(){//events, semi
             var args = getEventsAndConfig(arguments);
             transposeEvents(args.config[0], args.events);
         };
-    
-    
+
+
         Track.prototype.transpose = Track.prototype.transposeAllEvents = function(semi){
             transposeEvents(semi, this.events);
         };
@@ -1074,7 +1076,7 @@
                 }
                 effect.setInput(this.input);
                 effect.node.connect(this.panner.node);
-        
+
         //CONNNECT
         return;
         */
@@ -1179,7 +1181,8 @@
             this.volume = value;
             //console.log(value);
             //this.output.gain.value = this.volume; //-> this doesn't work which is weird
-            this.input.gain.value = this.volume; // this does work
+            // this.input.gain.value = this.volume; // this does work
+            this.input.gain.setValueAtTime(this.volume, context.currentTime);
         }
     };
 
@@ -1236,13 +1239,13 @@
 
         /*
                 var instrument;
-        
+
                 if(arg === '' || arg === undefined || arg === false){
                     getDefaultInstrumentConfig(this);
                 }else{
                     instrument = createInstrument(arg);
                 }
-        
+
         */
         instrument.track = this;
         // stop possible scheduled notes by the previous instrument
@@ -1572,12 +1575,12 @@
                 this.effects.push(reverb);
             }
         };
-    
-    
+
+
         Track.prototype.setReverb = function(id, amount){
         };
-    
-    
+
+
         Track.prototype.removeReverb = function(id, amount){
         };
     */

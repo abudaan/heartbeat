@@ -14,6 +14,7 @@
 
         lastEventTypeByte,
         trackName,
+        instrumentName,
 
         //import
         createStream; // defined in midi_stream.js
@@ -67,6 +68,7 @@
                     case 0x04:
                         event.subtype = 'instrumentName';
                         event.text = stream.read(length);
+                        instrumentName = event.text;
                         return event;
                     case 0x05:
                         event.subtype = 'lyrics';
@@ -238,6 +240,7 @@
     function parseStream(stream) {
         var formatType, trackCount, timeDivision, ticksPerBeat,
             tracks = [], i,
+            trackNames = [],
             trackChunk, trackStream,
             headerChunk, headerStream;
 
@@ -266,6 +269,7 @@
 
         for (i = 0; i < trackCount; i++) {
             tracks[i] = [];
+            trackNames[i] = trackName;
             trackChunk = readChunk(stream);
             if (trackChunk.id !== 'MTrk') {
                 throw 'Unexpected chunk - expected MTrk, got '+ trackChunk.id;
@@ -279,7 +283,8 @@
 
         return {
             'header': header,
-            'tracks': tracks
+            'tracks': tracks,
+            'trackNames': trackNames
         };
     }
 

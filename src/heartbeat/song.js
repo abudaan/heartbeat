@@ -230,7 +230,8 @@
 
         this.volume = 1;
         this.gainNode = context.createGainNode();
-        this.gainNode.gain.value = this.volume;
+        // this.gainNode.gain.value = this.volume;
+        this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
         this.metronome = createMetronome(this, dispatchEvent);
         this.connect();
 
@@ -1721,7 +1722,8 @@
                 return;
             }
             this.volume = value < 0 ? 0 : value > 1 ? 1 : value;
-            this.gainNode.gain.value = this.volume;
+            // this.gainNode.gain.value = this.volume;
+            this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
         }else{
             loop(args, 0, numArgs);
             for(i = tracks.length - 1; i >= 0; i--){

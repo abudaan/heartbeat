@@ -112,7 +112,8 @@
         }
 
         this.volume = event.velocity/127;
-        this.output.gain.value = this.volume;
+        // this.output.gain.value = this.volume;
+        this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
         this.createSource();
         this.phase = 'decay'; // -> naming of phases is not completely correct, we skip attack
@@ -378,13 +379,15 @@
         SampleSynth.prototype.createSource = function(){
             this.source = context.createOscillator();
             this.source.type = this.waveForm;
-            this.source.frequency.value = this.frequency;
+            // this.source.frequency.value = this.frequency;
+            this.source.frequency.setValueAtTime(this.frequency, context.currentTime);
         };
 
         SampleSynth.prototype.route = function(){
             //create some headroom for multi-timbrality
             this.volume *= 0.3;
-            this.output.gain.value = this.volume;
+            // this.output.gain.value = this.volume;
+            this.output.gain.setValueAtTime(this.volume, context.currentTime);
 
             if(this.autopan){
                 this.panner = createPanner();

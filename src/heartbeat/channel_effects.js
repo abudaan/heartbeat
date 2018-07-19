@@ -41,9 +41,15 @@
         this.output = context.createGainNode();
         this.wetGain = context.createGainNode();
         this.dryGain = context.createGainNode();
-        this.output.gain.value = 1;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
+
+        // this.output.gain.value = 1;
+        this.output.gain.setValueAtTime(1, context.currentTime);
+
+        // this.wetGain.gain.value = this.amount;
+        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
+
+        // this.dryGain.gain.value = 1 - this.amount;
+        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
     }
 
 
@@ -77,8 +83,11 @@
         */
 
         this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
+        // this.wetGain.gain.value = this.amount;
+        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
+
+        // this.dryGain.gain.value = 1 - this.amount;
+        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
         //console.log('wet',this.wetGain.gain.value,'dry',this.dryGain.gain.value);
     };
 
@@ -185,7 +194,8 @@
             this.node = context.createBiquadFilter();
             this.node.type = 0;
             this.node.Q.value = 4;
-            this.node.frequency.value = 1600;
+            // this.node.frequency.value = 1600;
+            this.node.frequency.setValueAtTime(1600, context.currentTime);
         });
 
         /*
