@@ -1,6 +1,7 @@
 /*
     depends on uglifyjs, see: https://github.com/mishoo/UglifyJS
 
+    DEPRECATED: use build.sh instead!
 */
 
 'use strict';
