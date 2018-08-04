@@ -7509,9 +7509,12 @@ if (typeof module !== "undefined" && module !== null) {
 
     dispatchEvent = function(editor, id, data){
         //console.log(id,eventListeners);
-        editor.eventListeners[id].forEach(function(cb){
-            cb(data);
-        });
+        var listeners = editor.eventListeners[id];
+        if (listeners) {
+          listeners.forEach(function(cb){
+              cb(data);
+          });
+        }
     };
 
 
