@@ -68,7 +68,7 @@
     }
 
     //console.log(os, browser, '---', ua);
-    console.log('heartbeat v0.0.2');
+    console.log('heartbeat v0.0.3');
 
 
     if(window.AudioContext){

@@ -1,7 +1,7 @@
 /*
 
 heartbeat
-(c) 2013 - 2015 abudaan
+(c) 2013 - 2018 abudaan
 https://github.com/abudaan/heartbeat/wiki/license
 
 
@@ -36,11 +36,7 @@ https://github.com/nusofthq/Recordmp3js
 If a browser doesn't support WebMIDI, heartbeat will try to fallback to Sema's Jazz plugin:
 
 http://jazz-soft.net/
-
-For this fallback, a slightly adapted version of Chris Wilson's WebMIDIAPIShim is used:
-
-https://github.com/cwilso/WebMIDIAPIShim
-
+https://github.com/jazz-soft/JZZ
 
 */
 
