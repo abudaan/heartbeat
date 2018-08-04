@@ -432,8 +432,7 @@ if (typeof module !== "undefined" && module !== null) {
     gainNode = context.createGainNode();
     //gainNode.connect(compressor);
     gainNode.connect(context.destination);
-    // gainNode.gain.value = 1;
-    gainNode.gain.setValueAtTime(1, context.currentTime);
+    gainNode.gain.value = 1;
 
 
     protectedScope = {
@@ -605,8 +604,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         setMasterVolume: function(value){
             value = value < 0 ? 0 : value > 1 ? 1 : value;
-            // gainNode.gain.value = value;
-            gainNode.gain.setValueAtTime(value, context.currentTime);
+            gainNode.gain.value = value;
         },
 
         getMasterVolume: function(){
@@ -659,8 +657,7 @@ if (typeof module !== "undefined" && module !== null) {
             }
             var src = context.createOscillator(),
                 gainNode = context.createGainNode();
-            // gainNode.gain.value = 0;
-            gainNode.gain.setValueAtTime(0, context.currentTime);
+            gainNode.gain.value = 0;
             src.connect(gainNode);
             gainNode.connect(context.destination);
             if(src.noteOn !== undefined){
@@ -689,7 +686,8 @@ if (typeof module !== "undefined" && module !== null) {
     //Object.defineProperty(window.sequencer, 'midiOutputs', {value: []});
 
 
-}());(function(){
+}());
+(function(){
 
     'use strict';
 
@@ -2757,14 +2755,9 @@ if (typeof module !== "undefined" && module !== null) {
         this.wetGain = context.createGainNode();
         this.dryGain = context.createGainNode();
 
-        // this.output.gain.value = 1;
-        this.output.gain.setValueAtTime(1, context.currentTime);
-
-        // this.wetGain.gain.value = this.amount;
-        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
-
-        // this.dryGain.gain.value = 1 - this.amount;
-        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
+        this.output.gain.value = 1;
+        this.wetGain.gain.value = this.amount;
+        this.dryGain.gain.value = 1 - this.amount;
     }
 
 
@@ -2798,11 +2791,8 @@ if (typeof module !== "undefined" && module !== null) {
         */
 
         this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
-        // this.wetGain.gain.value = this.amount;
-        this.wetGain.gain.setValueAtTime(this.amount, context.currentTime);
-
-        // this.dryGain.gain.value = 1 - this.amount;
-        this.dryGain.gain.setValueAtTime(1 - this.amount, context.currentTime);
+        this.wetGain.gain.value = this.amount;
+        this.dryGain.gain.value = 1 - this.amount;
         //console.log('wet',this.wetGain.gain.value,'dry',this.dryGain.gain.value);
     };
 
@@ -2909,8 +2899,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.node = context.createBiquadFilter();
             this.node.type = 0;
             this.node.Q.value = 4;
-            // this.node.frequency.value = 1600;
-            this.node.frequency.setValueAtTime(1600, context.currentTime);
+            this.node.frequency.value = 1600;
         });
 
         /*
@@ -14022,8 +14011,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         this.volume = event.velocity/127;
-        // this.output.gain.value = this.volume;
-        this.output.gain.setValueAtTime(this.volume, context.currentTime);
+        this.output.gain.value = this.volume;
 
         this.createSource();
         this.phase = 'decay'; // -> naming of phases is not completely correct, we skip attack
@@ -14299,15 +14287,13 @@ if (typeof module !== "undefined" && module !== null) {
         SampleSynth.prototype.createSource = function(){
             this.source = context.createOscillator();
             this.source.type = this.waveForm;
-            // this.source.frequency.value = this.frequency;
-            this.source.frequency.setValueAtTime(this.frequency, context.currentTime);
+            this.source.frequency.value = this.frequency;
         };
 
         SampleSynth.prototype.route = function(){
             //create some headroom for multi-timbrality
             this.volume *= 0.3;
-            // this.output.gain.value = this.volume;
-            this.output.gain.setValueAtTime(this.volume, context.currentTime);
+            this.output.gain.value = this.volume;
 
             if(this.autopan){
                 this.panner = createPanner();
@@ -16119,8 +16105,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         this.volume = 1;
         this.gainNode = context.createGainNode();
-        // this.gainNode.gain.value = this.volume;
-        this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
+        this.gainNode.gain.value = this.volume;
         this.metronome = createMetronome(this, dispatchEvent);
         this.connect();
 
@@ -17611,8 +17596,7 @@ if (typeof module !== "undefined" && module !== null) {
                 return;
             }
             this.volume = value < 0 ? 0 : value > 1 ? 1 : value;
-            // this.gainNode.gain.value = this.volume;
-            this.gainNode.gain.setValueAtTime(this.volume, context.currentTime);
+            this.gainNode.gain.value = this.volume;
         }else{
             loop(args, 0, numArgs);
             for(i = tracks.length - 1; i >= 0; i--){
@@ -17850,7 +17834,8 @@ if (typeof module !== "undefined" && module !== null) {
         addSong = sequencer.protectedScope.addSong;
     });
 
-}());(function(){
+}());
+(function(){
 
     'use strict';
 
@@ -20147,12 +20132,10 @@ if (typeof module !== "undefined" && module !== null) {
         this.volume = 1;
 
         this.input = context.createGainNode();
-        // this.input.gain.value = 1;
-        this.input.gain.setValueAtTime(1, context.currentTime);
+        this.input.gain.value = 1;
 
         this.output = context.createGainNode();
-        // this.output.gain.value = this.volume;
-        this.output.gain.setValueAtTime(this.volume, context.currentTime);
+        this.output.gain.value = this.volume;
 
         ///*
         this.panner = createPanner();
@@ -21251,8 +21234,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.volume = value;
             //console.log(value);
             //this.output.gain.value = this.volume; //-> this doesn't work which is weird
-            // this.input.gain.value = this.volume; // this does work
-            this.input.gain.setValueAtTime(this.volume, context.currentTime);
+            this.input.gain.value = this.volume; // this does work
         }
     };
 
@@ -21687,7 +21669,8 @@ if (typeof module !== "undefined" && module !== null) {
         handleMidiMessageTrack = protectedScope.handleMidiMessageTrack;
     });
 
-}());(function(){
+}());
+(function(){
 
     'use strict';
 
