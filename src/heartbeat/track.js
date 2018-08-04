@@ -77,12 +77,10 @@
         this.volume = 1;
 
         this.input = context.createGainNode();
-        // this.input.gain.value = 1;
-        this.input.gain.setValueAtTime(1, context.currentTime);
+        this.input.gain.value = 1;
 
         this.output = context.createGainNode();
-        // this.output.gain.value = this.volume;
-        this.output.gain.setValueAtTime(this.volume, context.currentTime);
+        this.output.gain.value = this.volume;
 
         ///*
         this.panner = createPanner();
@@ -1181,8 +1179,7 @@
             this.volume = value;
             //console.log(value);
             //this.output.gain.value = this.volume; //-> this doesn't work which is weird
-            // this.input.gain.value = this.volume; // this does work
-            this.input.gain.setValueAtTime(this.volume, context.currentTime);
+            this.input.gain.value = this.volume; // this does work
         }
     };
 
