@@ -9962,9 +9962,9 @@ if (typeof module !== "undefined" && module !== null) {
     });
 }());
 
-/* 
-	Wrapper for accessing strings through sequential reads 
-	
+/*
+	Wrapper for accessing strings through sequential reads
+
 	based on: https://github.com/gasman/jasmid
 	adapted to work with ArrayBuffer -> Uint8Array
 */
@@ -9977,9 +9977,9 @@ if (typeof module !== "undefined" && module !== null) {
         // satisfy jslint
         sequencer = window.sequencer,
         console = window.console,
-		
+
 		fcc = String.fromCharCode;
-	
+
 
 	// buffer is Uint8Array
 	function createStream(buffer) {
@@ -9994,23 +9994,23 @@ if (typeof module !== "undefined" && module !== null) {
 				result = '';
 				for(i = 0; i < length; i++, position++){
 					result += fcc(buffer[position]);
-				}			
+				}
 				return result;
 			}else{
 				result = [];
 				for(i = 0; i < length; i++, position++){
 					result.push(buffer[position]);
-				}						
+				}
 				return result;
 			}
 		}
-		
+
 		/* read a big-endian 32-bit integer */
 		function readInt32() {
 			var result = (
 				(buffer[position] << 24) +
 				(buffer[position + 1] << 16) +
-				(buffer[position + 2] << 8) + 
+				(buffer[position + 2] << 8) +
 				buffer[position + 3]
 			);
 			position += 4;
@@ -10020,13 +10020,13 @@ if (typeof module !== "undefined" && module !== null) {
 		/* read a big-endian 16-bit integer */
 		function readInt16() {
 			var result = (
-				(buffer[position] << 8) + 
+				(buffer[position] << 8) +
 				buffer[position + 1]
 			);
 			position += 2;
 			return result;
 		}
-		
+
 		/* read an 8-bit integer */
 		function readInt8(signed) {
 			var result = buffer[position];
@@ -10034,11 +10034,11 @@ if (typeof module !== "undefined" && module !== null) {
 			position += 1;
 			return result;
 		}
-		
+
 		function eof() {
 			return position >= buffer.length;
 		}
-		
+
 		/* read a MIDI-style variable-length integer
 			(big-endian value in groups of 7 bits,
 			with top bit set to signify that another byte follows)
@@ -10056,7 +10056,7 @@ if (typeof module !== "undefined" && module !== null) {
 				}
 			}
 		}
-		
+
 		return {
 			'eof': eof,
 			'read': read,
@@ -10068,7 +10068,7 @@ if (typeof module !== "undefined" && module !== null) {
 	}
 
 	sequencer.protectedScope.createStream = createStream;
-	
+
 }());
 
 (function(){
@@ -12287,6 +12287,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     addEvents = function(args, part, relative){
+      console.log('HB Part.addEvents', args, part);
         if(args === false){
             return;
         }
@@ -12346,6 +12347,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     transposeEvents = function(args, part){
+        // console.log('HB transpose events', args, part);
         //if(args === false || part.fixedPitch === true){
         if(args === false){
             return;
@@ -12376,6 +12378,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     moveEvents = function(args, part){
+        // console.log('HB move events', args, part);
         if(args === false){
             return;
         }
@@ -18195,6 +18198,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
 
         this.callListenersPositionTicks(ticks);
+        // console.log('heartbeat:', position.barsAsString);
 
         if(position.bar !== this.bar){
             this.bar = position.bar;
@@ -18376,9 +18380,11 @@ if (typeof module !== "undefined" && module !== null) {
         for(i = 0; i < maxi; i++){
             listener = this.allListenersById[tmp[i]];
             //console.log(listener,ticks);
-            if(ticks >= listener.ticks && ! listener.called){
-                listener.callback(listener.searchstring);
-                listener.called = true;
+            if (listener) {
+              if(ticks >= listener.ticks && ! listener.called){
+                  listener.callback(listener.searchstring);
+                  listener.called = true;
+              }
             }
         }
     };
@@ -18970,11 +18976,13 @@ if (typeof module !== "undefined" && module !== null) {
                         // reference to an array of all the listeners bound to this event type
                         listenerIds = this.allListenersByType[listener.type][listener.subtype][listener.position_type];
                         // loop over listeners and filter the one that has to be removed
-                        for(i = listenerIds.length - 1; i >= 0; i--){
-                            listenerId = listenerIds[i];
-                            if(listenerId !== id){
-                                filteredListenerIds.push(listenerId);
-                            }
+                        if (listenerIds) {
+                          for(i = listenerIds.length - 1; i >= 0; i--){
+                              listenerId = listenerIds[i];
+                              if(listenerId !== id){
+                                  filteredListenerIds.push(listenerId);
+                              }
+                          }
                         }
                         // add the filtered array back
                         this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
@@ -19172,7 +19180,7 @@ if (typeof module !== "undefined" && module !== null) {
 	/*
 
 	[[ gridPositionFromSong(seqPosition,width,height) ]]
-	
+
 	gridCoordinateFromPosition(position,width,height)
 
 	[[ gridPositionFromNote(notePitch,width,height) ]]
@@ -19180,7 +19188,7 @@ if (typeof module !== "undefined" && module !== null) {
 	gridCoordinateFromNote(note,width,height)
 	gridCoordinateFromNote(pitch,width,height) -> basically a y-position
 	gridCoordinateFromNote(event,width,height) -> specific event
-	
+
 
 	[[ songPositionFromGrid(x,y,width,height) ]]
 
@@ -19189,7 +19197,7 @@ if (typeof module !== "undefined" && module !== null) {
 	noteFromGridCoordinate(x,y,width,height) -> returns same as positionFromGridCoordinate
 
 	setSequenceLength(totalBars)
-	
+
 	song.setGrid(height, width, pitchMin, pitchMax)
 
 
@@ -19201,9 +19209,9 @@ if (typeof module !== "undefined" && module !== null) {
 
 	songToGrid(event) -> x and y
 	songToGrid(position,note) -> x and y
-	
+
 	songToGrid(position,width,height) -> x, y = 0
-	
+
 	songToGrid(note,width,height) -> y, x = 0
 	songToGrid(pitch)
 
@@ -19217,7 +19225,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 	'use strict';
 
-	var 
+	var
 		//import
 		getPosition, // → defined in get_position.js
 		floor, // → defined in util.js
@@ -19229,7 +19237,7 @@ if (typeof module !== "undefined" && module !== null) {
 		positionToGrid,
 		eventToGrid,
 		noteToGrid,
-		
+
 		gridToSong, // catch all -> may be remove this
 		positionToSong;
 
@@ -19257,7 +19265,7 @@ if (typeof module !== "undefined" && module !== null) {
 		//note = 127 - floor((y/height) * 128);
 		note = song.highestNote - floor((y/height) * song.pitchRange);
 		//note = song.highestNote - round((y/height) * song.numNotes);
-		
+
 		position = getPosition(song,['ticks',ticks]);
 		note = sequencer.createNote(note);
 
@@ -19309,7 +19317,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 	};
 
-	
+
 	eventToGrid = function(event, width, height, song){
 		if(song === undefined){
 			song = sequencer.getSong();
@@ -19330,8 +19338,8 @@ if (typeof module !== "undefined" && module !== null) {
 			y: noteToGrid(note,height,song)
 		};
 	};
-	
-	
+
+
 	positionToGrid = function(position, width, song){
 		if(song === undefined){
 			song = sequencer.getSong();
@@ -19345,12 +19353,12 @@ if (typeof module !== "undefined" && module !== null) {
 		//console.log(x, song.ticks, position.data, song.quantizeTicks);
 			x = x / song.ticks;
 			x = x * width;
-		
+
 		//return round(x);
 		return x;
 	};
-	
-	
+
+
 	noteToGrid = function(note, height, song){
 		if(song === undefined){
 			song = sequencer.getSong();
@@ -19370,17 +19378,17 @@ if (typeof module !== "undefined" && module !== null) {
 		//return round(y);
 		return y;
 	};
-	
+
 	// should this be added to sequencer publically? -> no, add to song
 /*
 	sequencer.positionToGrid = positionToGrid;
 	sequencer.eventToGrid = eventToGrid;
 	sequencer.noteToGrid = noteToGrid;
-*/	
+*/
 	sequencer.protectedScope.addInitMethod(function(){
-		getPosition = sequencer.protectedScope.getPosition; 
-		floor = sequencer.protectedScope.floor; 
-		round = sequencer.protectedScope.round; 
+		getPosition = sequencer.protectedScope.getPosition;
+		floor = sequencer.protectedScope.floor;
+		round = sequencer.protectedScope.round;
 		typeString = sequencer.protectedScope.typeString;
 	});
 
@@ -19417,6 +19425,7 @@ if (typeof module !== "undefined" && module !== null) {
         }
         //console.log('not here while playing');
         update2(song, updateTimeEvents);
+        // console.log('HB', song.events);
     };
 
 

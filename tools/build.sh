@@ -51,5 +51,5 @@ files="../src/license.js
 
 
 cat $files > ../build/heartbeat.js
-uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
+# uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
 #echo $files

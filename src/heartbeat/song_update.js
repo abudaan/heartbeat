@@ -28,6 +28,7 @@
         }
         //console.log('not here while playing');
         update2(song, updateTimeEvents);
+        // console.log('HB', song.events);
     };
 
 

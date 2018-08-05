@@ -192,6 +192,7 @@
         }
 
         this.callListenersPositionTicks(ticks);
+        // console.log('heartbeat:', position.barsAsString);
 
         if(position.bar !== this.bar){
             this.bar = position.bar;
@@ -373,9 +374,11 @@
         for(i = 0; i < maxi; i++){
             listener = this.allListenersById[tmp[i]];
             //console.log(listener,ticks);
-            if(ticks >= listener.ticks && ! listener.called){
-                listener.callback(listener.searchstring);
-                listener.called = true;
+            if (listener) {
+              if(ticks >= listener.ticks && ! listener.called){
+                  listener.callback(listener.searchstring);
+                  listener.called = true;
+              }
             }
         }
     };
@@ -967,11 +970,13 @@
                         // reference to an array of all the listeners bound to this event type
                         listenerIds = this.allListenersByType[listener.type][listener.subtype][listener.position_type];
                         // loop over listeners and filter the one that has to be removed
-                        for(i = listenerIds.length - 1; i >= 0; i--){
-                            listenerId = listenerIds[i];
-                            if(listenerId !== id){
-                                filteredListenerIds.push(listenerId);
-                            }
+                        if (listenerIds) {
+                          for(i = listenerIds.length - 1; i >= 0; i--){
+                              listenerId = listenerIds[i];
+                              if(listenerId !== id){
+                                  filteredListenerIds.push(listenerId);
+                              }
+                          }
                         }
                         // add the filtered array back
                         this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);

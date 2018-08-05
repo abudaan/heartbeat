@@ -163,6 +163,7 @@
 
 
     addEvents = function(args, part, relative){
+      console.log('HB Part.addEvents', args, part);
         if(args === false){
             return;
         }
@@ -222,6 +223,7 @@
 
 
     transposeEvents = function(args, part){
+        // console.log('HB transpose events', args, part);
         //if(args === false || part.fixedPitch === true){
         if(args === false){
             return;
@@ -252,6 +254,7 @@
 
 
     moveEvents = function(args, part){
+        // console.log('HB move events', args, part);
         if(args === false){
             return;
         }
