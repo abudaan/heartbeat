@@ -163,7 +163,7 @@
 
 
     addEvents = function(args, part, relative){
-      console.log('HB Part.addEvents', args, part);
+      // console.log('HB Part.addEvents', args, part);
         if(args === false){
             return;
         }
@@ -733,7 +733,8 @@
                     //this.dirtyNotes[note.id] = note;
                     this.notesById[note.id] = note;
                 }else{
-                    //console.log('certainly not here');
+                    // console.log('certainly not here');
+                    continue;
                 }
             }
         }

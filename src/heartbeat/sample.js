@@ -188,14 +188,15 @@
         //this.output.gain.linearRampToValueAtTime(this.volume, now);
 
         try{
-            // Fix by Nicolar Lair:
+            // Fix by Nicolas Lair:
             /*
               A DOM Exception occurs when a fade out is called while the sound is playing / planned to play
               until a later value in time:
               "Failed to execute 'linearRampToValueAtTime' on 'AudioParam': linearRampToValueAtTime()
               overlaps setValueCurveAt()"
             */
-            this.output.gain.cancelScheduledValues(0);
+            // this.output.gain.cancelScheduledValues(0);
+            this.output.gain.cancelScheduledValues(now);
             this.output.gain.linearRampToValueAtTime(0, now + fadeOut/1000); // fade out in seconds
 
             timedTasks['unschedule_' + this.id] = {

@@ -19,7 +19,6 @@
 
 
     update = function(song, updateTimeEvents){
-
         if(sequencer.playing === true){
             scheduledTasks.updateSong = function(){
                 update2(song, updateTimeEvents);
@@ -326,15 +325,15 @@
         }
         eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
         eventsMidiAudioMetronome.sort(function(a, b){
-            //return a.sortIndex - b.sortIndex;
-            return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
+            // return a.ticks - b.ticks;
         });
 
 
         eventsMidiTime = [].concat(events, song.timeEvents);
         eventsMidiTime.sort(function(a, b){
-            return a.ticks - b.ticks;
-            //return a.sortIndex - b.sortIndex;
+            // return a.ticks - b.ticks;
+            return a.sortIndex - b.sortIndex;
         });
 
         song.eventsMidiAudioMetronome = eventsMidiAudioMetronome; // all midi, audio and metronome events
