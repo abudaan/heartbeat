@@ -1819,7 +1819,10 @@
 
     Song.prototype.resetExternalMidiDevices = function(){
         //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
-        var time = this.scheduler.lastEventTime + 100;
+        var time = 0;
+        if (this.scheduler.lastEventTime) {
+          time = this.scheduler.lastEventTime + 100;
+        }
         //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
         objectForEach(this.midiOutputs, function(output){
             //console.log(output);
