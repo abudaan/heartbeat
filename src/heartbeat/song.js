@@ -1822,12 +1822,20 @@
 
     Song.prototype.resetExternalMidiDevices = function(){
         //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
-        var time = this.scheduler.lastEventTime + 100;
+        // console.log(this.scheduler.lastEventTime);
+        var time = 0;
         //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
+        if (this.scheduler.lastEventTime) {
+          time = this.scheduler.lastEventTime + 100;
+        }
         objectForEach(this.midiOutputs, function(output){
             //console.log(output);
-            output.send([0xB0, 0x7B, 0x00], time); // stop all notes
-            output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+            try {
+              output.send([0xB0, 0x7B, 0x00], time); // stop all notes
+              output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+            } catch(e) {
+              console.warn(e, output);
+            }
             //output.send([176, 123, 0], sequencer.getTime());
         });
     };

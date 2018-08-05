@@ -712,7 +712,7 @@
                     */
 
                 }else if(this.notesById[event.midiNote.id] === undefined){
-                    console.log('not here');
+                    // console.log('not here');
                     // note is recorded and has already a duration
                     note = event.midiNote;
                     //console.log('recorded notes', note.id);
@@ -724,7 +724,8 @@
                     //this.dirtyNotes[note.id] = note;
                     this.notesById[note.id] = note;
                 }else{
-                    console.log('certainly not here');
+                    // console.log('certainly not here');
+                    continue;
                 }
             }
         }

@@ -8,7 +8,7 @@ files="../src/license.js
     ../src/heartbeat/audio_encoder.js
     ../src/heartbeat/audio_event.js
     ../src/heartbeat/audio_recorder.js
-    ../src/heartbeat/audio_recording_worker.js
+    ../src/heartbeat/audio_recorder_worker.js
     ../src/heartbeat/audio_track.js
     ../src/heartbeat/channel_effects.js
     ../src/heartbeat/event_statistics.js
@@ -50,5 +50,5 @@ files="../src/license.js
 
 
 cat $files > ../build/heartbeat.js
-uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
+# uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
 #echo $files
