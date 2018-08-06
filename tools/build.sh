@@ -51,4 +51,6 @@ files="../src/license.js
 
 cat $files > ../build/heartbeat.js
 # uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
+cp ../build/heartbeat.js /home/abudaan/workspace/groovy2/client/dev/js/libs/heartbeat
+
 #echo $files
