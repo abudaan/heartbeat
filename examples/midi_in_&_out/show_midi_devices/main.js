@@ -19,13 +19,13 @@ window.onload = function(){
         // print all available midi inputs and outputs
         output.innerHTML = 'MIDI in:<br/>';
         sequencer.getMidiInputs(function(port){
-            output.innerHTML += port.label + '<br/>';
+            output.innerHTML += port.name + '<br/>';
             //output.innerHTML += port.name + ' ' + port.id + '<br/>';
         });
 
         output.innerHTML += '<br/>MIDI out:<br/>';
         sequencer.getMidiOutputs(function(port){
-            output.innerHTML += port.label + '<br/>';
+            output.innerHTML += port.name + '<br/>';
             //output.innerHTML += port.name + ' ' + port.id + '<br/>';
         });
     });

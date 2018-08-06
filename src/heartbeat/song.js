@@ -572,7 +572,6 @@
 
             song = this;
             playstart = this.startTime/1000;
-
             //console.log(this.startTime, playstart, this.recordTimestamp/1000 - playstart);
 
             repetitiveTasks.playAfterPrecount = function(){
@@ -596,6 +595,10 @@
         // make first call right after setting a time stamp to avoid delay
         //pulse(this);
         song = this;
+        // fixes bug: when an event listener is added to a midi note, the listener sometimes misses the first note
+        song.playhead.update('millis', 0);
+        song.followEvent.update();
+
         repetitiveTasks[this.id] = function(){
             pulse(song);
         };

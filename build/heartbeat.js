@@ -44,625 +44,6 @@ https://github.com/cwilso/WebMIDIAPIShim
 
 */
 
-/* Copyright 2013 Chris Wilson
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-// Initialize the MIDI library.
-(function (global) {
-    'use strict';
-    var midiIO, _delayedInit, MIDIAccess, _createJazzInstance, _onReady, _onNotReady, _createMIDIPortMap, MIDIPort, MIDIInput, MIDIOutput, _midiProc;
-    var inNodeJs = ( typeof __dirname !== 'undefined' && window.jazzMidi );
-    var allMidiIns = [];
-
-    function Iterator(items) {
-        this._items = items;
-        this._index = 0;
-        this._maxIndex = items.length;
-    }
-
-    Iterator.prototype.next = function(){
-        if(this._index === this._maxIndex){
-            return {value: undefined, done: true};
-        }
-        return {value: this._items[this._index++], done: false};
-    };
-
-    Iterator.prototype.reset = function(){
-        this._index = 0;
-    };
-
-
-    function Promise() {
-
-    }
-
-    Promise.prototype.then = function(accept, reject) {
-        this.accept = accept;
-        this.reject = reject;
-    };
-
-    Promise.prototype.succeed = function(access) {
-        if (this.accept)
-            this.accept(access);
-    };
-
-    Promise.prototype.fail = function(error) {
-        if (this.reject)
-            this.reject(error);
-    };
-
-    function _JazzInstance() {
-        this.inputInUse = false;
-        this.outputInUse = false;
-
-        // if running in Node.js
-        if (inNodeJs) {
-            this.objRef = new window.jazzMidi.MIDI();
-            return;
-        }
-
-        // load the Jazz plugin
-        var o1 = document.createElement("object");
-        o1.id = "_Jazz" + Math.random() + "ie";
-        o1.classid = "CLSID:1ACE1618-1C7D-4561-AEE1-34842AA85E90";
-
-        this.activeX = o1;
-
-        var o2 = document.createElement("object");
-        o2.id = "_Jazz" + Math.random();
-        o2.type="audio/x-jazz";
-        o1.appendChild(o2);
-
-        this.objRef = o2;
-
-        var e = document.createElement("p");
-        e.appendChild(document.createTextNode("This page requires the "));
-
-        var a = document.createElement("a");
-        a.appendChild(document.createTextNode("Jazz plugin"));
-        a.href = "http://jazz-soft.net/";
-
-        e.appendChild(a);
-        e.appendChild(document.createTextNode("."));
-        o2.appendChild(e);
-
-        var insertionPoint = document.getElementById("MIDIPlugin");
-        if (!insertionPoint) {
-            // Create hidden element
-            insertionPoint = document.createElement("div");
-            insertionPoint.id = "MIDIPlugin";
-            insertionPoint.style.position = "absolute";
-            insertionPoint.style.visibility = "hidden";
-            insertionPoint.style.left = "-9999px";
-            insertionPoint.style.top = "-9999px";
-            document.body.appendChild(insertionPoint);
-        }
-        insertionPoint.appendChild(o1);
-    }
-
-    _JazzInstance.prototype._init = function() {
-        if (this.objRef.isJazz) {
-            this._Jazz = this.objRef;
-        } else if (this.activeX.isJazz) {
-            this._Jazz = this.activeX;
-        } else {
-            this._Jazz = null;
-        }
-        if (this._Jazz) {
-            this._Jazz._jazzTimeZero = this._Jazz.Time();
-            this._Jazz._perfTimeZero = window.performance.now();
-        }
-    };
-
-    _JazzInstance.prototype._delayedInit = function(then) {
-        var that = this;
-        setTimeout(function() {
-            that._init();
-            then();
-        }, 100);
-    };
-
-
-    // API Methods
-
-    MIDIAccess = function() {
-        var numInputs,
-            numOutputs,
-            numInstances,
-            instance;
-
-        this._jazzInstances = new Array();
-        instance = new _JazzInstance();
-        this._jazzInstances.push( instance );
-        this._promise = new Promise;
-
-        instance._delayedInit(function() {
-            if (instance._Jazz) {
-                this._Jazz = instance._Jazz;
-                numInputs = this._Jazz.MidiInList().length;
-                numOutputs = this._Jazz.MidiOutList().length;
-                /*
-                    Get the number of _JazzInstances that is needed, because 1 input
-                    and 1 output can share a _JazzInstance, we check how much inputs
-                    and outputs are available and the largest number is the number
-                    of _JazzInstances that we need. Then we deduct one because we have
-                    already created a _JazzInstance.
-                */
-                numInstances = Math.max(numInputs, numOutputs) - 1;
-                if (numInstances > 0) {
-                    _createJazzInstance.bind(this)(0, numInstances);
-                } else {
-                    // no need to create additional instances
-                    window.setTimeout(_onReady.bind(this), 3);
-                }
-            } else {
-                window.setTimeout(_onNotReady.bind(this), 3);
-            }
-        }.bind(this));
-    };
-
-    _createJazzInstance = function(i, max){
-        var instance = new _JazzInstance();
-        this._jazzInstances.push(instance);
-
-        instance._delayedInit(function() {
-            i++;
-            if (i < max) {
-                _createJazzInstance.bind(this)(i, max);
-            } else {
-                /*
-                    All necessary _JazzInstances have been created and
-                    initialized, now call _onReady
-                */
-                window.setTimeout(_onReady.bind(this), 3);
-            }
-        }.bind(this));
-    };
-
-    _onReady = function() {
-        if (this._promise){
-            this.inputs = _createMIDIPortMap.call(this, this._Jazz.MidiInList(), MIDIInput);
-            this.outputs = _createMIDIPortMap.call(this, this._Jazz.MidiOutList(), MIDIOutput);
-            this._promise.succeed(this);
-        }
-    };
-
-    _onNotReady = function() {
-        if (this._promise)
-            this._promise.fail( { code: 1 } );
-    };
-
-
-    _createMIDIPortMap = function(list, PortClass) {
-        var size = list.length,
-            values = [],
-            keys = [],
-            entries = [],
-            portsById = {},
-            port, i;
-
-        for(i = 0; i < size; i++) {
-            if(PortClass !== undefined){ // Jazz plugin
-                port = new PortClass(this, list[i], i);
-            }else{ // older WebMIDI implementations
-                port = list[i];
-            }
-            entries.push([port.id, port]);
-            values.push(port);
-            keys.push(port.id);
-            portsById[port.id] = port;
-        }
-
-        keys = new Iterator(keys);
-        values = new Iterator(values);
-        entries = new Iterator(entries);
-
-        return {
-            size: size,
-            forEach: function(cb){
-                var i, entry;
-                for(i = 0; i < size; i++){
-                    entry = entries[i];
-                    cb(entry[0], entry[1]);
-                }
-            },
-            keys: function(){
-                keys.reset();
-                return keys;
-            },
-            values: function(){
-                values.reset();
-                return values;
-            },
-            entries: function(){
-                entries.reset();
-                return entries;
-            },
-            get: function(id){
-                return portsById[id];
-            },
-            has: function(id){
-                return portsById[id] !== undefined;
-            }
-        };
-    };
-
-
-    MIDIInput = function MIDIInput( midiAccess, name, index ) {
-        this._listeners = [];
-        this._midiAccess = midiAccess;
-        this._index = index;
-        this._inLongSysexMessage = false;
-        this._sysexBuffer = new Uint8Array();
-        this.id = "" + index + "." + name;
-        this.manufacturer = "";
-        this.name = name;
-        this.type = "input";
-        this.version = "";
-        this.onmidimessage = null;
-        if (midiAccess._Jazz.Support("MidiInInfo")) {
-            var info = midiAccess._Jazz.MidiInInfo(name);
-            this.manufacturer = info[1];
-            this.version = info[2];
-        }
-        var inputInstance = null;
-        var then = function() {
-            this._jazzInstance = inputInstance._Jazz;
-            this._input = this._jazzInstance.MidiInOpen( this._index, _midiProc.bind(this) );
-            if (inNodeJs) allMidiIns.push(this._jazzInstance);
-        };
-        for (var i=0; (i<midiAccess._jazzInstances.length)&&(!inputInstance); i++) {
-            if (!midiAccess._jazzInstances[i].inputInUse)
-                inputInstance=midiAccess._jazzInstances[i];
-        }
-        if (!inputInstance) {
-            inputInstance = new _JazzInstance();
-            midiAccess._jazzInstances.push( inputInstance );
-            inputInstance.inputInUse = true;
-            inputInstance._delayedInit(then.bind(this));
-        } else {
-            inputInstance.inputInUse = true;
-            //inputInstance._delayedInit(then.bind(this));
-            // no need for delay, the instance has already been initialized
-            then.call(this);
-        }
-    };
-
-    // Introduced in DOM Level 2:
-    MIDIInput.prototype.addEventListener = function (type, listener, useCapture ) {
-        if (type !== "midimessage")
-            return;
-        for (var i=0; i<this._listeners.length; i++)
-            if (this._listeners[i] == listener)
-                return;
-        this._listeners.push( listener );
-    };
-
-    MIDIInput.prototype.removeEventListener = function (type, listener, useCapture ) {
-        if (type !== "midimessage")
-            return;
-        for (var i=0; i<this._listeners.length; i++)
-            if (this._listeners[i] == listener) {
-                this._listeners.splice( i, 1 );  //remove it
-                return;
-            }
-    };
-
-    MIDIInput.prototype.preventDefault = function() {
-        this._pvtDef = true;
-    };
-
-    MIDIInput.prototype.dispatchEvent = function (evt) {
-        this._pvtDef = false;
-
-        // dispatch to listeners
-        for (var i=0; i<this._listeners.length; i++)
-            if (this._listeners[i].handleEvent)
-                this._listeners[i].handleEvent.bind(this)( evt );
-            else
-                this._listeners[i].bind(this)( evt );
-
-        if (this.onmidimessage)
-            this.onmidimessage( evt );
-
-        return this._pvtDef;
-    };
-
-    MIDIInput.prototype.appendToSysexBuffer = function ( data ) {
-        var oldLength = this._sysexBuffer.length;
-        var tmpBuffer = new Uint8Array( oldLength + data.length );
-        tmpBuffer.set( this._sysexBuffer );
-        tmpBuffer.set( data, oldLength );
-        this._sysexBuffer = tmpBuffer;
-    };
-
-    MIDIInput.prototype.bufferLongSysex = function ( data, initialOffset ) {
-        var j = initialOffset;
-        while (j<data.length) {
-            if (data[j] == 0xF7) {
-                // end of sysex!
-                j++;
-                this.appendToSysexBuffer( data.slice(initialOffset, j) );
-                return j;
-            }
-            j++;
-        }
-        // didn't reach the end; just tack it on.
-        this.appendToSysexBuffer( data.slice(initialOffset, j) );
-        this._inLongSysexMessage = true;
-        return j;
-    };
-
-    _midiProc = function _midiProc( timestamp, data ) {
-        // Have to use createEvent/initEvent because IE10 fails on new CustomEvent.  Thanks, IE!
-        var length = 0;
-        var i,j;
-        var isSysexMessage = false;
-
-        // Jazz sometimes passes us multiple messages at once, so we need to parse them out
-        // and pass them one at a time.
-
-        for (i=0; i<data.length; i+=length) {
-            var isValidMessage = true;
-            if (this._inLongSysexMessage) {
-                i = this.bufferLongSysex(data,i);
-                if ( data[i-1] != 0xf7 ) {
-                    // ran off the end without hitting the end of the sysex message
-                    return;
-                }
-                isSysexMessage = true;
-            } else {
-                isSysexMessage = false;
-                switch (data[i] & 0xF0) {
-                    case 0x00:  // Chew up spurious 0x00 bytes.  Fixes a Windows problem.
-                        length=1;
-                        isValidMessage = false;
-                        break;
-
-                    case 0x80:  // note off
-                    case 0x90:  // note on
-                    case 0xA0:  // polyphonic aftertouch
-                    case 0xB0:  // control change
-                    case 0xE0:  // channel mode
-                        length = 3;
-                        break;
-
-                    case 0xC0:  // program change
-                    case 0xD0:  // channel aftertouch
-                        length = 2;
-                        break;
-
-                    case 0xF0:
-                        switch (data[i]) {
-                            case 0xf0:  // variable-length sysex.
-                                i = this.bufferLongSysex(data,i);
-                                if ( data[i-1] != 0xf7 ) {
-                                    // ran off the end without hitting the end of the sysex message
-                                    return;
-                                }
-                                isSysexMessage = true;
-                                break;
-
-                            case 0xF1:  // MTC quarter frame
-                            case 0xF3:  // song select
-                                length = 2;
-                                break;
-
-                            case 0xF2:  // song position pointer
-                                length = 3;
-                                break;
-
-                            default:
-                                length = 1;
-                                break;
-                        }
-                        break;
-                }
-            }
-            if (!isValidMessage)
-                continue;
-            var evt = {};
-            if (!inNodeJs) {
-                evt = document.createEvent( "Event" );
-                evt.initEvent( "midimessage", false, false );
-            }
-            evt.receivedTime = parseFloat( timestamp.toString()) + this._jazzInstance._perfTimeZero;
-            if (isSysexMessage || this._inLongSysexMessage) {
-                evt.data = new Uint8Array( this._sysexBuffer );
-                this._sysexBuffer = new Uint8Array(0);
-                this._inLongSysexMessage = false;
-            } else
-                evt.data = new Uint8Array(data.slice(i, length+i));
-
-            if (inNodeJs) {
-                if (this.onmidimessage) this.onmidimessage( evt );
-            }
-            else this.dispatchEvent( evt );
-        }
-    };
-
-    MIDIOutput = function MIDIOutput( midiAccess, name, index ) {
-        this._listeners = [];
-        this._midiAccess = midiAccess;
-        this._index = index;
-        this.id = "" + index + "." + name;
-        this.manufacturer = "";
-        this.name = name;
-        this.type = "output";
-        this.version = "";
-        if (midiAccess._Jazz.Support("MidiOutInfo")) {
-            var info = midiAccess._Jazz.MidiOutInfo(name);
-            this.manufacturer = info[1];
-            this.version = info[2];
-        }
-        var outputInstance = null;
-        var then = function() {
-            this._jazzInstance = outputInstance._Jazz;
-            this._jazzInstance.MidiOutOpen(this.name);
-        };
-        for (var i=0; (i<midiAccess._jazzInstances.length)&&(!outputInstance); i++) {
-            if (!midiAccess._jazzInstances[i].outputInUse)
-                outputInstance=midiAccess._jazzInstances[i];
-        }
-        if (!outputInstance) {
-            outputInstance = new _JazzInstance();
-            midiAccess._jazzInstances.push( outputInstance );
-            outputInstance.outputInUse = true;
-            outputInstance._delayedInit(then.bind(this));
-        } else {
-            outputInstance.outputInUse = true;
-            //outputInstance._delayedInit(then.bind(this));
-            // no need for delay, the instance has already been initialized
-            then.call(this);
-        }
-    };
-
-    function _sendLater() {
-        this.jazz.MidiOutLong( this.data );    // handle send as sysex
-    }
-
-    MIDIOutput.prototype.send = function( data, timestamp ) {
-        var delayBeforeSend = 0;
-        if (data.length === 0)
-            return false;
-
-        if (timestamp)
-            delayBeforeSend = Math.floor( timestamp - window.performance.now() );
-
-        if (timestamp && (delayBeforeSend>1)) {
-            var sendObj = new Object();
-            sendObj.jazz = this._jazzInstance;
-            sendObj.data = data;
-
-            window.setTimeout( _sendLater.bind(sendObj), delayBeforeSend );
-        } else {
-            this._jazzInstance.MidiOutLong( data );
-        }
-        return true;
-    };
-
-
-    // wrapper for older WebMIDI implementation, i.e. Chromium's WebMIDI implementation
-
-    function MIDIAccessWrapper(request){
-        this._promise = new Promise();
-        this._request = request;
-    };
-
-    MIDIAccessWrapper.prototype.init = function() {
-        var scope = this;
-
-        this._request.bind(window.navigator)().then(
-
-            function onSuccess(access){
-                if(typeof access.inputs === 'function'){
-                    // add MIDIInputMap and MIDIOutputMap to MIDIAccess object
-                    access.inputs = _createMIDIPortMap.call(null, access.inputs());
-                    access.outputs = _createMIDIPortMap.call(null, access.outputs());
-                }
-                if(scope._promise){
-                    scope._promise.succeed(access);
-                }
-            },
-
-            function onError(e){
-                if(scope._promise){
-                    scope._promise.fail({code:1});
-                }
-            }
-        );
-    };
-
-    //init: create plugin or wrap native MIDIAccess object
-    (function init(){
-        var access;
-        if(!window.navigator.requestMIDIAccess){
-            window.navigator.requestMIDIAccess = function(){
-                access = new MIDIAccess();
-                return access._promise;
-            };
-            if(typeof __dirname !== 'undefined' && window.jazzMidi) {
-                window.navigator.close = function() {
-                    for(var i in allMidiIns) allMidiIns[i].MidiInClose();
-                    // Need to close MIDI input ports, otherwise Node.js will wait for MIDI input forever.
-                };
-            }
-        }else{
-            access = new MIDIAccessWrapper(window.navigator.requestMIDIAccess);
-            window.navigator.requestMIDIAccess = function(){
-                access.init();
-                return access._promise;
-            }
-        }
-    }());
-
-}(window));
-
-// Polyfill window.performance.now() if necessary.
-(function (exports) {
-    var perf = {}, props;
-
-    function findAlt() {
-        var prefix = ['moz', 'webkit', 'o', 'ms'],
-        i = prefix.length,
-            //worst case, we use Date.now()
-            props = {
-                value: (function (start) {
-                    return function () {
-                        return Date.now() - start;
-                    };
-                }(Date.now()))
-            };
-
-        //seach for vendor prefixed version
-        for (; i >= 0; i--) {
-            if ((prefix[i] + "Now") in exports.performance) {
-                props.value = function (method) {
-                    return function () {
-                        exports.performance[method]();
-                    }
-                }(prefix[i] + "Now");
-                return props;
-            }
-        }
-
-        //otherwise, try to use connectionStart
-        if ("timing" in exports.performance && "connectStart" in exports.performance.timing) {
-            //this pretty much approximates performance.now() to the millisecond
-            props.value = (function (start) {
-                return function() {
-                    Date.now() - start;
-                };
-            }(exports.performance.timing.connectStart));
-        }
-        return props;
-    }
-
-    //if already defined, bail
-    if (("performance" in exports) && ("now" in exports.performance))
-        return;
-    if (!("performance" in exports))
-        Object.defineProperty(exports, "performance", {
-            get: function () {
-                return perf;
-            }});
-        //otherwise, performance is there, but not "now()"
-
-    props = findAlt();
-    Object.defineProperty(exports.performance, "now", props);
-}(window));
 /*! FileSaver.js
  *  A saveAs() FileSaver implementation.
  *  2014-01-24
@@ -918,363 +299,389 @@ if (typeof module !== "undefined" && module !== null) {
 }
 (function(){
 
-    'use strict';
+  'use strict';
 
-    var
-        // satisfy jslint
-        alert = window.alert,
-        console = window.console,
+  var
+      // satisfy jslint
+      alert = window.alert,
+      console = window.console,
 
-        protectedScope,
-        initMethods = [],
+      protectedScope,
+      initMethods = [],
 
-        src,
-        context,
-        gainNode,
-        compressor,
-        sampleIndex = 0,
-        compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
+      webaudioUnlocked = false,
+      src,
+      context,
+      gainNode,
+      compressor,
+      sampleIndex = 0,
+      compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
 
-        ua = navigator.userAgent,
-        os,
-        browser,
-        legacy = false;
+      ua = navigator.userAgent,
+      os,
+      browser,
+      legacy = false;
+
+  if(ua.match(/(iPad|iPhone|iPod)/g)){
+      os = 'ios';
+      // webaudioUnlocked = false;
+  }else if(ua.indexOf('Android') !== -1){
+      os = 'android';
+  }else if(ua.indexOf('Linux') !== -1){
+      os = 'linux';
+  }else if(ua.indexOf('Macintosh') !== -1){
+      os = 'osx';
+  }else if(ua.indexOf('Windows') !== -1){
+      os = 'windows';
+  }
+
+  if(ua.indexOf('Chrome') !== -1){
+      // chrome, chromium and canary
+      browser = 'chrome';
+
+      if(ua.indexOf('OPR') !== -1){
+          browser = 'opera';
+      }else if(ua.indexOf('Chromium') !== -1){
+          browser = 'chromium';
+      }
+
+      /*
+      //console.log(new Audio().canPlayType('audio/mp3'));
+      if(new Audio().canPlayType('audio/mp3') !== 'probably'){
+          // chromium does not support mp3
+          browser = 'chromium';
+      }
+      */
+  }else if(ua.indexOf('Safari') !== -1){
+      browser = 'safari';
+  }else if(ua.indexOf('Firefox') !== -1){
+      browser = 'firefox';
+  }else if(ua.indexOf('Trident') !== -1){
+      browser = 'Internet Explorer';
+  }
+
+  if(os === 'ios'){
+      if(ua.indexOf('CriOS') !== -1){
+          browser = 'chrome';
+      }
+  }
+
+  //console.log(os, browser, '---', ua);
+  console.log('heartbeat v0.0.3-groovy2');
 
 
-    if(ua.match(/(iPad|iPhone|iPod)/g)){
-        os = 'ios';
-    }else if(ua.indexOf('Android') !== -1){
-        os = 'android';
-    }else if(ua.indexOf('Linux') !== -1){
-        os = 'linux';
-    }else if(ua.indexOf('Macintosh') !== -1){
-        os = 'osx';
-    }else if(ua.indexOf('Windows') !== -1){
-        os = 'windows';
-    }
+  if(window.AudioContext){
+      context = new window.AudioContext();
+      if(context.createGainNode === undefined){
+          context.createGainNode = context.createGain;
+      }
+  }else if(window.webkitAudioContext){
+      context = new window.webkitAudioContext();
+  }else if(window.oAudioContext){
+      context = new window.oAudioContext();
+  }else if(window.msAudioContext){
+      context = new window.msAudioContext();
+  }else{
+      //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
+      window.sequencer = {
+          browser: browser,
+          os: os
+      };
+      alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
+      window.sequencer.ready = function(cb){
+          cb();
+      };
+      return;
+  }
 
-    if(ua.indexOf('Chrome') !== -1){
-        // chrome, chromium and canary
-        browser = 'chrome';
-
-        if(ua.indexOf('OPR') !== -1){
-            browser = 'opera';
-        }else if(ua.indexOf('Chromium') !== -1){
-            browser = 'chromium';
-        }
-
-        /*
-        //console.log(new Audio().canPlayType('audio/mp3'));
-        if(new Audio().canPlayType('audio/mp3') !== 'probably'){
-            // chromium does not support mp3
-            browser = 'chromium';
-        }
-        */
-    }else if(ua.indexOf('Safari') !== -1){
-        browser = 'safari';
-    }else if(ua.indexOf('Firefox') !== -1){
-        browser = 'firefox';
-    }else if(ua.indexOf('Trident') !== -1){
-        browser = 'Internet Explorer';
-    }
-
-    if(os === 'ios'){
-        if(ua.indexOf('CriOS') !== -1){
-            browser = 'chrome';
-        }
-    }
-
-    //console.log(os, browser, '---', ua);
-
-    if(window.AudioContext){
-        context = new window.AudioContext();
-        if(context.createGainNode === undefined){
-            context.createGainNode = context.createGain;
-        }
-    }else if(window.webkitAudioContext){
-        context = new window.webkitAudioContext();
-    }else if(window.oAudioContext){
-        context = new window.oAudioContext();
-    }else if(window.msAudioContext){
-        context = new window.msAudioContext();
-    }else{
-        //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-        window.sequencer = {
-            browser: browser,
-            os: os
-        };
-        alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
-        window.sequencer.ready = function(cb){
-            cb();
-        };
-        return;
-    }
-
-    // check for older implementations of WebAudio
-    src = context.createBufferSource();
-    if(src.start === undefined){
-        legacy = true;
-    }
+  // check for older implementations of WebAudio
+  src = context.createBufferSource();
+  if(src.start === undefined){
+      legacy = true;
+  }
 
 
 /*
-    var audioTest = new Audio();
-    //wav = audioTest.canPlayType('audio/wav');// === '' ? false : true;
-    canplayOgg = audioTest.canPlayType('audio/ogg');// === '' ? false : true;
-    canplayMp3 = audioTest.canPlayType('audio/mpeg');// === '' ? false : true;
-    console.log('wav', audioTest.canPlayType('audio/wav'), 'ogg', canplayOgg, 'mp3', canplayMp3);
-    audioTest = null;
+  var audioTest = new Audio();
+  //wav = audioTest.canPlayType('audio/wav');// === '' ? false : true;
+  canplayOgg = audioTest.canPlayType('audio/ogg');// === '' ? false : true;
+  canplayMp3 = audioTest.canPlayType('audio/mpeg');// === '' ? false : true;
+  console.log('wav', audioTest.canPlayType('audio/wav'), 'ogg', canplayOgg, 'mp3', canplayMp3);
+  audioTest = null;
 */
 
 
-    navigator.getUserMedia = (
-        navigator.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia ||
-        navigator.msGetUserMedia
-    );
+  navigator.getUserMedia = (
+      navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia
+  );
 
 
-    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
-    window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
+  window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
+  window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
 
-    //console.log('iOS', os, context, window.Blob, window.requestAnimationFrame);
+  //console.log('iOS', os, context, window.Blob, window.requestAnimationFrame);
 
-    compressor = context.createDynamicsCompressor();
-    compressor.connect(context.destination);
-    //console.log(compressor);
-    gainNode = context.createGainNode();
-    //gainNode.connect(compressor);
-    gainNode.connect(context.destination);
-    gainNode.gain.value = 1;
+  compressor = context.createDynamicsCompressor();
+  compressor.connect(context.destination);
+  //console.log(compressor);
+  gainNode = context.createGainNode();
+  //gainNode.connect(compressor);
+  gainNode.connect(context.destination);
+  gainNode.gain.value = 1;
 
 
-    protectedScope = {
+  protectedScope = {
 
-        context: context,
-        //destination: context.destination,
-        masterGainNode: gainNode,
-        masterCompressor: compressor,
+      context: context,
+      //destination: context.destination,
+      masterGainNode: gainNode,
+      masterCompressor: compressor,
 
-        useDelta: false,
+      useDelta: false,
 
-        timedTasks: {},
-        scheduledTasks: {},
-        repetitiveTasks: {},
+      timedTasks: {},
+      scheduledTasks: {},
+      repetitiveTasks: {},
 
-        getSampleId: function(){
-            return 'S' + sampleIndex++ + new Date().getTime();
-        },
+      getSampleId: function(){
+          return 'S' + sampleIndex++ + new Date().getTime();
+      },
 
-        addInitMethod: function(method){
-            initMethods.push(method);
-        },
+      addInitMethod: function(method){
+          initMethods.push(method);
+      },
 
-        callInitMethods: function(){
-            var i, maxi = initMethods.length;
-            for(i = 0; i < maxi; i++){
-                initMethods[i]();
-            }
-        }
+      callInitMethods: function(){
+          var i, maxi = initMethods.length;
+          for(i = 0; i < maxi; i++){
+              initMethods[i]();
+          }
+      }
 /*
-        log: function(msg){
-            if(sequencer.debug >= 1){
-                console.log(msg);
-            }
-        },
-        info: function(msg){
-            if(sequencer.debug >= 2){
-                console.info(msg);
-            }
-        },
-        error: function(msg){
-            if(sequencer.debug >= 3){
-                console.error(msg);
-            }
-        },
+      log: function(msg){
+          if(sequencer.debug >= 1){
+              console.log(msg);
+          }
+      },
+      info: function(msg){
+          if(sequencer.debug >= 2){
+              console.info(msg);
+          }
+      },
+      error: function(msg){
+          if(sequencer.debug >= 3){
+              console.error(msg);
+          }
+      },
 */
 /*
-        addConstants: function(data){
-            var newSequencer = {};
-            Object.getOwnPropertyNames(data).forEach(function(val, idx, array) {
-                print(val + " -> " + data[val]);
-            });
-        };
+      addConstants: function(data){
+          var newSequencer = {};
+          Object.getOwnPropertyNames(data).forEach(function(val, idx, array) {
+              print(val + " -> " + data[val]);
+          });
+      };
 */
-    };
+  };
 
 
 
-    /**
-        @namespace sequencer
-    */
-    window.sequencer = {
-        name: 'qambi',
-        protectedScope: protectedScope,
-        ui: {},
-        ua: ua,
-        /**
-            The operating system
-            @alias sequencer#os
-        */
-        os: os,
-        /**
-            The name of thebrowser in lowercase, e.g. firefox, opera, safari, chromium, etc.
-            @alias sequencer#browser
-        */
-        browser: browser,
-        /**
-            Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
-            @alias sequencer#legacy
-        */
-        legacy: false,
-        midi: false,
-        webmidi: false,
-        webaudio: true,
-        jazz: false,
-        ogg: false,
-        mp3: false,
-        record_audio: navigator.getUserMedia !== undefined,
-        bitrate_mp3_encoding: 128,
-        util: {},
-        debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
-        defaultInstrument: 'sinewave',
-        pitch: 440,
-        bufferTime: 350/1000, //seconds
-        autoAdjustBufferTime: false,
-        noteNameMode: 'sharp',
-        minimalSongLength: 60000, //millis
-        pauseOnBlur: false,
-        restartOnFocus: true,
-        defaultPPQ: 960,
-        overrulePPQ: true,
-        precision: 3, // means float with precision 3, e.g. 10.437
+  /**
+      @namespace sequencer
+  */
+  window.sequencer = {
+      name: 'qambi',
+      protectedScope: protectedScope,
+      ui: {},
+      ua: ua,
+      /**
+          The operating system
+          @alias sequencer#os
+      */
+      os: os,
+      /**
+          The name of thebrowser in lowercase, e.g. firefox, opera, safari, chromium, etc.
+          @alias sequencer#browser
+      */
+      browser: browser,
+      /**
+          Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
+          @alias sequencer#legacy
+      */
+      legacy: false,
+      midi: false,
+      webmidi: false,
+      webaudio: true,
+      jazz: false,
+      ogg: false,
+      mp3: false,
+      record_audio: navigator.getUserMedia !== undefined,
+      bitrate_mp3_encoding: 128,
+      util: {},
+      debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
+      defaultInstrument: 'sinewave',
+      pitch: 440,
+      bufferTime: 350/1000, //seconds
+      autoAdjustBufferTime: false,
+      noteNameMode: 'sharp',
+      minimalSongLength: 60000, //millis
+      pauseOnBlur: false,
+      restartOnFocus: true,
+      defaultPPQ: 960,
+      overrulePPQ: true,
+      precision: 3, // means float with precision 3, e.g. 10.437
 
-        midiInputs: [],
-        midiOutputs: [],
+      midiInputs: {},
+      midiOutputs: {},
 /*
-        logger: {
-            clear: function(){console.log('create a logger first with sequencer.createLogger()');},
-            print: function(){console.log('create a logger first with sequencer.createLogger()');}
-        },
+      logger: {
+          clear: function(){console.log('create a logger first with sequencer.createLogger()');},
+          print: function(){console.log('create a logger first with sequencer.createLogger()');}
+      },
 */
-        storage: {
-            midi: {
-                id: 'midi'
-            },
-            audio: {
-                id: 'audio',
-                recordings: {}
-            },
-            instruments: {
-                id: 'instruments'
-            },
-            samplepacks: {
-                id: 'samplepacks'
-            },
-            assetpacks: {
-                id: 'assetpacks'
-            }
-        },
+      storage: {
+          midi: {
+              id: 'midi'
+          },
+          audio: {
+              id: 'audio',
+              recordings: {}
+          },
+          instruments: {
+              id: 'instruments'
+          },
+          samplepacks: {
+              id: 'samplepacks'
+          },
+          assetpacks: {
+              id: 'assetpacks'
+          }
+      },
 /*
-        createLogger: function(){
-            var divLog = document.createElement('div'),
-                clear, print;
+      createLogger: function(){
+          var divLog = document.createElement('div'),
+              clear, print;
 
-            divLog.style.position = 'absolute';
-            divLog.style.zIndex = 100;
-            divLog.style.fontFamily = 'monospace';
-            divLog.style.fontSize = '11px';
-            divLog.style.color = '#00ff00';
-            divLog.style.padding = '2px';
-            divLog.style.width = '500px';
-            divLog.style.backgroundColor = '#000000';
-            document.body.appendChild(divLog);
+          divLog.style.position = 'absolute';
+          divLog.style.zIndex = 100;
+          divLog.style.fontFamily = 'monospace';
+          divLog.style.fontSize = '11px';
+          divLog.style.color = '#00ff00';
+          divLog.style.padding = '2px';
+          divLog.style.width = '500px';
+          divLog.style.backgroundColor = '#000000';
+          document.body.appendChild(divLog);
 
-            clear = function(){
-                divLog.innerHTML = '';
-            };
+          clear = function(){
+              divLog.innerHTML = '';
+          };
 
-            print = function(msg, append){
-                append = append === undefined ? false : append;
-                if(append){
-                    divLog.innerHTML += msg + '<br/>';
-                }else{
-                    divLog.innerHTML = msg + '<br/>';
-                }
-            };
+          print = function(msg, append){
+              append = append === undefined ? false : append;
+              if(append){
+                  divLog.innerHTML += msg + '<br/>';
+              }else{
+                  divLog.innerHTML = msg + '<br/>';
+              }
+          };
 
-            this.logger.clear = clear;
-            this.logger.print = print;
-        },
+          this.logger.clear = clear;
+          this.logger.print = print;
+      },
 */
-        getAudioContext: function(){
-            return context;
-        },
+      getAudioContext: function(){
+          return context;
+      },
 
-        getTime: function(){
-            return context.currentTime;
-        },
+      getTime: function(){
+          return context.currentTime;
+      },
 
-        setMasterVolume: function(value){
-            value = value < 0 ? 0 : value > 1 ? 1 : value;
-            gainNode.gain.value = value;
-        },
+      setMasterVolume: function(value){
+          value = value < 0 ? 0 : value > 1 ? 1 : value;
+          gainNode.gain.value = value;
+      },
 
-        getMasterVolume: function(){
-            return gainNode.gain.value;
-        },
+      getMasterVolume: function(){
+          return gainNode.gain.value;
+      },
 
-        getCompressionReduction: function(){
-            //console.log(compressor);
-            return compressor.reduction.value;
-        },
+      getCompressionReduction: function(){
+          //console.log(compressor);
+          return compressor.reduction.value;
+      },
 
-        enableMasterCompressor: function(flag){
-            if(flag){
-                gainNode.disconnect(0);
-                gainNode.connect(compressor);
-                compressor.disconnect(0);
-                compressor.connect(context.destination);
-            }else{
-                compressor.disconnect(0);
-                gainNode.disconnect(0);
-                gainNode.connect(context.destination);
-            }
-        },
+      enableMasterCompressor: function(flag){
+          if(flag){
+              gainNode.disconnect(0);
+              gainNode.connect(compressor);
+              compressor.disconnect(0);
+              compressor.connect(context.destination);
+          }else{
+              compressor.disconnect(0);
+              gainNode.disconnect(0);
+              gainNode.connect(context.destination);
+          }
+      },
 
-        configureMasterCompressor: function(cfg){
-            /*
-                readonly attribute AudioParam threshold; // in Decibels
-                readonly attribute AudioParam knee; // in Decibels
-                readonly attribute AudioParam ratio; // unit-less
-                readonly attribute AudioParam reduction; // in Decibels
-                readonly attribute AudioParam attack; // in Seconds
-                readonly attribute AudioParam release; // in Seconds
-            */
-            var i, param;
-            for(i = compressorParams.length; i >= 0; i--){
-                param = compressorParams[i];
-                if(cfg[param] !== undefined){
-                    compressor[param].value = cfg[param];
-                }
-            }
-        }
+      configureMasterCompressor: function(cfg){
+          /*
+              readonly attribute AudioParam threshold; // in Decibels
+              readonly attribute AudioParam knee; // in Decibels
+              readonly attribute AudioParam ratio; // unit-less
+              readonly attribute AudioParam reduction; // in Decibels
+              readonly attribute AudioParam attack; // in Seconds
+              readonly attribute AudioParam release; // in Seconds
+          */
+          var i, param;
+          for(i = compressorParams.length; i >= 0; i--){
+              param = compressorParams[i];
+              if(cfg[param] !== undefined){
+                  compressor[param].value = cfg[param];
+              }
+          }
+      },
 
-    };
+      unlockWebAudio: function(){
+          if(webaudioUnlocked === true){
+              //console.log('already unlocked');
+              return;
+          }
+          if(typeof context.resume === 'function'){
+            context.resume();
+          }
+          var src = context.createOscillator(),
+              gainNode = context.createGainNode();
+          gainNode.gain.value = 0;
+          src.connect(gainNode);
+          gainNode.connect(context.destination);
+          if(src.noteOn !== undefined){
+              src.start = src.noteOn;
+              src.stop = src.noteOff;
+          }
+          src.start(0);
+          src.stop(0.001);
+          webaudioUnlocked = true;
+      }
 
-    // debug levels
-    Object.defineProperty(sequencer, 'ERROR', {value: 1});
-    Object.defineProperty(sequencer, 'WARN', {value: 2});
-    Object.defineProperty(sequencer, 'INFO', {value: 3});
-    Object.defineProperty(sequencer, 'LOG', {value: 4});
 
-    //Object.defineProperty(window.sequencer, 'timedTasks', {value: {}});
-    //Object.defineProperty(window.sequencer, 'scheduledTasks', {value: {}});
-    //Object.defineProperty(window.sequencer, 'repetitiveTasks', {value: {}});
+  };
 
-    //Object.defineProperty(window.sequencer, 'midiInputs', {value: []});
-    //Object.defineProperty(window.sequencer, 'midiOutputs', {value: []});
+  // debug levels
+  Object.defineProperty(sequencer, 'ERROR', {value: 1});
+  Object.defineProperty(sequencer, 'WARN', {value: 2});
+  Object.defineProperty(sequencer, 'INFO', {value: 3});
+  Object.defineProperty(sequencer, 'LOG', {value: 4});
+
+  //Object.defineProperty(window.sequencer, 'timedTasks', {value: {}});
+  //Object.defineProperty(window.sequencer, 'scheduledTasks', {value: {}});
+  //Object.defineProperty(window.sequencer, 'repetitiveTasks', {value: {}});
+
+  //Object.defineProperty(window.sequencer, 'midiInputs', {value: []});
+  //Object.defineProperty(window.sequencer, 'midiOutputs', {value: []});
 
 
 }());(function(){
@@ -3301,256 +2708,264 @@ if (typeof module !== "undefined" && module !== null) {
         createAudioRecorder = sequencer.protectedScope.createAudioRecorder;
     });
 
-}());
-// Sample.source -> gain (midiEvent.velocity) ->
+}());// Sample.source -> gain (midiEvent.velocity) ->
 // Track.input -> [FX input ~~ FX output] -> Track.panner (Track.setPanning())-> Track.output (Track.setVolume())
 // Song.gain (Song.setVolume()) ->
 // Sequencer.gain (sequencer.setMasterVolume()) -> Sequencer.compressor -> context.destiny
 
 (function(){
 
-    'use strict';
+  'use strict';
 
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
+  var
+      // satisfy jslint
+      sequencer = window.sequencer,
+      console = window.console,
 
-        id = 0,
-        context,
+      id = 0,
+      context,
 
-        createClass, // defined in util.js
-        getSample, // defined in instrument_manager.js
+      zeroValue = 0.00000000000000001,
 
-        Reverb,
-        Panner,
-        Panner2,
-        Delay,
-        BiQuadFilter,
-        Compressor;
+      createClass, // defined in util.js
+      getSample, // defined in instrument_manager.js
 
-
-    function Effect(config){
-        this.id = 'FX' + id++ + '' + new Date().getTime();
-        this.type = config.type;
-        this.buffer = config.buffer;
-        this.config = config;
-
-        this.bypass = false;
-        this.amount = 0;//0.5;
-
-        this.output = context.createGainNode();
-        this.wetGain = context.createGainNode();
-        this.dryGain = context.createGainNode();
-        this.output.gain.value = 1;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
-    }
+      Reverb,
+      Panner,
+      Panner2,
+      Delay,
+      BiQuadFilter,
+      Compressor;
 
 
-    Effect.prototype.setInput = function(input){
-        // input.connect(this.node);
-        // return;
+  function Effect(config){
+      this.id = 'FX' + id++ + '' + new Date().getTime();
+      this.type = config.type;
+      this.buffer = config.buffer;
+      this.config = config;
 
-        // dry channel
-        input.connect(this.dryGain);
-        this.dryGain.connect(this.output);
+      this.bypass = false;
+      this.amount = 0;//0.5;
 
-        // wet channel
-        input.connect(this.node);
-        this.node.connect(this.wetGain);
-        this.wetGain.connect(this.output);
-    };
+      this.output = context.createGainNode();
+      this.wetGain = context.createGainNode();
+      this.dryGain = context.createGainNode();
+      this.output.gain.value = 1;
+      this.wetGain.gain.value = this.amount;
+      this.dryGain.gain.value = 1 - this.amount;
+  }
+
+
+  Effect.prototype.setInput = function(input){
+      // input.connect(this.node);
+      // return;
+
+      // dry channel
+      input.connect(this.dryGain);
+      this.dryGain.connect(this.output);
+
+      // wet channel
+      input.connect(this.node);
+      this.node.connect(this.wetGain);
+      this.wetGain.connect(this.output);
+  };
 
 /*
-    Effect.prototype.setOutput = function(output){
-        this.output.disconnect(0);
-        this.output.connect(output);
-    };
+  Effect.prototype.setOutput = function(output){
+      this.output.disconnect(0);
+      this.output.connect(output);
+  };
 */
 
-    Effect.prototype.setAmount = function(value){
-        /*
-        this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
-        var gain1 = Math.cos(this.amount * 0.5 * Math.PI),
-            gain2 = Math.cos((1.0 - this.amount) * 0.5 * Math.PI);
-        this.gainNode.gain.value = gain2 * this.ratio;
-        */
+  Effect.prototype.setAmount = function(value){
+      /*
+      this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
+      var gain1 = Math.cos(this.amount * 0.5 * Math.PI),
+          gain2 = Math.cos((1.0 - this.amount) * 0.5 * Math.PI);
+      this.gainNode.gain.value = gain2 * this.ratio;
+      */
 
-        this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
-        this.wetGain.gain.value = this.amount;
-        this.dryGain.gain.value = 1 - this.amount;
-        //console.log('wet',this.wetGain.gain.value,'dry',this.dryGain.gain.value);
-    };
-
-
-    Effect.prototype.copy = function(){
-        switch(this.type){
-            case 'reverb':
-                return new Reverb(this.config);
-            case 'panner':
-                return new Panner(this.config);
-            case 'panner2':
-                return new Panner2(this.config);
-            case 'delay':
-                return new Delay(this.config);
-            case 'compressor':
-                return new Compressor(this.config);
-        }
-    };
+      this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
+      this.wetGain.gain.value = this.amount;
+      this.dryGain.gain.value = 1 - this.amount;
+      //console.log('wet',this.wetGain.gain.value,'dry',this.dryGain.gain.value);
+  };
 
 
-    sequencer.createReverb = function(id){
-        var buffer = getSample(id);
-        if(buffer === false){
-            console.warn('no reverb with id', id, 'loaded');
-            return false;
-        }
-        var config = {
-            type: 'reverb',
-            buffer: buffer
-        };
-        return new Reverb(config);
-    };
+  Effect.prototype.copy = function(){
+      switch(this.type){
+          case 'reverb':
+              return new Reverb(this.config);
+          case 'panner':
+              return new Panner(this.config);
+          case 'panner2':
+              return new Panner2(this.config);
+          case 'delay':
+              return new Delay(this.config);
+          case 'compressor':
+              return new Compressor(this.config);
+      }
+  };
 
 
-    sequencer.createPanner = function(config){
-        config = config || {};
-        config.type = 'panner';
-        return new Panner(config);
-    };
+  sequencer.createReverb = function(id){
+      var buffer = getSample(id);
+      if(buffer === false){
+          console.warn('no reverb with id', id, 'loaded');
+          return false;
+      }
+      var config = {
+          type: 'reverb',
+          buffer: buffer
+      };
+      return new Reverb(config);
+  };
 
 
-    sequencer.createPanner2 = function(config){
-        config = config || {};
-        config.type = 'panner2';
-        return new Panner2(config);
-    };
+  sequencer.createPanner = function(config){
+      config = config || {};
+      config.type = 'panner';
+      return new Panner(config);
+  };
 
 
-    sequencer.createDelay = function(config){
-        config = config || {};
-        config.type = 'delay';
-        return new Delay(config);
-    };
+  sequencer.createPanner2 = function(config){
+      config = config || {};
+      config.type = 'panner2';
+      return new Panner2(config);
+  };
 
 
-    sequencer.createCompressor = function(config){
-        config = config || {};
-        config.type = 'compressor';
-        return new Compressor(config);
-    };
+  sequencer.createDelay = function(config){
+      config = config || {};
+      config.type = 'delay';
+      return new Delay(config);
+  };
 
 
-    sequencer.createBiQuadFilter = function(config){
-        config = config || {};
-        config.type = 'biquadfilter';
-        return new BiQuadFilter(config);
-    };
+  sequencer.createCompressor = function(config){
+      config = config || {};
+      config.type = 'compressor';
+      return new Compressor(config);
+  };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
-        context = sequencer.protectedScope.context;
-        createClass = sequencer.protectedScope.createClass;
-        getSample = sequencer.getSample;
-
-        Reverb = createClass(Effect, function(config){
-            this.node = context.createConvolver();
-            this.node.buffer = config.buffer;
-            //console.log(this.node.buffer);
-        });
-
-        Panner = createClass(Effect, function(config){
-            this.node = context.createPanner();
-            this.node.panningModel = 'equalpower';
-            this.node.setPosition(0, 0, 0);
-        });
-
-        Panner2 = createClass(Effect, function(config){
-            this.node = context.createPanner();
-            this.node.panningModel = 'HRTF';
-            this.node.setPosition(0, 0, 0);
-        });
-
-        Delay = createClass(Effect, function(config){
-            this.node = context.createDelay();
-            this.node.delayTime.value = 0.3;
-        });
-
-        Compressor = createClass(Effect, function(config){
-            this.node = context.createDynamicsCompressor();
-        });
+  sequencer.createBiQuadFilter = function(config){
+      config = config || {};
+      config.type = 'biquadfilter';
+      return new BiQuadFilter(config);
+  };
 
 
-        BiQuadFilter = createClass(Effect, function(config){
-            this.node = context.createBiquadFilter();
-            this.node.type = 0;
-            this.node.Q.value = 4;
-            this.node.frequency.value = 1600;
-        });
+  sequencer.protectedScope.addInitMethod(function(){
+      context = sequencer.protectedScope.context;
+      createClass = sequencer.protectedScope.createClass;
+      getSample = sequencer.getSample;
 
-        /*
-        Panner.prototype.setPosition = function(x, y, z){
-            var multiplier = 5;
-            console.log(x * multiplier);
-            this.node.setPosition(x * multiplier, y * multiplier, z * multiplier);
-        };
-        */
+      Reverb = createClass(Effect, function(config){
+          this.node = context.createConvolver();
+          this.node.buffer = config.buffer;
+          //console.log(this.node.buffer);
+      });
 
-        Panner.prototype.setPosition = function(value){
-            var x = value,
-                z = 1 - Math.abs(x);
-            this.node.setPosition(x, 0, z);
-            //console.log(x,z);
-        };
+      Panner = createClass(Effect, function(config){
+          this.node = context.createPanner();
+          this.node.panningModel = 'equalpower';
+          this.node.setPosition(zeroValue, zeroValue, zeroValue);
+      });
 
-        Panner2.prototype.setPosition = function(value){
-            var xDeg = parseInt(value),
-                zDeg = xDeg + 90,
-                x, z;
-            if (zDeg > 90) {
-                zDeg = 180 - zDeg;
-            }
-            x = Math.sin(xDeg * (Math.PI / 180));
-            z = Math.sin(zDeg * (Math.PI / 180));
-            this.node.setPosition(x, 0, z);
-        };
+      Panner2 = createClass(Effect, function(config){
+          this.node = context.createPanner();
+          this.node.panningModel = 'HRTF';
+          this.node.setPosition(zeroValue, zeroValue, zeroValue);
+      });
 
-        Delay.prototype.setTime = function(value){
-            this.node.delayTime.value = value;
-        };
+      Delay = createClass(Effect, function(config){
+          this.node = context.createDelay();
+          this.node.delayTime.value = 0.3;
+      });
 
-    });
+      Compressor = createClass(Effect, function(config){
+          this.node = context.createDynamicsCompressor();
+      });
+
+
+      BiQuadFilter = createClass(Effect, function(config){
+          this.node = context.createBiquadFilter();
+          this.node.type = 0;
+          this.node.Q.value = 4;
+          this.node.frequency.value = 1600;
+      });
+
+      /*
+      Panner.prototype.setPosition = function(x, y, z){
+          var multiplier = 5;
+          console.log(x * multiplier);
+          this.node.setPosition(x * multiplier, y * multiplier, z * multiplier);
+      };
+      */
+
+      Panner.prototype.setPosition = function(value){
+          var x = value,
+              y = 0,
+              z = 1 - Math.abs(x);
+
+          x = x === 0 ? zeroValue : x;
+          y = y === 0 ? zeroValue : y;
+          z = z === 0 ? zeroValue : z;
+          this.node.setPosition(x, y, z);
+          //console.log(1,x,y,z);
+      };
+
+      Panner2.prototype.setPosition = function(value){
+          var xDeg = parseInt(value),
+              zDeg = xDeg + 90,
+              x, y, z;
+          if (zDeg > 90) {
+              zDeg = 180 - zDeg;
+          }
+          x = Math.sin(xDeg * (Math.PI / 180));
+          y = 0;
+          z = Math.sin(zDeg * (Math.PI / 180));
+          x = x === 0 ? zeroValue : x;
+          y = y === 0 ? zeroValue : y;
+          z = z === 0 ? zeroValue : z;
+          this.node.setPosition(x, y, z);
+          //console.log(2,x,y,z);
+      };
+
+      Delay.prototype.setTime = function(value){
+          this.node.delayTime.value = value;
+      };
+
+  });
 }());
 
 
 /*
 
-        // only reverb is currently supported, filter out reverb
-        if(this.numEffects > 0){
-            for(i in this.effects){
-                if(this.effects.hasOwnProperty(i)){
-                   effect = this.effects[i];
-                   if(this.reverb === undefined && effect.type === 'reverb'){
-                        this.reverb = effect;
-                        break;
-                   }
-                }
-            }
-            this.source.connect(this.reverb.node);
-            this.reverb.node.disconnect(0);
-            this.reverb.node.connect(this.wetGain);
-            this.wetGain.gain.value = this.reverb.amount;
-            this.dryGain.gain.value = (1 - this.reverb.amount);
-        }else{
-            this.dryGain.gain.value = 1;
-        }
+      // only reverb is currently supported, filter out reverb
+      if(this.numEffects > 0){
+          for(i in this.effects){
+              if(this.effects.hasOwnProperty(i)){
+                 effect = this.effects[i];
+                 if(this.reverb === undefined && effect.type === 'reverb'){
+                      this.reverb = effect;
+                      break;
+                 }
+              }
+          }
+          this.source.connect(this.reverb.node);
+          this.reverb.node.disconnect(0);
+          this.reverb.node.connect(this.wetGain);
+          this.wetGain.gain.value = this.reverb.amount;
+          this.dryGain.gain.value = (1 - this.reverb.amount);
+      }else{
+          this.dryGain.gain.value = 1;
+      }
 
 
 */
-
-
-
 /*
 
     operators:
@@ -9642,575 +9057,527 @@ if (typeof module !== "undefined" && module !== null) {
 
 (function(){
 
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        context, // defined in open_module.js
-        typeString, // defined in util.js
-        objectForEach, // defined in util.js
-        createMidiNote, // defined in midi_note.js
-        createMidiEvent, // defined in midi_event.js
-
-        slice = Array.prototype.slice,
-
-        songMidiEventListener,
-
-        midiInputsOrder = [],
-        midiOutputsOrder = [],
-        midiInitialized = false,
-        midiEventListenerId = 0;
-
-
-    function initMidi(cb){
-        var iterator, data, port, name, doubleNames;
-
-        //console.log(midiInitialized, navigator.requestMIDIAccess);
-
-        if(midiInitialized === true){
-            cb();
-            return;
-        }
-
-        midiInitialized = true;
-
-        if(navigator.requestMIDIAccess !== undefined){
-            navigator.requestMIDIAccess().then(
-                // on success
-                function midiAccessOnSuccess(midi){
-                    if(midi._jazzInstances !== undefined){
-                        sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
-                        sequencer.midi = true;
-                    }else{
-                        sequencer.webmidi = true;
-                        sequencer.midi = true;
-                    }
-                    iterator = midi.inputs.values();
-                    //console.time('parse ports');
-                    //console.log(ports);
-                    doubleNames = {};
-                    //midiInputsOrder = [];
-
-                    while((data = iterator.next()).done === false){
-                        port = data.value;
-                        name = port.name;
-                        if(doubleNames[name] === undefined){
-                            doubleNames[name] = [];
-                        }
-                        doubleNames[name].push(port);
-                    }
-
-                    objectForEach(doubleNames, function(obj, name){
-                        var i, port, numPorts = obj.length;
-                        //console.log(numPorts);
-                        if(numPorts === 1){
-                            port = obj[0];
-                            port.label = name;
-                            midiInputsOrder.push({label: port.label, id: port.id});
-                            sequencer.midiInputs[port.id] = port;
-                        }else{
-                            for(i = 0; i < numPorts; i++){
-                                port = obj[i];
-                                port.label = name + ' port ' + i;//(i + 1);
-                                //console.log(port.id, port.label, name);
-                                midiInputsOrder.push({label: port.label, id: port.id});
-                                sequencer.midiInputs[port.id] = port;
-                            }
-                        }
-                    });
-
-                    midiInputsOrder.sort(function(a, b){
-                        var nameA = a.label.toLowerCase(),
-                            nameB = b.label.toLowerCase();
-                        if(nameA < nameB){ //sort string ascending
-                            return -1;
-                        }else if (nameA > nameB){
-                            return 1;
-                        }
-                        return 0; //default return value (no sorting)
-                    });
-
-                    sequencer.numMidiInputs = midiInputsOrder.length;
-
-
-
-                    iterator = midi.outputs.values();
-                    doubleNames = {};
-                    //midiOutputsOrder = [];
-
-                    while((data = iterator.next()).done === false){
-                        port = data.value;
-                        name = port.name;
-                        if(doubleNames[name] === undefined){
-                            doubleNames[name] = [];
-                        }
-                        doubleNames[name].push(port);
-                    }
-
-                    objectForEach(doubleNames, function(obj, name){
-                        var i, port, numPorts = obj.length;
-                        //console.log(numPorts);
-                        if(numPorts === 1){
-                            port = obj[0];
-                            port.label = name;
-                            midiOutputsOrder.push({label: port.label, id: port.id});
-                            sequencer.midiOutputs[port.id] = port;
-                        }else{
-                            for(i = 0; i < numPorts; i++){
-                                port = obj[i];
-                                port.label = name + ' port ' + i;//(i + 1);
-                                //console.log(port.id, port.label, name);
-                                midiOutputsOrder.push({label: port.label, id: port.id});
-                                sequencer.midiOutputs[port.id] = port;
-                            }
-                        }
-                    });
-
-                    midiOutputsOrder.sort(function(a, b){
-                        var nameA = a.label.toLowerCase(),
-                            nameB = b.label.toLowerCase();
-                        if(nameA < nameB){ //sort string ascending
-                            return -1;
-                        }else if (nameA > nameB){
-                            return 1;
-                        }
-                        return 0; //default return value (no sorting)
-                    });
-
-                    sequencer.numMidiOutputs = midiOutputsOrder.length;
-
-                    //console.log(sequencer.midiInputs, sequencer.midiOutputs);
-                    //console.log(midiInputsOrder, midiOutputsOrder);
-                    //console.timeEnd('parse ports');
-/*
-                    // onconnect and ondisconnect are not yet implemented in Chrome and Chromium
-                    midi.addEventListener('onconnect', function(e){
-                        console.log('device connected', e);
-                    }, false);
-
-                    midi.addEventListener('ondisconnect', function(e){
-                        console.log('device disconnected', e);
-                    }, false);
-*/
-                    cb();
-                },
-                // on error
-                function midiAccessOnError(e){
-                    console.log('MIDI could not be initialized:', e);
-                    cb();
-                }
-            );
-        // browsers without WebMIDI API
-        }else{
-            if(sequencer.browser === 'chrome'){
-                console.log('Web MIDI API not enabled');
-            }else{
-                console.log('Web MIDI API not supported');
-            }
-            cb();
-        }
-    }
-
-
-    function initMidiSong(song){
-        songMidiEventListener = function(e){
-            //console.log(e);
-            handleMidiMessageSong(e, song, this);
-        };
-
-        // by default a song listens to all available midi-in ports
-        objectForEach(sequencer.midiInputs, function(port){
-            port.addEventListener('midimessage', songMidiEventListener);
-            song.midiInputs[port.id] = port;
-            //console.log(port);
-        });
-        //console.log(sequencer.midiInputs);
-
-        objectForEach(sequencer.midiOutputs, function(port){
-            song.midiOutputs[port.id] = port;
-        });
-
-        song.numMidiInputs = sequencer.numMidiInputs;
-        song.numMidiOutputs = sequencer.numMidiOutputs;
-    }
-
-
-    function setMidiInputSong(id, flag, song){
-        var input = sequencer.midiInputs[id],
-            tracks = song.tracks,
-            maxi = song.numTracks - 1,
-            i, track;
-
-        flag = flag === undefined ? true : flag;
-
-        if(input === undefined){
-            if(sequencer.debug === true){
-                console.log('no midi input with id', id,'found');
-            }
-            return;
-        }
-
-        if(flag === false){
-            delete song.midiInputs[id];
-            input.removeEventListener('midimessage', songMidiEventListener);
-            song.numMidiInputs--;
-        }else if(input !== undefined){
-            song.midiInputs[id] = input;
-            input.addEventListener('midimessage', songMidiEventListener);
-            song.numMidiInputs++;
-        }
-
-        for(i = maxi; i >= 0; i--){
-            track = tracks[i];
-            track.setMidiInput(id, flag);
-            // if(flag === false){
-            //     delete track.midiInputs[id];
-            // }
-        }
-    }
-
-    function setMidiOutputSong(id, flag, song){
-        var output = sequencer.midiOutputs[id],
-            tracks = song.tracks,
-            maxi = song.numTracks - 1,
-            i, track, time;
-
-        flag = flag === undefined ? true : flag;
-
-        if(output === undefined){
-            if(sequencer.debug === true){
-                console.log('no midi output with id', id,'found');
-            }
-            return;
-        }
-
-        if(flag === false){
-            delete song.midiOutputs[id];
-            song.numMidiOutputs--;
-            time = song.scheduler.lastEventTime + 100;
-            output.send([0xB0, 0x7B, 0x00], time); // stop all notes
-            output.send([0xB0, 0x79, 0x00], time); // reset all controllers
-        }else if(output !== undefined){
-            song.midiOutputs[id] = output;
-            song.numMidiOutputs++;
-        }
-
-        for(i = maxi; i >= 0; i--){
-            track = tracks[i];
-            track.setMidiOutput(id, flag);
-            // if(flag === false){
-            //     delete track.midiOutputs[id];
-            // }
-        }
-    }
-
-    function handleMidiMessageSong(midiMessageEvent, song, input){
-        var data = midiMessageEvent.data,
-            i, track,
-            tracks = song.tracks,
-            numTracks = song.numTracks,
-            midiEvent,
-            listeners;
-
-        //console.log(midiMessageEvent.data);
-        midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
-
-        for(i = 0; i < numTracks; i++){
-            track = tracks[i];
-            //console.log(track.midiInputs, input);
-            /*
-            if(midiEvent.channel === track.channel || track.channel === 0 || track.channel === 'any'){
-                handleMidiMessageTrack(midiEvent, track);
-            }
-            */
-            // like in Cubase, midi events from all devices, sent on any midi channel are forwarded to all tracks
-            // set track.monitor to false if you don't want to receive midi events on a certain track
-            // note that track.monitor is by default set to false and that track.monitor is automatically set to true
-            // if you are recording on that track
-            //console.log(track.monitor, track.id, input.id);
-            if(track.monitor === true && track.midiInputs[input.id] !== undefined){
-                handleMidiMessageTrack(midiEvent, track, input);
-            }
-        }
-
-        listeners = song.midiEventListeners[midiEvent.type];
-        if(listeners === undefined){
-            return;
-        }
-
-        objectForEach(listeners, function(listener){
-            listener(midiEvent, input);
-        });
-    }
-
-
-    //function handleMidiMessageTrack(midiMessageEvent, track, input){
-    function handleMidiMessageTrack(midiEvent, track, input){
-        var song = track.song,
-            note, listeners, channel;
-            //data = midiMessageEvent.data,
-            //midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
-
-        //midiEvent.source = midiMessageEvent.srcElement.name;
-        //console.log(midiMessageEvent)
-        //console.log('---->', midiEvent.type);
-
-        // add the exact time of this event so we can calculate its ticks position
-        midiEvent.recordMillis = context.currentTime * 1000; // millis
-        midiEvent.state = 'recorded';
-
-        if(midiEvent.type === 144){
-            note = createMidiNote(midiEvent);
-            track.recordingNotes[midiEvent.data1] = note;
-            //track.song.recordingNotes[note.id] = note;
-        }else if(midiEvent.type === 128){
-            note = track.recordingNotes[midiEvent.data1];
-            // check if the note exists: if the user plays notes on her keyboard before the midi system has
-            // been fully initialized, it can happen that the first incoming midi event is a NOTE OFF event
-            if(note === undefined){
-                return;
-            }
-            note.addNoteOff(midiEvent);
-            delete track.recordingNotes[midiEvent.data1];
-            //delete track.song.recordingNotes[note.id];
-        }
-
-        //console.log(song.preroll, song.recording, track.recordEnabled);
-
-        if((song.prerolling || song.recording) && track.recordEnabled === 'midi'){
-            if(midiEvent.type === 144){
-                track.song.recordedNotes.push(note);
-            }
-            track.recordPart.addEvent(midiEvent);
-            // song.recordedEvents is used in the key editor
-            track.song.recordedEvents.push(midiEvent);
-        }else if(track.enableRetrospectiveRecording){
-            track.retrospectiveRecording.push(midiEvent);
-        }
-
-        // call all midi event listeners
-        listeners = track.midiEventListeners[midiEvent.type];
-        if(listeners !== undefined){
-            objectForEach(listeners, function(listener){
-                listener(midiEvent, input);
-            });
-        }
-
-        channel = track.channel;
-        if(channel === 'any' || channel === undefined || isNaN(channel) === true){
-            channel = 0;
-        }
-
-        objectForEach(track.midiOutputs, function(output){
-            //console.log('midi out', output, midiEvent.type);
-            if(midiEvent.type === 128 || midiEvent.type === 144 || midiEvent.type === 176){
-                //console.log(midiEvent.type, midiEvent.data1, midiEvent.data2);
-                output.send([midiEvent.type, midiEvent.data1, midiEvent.data2]);
-            // }else if(midiEvent.type === 192){
-            //     output.send([midiEvent.type + channel, midiEvent.data1]);
-            }
-            //output.send([midiEvent.status + channel, midiEvent.data1, midiEvent.data2]);
-        });
-
-        // @TODO: maybe a track should be able to send its event to both a midi-out port and an internal heartbeat song?
-        //console.log(track.routeToMidiOut);
-        if(track.routeToMidiOut === false){
-            midiEvent.track = track;
-            track.instrument.processEvent(midiEvent);
-        }
-    }
-
-
-    function addMidiEventListener(args, obj){ // obj can be a track or a song
-        args = slice.call(args);
-
-        var id = midiEventListenerId++,
-            types = {},
-            ids = [],
-            listener,
-            loop;
-
-
-        // should I inline this?
-        loop = function(args, i, maxi){
-            for(i = 0; i < maxi; i++){
-                var arg = args[i],
-                    type = typeString(arg);
-                //console.log(type);
-                if(type === 'array'){
-                    loop(arg, 0, arg.length);
-                }else if(type === 'function'){
-                    listener = arg;
-                }else if(isNaN(arg) === false){
-                    arg = parseInt(arg, 10);
-                    if(sequencer.checkEventType(arg) !== false){
-                        types[arg] = arg;
-                    }
-                }else if(type === 'string'){
-                    if(sequencer.checkEventType(arg) !== false){
-                        arg = sequencer.midiEventNumberByName(arg);
-                        types[arg] = arg;
-                    }
-                }
-            }
-        };
-
-        loop(args, 0, args.length);
-        //console.log('types', types, 'listener', listener);
-
-        objectForEach(types, function(type){
-            //console.log(type);
-            if(obj.midiEventListeners[type] === undefined){
-                obj.midiEventListeners[type] = {};
-            }
-            obj.midiEventListeners[type][id] = listener;
-            ids.push(type + '_' + id);
-        });
-
-        //console.log(obj.midiEventListeners);
-        return ids.length === 1 ? ids[0] : ids;
-    }
-
-
-    function removeMidiEventListener(id, obj){
-        var type;
-        id = id.split('_');
-        type = id[0];
-        id = id[1];
-        delete obj.midiEventListeners[type][id];
-    }
-
-
-    function removeMidiEventListeners(){
-
-    }
-
-
-    function getMidiPortsAsDropdown(config, obj){
-        var select = document.createElement('select'),
-            option, ports,
-            type = config.type,
-            id = config.id || type,
-            div = config.div,
-            firstOption = config.firstOption;
-
-        if(type !== 'input' && type !== 'output'){
-            console.log('please set type to "input" or "output"');
-            return;
-        }
-
-        if(firstOption === undefined){
-            firstOption = type === 'input' ? 'choose MIDI in' : 'choose MIDI out';
-        }
-
-        select.id = id;
-        ports = type === 'input' ? obj.midiInputs : obj.midiOutputs;
-
-        if(firstOption !== false){
-            option = document.createElement('option');
-            option.value = -1;
-            option.innerHTML = firstOption;
-            select.appendChild(option);
-        }
-
-        objectForEach(ports, function(port){
-            option = document.createElement('option');
-            option.value = port.id;
-            option.innerHTML = port.label;
-            select.appendChild(option);
-        });
-
-        if(div){
-            div.appendChild(select);
-        }
-        return select;
-    }
-
-
-    sequencer.getMidiPortsAsDropdown = function(){
-        getMidiPortsAsDropdown(sequencer);
-    };
-
-
-    sequencer.getMidiInputsAsDropdown = function(config){
-        config = config || {
-            type: 'input'
-        };
-        return getMidiPortsAsDropdown(config, sequencer);
-    };
-
-
-    sequencer.getMidiOutputsAsDropdown = function(config){
-        config = config || {
-            type: 'output'
-        };
-        return getMidiPortsAsDropdown(config, sequencer);
-    };
-
-
-    function getMidiInputs(cb, obj){
-        var i, maxi;
-        if(obj === sequencer){
-            for(i = 0, maxi = midiInputsOrder.length; i < maxi; i++){
-                cb(obj.midiInputs[midiInputsOrder[i].id], i);
-            }
-        }else{
-            objectForEach(obj.midiInputs, function(port){
-                cb(port, i);
-            });
-        }
-    }
-
-
-    function getMidiOutputs(cb, obj){
-        var i, maxi;
-        if(obj === sequencer){
-            for(i = 0, maxi = midiOutputsOrder.length; i < maxi; i++){
-                cb(obj.midiOutputs[midiOutputsOrder[i].id], i);
-            }
-        }else{
-            objectForEach(obj.midiOutputs, function(port, i){
-                cb(port, i);
-            });
-        }
-    }
-
-
-    sequencer.getMidiInputs = function(cb){
-        getMidiInputs(cb, sequencer);
-    };
-
-
-    sequencer.getMidiOutputs = function(cb){
-        getMidiOutputs(cb, sequencer);
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        context = sequencer.protectedScope.context;
-        createMidiNote = sequencer.createMidiNote;
-        createMidiEvent = sequencer.createMidiEvent;
-        typeString = sequencer.protectedScope.typeString;
-        objectForEach = sequencer.protectedScope.objectForEach;
-    });
-
-
-    // close_module.js
-    sequencer.protectedScope.initMidi = initMidi;
-
-    // song.js
-    sequencer.protectedScope.initMidiSong = initMidiSong;
-    sequencer.protectedScope.getMidiInputs = getMidiInputs;
-    sequencer.protectedScope.getMidiOutputs = getMidiOutputs;
-    sequencer.protectedScope.setMidiInputSong = setMidiInputSong;
-    sequencer.protectedScope.setMidiOutputSong = setMidiOutputSong;
-    sequencer.protectedScope.addMidiEventListener = addMidiEventListener;
-    sequencer.protectedScope.getMidiPortsAsDropdown = getMidiPortsAsDropdown;
-    sequencer.protectedScope.removeMidiEventListener = removeMidiEventListener;
-    sequencer.protectedScope.removeMidiEventListeners = removeMidiEventListeners;
+  'use strict';
+
+  var
+      // satisfy jslint
+      sequencer = window.sequencer,
+      console = window.console,
+
+      context, // defined in open_module.js
+      typeString, // defined in util.js
+      objectForEach, // defined in util.js
+      createMidiNote, // defined in midi_note.js
+      createMidiEvent, // defined in midi_event.js
+
+      slice = Array.prototype.slice,
+
+      songMidiEventListener,
+
+      midiAccess,
+      midiInputsOrder,
+      midiOutputsOrder,
+      midiInitialized = false,
+      midiEventListenerId = 0;
+
+
+  function initMidi(cb){
+
+      //console.log(midiInitialized, navigator.requestMIDIAccess);
+
+      if(midiInitialized === true){
+          cb();
+          return;
+      }
+
+      midiInitialized = true;
+
+      if(navigator.requestMIDIAccess !== undefined){
+          navigator.requestMIDIAccess().then(
+              // on success
+              function midiAccessOnSuccess(midi){
+                  if(midi._jazzInstances !== undefined){
+                      sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
+                      sequencer.midi = true;
+                  }else{
+                      sequencer.webmidi = true;
+                      sequencer.midi = true;
+                  }
+                  midiAccess = midi;
+                  midiAccess.onstatechange = getDevices;
+                  getDevices();
+                  //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
+
+                  cb();
+              },
+              // on error
+              function midiAccessOnError(e){
+                  console.log('MIDI could not be initialized:', e);
+                  cb();
+              }
+          );
+      // browsers without WebMIDI API
+      }else{
+          if(sequencer.browser === 'chrome'){
+              console.log('Web MIDI API not enabled');
+          }else{
+              console.log('Web MIDI API not supported');
+          }
+          cb();
+      }
+  }
+
+
+  function getDevices(e){
+      //console.log('getDevices', e);
+      var inputs, outputs;
+      midiInputsOrder = [];
+      midiOutputsOrder = [];
+
+      inputs = midiAccess.inputs;
+
+      inputs.forEach(function(input){
+          midiInputsOrder.push({name: input.name, id: input.id});
+          sequencer.midiInputs[input.id] = input;
+      });
+
+      midiInputsOrder.sort(function(a, b){
+          var nameA = a.name.toLowerCase(),
+              nameB = b.name.toLowerCase();
+          if(nameA < nameB){ //sort string ascending
+              return -1;
+          }else if (nameA > nameB){
+              return 1;
+          }
+          return 0; //default return value (no sorting)
+      });
+
+      sequencer.numMidiInputs = midiInputsOrder.length;
+
+
+      outputs = midiAccess.outputs;
+
+      outputs.forEach(function(output){
+          midiOutputsOrder.push({name: output.name, id: output.id});
+          sequencer.midiOutputs[output.id] = output;
+      });
+
+
+      midiOutputsOrder.sort(function(a, b){
+          var nameA = a.name.toLowerCase(),
+              nameB = b.name.toLowerCase();
+          if(nameA < nameB){ //sort string ascending
+              return -1;
+          }else if (nameA > nameB){
+              return 1;
+          }
+          return 0; //default return value (no sorting)
+      });
+
+      sequencer.numMidiOutputs = midiOutputsOrder.length;
+  }
+
+
+  function initMidiSong(song){
+      songMidiEventListener = function(e){
+          //console.log(e);
+          handleMidiMessageSong(e, song, this);
+      };
+
+      // by default a song listens to all available midi-in ports
+      objectForEach(sequencer.midiInputs, function(port){
+          //port.addEventListener('midimessage', songMidiEventListener, false);
+          port.onmidimessage = songMidiEventListener;
+          song.midiInputs[port.id] = port;
+          //console.log(port);
+      });
+      //console.log(sequencer.midiInputs);
+
+      objectForEach(sequencer.midiOutputs, function(port){
+          song.midiOutputs[port.id] = port;
+      });
+
+      song.numMidiInputs = sequencer.numMidiInputs;
+      song.numMidiOutputs = sequencer.numMidiOutputs;
+  }
+
+
+  function setMidiInputSong(id, flag, song){
+      var input = sequencer.midiInputs[id],
+          tracks = song.tracks,
+          maxi = song.numTracks - 1,
+          i, track;
+
+      flag = flag === undefined ? true : flag;
+
+      if(input === undefined){
+          if(sequencer.debug === true){
+              console.log('no midi input with id', id,'found');
+          }
+          return;
+      }
+
+      if(flag === false){
+          delete song.midiInputs[id];
+          //input.removeEventListener('midimessage', songMidiEventListener, false);
+          input.onmidimessage = null;
+          song.numMidiInputs--;
+      }else if(input !== undefined){
+          song.midiInputs[id] = input;
+          //input.addEventListener('midimessage', songMidiEventListener, false);
+          input.onmidimessage = songMidiEventListener;
+          song.numMidiInputs++;
+      }
+
+      for(i = maxi; i >= 0; i--){
+          track = tracks[i];
+          track.setMidiInput(id, flag);
+          // if(flag === false){
+          //     delete track.midiInputs[id];
+          // }
+      }
+  }
+
+  function setMidiOutputSong(id, flag, song){
+      var output = sequencer.midiOutputs[id],
+          tracks = song.tracks,
+          maxi = song.numTracks - 1,
+          i, track, time;
+
+      flag = flag === undefined ? true : flag;
+
+      if(output === undefined){
+          if(sequencer.debug === true){
+              console.log('no midi output with id', id,'found');
+          }
+          return;
+      }
+
+      if(flag === false){
+          delete song.midiOutputs[id];
+          song.numMidiOutputs--;
+          time = song.scheduler.lastEventTime + 100;
+          output.send([0xB0, 0x7B, 0x00], time); // stop all notes
+          output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+      }else if(output !== undefined){
+          song.midiOutputs[id] = output;
+          song.numMidiOutputs++;
+      }
+
+      for(i = maxi; i >= 0; i--){
+          track = tracks[i];
+          track.setMidiOutput(id, flag);
+          // if(flag === false){
+          //     delete track.midiOutputs[id];
+          // }
+      }
+  }
+
+  function handleMidiMessageSong(midiMessageEvent, song, input){
+      var data = midiMessageEvent.data,
+          i, track,
+          tracks = song.tracks,
+          numTracks = song.numTracks,
+          midiEvent,
+          listeners;
+
+      //console.log(midiMessageEvent.data);
+      midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
+
+      for(i = 0; i < numTracks; i++){
+          track = tracks[i];
+          //console.log(track.midiInputs, input);
+          /*
+          if(midiEvent.channel === track.channel || track.channel === 0 || track.channel === 'any'){
+              handleMidiMessageTrack(midiEvent, track);
+          }
+          */
+          // like in Cubase, midi events from all devices, sent on any midi channel are forwarded to all tracks
+          // set track.monitor to false if you don't want to receive midi events on a certain track
+          // note that track.monitor is by default set to false and that track.monitor is automatically set to true
+          // if you are recording on that track
+          //console.log(track.monitor, track.id, input.id);
+          if(track.monitor === true && track.midiInputs[input.id] !== undefined){
+              handleMidiMessageTrack(midiEvent, track, input);
+          }
+      }
+
+      listeners = song.midiEventListeners[midiEvent.type];
+      if(listeners === undefined){
+          return;
+      }
+
+      objectForEach(listeners, function(listener){
+          listener(midiEvent, input);
+      });
+  }
+
+
+  //function handleMidiMessageTrack(midiMessageEvent, track, input){
+  function handleMidiMessageTrack(midiEvent, track, input){
+      var song = track.song,
+          note, listeners, channel;
+          //data = midiMessageEvent.data,
+          //midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
+
+      //midiEvent.source = midiMessageEvent.srcElement.name;
+      //console.log(midiMessageEvent)
+      //console.log('---->', midiEvent.type);
+
+      // add the exact time of this event so we can calculate its ticks position
+      midiEvent.recordMillis = context.currentTime * 1000; // millis
+      midiEvent.state = 'recorded';
+
+      if(midiEvent.type === 144){
+          note = createMidiNote(midiEvent);
+          track.recordingNotes[midiEvent.data1] = note;
+          //track.song.recordingNotes[note.id] = note;
+      }else if(midiEvent.type === 128){
+          note = track.recordingNotes[midiEvent.data1];
+          // check if the note exists: if the user plays notes on her keyboard before the midi system has
+          // been fully initialized, it can happen that the first incoming midi event is a NOTE OFF event
+          if(note === undefined){
+              return;
+          }
+          note.addNoteOff(midiEvent);
+          delete track.recordingNotes[midiEvent.data1];
+          //delete track.song.recordingNotes[note.id];
+      }
+
+      //console.log(song.preroll, song.recording, track.recordEnabled);
+
+      if((song.prerolling || song.recording) && track.recordEnabled === 'midi'){
+          if(midiEvent.type === 144){
+              track.song.recordedNotes.push(note);
+          }
+          track.recordPart.addEvent(midiEvent);
+          // song.recordedEvents is used in the key editor
+          track.song.recordedEvents.push(midiEvent);
+      }else if(track.enableRetrospectiveRecording){
+          track.retrospectiveRecording.push(midiEvent);
+      }
+
+      // call all midi event listeners
+      listeners = track.midiEventListeners[midiEvent.type];
+      if(listeners !== undefined){
+          objectForEach(listeners, function(listener){
+              listener(midiEvent, input);
+          });
+      }
+
+      channel = track.channel;
+      if(channel === 'any' || channel === undefined || isNaN(channel) === true){
+          channel = 0;
+      }
+
+      objectForEach(track.midiOutputs, function(output){
+          //console.log('midi out', output, midiEvent.type);
+          if(midiEvent.type === 128 || midiEvent.type === 144 || midiEvent.type === 176){
+              //console.log(midiEvent.type, midiEvent.data1, midiEvent.data2);
+              output.send([midiEvent.type, midiEvent.data1, midiEvent.data2]);
+          // }else if(midiEvent.type === 192){
+          //     output.send([midiEvent.type + channel, midiEvent.data1]);
+          }
+          //output.send([midiEvent.status + channel, midiEvent.data1, midiEvent.data2]);
+      });
+
+      // @TODO: maybe a track should be able to send its event to both a midi-out port and an internal heartbeat song?
+      //console.log(track.routeToMidiOut);
+      if(track.routeToMidiOut === false){
+          midiEvent.track = track;
+          track.instrument.processEvent(midiEvent);
+      }
+  }
+
+
+  function addMidiEventListener(args, obj){ // obj can be a track or a song
+      args = slice.call(args);
+
+      var id = midiEventListenerId++,
+          types = {},
+          ids = [],
+          listener,
+          loop;
+
+
+      // should I inline this?
+      loop = function(args, i, maxi){
+          for(i = 0; i < maxi; i++){
+              var arg = args[i],
+                  type = typeString(arg);
+              //console.log(type);
+              if(type === 'array'){
+                  loop(arg, 0, arg.length);
+              }else if(type === 'function'){
+                  listener = arg;
+              }else if(isNaN(arg) === false){
+                  arg = parseInt(arg, 10);
+                  if(sequencer.checkEventType(arg) !== false){
+                      types[arg] = arg;
+                  }
+              }else if(type === 'string'){
+                  if(sequencer.checkEventType(arg) !== false){
+                      arg = sequencer.midiEventNumberByName(arg);
+                      types[arg] = arg;
+                  }
+              }
+          }
+      };
+
+      loop(args, 0, args.length);
+      //console.log('types', types, 'listener', listener);
+
+      objectForEach(types, function(type){
+          //console.log(type);
+          if(obj.midiEventListeners[type] === undefined){
+              obj.midiEventListeners[type] = {};
+          }
+          obj.midiEventListeners[type][id] = listener;
+          ids.push(type + '_' + id);
+      });
+
+      //console.log(obj.midiEventListeners);
+      return ids.length === 1 ? ids[0] : ids;
+  }
+
+
+  function removeMidiEventListener(id, obj){
+      var type;
+      id = id.split('_');
+      type = id[0];
+      id = id[1];
+      delete obj.midiEventListeners[type][id];
+  }
+
+
+  function removeMidiEventListeners(){
+
+  }
+
+
+  function getMidiPortsAsDropdown(config, obj){
+      var select = document.createElement('select'),
+          option, ports,
+          type = config.type,
+          id = config.id || type,
+          div = config.div,
+          firstOption = config.firstOption;
+
+      if(type !== 'input' && type !== 'output'){
+          console.log('please set type to "input" or "output"');
+          return;
+      }
+
+      if(firstOption === undefined){
+          firstOption = type === 'input' ? 'choose MIDI in' : 'choose MIDI out';
+      }
+
+      select.id = id;
+      ports = type === 'input' ? obj.midiInputs : obj.midiOutputs;
+
+      if(firstOption !== false){
+          option = document.createElement('option');
+          option.value = -1;
+          option.innerHTML = firstOption;
+          select.appendChild(option);
+      }
+
+      objectForEach(ports, function(port){
+          option = document.createElement('option');
+          option.value = port.id;
+          option.innerHTML = port.name;
+          select.appendChild(option);
+      });
+
+      if(div){
+          div.appendChild(select);
+      }
+      return select;
+  }
+
+
+  sequencer.getMidiPortsAsDropdown = function(){
+      getMidiPortsAsDropdown(sequencer);
+  };
+
+
+  sequencer.getMidiInputsAsDropdown = function(config){
+      config = config || {
+          type: 'input'
+      };
+      return getMidiPortsAsDropdown(config, sequencer);
+  };
+
+
+  sequencer.getMidiOutputsAsDropdown = function(config){
+      config = config || {
+          type: 'output'
+      };
+      return getMidiPortsAsDropdown(config, sequencer);
+  };
+
+
+  function getMidiInputs(cb, obj){
+      var i, maxi;
+      if(obj === sequencer){
+          for(i = 0, maxi = midiInputsOrder.length; i < maxi; i++){
+              cb(obj.midiInputs[midiInputsOrder[i].id], i);
+          }
+      }else{
+          objectForEach(obj.midiInputs, function(port){
+              cb(port, i);
+          });
+      }
+  }
+
+
+  function getMidiOutputs(cb, obj){
+      var i, maxi;
+      if(obj === sequencer){
+          for(i = 0, maxi = midiOutputsOrder.length; i < maxi; i++){
+              cb(obj.midiOutputs[midiOutputsOrder[i].id], i);
+          }
+      }else{
+          objectForEach(obj.midiOutputs, function(port, i){
+              cb(port, i);
+          });
+      }
+  }
+
+
+  sequencer.getMidiInputs = function(cb){
+      getMidiInputs(cb, sequencer);
+  };
+
+
+  sequencer.getMidiOutputs = function(cb){
+      getMidiOutputs(cb, sequencer);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function(){
+      context = sequencer.protectedScope.context;
+      createMidiNote = sequencer.createMidiNote;
+      createMidiEvent = sequencer.createMidiEvent;
+      typeString = sequencer.protectedScope.typeString;
+      objectForEach = sequencer.protectedScope.objectForEach;
+  });
+
+
+  // close_module.js
+  sequencer.protectedScope.initMidi = initMidi;
+
+  // song.js
+  sequencer.protectedScope.initMidiSong = initMidiSong;
+  sequencer.protectedScope.getMidiInputs = getMidiInputs;
+  sequencer.protectedScope.getMidiOutputs = getMidiOutputs;
+  sequencer.protectedScope.setMidiInputSong = setMidiInputSong;
+  sequencer.protectedScope.setMidiOutputSong = setMidiOutputSong;
+  sequencer.protectedScope.addMidiEventListener = addMidiEventListener;
+  sequencer.protectedScope.getMidiPortsAsDropdown = getMidiPortsAsDropdown;
+  sequencer.protectedScope.removeMidiEventListener = removeMidiEventListener;
+  sequencer.protectedScope.removeMidiEventListeners = removeMidiEventListeners;
+  sequencer.protectedScope.handleMidiMessageTrack = handleMidiMessageTrack;
 
 }());
 
@@ -10218,61 +9585,61 @@ if (typeof module !== "undefined" && module !== null) {
 
 
 /*
-    function handleMidiMessageTrack(e, track){
-        var data = e.data,
-            midiEvent,
-            song = track.song,
-            note, listeners;
+  function handleMidiMessageTrack(e, track){
+      var data = e.data,
+          midiEvent,
+          song = track.song,
+          note, listeners;
 
-        //console.log(track.recordPart);
-        if(song){
-            midiEvent = sequencer.createMidiEvent(song.ticks, data[0], data[1], data[2]);
-            //console.log(midiEvent);
-            if(midiEvent.type === 144){
-                note = createMidiNote(midiEvent);
-                track.recordingNotes[midiEvent.data1] = note;
-                //track.song.recordingNotes[note.id] = note;
-            }else if(midiEvent.type === 128){
-                note = track.recordingNotes[midiEvent.data1];
-                note.addNoteOff(midiEvent);
-                delete track.recordingNotes[midiEvent.data1];
-                //delete track.song.recordingNotes[note.id];
-            }
-            if(song.recording && song.playing && track.recordEnabled){
-                if(midiEvent.type === 144){
-                    track.song.recordedNotes.push(note);
-                }
-                track.recordPart.addEvent(midiEvent);
-                track.song.recordedEvents.push(midiEvent);
-            }else if(track.enableRetrospectiveRecording){
-                track.retrospectiveRecording.push(midiEvent);
-            }
+      //console.log(track.recordPart);
+      if(song){
+          midiEvent = sequencer.createMidiEvent(song.ticks, data[0], data[1], data[2]);
+          //console.log(midiEvent);
+          if(midiEvent.type === 144){
+              note = createMidiNote(midiEvent);
+              track.recordingNotes[midiEvent.data1] = note;
+              //track.song.recordingNotes[note.id] = note;
+          }else if(midiEvent.type === 128){
+              note = track.recordingNotes[midiEvent.data1];
+              note.addNoteOff(midiEvent);
+              delete track.recordingNotes[midiEvent.data1];
+              //delete track.song.recordingNotes[note.id];
+          }
+          if(song.recording && song.playing && track.recordEnabled){
+              if(midiEvent.type === 144){
+                  track.song.recordedNotes.push(note);
+              }
+              track.recordPart.addEvent(midiEvent);
+              track.song.recordedEvents.push(midiEvent);
+          }else if(track.enableRetrospectiveRecording){
+              track.retrospectiveRecording.push(midiEvent);
+          }
 
-            // call all midi event listeners
-            listeners = track.midiEventListeners[midiEvent.type];
-            if(listeners !== undefined){
-                objectForEach(listeners, function(listener, id){
-                    listener(midiEvent);
-                });
-            }
-        }else{
-            console.error('unexpected situation!');
-            // does this ever happen?
-            midiEvent = sequencer.createMidiEvent(0, data[0], data[1], data[2]);
-            midiEvent.millis = song.recordTimestamp - sequencer.getTime();
-            if(track.enableRetrospectiveRecording){
-                track.retrospectiveRecording.push(midiEvent);
-            }
-            //@TODO: add parser for retrospective recording: convert millis to ticks
-        }
+          // call all midi event listeners
+          listeners = track.midiEventListeners[midiEvent.type];
+          if(listeners !== undefined){
+              objectForEach(listeners, function(listener, id){
+                  listener(midiEvent);
+              });
+          }
+      }else{
+          console.error('unexpected situation!');
+          // does this ever happen?
+          midiEvent = sequencer.createMidiEvent(0, data[0], data[1], data[2]);
+          midiEvent.millis = song.recordTimestamp - sequencer.getTime();
+          if(track.enableRetrospectiveRecording){
+              track.retrospectiveRecording.push(midiEvent);
+          }
+          //@TODO: add parser for retrospective recording: convert millis to ticks
+      }
 
-        if(track.midiOutput !== undefined){
-            track.midiOutput.send([data[0], data[1], data[2]]);
-        }else{
-            midiEvent.track = track;
-            track.instrument.processEvent(midiEvent);
-        }
-    }
+      if(track.midiOutput !== undefined){
+          track.midiOutput.send([data[0], data[1], data[2]]);
+      }else{
+          midiEvent.track = track;
+          track.instrument.processEvent(midiEvent);
+      }
+  }
 *///http://www.deluge.co/?q=midi-tempo-bpm
 // This code is based on https://github.com/sergi/jsmidi
 
@@ -16122,7 +15489,6 @@ if (typeof module !== "undefined" && module !== null) {
 
             song = this;
             playstart = this.startTime/1000;
-
             //console.log(this.startTime, playstart, this.recordTimestamp/1000 - playstart);
 
             repetitiveTasks.playAfterPrecount = function(){
@@ -16146,6 +15512,10 @@ if (typeof module !== "undefined" && module !== null) {
         // make first call right after setting a time stamp to avoid delay
         //pulse(this);
         song = this;
+        // fixes bug: when an event listener is added to a midi note, the listener sometimes misses the first note
+        song.playhead.update('millis', 0);
+        song.followEvent.update();
+
         repetitiveTasks[this.id] = function(){
             pulse(song);
         };
