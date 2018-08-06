@@ -131,7 +131,7 @@
                             note = this.notes[i];
                             noteOn = note.noteOn;
                             noteOff = note.noteOff;
-                            if(noteOff.millis <= this.song.loopEnd){
+                            if(noteOff && noteOff.millis <= this.song.loopEnd){
                                 continue;
                             }
                             event = sequencer.createMidiEvent(endTicks, 128, noteOn.data1, 0);

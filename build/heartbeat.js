@@ -13134,11 +13134,12 @@ if (typeof module !== "undefined" && module !== null) {
             fadeOut = when === null ? 100 : when;//milliseconds
 
         this.source.onended = undefined;
-        this.output.gain.cancelScheduledValues(now);
+        // this.output.gain.cancelScheduledValues(now);
         //console.log(this.volume, now);
         //this.output.gain.linearRampToValueAtTime(this.volume, now);
 
         try{
+            this.output.gain.cancelScheduledValues(0);
             this.output.gain.linearRampToValueAtTime(0, now + fadeOut/1000); // fade out in seconds
 
             timedTasks['unschedule_' + this.id] = {
@@ -13977,7 +13978,7 @@ if (typeof module !== "undefined" && module !== null) {
                             note = this.notes[i];
                             noteOn = note.noteOn;
                             noteOff = note.noteOff;
-                            if(noteOff.millis <= this.song.loopEnd){
+                            if(noteOff && noteOff.millis <= this.song.loopEnd){
                                 continue;
                             }
                             event = sequencer.createMidiEvent(endTicks, 128, noteOn.data1, 0);
@@ -17001,19 +17002,21 @@ if (typeof module !== "undefined" && module !== null) {
             case 'loop': // the playhead jumps from the loop end position to the loop start position
             case 'sustain_pedal':
                 tmp = this.listeners[type];
-                for(i = tmp.length - 1; i >= 0; i--){
-                    listener = tmp[i];
-                    // remove by id
-                    if(id !== undefined){
-                        if(listener.id !== id){
-                            filteredListeners.push(listener);
-                        }
-                    // remove by callback
-                    }else if(callback !== undefined && listener.callback !== callback){
-                        filteredListeners.push(listener);
-                    }
+                if (tmp) {
+                  for(i = tmp.length - 1; i >= 0; i--){
+                      listener = tmp[i];
+                      // remove by id
+                      if(id !== undefined){
+                          if(listener.id !== id){
+                              filteredListeners.push(listener);
+                          }
+                      // remove by callback
+                      }else if(callback !== undefined && listener.callback !== callback){
+                          filteredListeners.push(listener);
+                      }
+                  }
+                  this.listeners[type] = [].concat(filteredListeners);
                 }
-                this.listeners[type] = [].concat(filteredListeners);
                 break;
             case 'note':
             case 'event':

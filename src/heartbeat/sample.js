@@ -173,11 +173,12 @@
             fadeOut = when === null ? 100 : when;//milliseconds
 
         this.source.onended = undefined;
-        this.output.gain.cancelScheduledValues(now);
+        // this.output.gain.cancelScheduledValues(now);
         //console.log(this.volume, now);
         //this.output.gain.linearRampToValueAtTime(this.volume, now);
 
         try{
+            this.output.gain.cancelScheduledValues(0);
             this.output.gain.linearRampToValueAtTime(0, now + fadeOut/1000); // fade out in seconds
 
             timedTasks['unschedule_' + this.id] = {
