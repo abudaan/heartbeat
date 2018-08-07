@@ -14132,12 +14132,17 @@ if (typeof module !== "undefined" && module !== null) {
                     if(channel === 'any' || channel === undefined || isNaN(channel) === true){
                         channel = 0;
                     }
+                    var n = performance.now(); // starts before AudioContext
+                    var c = sequencer.getAudioContext().currentTime * 1000;
+                    var d = n - c; // calculate the diff between Document.start() and AudioContext.start()
                     objectForEach(track.midiOutputs, function(midiOutput){
+                      var t = event.time + d;
+                      // console.log(n, t, event.time, event.millis, event.ticks, c);
                         if(event.type === 128 || event.type === 144 || event.type === 176){
                             //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], t);
                         }else if(event.type === 192 || event.type === 224){
-                            midiOutput.send([event.type + channel, event.data1], event.time);
+                            midiOutput.send([event.type + channel, event.data1], t);
                         }
                     });
                     // needed for Song.resetExternalMidiDevices()
@@ -14487,7 +14492,9 @@ if (typeof module !== "undefined" && module !== null) {
 
         part = sequencer.createPart();
         track = sequencer.createTrack();
-        track.setInstrument(instrument);
+        if (instrument) {
+          track.setInstrument(instrument);
+        }
 
         if(processEventTracks[track.instrumentId] === undefined){
             processEventTracks[track.instrumentId] = track;
@@ -14510,7 +14517,13 @@ if (typeof module !== "undefined" && module !== null) {
             //time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
             //console.log(event.ticks, time, contextTime);
             //track.instrument.processEvent(event, time);
-            track.instrument.processEvent(event);
+            if (instrument) {
+              track.instrument.processEvent(event);
+            } else {
+              objectForEach(sequencer.midiOutputs, function(port){
+                port.send([event.type, event.noteNumber, event.velocity], event.time);
+              })
+            }
         }
     };
 

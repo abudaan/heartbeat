@@ -281,7 +281,9 @@
 
         part = sequencer.createPart();
         track = sequencer.createTrack();
-        track.setInstrument(instrument);
+        if (instrument) {
+          track.setInstrument(instrument);
+        }
 
         if(processEventTracks[track.instrumentId] === undefined){
             processEventTracks[track.instrumentId] = track;
@@ -304,7 +306,13 @@
             //time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
             //console.log(event.ticks, time, contextTime);
             //track.instrument.processEvent(event, time);
-            track.instrument.processEvent(event);
+            if (instrument) {
+              track.instrument.processEvent(event);
+            } else {
+              objectForEach(sequencer.midiOutputs, function(port){
+                port.send([event.type, event.noteNumber, event.velocity], event.time);
+              })
+            }
         }
     };
 
