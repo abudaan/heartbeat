@@ -248,6 +248,10 @@
           }
       }
 
+      if (!song.midiEventListeners || !midiEvent) {
+        return;
+      }
+
       listeners = song.midiEventListeners[midiEvent.type];
       if(listeners === undefined){
           return;

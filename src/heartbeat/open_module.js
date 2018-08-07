@@ -68,7 +68,7 @@
   }
 
   //console.log(os, browser, '---', ua);
-  console.log('heartbeat v0.0.4-groovy2');
+  console.log('heartbeat v0.0.5-groovy2');
 
 
   if(window.AudioContext){

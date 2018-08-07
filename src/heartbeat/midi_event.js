@@ -373,8 +373,11 @@
             @param data1 {int}
             @param data2 {int}
         */
-        var args = slice.call(arguments),
-            className = args[0].className;
+        var args = slice.call(arguments);
+        var className;
+        if (args[0]) {
+          className = args[0].className;
+        }
 
         if(className === 'MidiEvent'){
             return args[0].copy();
