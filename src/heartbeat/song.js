@@ -632,6 +632,7 @@
 
     Song.prototype.stop = function() {
         if(this.stopped){
+            this.allNotesOff();
             // is this necessary?
             this.followEvent.resetAllListeners();
             this.playhead.set('millis', 0);
@@ -650,12 +651,14 @@
                 delete timedTasks[id];
             }
         });
+
         this.allNotesOff();
 
         this.playing = false;
         this.paused = false;
         this.stopped = true;
         this.endOfSong = false;
+
 
         this.followEvent.resetAllListeners();
         this.playhead.set('millis', 0);
@@ -1823,6 +1826,7 @@
     Song.prototype.resetExternalMidiDevices = function(){
         //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
         var time = 0;
+        // console.log('Song.resetExternalMidiDevices', this.scheduler.lastEventTime)
         if (this.scheduler.lastEventTime) {
           time = this.scheduler.lastEventTime + 100;
         }

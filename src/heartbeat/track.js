@@ -120,6 +120,7 @@
             this.setInstrument(this.instrumentName);
         }
         //this.audio = createAudioTrack(this);
+        this.latency = 0; // for MIDI out, set a value in millis
     };
 
 
@@ -1550,6 +1551,16 @@ return;
     Track.prototype.allNotesOff = function(id){
         if(this.audio){
             this.audio.allNotesOff();
+        }
+        if(this.routeToMidiOut) {
+          var n = performance.now();
+          var t = n + (sequencer.bufferTime * 1200); // make sure that these events come after any possibly scheduled events
+          // console.log(n, t);
+          objectForEach(this.midiOutputs, function(output){
+            // output.clear();
+            output.send([0xB0, 0x7B, 0x00], t); // stop all notes
+            output.send([0xB0, 0x79, 0x00], t); // reset all controllers
+          });
         }
         if(this.instrument){
             this.instrument.allNotesOff();

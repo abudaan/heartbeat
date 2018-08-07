@@ -199,7 +199,10 @@
       if(flag === false){
           delete song.midiOutputs[id];
           song.numMidiOutputs--;
-          time = song.scheduler.lastEventTime + 100;
+          time = 0;
+          if (song.scheduler.lastEventTime) {
+            time = song.scheduler.lastEventTime + 100;
+          }
           output.send([0xB0, 0x7B, 0x00], time); // stop all notes
           output.send([0xB0, 0x79, 0x00], time); // reset all controllers
       }else if(output !== undefined){

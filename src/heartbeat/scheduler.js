@@ -285,19 +285,24 @@
                     if(channel === 'any' || channel === undefined || isNaN(channel) === true){
                         channel = 0;
                     }
+                    var l = event.track.latency;
+                    // console.log('LATENCY', l);
                     var n = performance.now(); // starts before AudioContext
                     var c = sequencer.getAudioContext().currentTime * 1000;
                     var d = n - c; // calculate the diff between Document.start() and AudioContext.start()
-                    objectForEach(track.midiOutputs, function(midiOutput){
-                      var t = event.time + d;
-                      // console.log(n, t, event.time, event.millis, event.ticks, c);
-                        if(event.type === 128 || event.type === 144 || event.type === 176){
-                            //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], t);
-                        }else if(event.type === 192 || event.type === 224){
-                            midiOutput.send([event.type + channel, event.data1], t);
-                        }
-                    });
+                    // console.log(this.song.stopped);
+                    // if (this.song.stopped === false) {
+                      objectForEach(track.midiOutputs, function(midiOutput){
+                        var t = event.time + d + l;
+                        // console.log(n, t, event.time, event.millis, event.ticks, c);
+                          if(event.type === 128 || event.type === 144 || event.type === 176){
+                              //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                              midiOutput.send([event.type + channel, event.data1, event.data2], t);
+                          }else if(event.type === 192 || event.type === 224){
+                              midiOutput.send([event.type + channel, event.data1], t);
+                          }
+                      });
+                    // }
                     // needed for Song.resetExternalMidiDevices()
                     this.lastEventTime = event.time;
                 }

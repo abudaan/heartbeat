@@ -367,7 +367,7 @@ if (typeof module !== "undefined" && module !== null) {
   }
 
   //console.log(os, browser, '---', ua);
-  console.log('heartbeat v0.0.3-groovy2');
+  console.log('heartbeat v0.0.4-groovy2');
 
 
   if(window.AudioContext){
@@ -9256,7 +9256,10 @@ if (typeof module !== "undefined" && module !== null) {
       if(flag === false){
           delete song.midiOutputs[id];
           song.numMidiOutputs--;
-          time = song.scheduler.lastEventTime + 100;
+          time = 0;
+          if (song.scheduler.lastEventTime) {
+            time = song.scheduler.lastEventTime + 100;
+          }
           output.send([0xB0, 0x7B, 0x00], time); // stop all notes
           output.send([0xB0, 0x79, 0x00], time); // reset all controllers
       }else if(output !== undefined){
@@ -14132,19 +14135,24 @@ if (typeof module !== "undefined" && module !== null) {
                     if(channel === 'any' || channel === undefined || isNaN(channel) === true){
                         channel = 0;
                     }
+                    var l = event.track.latency;
+                    // console.log('LATENCY', l);
                     var n = performance.now(); // starts before AudioContext
                     var c = sequencer.getAudioContext().currentTime * 1000;
                     var d = n - c; // calculate the diff between Document.start() and AudioContext.start()
-                    objectForEach(track.midiOutputs, function(midiOutput){
-                      var t = event.time + d;
-                      // console.log(n, t, event.time, event.millis, event.ticks, c);
-                        if(event.type === 128 || event.type === 144 || event.type === 176){
-                            //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], t);
-                        }else if(event.type === 192 || event.type === 224){
-                            midiOutput.send([event.type + channel, event.data1], t);
-                        }
-                    });
+                    // console.log(this.song.stopped);
+                    // if (this.song.stopped === false) {
+                      objectForEach(track.midiOutputs, function(midiOutput){
+                        var t = event.time + d + l;
+                        // console.log(n, t, event.time, event.millis, event.ticks, c);
+                          if(event.type === 128 || event.type === 144 || event.type === 176){
+                              //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                              midiOutput.send([event.type + channel, event.data1, event.data2], t);
+                          }else if(event.type === 192 || event.type === 224){
+                              midiOutput.send([event.type + channel, event.data1], t);
+                          }
+                      });
+                    // }
                     // needed for Song.resetExternalMidiDevices()
                     this.lastEventTime = event.time;
                 }
@@ -15563,6 +15571,7 @@ if (typeof module !== "undefined" && module !== null) {
 
     Song.prototype.stop = function() {
         if(this.stopped){
+            this.allNotesOff();
             // is this necessary?
             this.followEvent.resetAllListeners();
             this.playhead.set('millis', 0);
@@ -15581,12 +15590,14 @@ if (typeof module !== "undefined" && module !== null) {
                 delete timedTasks[id];
             }
         });
+
         this.allNotesOff();
 
         this.playing = false;
         this.paused = false;
         this.stopped = true;
         this.endOfSong = false;
+
 
         this.followEvent.resetAllListeners();
         this.playhead.set('millis', 0);
@@ -16754,6 +16765,7 @@ if (typeof module !== "undefined" && module !== null) {
     Song.prototype.resetExternalMidiDevices = function(){
         //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
         var time = 0;
+        // console.log('Song.resetExternalMidiDevices', this.scheduler.lastEventTime)
         if (this.scheduler.lastEventTime) {
           time = this.scheduler.lastEventTime + 100;
         }
@@ -19218,6 +19230,7 @@ if (typeof module !== "undefined" && module !== null) {
             this.setInstrument(this.instrumentName);
         }
         //this.audio = createAudioTrack(this);
+        this.latency = 0; // for MIDI out, set a value in millis
     };
 
 
@@ -20648,6 +20661,16 @@ return;
     Track.prototype.allNotesOff = function(id){
         if(this.audio){
             this.audio.allNotesOff();
+        }
+        if(this.routeToMidiOut) {
+          var n = performance.now();
+          var t = n + (sequencer.bufferTime * 1200); // make sure that these events come after any possibly scheduled events
+          // console.log(n, t);
+          objectForEach(this.midiOutputs, function(output){
+            // output.clear();
+            output.send([0xB0, 0x7B, 0x00], t); // stop all notes
+            output.send([0xB0, 0x79, 0x00], t); // reset all controllers
+          });
         }
         if(this.instrument){
             this.instrument.allNotesOff();
