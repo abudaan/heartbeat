@@ -23,6 +23,9 @@
       browser,
       legacy = false;
 
+
+      console.log('heartbeat v0.0.9-groovy2');
+
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
       // webaudioUnlocked = false;
@@ -67,8 +70,7 @@
       }
   }
 
-  //console.log(os, browser, '---', ua);
-  console.log('heartbeat v0.0.5-groovy2');
+  console.log(os, browser, '---', ua);
 
 
   if(window.AudioContext){

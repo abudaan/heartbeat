@@ -103,7 +103,7 @@
 
 
     function loadLoop(pack, callback){
-        //console.log('load sample pack', pack.name);
+        // console.log('load sample pack', pack.name);
         loadSamples(pack.samples, function(buffer){
             //console.log('kheb er een ferig', buffer);
         }, function(){
@@ -416,6 +416,7 @@
 
         sequencer.addTask({
             type: 'load sample pack',
+            name: 'load sample pack ' + samplepack.name,
             method: load,
             params: samplepack
         }, function(value){

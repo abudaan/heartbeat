@@ -147,6 +147,7 @@
 
         sequencer.addTask({
             type: 'load instrument config',
+            name: 'load instrument config ' + instrument.name,
             method: load,
             params: instrument
         }, function(value){

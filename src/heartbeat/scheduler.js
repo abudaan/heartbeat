@@ -271,14 +271,17 @@
                 event.time /= 1000;
                 track.audio.processEvent(event);
             }else{
-
+                // console.log(track);
                 if(track.routeToMidiOut === false){
                     // if(event.type === 144){
                     //     console.log(event.time/1000, sequencer.getTime(), event.time/1000 - sequencer.getTime());
                     // }
-                    event.time /= 1000;
+                    // if (sequencer.os !== 'android') {
+                      event.time /= 1000;
+                    // }
                     //console.log('scheduled', event.type, event.time, event.midiNote.id);
                     //console.log(track.instrument.processEvent);
+                    // console.log(sequencer.getAudioContext().currentTime, event.time);
                     track.instrument.processEvent(event);
                 }else{
                     channel = track.channel;

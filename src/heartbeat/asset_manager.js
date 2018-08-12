@@ -194,7 +194,7 @@
 
 
     sequencer.startTaskQueue = function(cb){
-        //console.log('startTaskQueue', taskQueue.length, busy);
+        // console.log('startTaskQueue', taskQueue.length, busy);
         if(busy === true){
             return;
         }
@@ -206,7 +206,7 @@
     sequencer.addTask = function(task, callback, callbackAfterAllTasksAreDone){
         task.id = 'task' + taskIndex++;
         taskQueue.push(task);
-        //console.log('task', task.type, taskQueue.length);
+        // console.log('[ADD TASK]', task.id, task.name, taskQueue.length, task.id, callback);
         if(callback !== undefined){
             if(callbackAfterAllTasksAreDone === true){
                 // call the callback only after all tasks are done
@@ -225,7 +225,7 @@
            method: callback,
            taskIds: taskIds
         });
-        //console.log('taskIds', taskIds);
+        // console.log('[AFTER TASK] taskIds', taskIds);
     };
 
 
@@ -243,7 +243,7 @@
                     // this callback has already been called
                     continue;
                 }
-                //console.log(i, callback.method);
+                // console.log(i, callback.method);
                 var m = callback.method;
                 //callback = false;
                 //console.log(1,callback);
@@ -271,7 +271,7 @@
         scope = task.scope || null;
         params = task.params || [];
 
-        //console.log(index, task.type, taskQueue.length);
+        // console.log('[TASK DONE 1]', task.id, index, taskQueue.length);
 
         if(typeString(params) !== 'array'){
             params = [params];
@@ -300,7 +300,7 @@
                             performCallback = false;
                         }
                     }
-                    //console.log('performCallback', performCallback);
+                    // console.log('performCallback', performCallback);
                     if(performCallback){
                         //callback.method.call(null);
                         //console.log(callback);
@@ -314,7 +314,7 @@
                 }
             }
 
-            //console.log('task done', task.name, index, taskQueue.length);
+            // console.log('[TASK DONE 2]',task.id, task.name, index, taskQueue.length);
             index++;
 
             // if(index === taskQueue.length && taskIds === undefined){
@@ -325,7 +325,7 @@
 
         params.push(cbActionLoop);
 
-        //console.log(index, taskQueue.length, task.method.name, params);
+        // console.log('[EXECUTE TASK]', index, taskQueue.length, task.method.name, params);
         task.method.apply(scope, params);
     }
 

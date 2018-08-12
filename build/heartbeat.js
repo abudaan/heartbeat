@@ -322,6 +322,9 @@ if (typeof module !== "undefined" && module !== null) {
       browser,
       legacy = false;
 
+
+      console.log('heartbeat v0.0.9-groovy2');
+
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
       // webaudioUnlocked = false;
@@ -366,8 +369,7 @@ if (typeof module !== "undefined" && module !== null) {
       }
   }
 
-  //console.log(os, browser, '---', ua);
-  console.log('heartbeat v0.0.5-groovy2');
+  console.log(os, browser, '---', ua);
 
 
   if(window.AudioContext){
@@ -880,7 +882,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     sequencer.startTaskQueue = function(cb){
-        //console.log('startTaskQueue', taskQueue.length, busy);
+        // console.log('startTaskQueue', taskQueue.length, busy);
         if(busy === true){
             return;
         }
@@ -892,7 +894,7 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.addTask = function(task, callback, callbackAfterAllTasksAreDone){
         task.id = 'task' + taskIndex++;
         taskQueue.push(task);
-        //console.log('task', task.type, taskQueue.length);
+        // console.log('[ADD TASK]', task.id, task.name, taskQueue.length, task.id, callback);
         if(callback !== undefined){
             if(callbackAfterAllTasksAreDone === true){
                 // call the callback only after all tasks are done
@@ -911,7 +913,7 @@ if (typeof module !== "undefined" && module !== null) {
            method: callback,
            taskIds: taskIds
         });
-        //console.log('taskIds', taskIds);
+        // console.log('[AFTER TASK] taskIds', taskIds);
     };
 
 
@@ -929,7 +931,7 @@ if (typeof module !== "undefined" && module !== null) {
                     // this callback has already been called
                     continue;
                 }
-                //console.log(i, callback.method);
+                // console.log(i, callback.method);
                 var m = callback.method;
                 //callback = false;
                 //console.log(1,callback);
@@ -957,7 +959,7 @@ if (typeof module !== "undefined" && module !== null) {
         scope = task.scope || null;
         params = task.params || [];
 
-        //console.log(index, task.type, taskQueue.length);
+        // console.log('[TASK DONE 1]', task.id, index, taskQueue.length);
 
         if(typeString(params) !== 'array'){
             params = [params];
@@ -986,7 +988,7 @@ if (typeof module !== "undefined" && module !== null) {
                             performCallback = false;
                         }
                     }
-                    //console.log('performCallback', performCallback);
+                    // console.log('performCallback', performCallback);
                     if(performCallback){
                         //callback.method.call(null);
                         //console.log(callback);
@@ -1000,7 +1002,7 @@ if (typeof module !== "undefined" && module !== null) {
                 }
             }
 
-            //console.log('task done', task.name, index, taskQueue.length);
+            // console.log('[TASK DONE 2]',task.id, task.name, index, taskQueue.length);
             index++;
 
             // if(index === taskQueue.length && taskIds === undefined){
@@ -1011,7 +1013,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         params.push(cbActionLoop);
 
-        //console.log(index, taskQueue.length, task.method.name, params);
+        // console.log('[EXECUTE TASK]', index, taskQueue.length, task.method.name, params);
         task.method.apply(scope, params);
     }
 
@@ -1337,6 +1339,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         sequencer.addTask({
             type: 'load asset pack',
+            name: 'load asset pack ' + config.name,
             method: load,
             params: new AssetPack(config)
         }, function(assetpack){
@@ -5170,6 +5173,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         sequencer.addTask({
             type: 'load instrument config',
+            name: 'load instrument config ' + instrument.name,
             method: load,
             params: instrument
         }, function(value){
@@ -5640,13 +5644,13 @@ if (typeof module !== "undefined" && module !== null) {
     KeyEditor.prototype.gotoPage = function(n){
         console.warn('ooops, not implemented yet!');
         return;
-        n = n - 1;
-        if(n < 0 || n > this.lastPage){
-            return;
-        }
-        this.pageNo = n;
-        dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
-        setPageData(this, this.pageNo);
+        // n = n - 1;
+        // if(n < 0 || n > this.lastPage){
+        //     return;
+        // }
+        // this.pageNo = n;
+        // dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
+        // setPageData(this, this.pageNo);
     };
 
 
@@ -8327,6 +8331,9 @@ if (typeof module !== "undefined" && module !== null) {
     sequencer.addMidiFile = function(config, callback){
         var type = typeString(config),
             midifile, json, name, folder;
+        // console.log(fetch, Promise);
+
+        // console.log(type, config);
 
         if(type !== 'object'){
             if(sequencer.debug >= 2){
@@ -8367,10 +8374,11 @@ if (typeof module !== "undefined" && module !== null) {
 
         sequencer.addTask({
             type: 'load midifile',
+            name: 'load midifile ' + midifile.url,
             method: load,
             params: midifile
         }, function(){
-            //console.log(midifile);
+            // console.log(midifile);
             store(midifile);
             if(callback){
                 callback(midifile);
@@ -9078,27 +9086,28 @@ if (typeof module !== "undefined" && module !== null) {
       songMidiEventListener,
 
       midiAccess,
-      midiInputsOrder,
-      midiOutputsOrder,
+      midiInputsOrder = [],
+      midiOutputsOrder = [],
       midiInitialized = false,
       midiEventListenerId = 0;
 
 
   function initMidi(cb){
 
-      //console.log(midiInitialized, navigator.requestMIDIAccess);
+      // console.log(midiInitialized, navigator.requestMIDIAccess);
 
-      if(midiInitialized === true){
+      if(midiInitialized === true || !navigator.requestMIDIAccess){
           cb();
           return;
       }
 
       midiInitialized = true;
 
-      if(navigator.requestMIDIAccess !== undefined){
-          navigator.requestMIDIAccess().then(
-              // on success
-              function midiAccessOnSuccess(midi){
+      if(navigator.requestMIDIAccess && !(sequencer.os === 'android' && sequencer.browser === 'firefox')){
+          navigator.requestMIDIAccess()
+          .then(
+            // on success
+            function midiAccessOnSuccess(midi){
                   if(midi._jazzInstances !== undefined){
                       sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
                       sequencer.midi = true;
@@ -9117,8 +9126,12 @@ if (typeof module !== "undefined" && module !== null) {
               function midiAccessOnError(e){
                   console.log('MIDI could not be initialized:', e);
                   cb();
-              }
-          );
+                }
+          )
+          // .catch(function(e){
+          //   console.log('MIDI could not be initialized:', e);
+          //   cb();
+          // });
       // browsers without WebMIDI API
       }else{
           if(sequencer.browser === 'chrome'){
@@ -9131,8 +9144,8 @@ if (typeof module !== "undefined" && module !== null) {
   }
 
 
-  function getDevices(e){
-      //console.log('getDevices', e);
+  function getDevices(){
+      // console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
@@ -9178,10 +9191,13 @@ if (typeof module !== "undefined" && module !== null) {
       });
 
       sequencer.numMidiOutputs = midiOutputsOrder.length;
+
+      // console.log(outputs);
   }
 
 
   function initMidiSong(song){
+    // console.log('HB => initMIDISong');
       songMidiEventListener = function(e){
           //console.log(e);
           handleMidiMessageSong(e, song, this);
@@ -13503,7 +13519,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     function loadLoop(pack, callback){
-        //console.log('load sample pack', pack.name);
+        // console.log('load sample pack', pack.name);
         loadSamples(pack.samples, function(buffer){
             //console.log('kheb er een ferig', buffer);
         }, function(){
@@ -13816,6 +13832,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         sequencer.addTask({
             type: 'load sample pack',
+            name: 'load sample pack ' + samplepack.name,
             method: load,
             params: samplepack
         }, function(value){
@@ -14128,14 +14145,17 @@ if (typeof module !== "undefined" && module !== null) {
                 event.time /= 1000;
                 track.audio.processEvent(event);
             }else{
-
+                // console.log(track);
                 if(track.routeToMidiOut === false){
                     // if(event.type === 144){
                     //     console.log(event.time/1000, sequencer.getTime(), event.time/1000 - sequencer.getTime());
                     // }
-                    event.time /= 1000;
+                    // if (sequencer.os !== 'android') {
+                      event.time /= 1000;
+                    // }
                     //console.log('scheduled', event.type, event.time, event.midiNote.id);
                     //console.log(track.instrument.processEvent);
+                    // console.log(sequencer.getAudioContext().currentTime, event.time);
                     track.instrument.processEvent(event);
                 }else{
                     channel = track.channel;
@@ -20413,30 +20433,39 @@ return;
         // a track can, unlike Cubase, send its events to more than one midi output
         flag = flag === undefined ? true : flag;
 
-        //console.log(id, flag, this.song.midiOutputs);
-
-        var output = this.song.midiOutputs[id],
-            me = this;
-
-        if(output === undefined){
-            return;
-        }
-
-
-        // stop the internal instrument if a midi output has been chosen -> particulary necessary while the song is playing
-        if(flag === true){
+        // stop the internal instrument if a midi output has been chosen -> particularly necessary while the song is playing
+        if(flag === true && this.instrument){
             this.instrument.allNotesOff();
         }
 
-        //this.midiOutputs[id] = flag === true ? output : false;
-        if(flag){
+        if(id === 'all'){
+          var midiOutputs = this.midiOutputs;
+          var availableOutputs = this.song !== undefined ? this.song.midiOutputs : sequencer.midiOutputs;
+          objectForEach(availableOutputs, function(value, key){
+            if(flag === true){
+              midiOutputs[key] = value;
+            }else{
+              delete midiOutputs[key];
+            }
+          });
+          //console.log(sequencer.midiInputs, this.midiInputs, midiInputs);
+        } else {
+          //console.log(id, flag, this.song.midiOutputs);
+          var output = this.song.midiOutputs[id];
+          if(output === undefined){
+            return;
+          }
+          //this.midiOutputs[id] = flag === true ? output : false;
+          if(flag){
             this.midiOutputs[id] = output;
-        }else{
+          }else{
             delete this.midiOutputs[id];
+          }
         }
 
         this.routeToMidiOut = false;
 
+        var me = this;
         //console.log(this.midiOutputs[id]);
         objectForEach(this.midiOutputs, function(value, key){
             //console.log(value, key);
@@ -22572,21 +22601,24 @@ return;
 
 
     function testType(base64, type, callback){
+        var bin = base64ToBinary(base64);
+        // console.log(bin);
         try{
-            context.decodeAudioData(base64ToBinary(base64), function(){
+            context.decodeAudioData(bin, function(){
                 window.sequencer[type] = true;
                 callback();
             }, function(){
                 callback();
             });
         }catch(e){
-            //console.log(e);
+            // console.log(e);
             callback();
         }
     }
 
     sequencer.addTask({
         type: 'test mp3',
+        name: 'test mp3',
         method: function(cb){
             testType(emptyMp3, 'mp3', cb);
         },
@@ -22595,6 +22627,7 @@ return;
 
     sequencer.addTask({
         type: 'test ogg',
+        name: 'test ogg',
         method: function(cb){
             testType(emptyOgg, 'ogg', cb);
         },
@@ -22616,6 +22649,7 @@ return;
 */
     sequencer.addTask({
         type: 'init midi',
+        name: 'init midi',
         method: initMidi,
         params: []
     }, function(){

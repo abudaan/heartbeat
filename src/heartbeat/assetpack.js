@@ -264,6 +264,7 @@
 
         sequencer.addTask({
             type: 'load asset pack',
+            name: 'load asset pack ' + config.name,
             method: load,
             params: new AssetPack(config)
         }, function(assetpack){

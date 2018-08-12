@@ -68,21 +68,24 @@
 
 
     function testType(base64, type, callback){
+        var bin = base64ToBinary(base64);
+        // console.log(bin);
         try{
-            context.decodeAudioData(base64ToBinary(base64), function(){
+            context.decodeAudioData(bin, function(){
                 window.sequencer[type] = true;
                 callback();
             }, function(){
                 callback();
             });
         }catch(e){
-            //console.log(e);
+            // console.log(e);
             callback();
         }
     }
 
     sequencer.addTask({
         type: 'test mp3',
+        name: 'test mp3',
         method: function(cb){
             testType(emptyMp3, 'mp3', cb);
         },
@@ -91,6 +94,7 @@
 
     sequencer.addTask({
         type: 'test ogg',
+        name: 'test ogg',
         method: function(cb){
             testType(emptyOgg, 'ogg', cb);
         },
@@ -112,6 +116,7 @@
 */
     sequencer.addTask({
         type: 'init midi',
+        name: 'init midi',
         method: initMidi,
         params: []
     }, function(){

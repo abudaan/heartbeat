@@ -1296,30 +1296,39 @@ return;
         // a track can, unlike Cubase, send its events to more than one midi output
         flag = flag === undefined ? true : flag;
 
-        //console.log(id, flag, this.song.midiOutputs);
-
-        var output = this.song.midiOutputs[id],
-            me = this;
-
-        if(output === undefined){
-            return;
-        }
-
-
-        // stop the internal instrument if a midi output has been chosen -> particulary necessary while the song is playing
-        if(flag === true){
+        // stop the internal instrument if a midi output has been chosen -> particularly necessary while the song is playing
+        if(flag === true && this.instrument){
             this.instrument.allNotesOff();
         }
 
-        //this.midiOutputs[id] = flag === true ? output : false;
-        if(flag){
+        if(id === 'all'){
+          var midiOutputs = this.midiOutputs;
+          var availableOutputs = this.song !== undefined ? this.song.midiOutputs : sequencer.midiOutputs;
+          objectForEach(availableOutputs, function(value, key){
+            if(flag === true){
+              midiOutputs[key] = value;
+            }else{
+              delete midiOutputs[key];
+            }
+          });
+          //console.log(sequencer.midiInputs, this.midiInputs, midiInputs);
+        } else {
+          //console.log(id, flag, this.song.midiOutputs);
+          var output = this.song.midiOutputs[id];
+          if(output === undefined){
+            return;
+          }
+          //this.midiOutputs[id] = flag === true ? output : false;
+          if(flag){
             this.midiOutputs[id] = output;
-        }else{
+          }else{
             delete this.midiOutputs[id];
+          }
         }
 
         this.routeToMidiOut = false;
 
+        var me = this;
         //console.log(this.midiOutputs[id]);
         objectForEach(this.midiOutputs, function(value, key){
             //console.log(value, key);

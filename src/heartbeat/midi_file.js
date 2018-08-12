@@ -341,6 +341,9 @@
     sequencer.addMidiFile = function(config, callback){
         var type = typeString(config),
             midifile, json, name, folder;
+        // console.log(fetch, Promise);
+
+        // console.log(type, config);
 
         if(type !== 'object'){
             if(sequencer.debug >= 2){
@@ -381,10 +384,11 @@
 
         sequencer.addTask({
             type: 'load midifile',
+            name: 'load midifile ' + midifile.url,
             method: load,
             params: midifile
         }, function(){
-            //console.log(midifile);
+            // console.log(midifile);
             store(midifile);
             if(callback){
                 callback(midifile);

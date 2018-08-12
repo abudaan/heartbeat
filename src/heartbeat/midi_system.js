@@ -18,27 +18,28 @@
       songMidiEventListener,
 
       midiAccess,
-      midiInputsOrder,
-      midiOutputsOrder,
+      midiInputsOrder = [],
+      midiOutputsOrder = [],
       midiInitialized = false,
       midiEventListenerId = 0;
 
 
   function initMidi(cb){
 
-      //console.log(midiInitialized, navigator.requestMIDIAccess);
+      // console.log(midiInitialized, navigator.requestMIDIAccess);
 
-      if(midiInitialized === true){
+      if(midiInitialized === true || !navigator.requestMIDIAccess){
           cb();
           return;
       }
 
       midiInitialized = true;
 
-      if(navigator.requestMIDIAccess !== undefined){
-          navigator.requestMIDIAccess().then(
-              // on success
-              function midiAccessOnSuccess(midi){
+      if(navigator.requestMIDIAccess && !(sequencer.os === 'android' && sequencer.browser === 'firefox')){
+          navigator.requestMIDIAccess()
+          .then(
+            // on success
+            function midiAccessOnSuccess(midi){
                   if(midi._jazzInstances !== undefined){
                       sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
                       sequencer.midi = true;
@@ -57,8 +58,12 @@
               function midiAccessOnError(e){
                   console.log('MIDI could not be initialized:', e);
                   cb();
-              }
-          );
+                }
+          )
+          // .catch(function(e){
+          //   console.log('MIDI could not be initialized:', e);
+          //   cb();
+          // });
       // browsers without WebMIDI API
       }else{
           if(sequencer.browser === 'chrome'){
@@ -71,8 +76,8 @@
   }
 
 
-  function getDevices(e){
-      //console.log('getDevices', e);
+  function getDevices(){
+      // console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
@@ -118,10 +123,13 @@
       });
 
       sequencer.numMidiOutputs = midiOutputsOrder.length;
+
+      // console.log(outputs);
   }
 
 
   function initMidiSong(song){
+    // console.log('HB => initMIDISong');
       songMidiEventListener = function(e){
           //console.log(e);
           handleMidiMessageSong(e, song, this);
