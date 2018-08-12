@@ -34,31 +34,29 @@
       }
 
       midiInitialized = true;
-
-      if(navigator.requestMIDIAccess && !(sequencer.os === 'android' && sequencer.browser === 'firefox')){
+      if(navigator.requestMIDIAccess){
           navigator.requestMIDIAccess()
           .then(
             // on success
             function midiAccessOnSuccess(midi){
-                  if(midi._jazzInstances !== undefined){
-                      sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
-                      sequencer.midi = true;
-                  }else{
-                      sequencer.webmidi = true;
-                      sequencer.midi = true;
-                  }
-                  midiAccess = midi;
-                  midiAccess.onstatechange = getDevices;
-                  getDevices();
-                  //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
-
-                  cb();
+                if(midi._jazzInstances !== undefined){
+                    sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
+                    sequencer.midi = true;
+                }else{
+                    sequencer.webmidi = true;
+                    sequencer.midi = true;
+                }
+                midiAccess = midi;
+                midiAccess.onstatechange = getDevices;
+                getDevices();
+                //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
+                cb();
               },
               // on error
               function midiAccessOnError(e){
-                  console.log('MIDI could not be initialized:', e);
-                  cb();
-                }
+                console.log('MIDI could not be initialized:', e);
+                cb();
+              }
           )
           // .catch(function(e){
           //   console.log('MIDI could not be initialized:', e);
@@ -77,12 +75,19 @@
 
 
   function getDevices(){
-      // console.log('getDevices');
+      console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
 
       inputs = midiAccess.inputs;
+      outputs = midiAccess.outputs;
+
+      if (inputs.size === 0 && outputs.size === 0) {
+        sequencer.midi = false;
+        console.log('no MIDI ports available');
+        return;
+      }
 
       inputs.forEach(function(input){
           midiInputsOrder.push({name: input.name, id: input.id});
@@ -103,7 +108,6 @@
       sequencer.numMidiInputs = midiInputsOrder.length;
 
 
-      outputs = midiAccess.outputs;
 
       outputs.forEach(function(output){
           midiOutputsOrder.push({name: output.name, id: output.id});
@@ -123,7 +127,6 @@
       });
 
       sequencer.numMidiOutputs = midiOutputsOrder.length;
-
       // console.log(outputs);
   }
 

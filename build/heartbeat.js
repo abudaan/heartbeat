@@ -322,8 +322,7 @@ if (typeof module !== "undefined" && module !== null) {
       browser,
       legacy = false;
 
-
-      console.log('heartbeat v0.0.9-groovy2');
+      console.log('heartbeat v0.0.11-groovy2');
 
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
@@ -9102,31 +9101,29 @@ if (typeof module !== "undefined" && module !== null) {
       }
 
       midiInitialized = true;
-
-      if(navigator.requestMIDIAccess && !(sequencer.os === 'android' && sequencer.browser === 'firefox')){
+      if(navigator.requestMIDIAccess){
           navigator.requestMIDIAccess()
           .then(
             // on success
             function midiAccessOnSuccess(midi){
-                  if(midi._jazzInstances !== undefined){
-                      sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
-                      sequencer.midi = true;
-                  }else{
-                      sequencer.webmidi = true;
-                      sequencer.midi = true;
-                  }
-                  midiAccess = midi;
-                  midiAccess.onstatechange = getDevices;
-                  getDevices();
-                  //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
-
-                  cb();
+                if(midi._jazzInstances !== undefined){
+                    sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
+                    sequencer.midi = true;
+                }else{
+                    sequencer.webmidi = true;
+                    sequencer.midi = true;
+                }
+                midiAccess = midi;
+                midiAccess.onstatechange = getDevices;
+                getDevices();
+                //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
+                cb();
               },
               // on error
               function midiAccessOnError(e){
-                  console.log('MIDI could not be initialized:', e);
-                  cb();
-                }
+                console.log('MIDI could not be initialized:', e);
+                cb();
+              }
           )
           // .catch(function(e){
           //   console.log('MIDI could not be initialized:', e);
@@ -9145,12 +9142,19 @@ if (typeof module !== "undefined" && module !== null) {
 
 
   function getDevices(){
-      // console.log('getDevices');
+      console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
 
       inputs = midiAccess.inputs;
+      outputs = midiAccess.outputs;
+
+      if (inputs.size === 0 && outputs.size === 0) {
+        sequencer.midi = false;
+        console.log('no MIDI ports available');
+        return;
+      }
 
       inputs.forEach(function(input){
           midiInputsOrder.push({name: input.name, id: input.id});
@@ -9171,7 +9175,6 @@ if (typeof module !== "undefined" && module !== null) {
       sequencer.numMidiInputs = midiInputsOrder.length;
 
 
-      outputs = midiAccess.outputs;
 
       outputs.forEach(function(output){
           midiOutputsOrder.push({name: output.name, id: output.id});
@@ -9191,7 +9194,6 @@ if (typeof module !== "undefined" && module !== null) {
       });
 
       sequencer.numMidiOutputs = midiOutputsOrder.length;
-
       // console.log(outputs);
   }
 

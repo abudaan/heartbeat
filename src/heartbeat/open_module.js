@@ -23,8 +23,7 @@
       browser,
       legacy = false;
 
-
-      console.log('heartbeat v0.0.9-groovy2');
+      console.log('heartbeat v0.0.11-groovy2');
 
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
