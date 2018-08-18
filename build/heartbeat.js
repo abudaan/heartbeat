@@ -322,7 +322,7 @@ if (typeof module !== "undefined" && module !== null) {
       browser,
       legacy = false;
 
-      console.log('heartbeat v0.0.12-groovy2');
+      console.log('heartbeat v0.0.14-groovy2');
 
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
@@ -6170,8 +6170,9 @@ if (typeof module !== "undefined" && module !== null) {
 
 
     KeyEditor.prototype.removePart = function(part){
+      if(part.track) {
         part.track.removePart(part);
-        this.song.update();
+      }
     };
 
 
@@ -9142,7 +9143,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
   function getDevices(){
-      console.log('getDevices');
+      // console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
@@ -9152,7 +9153,9 @@ if (typeof module !== "undefined" && module !== null) {
 
       if (inputs.size === 0 && outputs.size === 0) {
         sequencer.midi = false;
-        console.log('no MIDI ports available');
+        sequencer.numMidiInputs = 0;
+        sequencer.numMidiOutputs = 0;
+        // console.log('no MIDI ports available');
         return;
       }
 
@@ -22617,7 +22620,7 @@ return;
             callback();
         }
     }
-
+/*
     sequencer.addTask({
         type: 'test mp3',
         name: 'test mp3',
@@ -22635,6 +22638,9 @@ return;
         },
         params: []
     });
+*/
+
+
 /*
     , function(){
         console.log('another callback');
@@ -22659,15 +22665,17 @@ return;
             cb();
         });
         if(sequencer.debug >= 4){
-            var msg = 'sequencer ready, support for:';
-            if(sequencer.ogg === true){
-                msg +=  ' ogg';
-            }
-            if(sequencer.mp3 === true){
-                msg +=  ' mp3';
-            }
+            // var msg = 'sequencer ready, support for:';
+            // if(sequencer.ogg === true){
+            //     msg +=  ' ogg';
+            // }
+            // if(sequencer.mp3 === true){
+            //     msg +=  ' mp3';
+            // }
+            // console.log(msg);
+            var msg = 'sequencer ready, midi support:' + sequencer.midi;
             console.log(msg);
-        }
+          }
         ready = true;
     }, false); // @TODO: check this true | false
 

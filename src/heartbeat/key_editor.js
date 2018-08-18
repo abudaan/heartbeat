@@ -960,8 +960,9 @@
 
 
     KeyEditor.prototype.removePart = function(part){
+      if(part.track) {
         part.track.removePart(part);
-        this.song.update();
+      }
     };
 
 

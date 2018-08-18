@@ -75,7 +75,7 @@
 
 
   function getDevices(){
-      console.log('getDevices');
+      // console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
@@ -85,7 +85,9 @@
 
       if (inputs.size === 0 && outputs.size === 0) {
         sequencer.midi = false;
-        console.log('no MIDI ports available');
+        sequencer.numMidiInputs = 0;
+        sequencer.numMidiOutputs = 0;
+        // console.log('no MIDI ports available');
         return;
       }
 

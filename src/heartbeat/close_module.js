@@ -82,7 +82,7 @@
             callback();
         }
     }
-
+/*
     sequencer.addTask({
         type: 'test mp3',
         name: 'test mp3',
@@ -100,6 +100,9 @@
         },
         params: []
     });
+*/
+
+
 /*
     , function(){
         console.log('another callback');
@@ -124,15 +127,17 @@
             cb();
         });
         if(sequencer.debug >= 4){
-            var msg = 'sequencer ready, support for:';
-            if(sequencer.ogg === true){
-                msg +=  ' ogg';
-            }
-            if(sequencer.mp3 === true){
-                msg +=  ' mp3';
-            }
+            // var msg = 'sequencer ready, support for:';
+            // if(sequencer.ogg === true){
+            //     msg +=  ' ogg';
+            // }
+            // if(sequencer.mp3 === true){
+            //     msg +=  ' mp3';
+            // }
+            // console.log(msg);
+            var msg = 'sequencer ready, midi support:' + sequencer.midi;
             console.log(msg);
-        }
+          }
         ready = true;
     }, false); // @TODO: check this true | false
 
