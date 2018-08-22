@@ -322,7 +322,7 @@ if (typeof module !== "undefined" && module !== null) {
       browser,
       legacy = false;
 
-      console.log('heartbeat v0.0.15-groovy2');
+      console.log('heartbeat v0.0.16-groovy2');
 
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
@@ -338,22 +338,14 @@ if (typeof module !== "undefined" && module !== null) {
   }
 
   if(ua.indexOf('Chrome') !== -1){
-      // chrome, chromium and canary
-      browser = 'chrome';
+    // chrome, chromium and canary
+    browser = 'chrome';
 
-      if(ua.indexOf('OPR') !== -1){
-          browser = 'opera';
-      }else if(ua.indexOf('Chromium') !== -1){
-          browser = 'chromium';
-      }
-
-      /*
-      //console.log(new Audio().canPlayType('audio/mp3'));
-      if(new Audio().canPlayType('audio/mp3') !== 'probably'){
-          // chromium does not support mp3
-          browser = 'chromium';
-      }
-      */
+    if(ua.indexOf('OPR') !== -1){
+        browser = 'opera';
+    }else if(ua.indexOf('Chromium') !== -1){
+        browser = 'chromium';
+    }
   }else if(ua.indexOf('Safari') !== -1){
       browser = 'safari';
   }else if(ua.indexOf('Firefox') !== -1){
@@ -363,17 +355,25 @@ if (typeof module !== "undefined" && module !== null) {
   }
 
   if(os === 'ios'){
-      if(ua.indexOf('CriOS') !== -1){
-          browser = 'chrome';
-      }
+    if(ua.indexOf('CriOS') !== -1){
+        browser = 'chrome';
+    }
   }
 
   console.log(os, browser, '---', ua);
+
 
   var options = {
     // legacyHint: 'interactive',
     // sampleRate: 22050
   };
+
+  if (window.sampleRate) {
+    var options = {
+      // legacyHint: 'interactive',
+      sampleRate: window.sampleRate
+    };
+  }
 
   if(window.AudioContext){
     context = new window.AudioContext(options);
@@ -399,37 +399,13 @@ if (typeof module !== "undefined" && module !== null) {
     return;
   }
 
-  // console.log(context.sampleRate);
+  console.log('parsing sample rate', context.sampleRate);
 
   // check for older implementations of WebAudio
   src = context.createBufferSource();
   if(src.start === undefined){
       legacy = true;
   }
-
-
-/*
-  var audioTest = new Audio();
-  //wav = audioTest.canPlayType('audio/wav');// === '' ? false : true;
-  canplayOgg = audioTest.canPlayType('audio/ogg');// === '' ? false : true;
-  canplayMp3 = audioTest.canPlayType('audio/mpeg');// === '' ? false : true;
-  console.log('wav', audioTest.canPlayType('audio/wav'), 'ogg', canplayOgg, 'mp3', canplayMp3);
-  audioTest = null;
-*/
-
-
-  navigator.getUserMedia = (
-      navigator.getUserMedia ||
-      navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia ||
-      navigator.msGetUserMedia
-  );
-
-
-  window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
-  window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
-
-  //console.log('iOS', os, context, window.Blob, window.requestAnimationFrame);
 
   compressor = context.createDynamicsCompressor();
   compressor.connect(context.destination);
@@ -439,6 +415,18 @@ if (typeof module !== "undefined" && module !== null) {
   gainNode.connect(context.destination);
   gainNode.gain.value = 1;
 
+
+  navigator.getUserMedia = (
+      navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia
+  );
+
+  window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
+  window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
+
+  //console.log('iOS', os, context, window.Blob, window.requestAnimationFrame);
 
   protectedScope = {
 
@@ -458,7 +446,8 @@ if (typeof module !== "undefined" && module !== null) {
       },
 
       addInitMethod: function(method){
-          initMethods.push(method);
+        // console.log('addInitMethod', method);
+        initMethods.push(method);
       },
 
       callInitMethods: function(){
@@ -651,6 +640,8 @@ if (typeof module !== "undefined" && module !== null) {
               }
           }
       },
+
+      // initAudio: initAudio,
 
       unlockWebAudio: function(){
           if(webaudioUnlocked === true){
@@ -22573,7 +22564,6 @@ return;
         }
     };
 
-
     sequencer.addInstrument({
         name: 'sinewave',
         folder: 'heartbeat',
@@ -22595,7 +22585,6 @@ return;
       }
     });
 
-
     //console.log(sequencer.os, sequencer.browser);
 
     // safari supports only mp3 and all other browsers support mp3 among others, so although ogg is a better format, mp3 is the best choice here to cover all browsers
@@ -22610,8 +22599,7 @@ return;
     });
     //console.log(initMidi);
 
-
-
+/*
     function testType(base64, type, callback){
         var bin = base64ToBinary(base64);
         // console.log(bin);
@@ -22627,7 +22615,6 @@ return;
             callback();
         }
     }
-/*
     sequencer.addTask({
         type: 'test mp3',
         name: 'test mp3',
@@ -22662,6 +22649,13 @@ return;
         params: []
     });
 */
+    // sequencer.addTask({
+    //     type: 'init audio',
+    //     name: 'init audio',
+    //     method: initAudio,
+    //     params: []
+    // });
+
     sequencer.addTask({
         type: 'init midi',
         name: 'init midi',

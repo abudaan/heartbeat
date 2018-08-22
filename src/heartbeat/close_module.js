@@ -28,7 +28,6 @@
         }
     };
 
-
     sequencer.addInstrument({
         name: 'sinewave',
         folder: 'heartbeat',
@@ -50,7 +49,6 @@
       }
     });
 
-
     //console.log(sequencer.os, sequencer.browser);
 
     // safari supports only mp3 and all other browsers support mp3 among others, so although ogg is a better format, mp3 is the best choice here to cover all browsers
@@ -65,8 +63,7 @@
     });
     //console.log(initMidi);
 
-
-
+/*
     function testType(base64, type, callback){
         var bin = base64ToBinary(base64);
         // console.log(bin);
@@ -82,7 +79,6 @@
             callback();
         }
     }
-/*
     sequencer.addTask({
         type: 'test mp3',
         name: 'test mp3',
@@ -117,6 +113,13 @@
         params: []
     });
 */
+    // sequencer.addTask({
+    //     type: 'init audio',
+    //     name: 'init audio',
+    //     method: initAudio,
+    //     params: []
+    // });
+
     sequencer.addTask({
         type: 'init midi',
         name: 'init midi',
