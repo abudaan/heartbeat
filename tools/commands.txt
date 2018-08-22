@@ -1,0 +1,11 @@
+44K mono
+nodejs sfz2heartbeat.js ../samples/groovy -c ../samples/cfg/groovy.ogg.3.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono -r -g
+nodejs sfz2heartbeat.js ../samples/cfg/TP00-PianoStereo_q3.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono
+
+22K mono
+nodejs sfz2heartbeat.js ../samples/groovy -c ../samples/cfg/groovy.ogg.3.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono-22k -r -g
+nodejs sfz2heartbeat.js ../samples/cfg/TP00-PianoStereo_q3.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono-22k
+
+22K mono q1
+nodejs sfz2heartbeat.js ../samples/groovy -c ../samples/cfg/groovy.ogg.1.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono-22k-q1 -r -g
+nodejs sfz2heartbeat.js ../samples/cfg/TP00-PianoStereo_q1.cfg -o /home/abudaan/workspace/groovy2/client/assets/libs/mono-22k-q1

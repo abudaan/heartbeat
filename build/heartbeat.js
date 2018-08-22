@@ -9150,7 +9150,7 @@ if (typeof module !== "undefined" && module !== null) {
 
 
   function getDevices(){
-      // console.log('getDevices');
+      console.log('getDevices');
       var inputs, outputs;
       midiInputsOrder = [];
       midiOutputsOrder = [];
@@ -9162,7 +9162,7 @@ if (typeof module !== "undefined" && module !== null) {
         sequencer.midi = false;
         sequencer.numMidiInputs = 0;
         sequencer.numMidiOutputs = 0;
-        // console.log('no MIDI ports available');
+        console.log('no MIDI ports available');
         return;
       }
 
