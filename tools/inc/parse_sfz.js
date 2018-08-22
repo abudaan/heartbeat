@@ -42,12 +42,15 @@ var
     sampleName,
     sampleExtension,
     convertBitRate,
+    convertSampleRate = 22050,
+    convertMono = true,
 
     hasSustainLoop,
     sustainLoop,
     trimSample,
     trimEnd,
     trimmed,
+    converted,
 
     keyscalingPanning,
     keyscalingRelease,
@@ -463,6 +466,7 @@ function parseRegion(region, callback){
     }else{
         getSustainLoop(sample);
         trimmed = false;
+        converted = false; // not yet mono 22050 Hz
 
         pitch = regionKey || regionLokey;
         lowestNote = pitch < lowestNote ? pitch : lowestNote;
@@ -617,17 +621,42 @@ function processSample(sample, cents, callback){
 
     var cmd, tmpFile, data, base64;
 
+    console.log(sample);
+
     if(convertBitRate === undefined){
         cmd = soxPath + ' --i -B \'' + sample + '\'';
-        //console.log(cmd);
+        // console.log(cmd);
         runSox(cmd, function(result, output, error){
             if(error !== undefined){
                 console.error('error getting sample info', error, output);
                 callback(false);
             }else{
-                //console.log(output);
+                // console.log(output);
                 convertBitRate = output;
                 processSample(sample, 0, callback);
+            }
+        });
+    }
+
+    else if(convertSampleRate !== undefined && converted === false){
+        tmpFile = path.resolve(tmpDir, 'tmp.' + sampleExtension);
+        // cmd = soxPath + ' --i -r \'' + sample + '\'';
+        // cmd = soxPath + ' -r ' + convertSampleRate + ' \'' + sample + '\'';
+        // cmd = soxPath + ' \'' +  sample + '\' -t raw - | sox -t raw -e signed -b 16 -c 1 -r 22050 - \'' +  sample + '\'';
+        cmd = soxPath + ' \'' + sample + '\' \'' + tmpFile + '\' rate 22050 channels 1';
+        // cmd = soxPath + ' \'' + sample + '\' \'' + tmpFile + '\' channels 1';
+        // console.log(cmd);
+        runSox(cmd, function(result, output, error){
+            converted = true;
+            if(error !== undefined){
+                console.error('error converting sample rate', error, output);
+                if(fs.existsSync(tmpFile) !== false){
+                  fs.unlinkSync(tmpFile);
+                }
+                callback(false);
+            }else{
+                // console.log(output);
+                processSample(tmpFile, 0, callback);
             }
         });
     }

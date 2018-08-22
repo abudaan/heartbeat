@@ -23,7 +23,7 @@
       browser,
       legacy = false;
 
-      console.log('heartbeat v0.0.14-groovy2');
+      console.log('heartbeat v0.0.15-groovy2');
 
   if(ua.match(/(iPad|iPhone|iPod)/g)){
       os = 'ios';
@@ -71,30 +71,36 @@
 
   console.log(os, browser, '---', ua);
 
+  var options = {
+    // legacyHint: 'interactive',
+    // sampleRate: 22050
+  };
 
   if(window.AudioContext){
-      context = new window.AudioContext();
-      if(context.createGainNode === undefined){
-          context.createGainNode = context.createGain;
-      }
+    context = new window.AudioContext(options);
+    if(context.createGainNode === undefined){
+      context.createGainNode = context.createGain;
+    }
   }else if(window.webkitAudioContext){
-      context = new window.webkitAudioContext();
+    context = new window.webkitAudioContext(options);
   }else if(window.oAudioContext){
-      context = new window.oAudioContext();
+    context = new window.oAudioContext(options);
   }else if(window.msAudioContext){
-      context = new window.msAudioContext();
+    context = new window.msAudioContext(options);
   }else{
-      //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-      window.sequencer = {
-          browser: browser,
-          os: os
-      };
-      alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
-      window.sequencer.ready = function(cb){
-          cb();
-      };
-      return;
+    //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
+    window.sequencer = {
+      browser: browser,
+      os: os
+    };
+    alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
+    window.sequencer.ready = function(cb){
+      cb();
+    };
+    return;
   }
+
+  // console.log(context.sampleRate);
 
   // check for older implementations of WebAudio
   src = context.createBufferSource();

@@ -13,15 +13,17 @@ window.onload = function(){
         sequencer = window.sequencer,
         console = window.console,
         formInputs = document.getElementById('inputs'),
-        formOutputs = document.getElementById('outputs');
+        formOutputs = document.getElementById('outputs'),
 
+        // relative path to assets
+        path = '../../../../assets';
 
     // use sequencer.ready(callback) to allow the browser to initialize navigator.requestMIDIAccess
     // this is not necessary if you use sequencer.addAssetPack() or any of the other methods that
     // add assets to heartbeat (addMidiFile(), addSamplePack(), addInstrument())
 
-    sequencer.ready(function(){
-        var track, song, checkbox, label;
+    function init(){
+       var track, song, checkbox, label;
 
         if(sequencer.midi === false){
             document.querySelectorAll('p')[0].innerHTML = '';
@@ -33,6 +35,7 @@ window.onload = function(){
         track = sequencer.createTrack();
         // set monitor to true to route the incoming midi events to the track
         track.monitor = true;
+        track.setInstrument('B00-Trumpet');
 
         // add track to new song
         song = sequencer.createSong({
@@ -44,7 +47,7 @@ window.onload = function(){
 
         // get all midi inputs from this song
         song.getMidiInputs(function(port){
-
+            // console.log(port);
             checkbox = document.createElement('input');
             checkbox.setAttribute('type', 'checkbox');
             checkbox.setAttribute('value', port.id);
@@ -54,7 +57,7 @@ window.onload = function(){
             label.setAttribute('for', checkbox.id);
             formInputs.appendChild(label);
             label.appendChild(checkbox);
-            label.innerHTML += port.label;
+            label.innerHTML += port.name;
 
             document.getElementById(checkbox.id).addEventListener('click', function(e){
                 var cb = e.target;
@@ -79,7 +82,7 @@ window.onload = function(){
             label.setAttribute('for', checkbox.id);
             formOutputs.appendChild(label);
             label.appendChild(checkbox);
-            label.innerHTML += port.label;
+            label.innerHTML += port.name;
 
             document.getElementById(checkbox.id).addEventListener('click', function(e){
                 var cb = e.target;
@@ -88,5 +91,7 @@ window.onload = function(){
                 });
             }, false);
         });
-    });
+    }
+    // sequencer.ready(init);
+    sequencer.addAssetPack({url: path + '/examples/B00-Trumpet-q1.json'}, init);
 };

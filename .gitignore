@@ -22,3 +22,6 @@ tools/build_examples_page.js
 tools/build_site_page.js
 tools/get_sustainloop.js
 tools/quick_build.sh
+
+heartbeat_tmp
+samples
