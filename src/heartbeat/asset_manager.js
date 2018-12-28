@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         loadLoop, //defined in util.js
         findItem, //defined in util.js

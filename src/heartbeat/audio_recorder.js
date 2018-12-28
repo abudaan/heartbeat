@@ -3,9 +3,6 @@
     'use strict';
 
     var
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         context, // defined in open_module.js
         encode64, // defined in util.js

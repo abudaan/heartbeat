@@ -3,9 +3,6 @@
     'use strict';
 
     var
-         // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         index = 0,
         storage, // defined in open_module.js
         ajax, // defined in utils.js

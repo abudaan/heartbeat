@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         findEvent, // → defined in find_position.js
         typeString, // → defined in util.js

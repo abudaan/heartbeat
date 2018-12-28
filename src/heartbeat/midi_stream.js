@@ -9,14 +9,8 @@
 
 	'use strict';
 
-	var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-		
-		fcc = String.fromCharCode;
+	var	fcc = String.fromCharCode;
 	
-
 	// buffer is Uint8Array
 	function createStream(buffer) {
 		var position = 0;

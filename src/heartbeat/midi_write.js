@@ -6,10 +6,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         AP = Array.prototype,
         PPQ = sequencer.defaultPPQ,
         HDR_CHUNKID = [

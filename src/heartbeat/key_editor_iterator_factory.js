@@ -3,8 +3,6 @@
     'use strict';
 
     var
-        sequencer = window.sequencer,
-
         minWidthSixteenth = 0.042,
         minWidthBeat = 0.02,
 /*

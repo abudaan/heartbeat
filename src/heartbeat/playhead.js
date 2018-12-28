@@ -2,10 +2,6 @@
 
     'use strict';
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         instanceId = 0,
         range = 10,
 

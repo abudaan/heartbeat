@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         createMidiNote, // → defined in midi_note.js
         createMidiEvent, // → defined in midi_event.js

@@ -3,10 +3,6 @@
     'use strict';
 
     var
-    // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         getPosition, // -> defined in position.js
         parseTimeEvents, // -> defined in parse_time_events.js

@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         context, // defined in open_module.js
         timedTasks, // defined in open_module.js

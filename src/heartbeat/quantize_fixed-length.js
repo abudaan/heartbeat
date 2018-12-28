@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         copyObject, // defined in util.js
 
         floor = Math.floor,

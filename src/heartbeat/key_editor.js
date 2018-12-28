@@ -3,11 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-        requestAnimationFrame = window.requestAnimationFrame,
-
         //private
         KeyEditor,
 

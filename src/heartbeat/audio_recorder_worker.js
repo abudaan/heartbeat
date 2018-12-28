@@ -2,12 +2,6 @@
 
     'use strict';
 
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console;
-
-
     function createWorker(){
 
         var

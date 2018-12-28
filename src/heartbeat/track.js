@@ -13,9 +13,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         debug = sequencer.debug,
 
         slice = Array.prototype.slice,

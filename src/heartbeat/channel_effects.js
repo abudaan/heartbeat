@@ -9,9 +9,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
 
         id = 0,
         context,

@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         ajax, //defined in util.js
         findItem, //defined in util.js
         storeItem, //defined in util.js

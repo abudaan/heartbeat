@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         round = Math.round,
 
         precision = Math.pow(10, sequencer.precision),

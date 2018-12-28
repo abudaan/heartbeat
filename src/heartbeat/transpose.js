@@ -4,9 +4,7 @@
 
     var
         // satisfy jslint
-        sequencer = window.sequencer,
         Pitchshift = window.Pitchshift,
-        console = window.console,
 
         context,
         fftFrameSize = 2048,

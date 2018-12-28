@@ -3,8 +3,6 @@
     'use strict';
 
     var
-        sequencer = window.sequencer,
-        console = window.console,
         self,
         importScripts,
         Lame,

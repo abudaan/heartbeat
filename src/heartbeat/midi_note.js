@@ -5,10 +5,6 @@
     var
         MidiNote,
 
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //public
         createMidiEvent,
 

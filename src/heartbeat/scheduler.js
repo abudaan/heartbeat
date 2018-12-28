@@ -3,10 +3,6 @@
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         typeString, // defined in util.js
         objectForEach, // defined in util.js
 

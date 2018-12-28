@@ -40,7 +40,7 @@ https://github.com/jazz-soft/JZZ
 
 */
 
-!function(t,e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define("JZZ",[],e);else{if(t.JZZ&&t.JZZ.MIDI)return;t.JZZ=e()}}(this,function(){var t,e,n,i,o,r="undefined"==typeof window?global:window,s="0.4.6",u=Date.now||function(){return(new Date).getTime()},a=u(),h="undefined"!=typeof performance&&performance.now?function(){return performance.now()}:function(){return u()-a};function c(){this._orig=this,this._ready=!1,this._queue=[],this._err=[]}function p(t,e){setTimeout(function(){t._resume()},e)}function f(t){t._resume()}function l(t,e,n){t[n]=function(){var t=arguments,i=e._image();return this._push(f,[i]),i[n].apply(i,t)}}function _(t){t instanceof Function?t.apply(this):console.log(t)}function d(t){t instanceof Function?t.apply(this):console.log(t)}function m(t){this._break("closed"),t._resume()}function v(t){if(t.length){var e=t.shift();if(t.length){var n=this;this._slip(d,[function(){v.apply(n,[t])}])}try{this._repair(),e.apply(this)}catch(t){this._break(t.toString())}}else this._break()}function g(t,e){for(var n=0;n<t.length;n++)if(t[n]===e)return;t.push(e)}function y(t,e){for(var n=0;n<t.length;n++)if(t[n]===e)return void t.splice(n,1)}function w(){c.apply(this)}function M(t,e,n){if(void 0===e)return M(t,[],[]);if(t instanceof Object){for(var i=0;i<e.length;i++)if(e[i]===t)return n[i];var o;o=t instanceof Array?[]:{},e.push(t),n.push(o);for(var r in t)t.hasOwnProperty(r)&&(o[r]=M(t[r],e,n));return o}return t}c.prototype._exec=function(){for(;this._ready&&this._queue.length;){var t=this._queue.shift();this._orig._bad?this._orig._hope&&t[0]==d?(this._orig._hope=!1,t[0].apply(this,t[1])):(this._queue=[],this._orig._hope=!1):t[0]!=d&&t[0].apply(this,t[1])}},c.prototype._push=function(t,e){this._queue.push([t,e]),c.prototype._exec.apply(this)},c.prototype._slip=function(t,e){this._queue.unshift([t,e])},c.prototype._pause=function(){this._ready=!1},c.prototype._resume=function(){this._ready=!0,c.prototype._exec.apply(this)},c.prototype._break=function(t){this._orig._bad=!0,this._orig._hope=!0,t&&this._orig._err.push(t)},c.prototype._repair=function(){this._orig._bad=!1},c.prototype._crash=function(t){this._break(t),this._resume()},c.prototype.err=function(){return M(this._err)},c.prototype._image=function(){var t=function(){};t.prototype=this._orig;var e=new t;return e._ready=!1,e._queue=[],e},c.prototype.wait=function(t){if(!t)return this;var e=this._image();return this._push(p,[e,t]),e},c.prototype.and=function(t){return this._push(_,[t]),this},c.prototype.or=function(t){return this._push(d,[t]),this},c.prototype._info={},c.prototype.info=function(){var t=M(this._orig._info);return void 0===t.engine&&(t.engine="none"),void 0===t.sysex&&(t.sysex=!0),t},c.prototype.name=function(){return this.info().name},c.prototype.close=function(){var t=new c;return this._close&&this._push(this._close,[]),this._push(m,[t]),t},w.prototype=new c,w.prototype._info={name:"JZZ.js",ver:s,version:s};var b,S=[],O=[];function I(){var t,e;for(this._orig._info.engine=Z._type,this._orig._info.version=Z._version,this._orig._info.sysex=Z._sysex,this._orig._info.inputs=[],this._orig._info.outputs=[],S=[],O=[],Z._allOuts={},Z._allIns={},t=0;t<Z._outs.length;t++)(e=Z._outs[t]).engine=Z,Z._allOuts[e.name]=e,this._orig._info.outputs.push({name:e.name,manufacturer:e.manufacturer,version:e.version,engine:Z._type}),S.push(e);for(t=0;t<J._outs.length;t++)e=J._outs[t],this._orig._info.outputs.push({name:e.name,manufacturer:e.manufacturer,version:e.version,engine:e.type}),S.push(e);for(t=0;t<Z._ins.length;t++)(e=Z._ins[t]).engine=Z,Z._allIns[e.name]=e,this._orig._info.inputs.push({name:e.name,manufacturer:e.manufacturer,version:e.version,engine:Z._type}),O.push(e);for(t=0;t<J._ins.length;t++)e=J._ins[t],this._orig._info.inputs.push({name:e.name,manufacturer:e.manufacturer,version:e.version,engine:e.type}),O.push(e)}function C(){this._slip(I,[]),Z._refresh(this)}function E(t,e){if(void 0===t)return e.slice();var n,i,o=[];if(t instanceof RegExp){for(i=0;i<e.length;i++)t.test(e[i].name)&&o.push(e[i]);return o}for(t instanceof Function&&(t=t(e)),t instanceof Array||(t=[t]),n=0;n<t.length;n++)for(i=0;i<e.length;i++)(t[n]+""==i+""||t[n]===e[i].name||t[n]instanceof Object&&t[n].name===e[i].name)&&o.push(e[i]);return o}function A(t,e){var n;n=e instanceof RegExp?"Port matching "+e+" not found":e instanceof Object||void 0===e?"Port not found":'Port "'+e+'" not found',t._crash(n)}function B(t,e){var n=E(e,S);if(n.length){for(var i=function(t){return function(){t.engine._openOut(this,t.name)}},o=0;o<n.length;o++)n[o]=i(n[o]);t._slip(v,[n]),t._resume()}else A(t,e)}function x(t,e){var n=E(e,O);if(n.length){for(var i=function(t){return function(){t.engine._openIn(this,t.name)}},o=0;o<n.length;o++)n[o]=i(n[o]);t._slip(v,[n]),t._resume()}else A(t,e)}function P(t,e){t._slip(N,[e]),t._resume()}function q(){c.apply(this),this._handles=[],this._outs=[]}function L(t){this._receive(t)}function k(t){this._emit(t)}function D(t){t instanceof Function?g(this._orig._handles,t):g(this._orig._outs,t)}function z(t){void 0===t?(this._orig._handles=[],this._orig._outs=[]):t instanceof Function?y(this._orig._handles,t):y(this._orig._outs,t)}function F(t,e){this._orig._mpe||(this._orig._mpe=new bt),this._orig._mpe.setup(t,e)}function T(t,e){q.apply(this),this._port=t._orig,this._chan=e,l(this,this._port,"ch"),l(this,this._port,"mpe"),l(this,this._port,"connect"),l(this,this._port,"disconnect"),l(this,this._port,"close")}function j(t,e,n){q.apply(this),this._port=t._orig,this._master=e,this._band=n,l(this,this._port,"ch"),l(this,this._port,"mpe"),l(this,this._port,"connect"),l(this,this._port,"disconnect"),l(this,this._port,"close")}function W(){c.apply(this),this._handles=[],l(this,b,"refresh"),l(this,b,"openMidiOut"),l(this,b,"openMidiIn"),l(this,b,"onChange"),l(this,b,"close")}function N(t){t instanceof Function&&(this._orig._handles.length||Z._watch(),g(this._orig._handles,t))}function R(t){void 0===t?this._orig._handles=[]:y(this._orig._handles,t),this._orig._handles.length||Z._unwatch()}function V(t,e,n,i){if(function(t,e,n,i){var o;if(t.length!=n.length||e.length!=i.length)return!0;for(o=0;o<t.length;o++)if(t[o].name!=n[o].name)return!0;for(o=0;o<e.length;o++)if(e[o].name!=i[o].name)return!0;return!1}(t,e,n,i)){var o,r=[],s=[],u=[],a=[],h={};for(o=0;o<t.length;o++)h[t[o].name]=!0;for(o=0;o<n.length;o++)h[n[o].name]||r.push(n[o]);for(h={},o=0;o<n.length;o++)h[n[o].name]=!0;for(o=0;o<t.length;o++)h[t[o].name]||u.push(t[o]);for(h={},o=0;o<e.length;o++)h[e[o].name]=!0;for(o=0;o<i.length;o++)h[i[o].name]||s.push(i[o]);for(h={},o=0;o<i.length;o++)h[i[o].name]=!0;for(o=0;o<e.length;o++)h[e[o].name]||a.push(e[o]);return r.length||u.length||s.length||a.length?{inputs:{added:r,removed:u},outputs:{added:s,removed:a}}:void 0}}function G(e){for(t=0;t<b._watcher._handles.length;t++)b._watcher._handles[t].apply(b,[e])}w.prototype.refresh=function(){return this._push(C,[]),this},w.prototype.openMidiOut=function(t){var e=new q;return this._push(C,[]),this._push(B,[e,t]),e},w.prototype.openMidiIn=function(t){var e=new q;return this._push(C,[]),this._push(x,[e,t]),e},w.prototype.onChange=function(t){this._orig._watcher||(this._orig._watcher=new W);var e=this._orig._watcher._image();return this._push(P,[e,t]),e},w.prototype._close=function(){Z._close()},q.prototype=new c,q.prototype._filter=function(t){if(this._orig._mpe){var e,n=0;this._handles&&this._handles.length&&(n=this._handles.length,e=this._handles[0]),this._outs&&this._outs.length&&(n=this._outs.length,e=this._outs[0]),1!=n||e._mpe||(t=this._orig._mpe.filter(t))}return t},q.prototype._receive=function(t){this._emit(this._filter(t))},q.prototype.send=function(){return this._push(L,[at.apply(null,arguments)]),this},q.prototype.note=function(t,e,n,i){return this.noteOn(t,e,n),i&&this.wait(i).noteOff(t,e),this},q.prototype._emit=function(t){var e;for(e=0;e<this._handles.length;e++)this._handles[e].apply(this,[at(t)._stamp(this)]);for(e=0;e<this._outs.length;e++){var n=at(t);n._stamped(this._outs[e])||this._outs[e].send(n._stamp(this))}},q.prototype.emit=function(t){return this._push(k,[t]),this},q.prototype.connect=function(t){return this._push(D,[t]),this},q.prototype.disconnect=function(t){return this._push(z,[t]),this},q.prototype.ch=function(t){if(void 0===t)return this;if(t!=parseInt(t)||t<0||t>15)throw RangeError("Bad channel value: "+t+" (must be from 0 to 15)");var e=new T(this,t);return this._push(f,[e]),e},q.prototype.mpe=function(t,e){if(void 0===t&&void 0===e)return this;bt.validate(t,e);var n=e?new j(this,t,e):new T(this,t);return this._push(F,[t,e]),this._push(f,[n]),n},T.prototype=new q,T.prototype.channel=function(){return this._chan},T.prototype._receive=function(t){this._port._receive(t)},T.prototype.note=function(t,e,n){return this.noteOn(t,e),n&&this.wait(n).noteOff(t),this},j.prototype=new q,j.prototype.channel=function(){return this._master},j.prototype._receive=function(t){this._port._receive(t)},j.prototype.note=function(t,e,n){return this.noteOn(t,e),n&&this.wait(n).noteOff(t),this},W.prototype=new c,W.prototype.connect=function(t){return this._push(N,[t]),this},W.prototype.disconnect=function(t){return this._push(R,[t]),this};var Z={},J={_outs:[],_ins:[]};function H(){if("undefined"!=typeof module&&module.exports)return t=require("jazz-midi"),Z._type="node",Z._main=t,Z._pool=[],Z._newPlugin=function(){return new t.MIDI},void et();var t;this._break()}function Q(){var t=document.createElement("div");t.style.visibility="hidden",document.body.appendChild(t);var e,n=document.createElement("object");if(n.style.visibility="hidden",n.style.width="0px",n.style.height="0px",n.classid="CLSID:1ACE1618-1C7D-4561-AEE1-34842AA85E90",n.type="audio/x-jazz",document.body.appendChild(n),n.isJazz)return e=n,Z._type="plugin",Z._main=e,Z._pool=[e],Z._newPlugin=function(){var t=document.createElement("object");return t.style.visibility="hidden",t.style.width="0px",e.style.height="0px",t.classid="CLSID:1ACE1618-1C7D-4561-AEE1-34842AA85E90",t.type="audio/x-jazz",document.body.appendChild(t),t.isJazz?t:void 0},void et();this._break()}function U(){if(navigator.requestMIDIAccess){var t=this;return navigator.requestMIDIAccess({}).then(function(e){nt(e),t._resume()},function(e){t._crash(e)}),void this._pause()}this._break()}function K(){if(navigator.requestMIDIAccess){var t=this;return navigator.requestMIDIAccess({sysex:!0}).then(function(e){nt(e,!0),t._resume()},function(e){t._crash(e)}),void this._pause()}this._break()}function X(){var t,e,n=this;this._pause(),document.addEventListener("jazz-midi-msg",function i(o){if(t=!0,e||(e=document.getElementById("jazz-midi-msg")),e){var r,s,u,a=[];try{a=JSON.parse(e.innerText)}catch(t){}e.innerText="",document.removeEventListener("jazz-midi-msg",i),"version"===a[0]?(r=e,s=a[2],Z._type="extension",Z._version=s,Z._sysex=!0,Z._pool=[],Z._outs=[],Z._ins=[],Z._inArr=[],Z._outArr=[],Z._inMap={},Z._outMap={},Z._outsW=[],Z._insW=[],Z.refreshClients=[],Z._msg=r,Z._newPlugin=function(){var t={id:Z._pool.length};t.id?document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["new"]})):t.ready=!0,Z._pool.push(t)},Z._newPlugin(),Z._refresh=function(t){Z.refreshClients.push(t),t._pause(),setTimeout(function(){document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["refresh"]}))},0)},_closeAll=function(){for(var t=0;t<this.clients.length;t++)this._close(this.clients[t])},Z._openOut=function(t,e){var n=Z._outMap[e];if(!n){Z._pool.length<=Z._outArr.length&&Z._newPlugin();var i=Z._pool[Z._outArr.length];(n={name:e,clients:[],info:{name:e,manufacturer:Z._allOuts[e].manufacturer,version:Z._allOuts[e].version,type:"MIDI-out",sysex:Z._sysex,engine:Z._type},_start:function(){document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["openout",i.id,e]}))},_close:function(t){Z._closeOut(t)},_closeAll:_closeAll,_receive:function(t){var e=t.slice();e.splice(0,0,"play",i.id),document.dispatchEvent(new CustomEvent("jazz-midi",{detail:e}))}}).plugin=i,i.output=n,Z._outArr.push(n),Z._outMap[e]=n}t._orig._impl=n,g(n.clients,t._orig),t._info=n.info,t._receive=function(t){n._receive(t)},t._close=function(){n._close(this)},n.open||(n.plugin.ready&&n._start(),t._pause())},Z._openIn=function(t,e){var n=Z._inMap[e];if(!n){Z._pool.length<=Z._inArr.length&&Z._newPlugin();var i=Z._pool[Z._inArr.length];(n={name:e,clients:[],info:{name:e,manufacturer:Z._allIns[e].manufacturer,version:Z._allIns[e].version,type:"MIDI-in",sysex:Z._sysex,engine:Z._type},_start:function(){document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["openin",i.id,e]}))},_close:function(t){Z._closeIn(t)},_closeAll:_closeAll}).plugin=i,i.input=n,Z._inArr.push(n),Z._inMap[e]=n}t._orig._impl=n,g(n.clients,t._orig),t._info=n.info,t._close=function(){n._close(this)},n.open||(n.plugin.ready&&n._start(),t._pause())},Z._closeOut=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.open=!1,document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["closeout",e.plugin.id]})))},Z._closeIn=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.open=!1,document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["closein",e.plugin.id]})))},Z._close=function(){},Z._watch=function(){Z._insW=Z._ins,Z._outsW=Z._outs,u=setInterval(function(){document.dispatchEvent(new CustomEvent("jazz-midi",{detail:["refresh"]}))},250)},Z._unwatch=function(){clearInterval(u),u=void 0},document.addEventListener("jazz-midi-msg",function(t){var e,n,i,o=Z._msg.innerText.split("\n");for(Z._msg.innerText="",n=0;n<o.length;n++){var r=[];try{r=JSON.parse(o[n])}catch(t){}if(r.length)if("refresh"===r[0]){if(r[1].ins){for(i=0;i<r[1].ins.length;i++)r[1].ins[i].type=Z._type;Z._ins=r[1].ins}if(r[1].outs){for(i=0;i<r[1].outs.length;i++)r[1].outs[i].type=Z._type;Z._outs=r[1].outs}for(i=0;i<Z.refreshClients.length;i++)Z.refreshClients[i]._resume();Z.refreshClients=[];var s=V(Z._insW,Z._outsW,Z._ins,Z._outs);if(s){for(Z._insW=Z._ins,Z._outsW=Z._outs,i=0;i<s.inputs.removed.length;i++)(e=Z._inMap[s.inputs.removed[i].name])&&e._closeAll();for(i=0;i<s.outputs.removed.length;i++)(e=Z._outMap[s.outputs.removed[i].name])&&e._closeAll();u&&G(s)}}else if("version"===r[0]){var a=Z._pool[r[1]];a&&(a.ready=!0,a.input&&a.input._start(),a.output&&a.output._start())}else if("openout"===r[0]){if(e=Z._pool[r[1]].output)if(r[2]==e.name){if(e.open=!0,e.clients)for(i=0;i<e.clients.length;i++)e.clients[i]._resume()}else if(e.clients)for(i=0;i<e.clients.length;i++)e.clients[i]._crash()}else if("openin"===r[0]){if(e=Z._pool[r[1]].input)if(r[2]==e.name){if(e.open=!0,e.clients)for(i=0;i<e.clients.length;i++)e.clients[i]._resume()}else if(e.clients)for(i=0;i<e.clients.length;i++)e.clients[i]._crash()}else if("midi"===r[0]&&(e=Z._pool[r[1]].input)&&e.clients)for(i=0;i<e.clients.length;i++){var h=at(r.slice(3));e.clients[i]._emit(h)}}}),n._resume()):n._crash()}});try{document.dispatchEvent(new Event("jazz-midi"))}catch(t){}window.setTimeout(function(){t||n._crash()},0)}function Y(){this._pause();var t=this;setTimeout(function(){t._crash()},0)}function $(t){for(var e=[H,Y],n=function(t){var e=["extension","plugin","webmidi"];if(!t||!t.engine)return e;var n,i,o,r=t.engine instanceof Array?t.engine:[t.engine],s={},u=[],a=[];for(o=0;o<r.length;o++){var h=r[o].toString().toLowerCase();s[h]||(s[h]=!0,"none"===h&&(n=!0),"etc"===h&&(i=!0),i?a.push(h):u.push(h),y(e,h))}(i||u.length||a.length)&&(n=!1);return n?[]:u.concat(i?e:a)}(t),i=0;i<n.length;i++)"webmidi"==n[i]?(t&&!0===t.sysex&&e.push(K),t&&!0===t.sysex&&!0!==t.degrade||e.push(U)):"extension"==n[i]?e.push(X):"plugin"==n[i]&&e.push(Q);return e.push(tt),e}function tt(){Z._type="none",Z._sysex=!0,Z._refresh=function(){Z._outs=[],Z._ins=[]},Z._watch=function(){},Z._unwatch=function(){}}function et(){var t;function n(){t&&(Z._refresh(),t=!1)}function i(e){t=!0,setTimeout(n,0)}Z._inArr=[],Z._outArr=[],Z._inMap={},Z._outMap={},Z._outsW=[],Z._insW=[],Z._version=Z._main.version,Z._sysex=!0,_closeAll=function(){for(var t=0;t<this.clients.length;t++)this._close(this.clients[t])},Z._refresh=function(){var n,i;for(Z._outs=[],Z._ins=[],n=0;(i=Z._main.MidiOutInfo(n)).length;n++)Z._outs.push({type:Z._type,name:i[0],manufacturer:i[1],version:i[2]});for(n=0;(i=Z._main.MidiInInfo(n)).length;n++)Z._ins.push({type:Z._type,name:i[0],manufacturer:i[1],version:i[2]});var o=V(Z._insW,Z._outsW,Z._ins,Z._outs);if(o){for(e=0;e<o.inputs.removed.length;e++)impl=Z._inMap[o.inputs.removed[e].name],impl&&impl._closeAll();for(e=0;e<o.outputs.removed.length;e++)impl=Z._outMap[o.inputs.removed[e].name],impl&&impl._closeAll();Z._insW=Z._ins,Z._outsW=Z._outs,t&&G(o)}},Z._openOut=function(t,e){var n=Z._outMap[e];if(!n){Z._pool.length<=Z._outArr.length&&Z._pool.push(Z._newPlugin()),n={name:e,clients:[],info:{name:e,manufacturer:Z._allOuts[e].manufacturer,version:Z._allOuts[e].version,type:"MIDI-out",sysex:Z._sysex,engine:Z._type},_close:function(t){Z._closeOut(t)},_closeAll:_closeAll,_receive:function(t){this.plugin.MidiOutRaw(t.slice())}};var i=Z._pool[Z._outArr.length];n.plugin=i,Z._outArr.push(n),Z._outMap[e]=n}if(!n.open){var o=n.plugin.MidiOutOpen(e);if(o!==e)return o&&n.plugin.MidiOutClose(),void t._break();n.open=!0}t._orig._impl=n,g(n.clients,t._orig),t._info=n.info,t._receive=function(t){n._receive(t)},t._close=function(){n._close(this)}},Z._openIn=function(t,e){var n,i=Z._inMap[e];if(!i){Z._pool.length<=Z._inArr.length&&Z._pool.push(Z._newPlugin());(i={name:e,clients:[],info:{name:e,manufacturer:Z._allIns[e].manufacturer,version:Z._allIns[e].version,type:"MIDI-in",sysex:Z._sysex,engine:Z._type},_close:function(t){Z._closeIn(t)},_closeAll:_closeAll,handle:function(t,e){for(var n=0;n<this.clients.length;n++){var i=at(e);this.clients[n]._emit(i)}}}).onmidi=(n=i,function(t,e){n.handle(t,e)});var o=Z._pool[Z._inArr.length];i.plugin=o,Z._inArr.push(i),Z._inMap[e]=i}if(!i.open){var r=i.plugin.MidiInOpen(e,i.onmidi);if(r!==e)return r&&i.plugin.MidiInClose(),void t._break();i.open=!0}t._orig._impl=i,g(i.clients,t._orig),t._info=i.info,t._close=function(){i._close(this)}},Z._closeOut=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.open=!1,e.plugin.MidiOutClose())},Z._closeIn=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.open=!1,e.plugin.MidiInClose())},Z._close=function(){for(var t=0;t<Z._inArr.length;t++)Z._inArr[t].open&&Z._inArr[t].plugin.MidiInClose();Z._unwatch()},Z._watch=function(){Z._main.OnConnectMidiIn(i),Z._main.OnConnectMidiOut(i),Z._main.OnDisconnectMidiIn(i),Z._main.OnDisconnectMidiOut(i)},Z._unwatch=function(){Z._main.OnConnectMidiIn(),Z._main.OnConnectMidiOut(),Z._main.OnDisconnectMidiIn(),Z._main.OnDisconnectMidiOut()}}function nt(t,n){var i;Z._type="webmidi",Z._version=43,Z._sysex=!!n,Z._access=t,Z._inMap={},Z._outMap={},Z._outsW=[],Z._insW=[],_closeAll=function(){for(var t=0;t<this.clients.length;t++)this._close(this.clients[t])},Z._refresh=function(){Z._outs=[],Z._ins=[],Z._access.outputs.forEach(function(t,e){Z._outs.push({type:Z._type,name:t.name,manufacturer:t.manufacturer,version:t.version})}),Z._access.inputs.forEach(function(t,e){Z._ins.push({type:Z._type,name:t.name,manufacturer:t.manufacturer,version:t.version})});var t=V(Z._insW,Z._outsW,Z._ins,Z._outs);if(t){for(e=0;e<t.inputs.removed.length;e++)impl=Z._inMap[t.inputs.removed[e].name],impl&&impl._closeAll();for(e=0;e<t.outputs.removed.length;e++)impl=Z._outMap[t.inputs.removed[e].name],impl&&impl._closeAll();Z._insW=Z._ins,Z._outsW=Z._outs,i&&G(t)}},Z._openOut=function(t,e){var n,i=Z._outMap[e];i||(i={name:e,clients:[],info:{name:e,manufacturer:Z._allOuts[e].manufacturer,version:Z._allOuts[e].version,type:"MIDI-out",sysex:Z._sysex,engine:Z._type},_close:function(t){Z._closeOut(t)},_closeAll:_closeAll,_receive:function(t){i.dev&&this.dev.send(t.slice())}}),Z._access.outputs.forEach(function(t,i){t.name===e&&(n=t)}),n?(i.dev=n,Z._outMap[e]=i,i.dev.open&&i.dev.open(),t._orig._impl=i,g(i.clients,t._orig),t._info=i.info,t._receive=function(t){i._receive(t)},t._close=function(){i._close(this)}):t._break()},Z._openIn=function(t,e){var n,i,o=Z._inMap[e];if(o||(o={name:e,clients:[],info:{name:e,manufacturer:Z._allIns[e].manufacturer,version:Z._allIns[e].version,type:"MIDI-in",sysex:Z._sysex,engine:Z._type},_close:function(t){Z._closeIn(t)},_closeAll:_closeAll,handle:function(t){for(var e=0;e<this.clients.length;e++){var n=at([].slice.call(t.data));this.clients[e]._emit(n)}}}),Z._access.inputs.forEach(function(t,i){t.name===e&&(n=t)}),n){o.dev=n;o.dev.onmidimessage=(i=o,function(t){i.handle(t)}),Z._inMap[e]=o,o.dev.open&&o.dev.open(),t._orig._impl=o,g(o.clients,t._orig),t._info=o.info,t._close=function(){o._close(this)}}else t._break()},Z._closeOut=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.dev&&e.dev.close&&e.dev.close(),e.dev=void 0)},Z._closeIn=function(t){var e=t._impl;y(e.clients,t._orig),e.clients.length||(e.dev&&e.dev.close&&e.dev.close(),e.dev=void 0)},Z._close=function(){},Z._watch=function(){Z._access.onstatechange=function(){i=!0,setTimeout(function(){i&&(Z._refresh(),i=!1)},0)}},Z._unwatch=function(){Z._access.onstatechange=void 0}}var it=function(t){var e;return b||(e=t,St(),(b=new w)._options=e,b._push(v,[$(e)]),b.refresh(),b._push(function(){S.length||O.length||this._break()},[]),b._resume()),b};function ot(){var t=this instanceof ot?this:t=new ot;return ot.prototype.reset.apply(t,arguments),t}function rt(){29.97==this.type&&!this.second&&this.frame<2&&this.minute%10&&(this.frame=2)}function st(t){return[[24,25,29.97,30][t[7]>>1&3],(1&t[7])<<4|t[6],t[5]<<4|t[4],t[3]<<4|t[2],t[1]<<4|t[0]]}function ut(t){return t<10?"0"+t:t}function at(e){var n=this instanceof at?this:n=new at;if(e instanceof at?(n._from=e._from.slice(),n._mpe=e._mpe):n._from=[],!arguments.length)return n;var i=e instanceof Array?e:arguments;for(t=0;t<i.length;t++)o=i[t],1==t&&(n[0]>=128&&n[0]<=175&&(o=at.noteValue(o)),n[0]>=192&&n[0]<=207&&(o=at.programValue(o))),(o!=parseInt(o)||o<0||o>255)&&pt(i[t]),n.push(o);return n}it.now=h,it.info=function(){return w.prototype.info()},it.Widget=function(t){var e=new q;if(t instanceof Object)for(var n in t)t.hasOwnProperty(n)&&(e[n]=t[n]);return e._resume(),e},w.prototype.Widget=it.Widget,ot.prototype.reset=function(t){if(t instanceof ot)return this.setType(t.getType()),this.setHour(t.getHour()),this.setMinute(t.getMinute()),this.setSecond(t.getSecond()),this.setFrame(t.getFrame()),this.setQuarter(t.getQuarter()),this;var e=t instanceof Array?t:arguments;return this.setType(e[0]),this.setHour(e[1]),this.setMinute(e[2]),this.setSecond(e[3]),this.setFrame(e[4]),this.setQuarter(e[5]),this},ot.prototype.isFullFrame=function(){return 0==this.quarter||4==this.quarter},ot.prototype.getType=function(){return this.type},ot.prototype.getHour=function(){return this.hour},ot.prototype.getMinute=function(){return this.minute},ot.prototype.getSecond=function(){return this.second},ot.prototype.getFrame=function(){return this.frame},ot.prototype.getQuarter=function(){return this.quarter},ot.prototype.setType=function(t){if(void 0===t||24==t)this.type=24;else if(25==t)this.type=25;else if(29.97==t)this.type=29.97,rt.apply(this);else{if(30!=t)throw RangeError("Bad SMPTE frame rate: "+t);this.type=30}return this.frame>=this.type&&(this.frame=29.97==this.type?29:this.type-1),this},ot.prototype.setHour=function(t){if(void 0===t&&(t=0),t!=parseInt(t)||t<0||t>=24)throw RangeError("Bad SMPTE hours value: "+t);return this.hour=t,this},ot.prototype.setMinute=function(t){if(void 0===t&&(t=0),t!=parseInt(t)||t<0||t>=60)throw RangeError("Bad SMPTE minutes value: "+t);return this.minute=t,rt.apply(this),this},ot.prototype.setSecond=function(t){if(void 0===t&&(t=0),t!=parseInt(t)||t<0||t>=60)throw RangeError("Bad SMPTE seconds value: "+t);return this.second=t,rt.apply(this),this},ot.prototype.setFrame=function(t){if(void 0===t&&(t=0),t!=parseInt(t)||t<0||t>=this.type)throw RangeError("Bad SMPTE frame number: "+t);return this.frame=t,rt.apply(this),this},ot.prototype.setQuarter=function(t){if(void 0===t&&(t=0),t!=parseInt(t)||t<0||t>=8)throw RangeError("Bad SMPTE quarter frame: "+t);return this.quarter=t,this},ot.prototype.incrFrame=function(){return this.frame++,this.frame>=this.type&&(this.frame=0,this.second++,this.second>=60&&(this.second=0,this.minute++,this.minute>=60&&(this.minute=0,this.hour=this.hour>=23?0:this.hour+1))),rt.apply(this),this},ot.prototype.decrFrame=function(){return!this.second&&2==this.frame&&29.97==this.type&&this.minute%10&&(this.frame=0),this.frame--,this.frame<0&&(this.frame=29.97==this.type?29:this.type-1,this.second--,this.second<0&&(this.second=59,this.minute--,this.minute<0&&(this.minute=59,this.hour=this.hour?this.hour-1:23))),this},ot.prototype.incrQF=function(){return this.backwards=!1,this.quarter=this.quarter+1&7,0!=this.quarter&&4!=this.quarter||this.incrFrame(),this},ot.prototype.decrQF=function(){return this.backwards=!0,this.quarter=this.quarter+7&7,3!=this.quarter&&7!=this.quarter||this.decrFrame(),this},ot.prototype.read=function(t){if(t instanceof at||(t=at.apply(null,arguments)),240==t[0]&&127==t[1]&&1==t[3]&&1==t[4]&&247==t[9])return this.type=[24,25,29.97,30][t[5]>>5&3],this.hour=31&t[5],this.minute=t[6],this.second=t[7],this.frame=t[8],this.quarter=0,this._=void 0,this._b=void 0,this._f=void 0,!0;if(241==t[0]&&void 0!==t[1]){var e=t[1]>>4,n=15&t[1];return 0==e?7==this._&&(7==this._f&&(this.reset(st(this._a)),this.incrFrame()),this.incrFrame()):3==e?4==this._&&this.decrFrame():4==e?3==this._&&this.incrFrame():7==e&&0===this._&&(0===this._b&&(this.reset(st(this._a)),this.decrFrame()),this.decrFrame()),this._a||(this._a=[]),this._a[e]=n,this._f=this._f===e-1||0==e?e:void 0,this._b=this._b===e+1||7==e?e:void 0,this._=e,this.quarter=e,!0}return!1},ot.prototype.toString=function(){return[ut(this.hour),ut(this.minute),ut(this.second),ut(this.frame)].join(":")},it.SMPTE=ot,at.prototype=[],at.prototype.constructor=at;var ht={};at.noteValue=function(t){return void 0===t?void 0:ht[t.toString().toLowerCase()]},at.programValue=function(t){return t},at.freq=function(t,e){return void 0===e&&(e=440),e*Math.pow(2,(lt(at.noteValue(t),t)-69)/12)};var ct={c:0,d:2,e:4,f:5,g:7,a:9,b:11,h:11};for(n in ct)if(ct.hasOwnProperty(n))for(o=0;o<12&&!((i=ct[n]+12*o)>127);o++)ht[n+o]=i,i>0&&(ht[n+"b"+o]=i-1,ht[n+"bb"+o]=i-2),i<127&&(ht[n+"#"+o]=i+1,ht[n+"##"+o]=i+2);for(o=0;o<128;o++)ht[o]=o;function pt(t){throw RangeError("Bad MIDI value: "+t)}function ft(t){return(t!=parseInt(t)||t<0||t>15)&&pt(t),t}function lt(t,e){return(t!=parseInt(t)||t<0||t>127)&&pt(void 0===e?t:e),t}function _t(t){return(t!=parseInt(t)||t<0||t>16383)&&pt(t),127&t}function dt(t){return(t!=parseInt(t)||t<0||t>16383)&&pt(t),t>>7}var mt={noteOff:function(t,e,n){return void 0===n&&(n=64),[128+ft(t),lt(at.noteValue(e),e),lt(n)]},noteOn:function(t,e,n){return void 0===n&&(n=127),[144+ft(t),lt(at.noteValue(e),e),lt(n)]},aftertouch:function(t,e,n){return[160+ft(t),lt(at.noteValue(e),e),lt(n)]},control:function(t,e,n){return[176+ft(t),lt(e),lt(n)]},program:function(t,e){return[192+ft(t),lt(at.programValue(e),e)]},pressure:function(t,e){return[208+ft(t),lt(e)]},pitchBend:function(t,e){return[224+ft(t),_t(e),dt(e)]},bankMSB:function(t,e){return[176+ft(t),0,lt(e)]},bankLSB:function(t,e){return[176+ft(t),32,lt(e)]},modMSB:function(t,e){return[176+ft(t),1,lt(e)]},modLSB:function(t,e){return[176+ft(t),33,lt(e)]},breathMSB:function(t,e){return[176+ft(t),2,lt(e)]},breathLSB:function(t,e){return[176+ft(t),34,lt(e)]},footMSB:function(t,e){return[176+ft(t),4,lt(e)]},footLSB:function(t,e){return[176+ft(t),36,lt(e)]},portamentoMSB:function(t,e){return[176+ft(t),5,lt(e)]},portamentoLSB:function(t,e){return[176+ft(t),37,lt(e)]},volumeMSB:function(t,e){return[176+ft(t),7,lt(e)]},volumeLSB:function(t,e){return[176+ft(t),39,lt(e)]},balanceMSB:function(t,e){return[176+ft(t),8,lt(e)]},balanceLSB:function(t,e){return[176+ft(t),40,lt(e)]},panMSB:function(t,e){return[176+ft(t),10,lt(e)]},panLSB:function(t,e){return[176+ft(t),42,lt(e)]},expressionMSB:function(t,e){return[176+ft(t),11,lt(e)]},expressionLSB:function(t,e){return[176+ft(t),43,lt(e)]},damper:function(t,e){return[176+ft(t),64,e?127:0]},portamento:function(t,e){return[176+ft(t),65,e?127:0]},sostenuto:function(t,e){return[176+ft(t),66,e?127:0]},soft:function(t,e){return[176+ft(t),67,e?127:0]},allSoundOff:function(t){return[176+ft(t),120,0]},allNotesOff:function(t){return[176+ft(t),123,0]}},vt={mtc:function(t){return[241,function(t){var e;switch(!t.backwards&&t.quarter>=4?t.decrFrame():t.backwards&&t.quarter<4&&t.incrFrame(),t.quarter>>1){case 0:e=t.frame;break;case 1:e=t.second;break;case 2:e=t.minute;break;default:e=t.hour}return 1&t.quarter?e>>=4:e&=15,7==t.quarter&&(25==t.type?e|=2:29.97==t.type?e|=4:30==t.type&&(e|=6)),!t.backwards&&t.quarter>=4?t.incrFrame():t.backwards&&t.quarter<4&&t.decrFrame(),e|t.quarter<<4}(t)]},songPosition:function(t){return[242,_t(t),dt(t)]},songSelect:function(t){return[243,lt(t)]},tune:function(){return[246]},clock:function(){return[248]},start:function(){return[250]},continue:function(){return[251]},stop:function(){return[252]},active:function(){return[254]},sxIdRequest:function(){return[240,126,127,6,1,247]},sxFullFrame:function(t){return[240,127,127,1,1,(e=t,25==e.type?32|e.hour:29.97==e.type?64|e.hour:30==e.type?96|e.hour:e.hour),t.getMinute(),t.getSecond(),t.getFrame(),247];var e},reset:function(){return[255]}};function gt(t,e){var n,i;i=e,at[n=t]=function(){return new at(i.apply(0,arguments))},q.prototype[n]=function(){return this.send(i.apply(0,arguments)),this},T.prototype[t]=function(){return this.send(e.apply(0,[this._chan].concat(Array.prototype.slice.call(arguments)))),this},j.prototype[t]=function(){var t,n=Array.prototype.slice.call(arguments);n.length<e.length?n=[this._master].concat(n):(t=lt(at.noteValue(n[0],n[0])),n[0]=this._master);var i=e.apply(0,n);return i.mpe=t,this.send(i),this}}for(n in vt)vt.hasOwnProperty(n)&&gt(n,vt[n]);for(n in mt)mt.hasOwnProperty(n)&&gt(n,mt[n]);j.prototype.noteOn=function(t,e){var n=at.noteOn(this._master,t,e);return n._mpe=n[1],this.send(n),this},j.prototype.noteOff=function(t,e){var n=at.noteOff(this._master,t,e);return n._mpe=n[1],this.send(n),this},j.prototype.aftertouch=function(t,e){return this.send(at.aftertouch(this._master,t,e)),this};var yt,wt,Mt={a:10,b:11,c:12,d:13,e:14,f:15,A:10,B:11,C:12,D:13,E:14,F:15};for(n=0;n<16;n++)Mt[n]=n;function bt(){var t=this instanceof bt?this:t=new bt;return t.reset(),arguments.length&&bt.prototype.setup.apply(t,arguments),t}function St(){if(!yt&&"undefined"!=typeof window){var t=window.AudioContext||window.webkitAudioContext;if(t){(yt=new t)&&!yt.createGain&&(yt.createGain=yt.createGainNode);var e=function(){if("running"!=yt.state){yt.resume();var t=yt.createOscillator(),n=yt.createGain();try{n.gain.value=0}catch(t){}n.gain.setTargetAtTime(0,yt.currentTime,.01),t.connect(n),n.connect(yt.destination),t.start||(t.start=t.noteOn),t.stop||(t.stop=t.noteOff),t.start(.1),t.stop(.11)}else document.removeEventListener("touchend",e),document.removeEventListener("mousedown",e),document.removeEventListener("keydown",e)};document.addEventListener("touchend",e),document.addEventListener("mousedown",e),document.addEventListener("keydown",e),e()}}}at.prototype.getChannel=function(){var t=this[0];if(!(void 0===t||t<128||t>239))return 15&t},at.prototype.setChannel=function(t){var e=this[0];return void 0===e||e<128||e>239?this:(void 0!==(t=Mt[t])&&(this[0]=240&e|t),this)},at.prototype.getNote=function(){var t=this[0];if(!(void 0===t||t<128||t>175))return this[1]},at.prototype.setNote=function(t){var e=this[0];return void 0===e||e<128||e>175?this:(void 0!==(t=at.noteValue(t))&&(this[1]=t),this)},at.prototype.getVelocity=function(){var t=this[0];if(!(void 0===t||t<144||t>159))return this[2]},at.prototype.setVelocity=function(t){var e=this[0];return void 0===e||e<144||e>159?this:((t=parseInt(t))>=0&&t<128&&(this[2]=t),this)},at.prototype.getSysExChannel=function(){if(240==this[0])return this[2]},at.prototype.setSysExChannel=function(t){return 240==this[0]&&this.length>2&&(t=parseInt(t))>=0&&t<128&&(this[2]=t),this},at.prototype.isNoteOn=function(){var t=this[0];return!(void 0===t||t<144||t>159)&&this[2]>0},at.prototype.isNoteOff=function(){var t=this[0];return!(void 0===t||t<128||t>159)&&(t<144||0==this[2])},at.prototype.isSysEx=function(){return 240==this[0]},at.prototype.isFullSysEx=function(){return 240==this[0]&&247==this[this.length-1]},at.prototype.toString=function(){if(!this.length)return"empty";var t=function(t){for(var e=[],n=0;n<t.length;n++)e[n]=(t[n]<16?"0":"")+t[n].toString(16);return e.join(" ")}(this);if(this[0]<128)return t;var e={241:"MIDI Time Code",242:"Song Position",243:"Song Select",244:"Undefined",245:"Undefined",246:"Tune request",248:"Timing clock",249:"Undefined",250:"Start",251:"Continue",252:"Stop",253:"Undefined",254:"Active Sensing",255:"Reset"}[this[0]];if(e)return t+" -- "+e;var n=this[0]>>4;return(e={8:"Note Off",10:"Aftertouch",12:"Program Change",13:"Channel Aftertouch",14:"Pitch Wheel"}[n])?t+" -- "+e:9==n?t+" -- "+(this[2]?"Note On":"Note Off"):11!=n?t:((e={0:"Bank Select MSB",1:"Modulation Wheel MSB",2:"Breath Controller MSB",4:"Foot Controller MSB",5:"Portamento Time MSB",6:"Data Entry MSB",7:"Channel Volume MSB",8:"Balance MSB",10:"Pan MSB",11:"Expression Controller MSB",12:"Effect Control 1 MSB",13:"Effect Control 2 MSB",16:"General Purpose Controller 1 MSB",17:"General Purpose Controller 2 MSB",18:"General Purpose Controller 3 MSB",19:"General Purpose Controller 4 MSB",32:"Bank Select LSB",33:"Modulation Wheel LSB",34:"Breath Controller LSB",36:"Foot Controller LSB",37:"Portamento Time LSB",38:"Data Entry LSB",39:"Channel Volume LSB",40:"Balance LSB",42:"Pan LSB",43:"Expression Controller LSB",44:"Effect control 1 LSB",45:"Effect control 2 LSB",48:"General Purpose Controller 1 LSB",49:"General Purpose Controller 2 LSB",50:"General Purpose Controller 3 LSB",51:"General Purpose Controller 4 LSB",64:"Damper Pedal On/Off",65:"Portamento On/Off",66:"Sostenuto On/Off",67:"Soft Pedal On/Off",68:"Legato Footswitch",69:"Hold 2",70:"Sound Controller 1",71:"Sound Controller 2",72:"Sound Controller 3",73:"Sound Controller 4",74:"Sound Controller 5",75:"Sound Controller 6",76:"Sound Controller 7",77:"Sound Controller 8",78:"Sound Controller 9",79:"Sound Controller 10",80:"General Purpose Controller 5",81:"General Purpose Controller 6",82:"General Purpose Controller 7",83:"General Purpose Controller 8",84:"Portamento Control",88:"High Resolution Velocity Prefix",91:"Effects 1 Depth",92:"Effects 2 Depth",93:"Effects 3 Depth",94:"Effects 4 Depth",95:"Effects 5 Depth",96:"Data Increment",97:"Data Decrement",98:"Non-Registered Parameter Number LSB",99:"Non-Registered Parameter Number MSB",100:"Registered Parameter Number LSB",101:"Registered Parameter Number MSB",120:"All Sound Off",121:"Reset All Controllers",122:"Local Control On/Off",123:"All Notes Off",124:"Omni Mode Off",125:"Omni Mode On",126:"Mono Mode On",127:"Poly Mode On"}[this[1]])||(e="Undefined"),t+" -- "+e)},at.prototype._stamp=function(t){return this._from.push(t._orig?t._orig:t),this},at.prototype._unstamp=function(t){if(void 0===t)this._from=[];else{t._orig&&(t=t._orig);var e=this._from.indexOf(t);e>-1&&this._from.splice(e,1)}return this},at.prototype._stamped=function(t){t._orig&&(t=t._orig);for(var e=0;e<this._from.length;e++)if(this._from[e]==t)return!0;return!1},it.MIDI=at,bt.validate=function(t){var e=t instanceof Array?t:arguments;if(e[0]!=parseInt(e[0])||e[0]<0||e[0]>14)throw RangeError("Bad master channel value: "+e[0]);if(e[1]!=parseInt(e[1])||e[1]<0||e[0]+e[1]>15)throw RangeError("Bad zone size value: "+e[1])},bt.prototype.reset=function(){for(var t=0;t<16;t++)this[t]={band:0,master:t}},bt.prototype.setup=function(t,e){var n;bt.validate(t,e);var i=t+e;if((this[t].master!=t||this[t].band!=e)&&(e||this[t].band)){for(this[t].band?i<(n=t+this[t].band)&&(i=n):this[t].master==t-1?(n=t-1,i<(n+=this[n].band)&&(i=n),this[t-1]={band:0,master:t-1}):this[t].master!=t&&(n=this[t].master,i<(n+=this[n].band)&&(i=n),this[this[t].master].band=t-this[t].master-1),this[t].master=t,this[t].band=e,n=t+1;n<=t+e;n++)this[n].band&&i<n+this[n].band&&(i=n+this[n].band),this[n]={band:0,master:t};for(;n<=i;n++)this[n]={band:0,master:n}}},bt.prototype.filter=function(t){var e=t.getChannel();if(!this[e]||!this[this[e].master].band)return t;var n,i,o,r=this[e].master,s=this[r].band;if(void 0!==t._mpe){for(o=256,n=r+1;n<=r+s;n++)if(this[n].notes){for(o>this[n].notes.length&&(e=n,o=this[n].notes.length),i=0;i<this[n].notes.length;i++)if(this[n].notes[i]==t._mpe){e=n,o=-1;break}}else o>0&&(e=n,o=0);t.setChannel(e),t._mpe=void 0}return e==r?t:(t.isNoteOn()?(this[e].notes||(this[e].notes=[]),g(this[e].notes,t.getNote())):t.isNoteOff()&&this[e].notes&&y(this[e].notes,t.getNote()),t)},it.MPE=bt,it.lib={},it.lib.openMidiOut=function(t,e){var n=new q;return e._openOut(n,t),n},it.lib.openMidiIn=function(t,e){var n=new q;return e._openIn(n,t),n},it.lib.registerMidiOut=function(t,e){for(var n=e._info(t),i=0;i<J._outs.length;i++)if(J._outs[i].name==n.name)return!1;return n.engine=e,J._outs.push(n),b&&b._bad&&(b._repair(),b._resume()),!0},it.lib.registerMidiIn=function(t,e){for(var n=e._info(t),i=0;i<J._ins.length;i++)if(J._ins[i].name==n.name)return!1;return n.engine=e,J._ins.push(n),b&&b._bad&&(b._repair(),b._resume()),!0},it.lib.getAudioContext=function(){return St(),yt};var Ot,It=[],Ct={},Et={},At={},Bt={};function xt(){}var Pt=r.Promise;"function"!=typeof Pt&&((Pt=function(t){this.executor=t}).prototype.then=function(t,e){"function"!=typeof t&&(t=function(){}),"function"!=typeof e&&(e=function(){}),this.executor(t,e)});var qt=r.Map;function Lt(){for(var t=new Array(64),e=0;e<64;e++)t[e]=Math.floor(16*Math.random()%16).toString(16).toUpperCase();return t.join("")}function kt(t,e){return e?(Et[t]||(Et[t]=Lt()),Et[t]):(Ct[t]||(Ct[t]=Lt()),Ct[t])}function Dt(){this.sysexEnabled=!0,this.outputs=new qt,this.inputs=new qt;var t=this;function e(e){return function(){Ot(new zt(e,t))}}function n(n){var i,o,r;for(i=0;i<n.inputs.added.length;i++)o=new Tt(n.inputs.added[i]),t.inputs.set(o.id,o),r=e(o),o.open().then(r,r);for(i=0;i<n.outputs.added.length;i++)o=new Ft(n.outputs.added[i]),t.outputs.set(o.id,o),r=e(o),o.open().then(r,r);for(i=0;i<n.inputs.removed.length;i++)(o=t.inputs.get(Et[n.inputs.removed[i].name])).close(),t.inputs.delete(o.id),Ot(new zt(o,t));for(i=0;i<n.outputs.removed.length;i++)(o=t.outputs.get(Ct[n.outputs.removed[i].name])).close(),t.outputs.delete(o.id),Ot(new zt(o,t))}Object.defineProperty(this,"onstatechange",{get:function(){return Ot},set:function(t){t instanceof Function?(Ot||it().onChange(n),Ot=t):Ot&&(it().onChange().disconnect(n),Ot=void 0)}})}function zt(t,e){this.bubbles=!1,this.cancelBubble=!1,this.cancelable=!1,this.currentTarget=e,this.defaultPrevented=!1,this.eventPhase=0,this.path=[],this.port=t,this.returnValue=!0,this.srcElement=e,this.target=e,this.timeStamp=h(),this.type="statechange"}function Ft(t){var e=this;this.type="output",this.name=t.name,this.manufacturer=t.manufacturer,this.version=t.version,this.id=kt(this.name,!1),this.state="disconnected",this.connection="closed",Object.defineProperty(this,"onstatechange",{get:function(){return At[e.name].onstatechange},set:function(t){Function,At[e.name].onstatechange=t}})}function Tt(t){var e=this;this.type="input",this.name=t.name,this.manufacturer=t.manufacturer,this.version=t.version,this.id=kt(this.name,!0),this.state="disconnected",this.connection="closed",Object.defineProperty(this,"onstatechange",{get:function(){return Bt[e.name].onstatechange},set:function(t){Function,Bt[e.name].onstatechange=t}})}return"function"!=typeof qt&&((qt=function(){this.store={},this.keys=[]}).prototype.set=function(t,e){return void 0===this.store[t]&&this.keys.push(t),this.store[t]=e,this.size=this.keys.length,this},qt.prototype.get=function(t){return this.store[t]},qt.prototype.delete=function(t){delete this.store[t];var e=this.keys.indexOf(t);return e>-1&&this.keys.splice(e,1),this.size=this.keys.length,this},qt.prototype.forEach=function(t){var e,n=this.keys.length;for(e=0;e<n;e++)t(this.store[this.keys[e]])}),Dt.prototype.onstatechange=function(){},Ft.prototype.open=function(){var t=this;return new Pt(function(e,n){At[t.name]?e(t):(t._resolves||(t._resolves=[]),t._resolves.push(e),1==t._resolves.length&&it().openMidiOut(t.name).or(n).and(function(){At[t.name]=this,t.state="connected",t.connection="open";for(var n=0;n<t._resolves.length;n++)e(t._resolves[n]);delete t._resolves,t.onstatechange&&t.onstatechange(new zt(t,t))}))})},Ft.prototype.close=function(){var t=At[this.name];return t&&(t.close(),this.state="disconnected",this.connection="closed",this.onstatechange&&this.onstatechange(new zt(this,this)),At[this.name]=void 0),this},Ft.prototype.clear=function(){},Ft.prototype.send=function(t,e){var n=At[this.name];if(n){for(var i=[],o=0;o<t.length;o++){if(!(t[o]==Math.floor(t[o])&&t[o]>=0&&t[o]<=255))return;i.push(t[o])}e>h()?setTimeout(function(){n.send(i)},e-h()):n.send(i)}else{var r=this;r.open().then(function(){r.send(t,e)},xt)}},Tt.prototype.onmidimessage=function(){},Tt.prototype.open=function(){var t=this;return new Pt(function(e,n){Bt[t.name]?e(t):(t._resolves||(t._resolves=[]),t._resolves.push(e),1==t._resolves.length&&it().openMidiIn(t.name).or(n).and(function(){Bt[t.name]=this,t.state="connected",t.connection="open",this.connect(function(e){t.onmidimessage(new function(t,e){this.bubbles=!1,this.cancelBubble=!1,this.cancelable=!1,this.currentTarget=t,this.data=e,this.defaultPrevented=!1,this.eventPhase=0,this.path=[],this.receivedTime=h(),this.returnValue=!0,this.srcElement=t,this.target=t,this.timeStamp=this.receivedTime,this.type="midimessage"}(t,new Uint8Array(e)))});for(var n=0;n<t._resolves.length;n++)e(t._resolves[n]);delete t._resolves,t.onstatechange&&t.onstatechange(new zt(t,t))}))})},Tt.prototype.close=function(){var t=Bt[this.name];return t&&(t.close(),this.state="disconnected",this.connection="closed",this.onstatechange&&this.onstatechange(new zt(this,this)),Bt[this.name]=void 0),this.onmidimessage=Tt.prototype.onmidimessage,this},it.requestMIDIAccess=function(){var t,e;function n(){wt=t;for(var e=0;e<It.length;e++)It[e](wt)}function i(){--e||n()}return new Pt(function(o,r){wt?o(wt):(It.push(o),1==It.length&&(t=new Dt,it().or(n).and(function(){var n,o,r=this.info();for(e=r.inputs.length+r.outputs.length,n=0;n<r.outputs.length;n++)o=new Ft(r.outputs[n]),t.outputs.set(o.id,o),o.open().then(i,i);for(n=0;n<r.inputs.length;n++)o=new Tt(r.inputs[n]),t.inputs.set(o.id,o),o.open().then(i,i)})))})},"undefined"==typeof navigator||navigator.requestMIDIAccess||(navigator.requestMIDIAccess=it.requestMIDIAccess),it.close=function(){Z._close&&Z._close()},it});
+
 /*
  *	FileSaver.js
  *  A saveAs() FileSaver implementation.
@@ -288,6 +288,8 @@ var saveAs = saveAs
 // while `this` is nsIContentFrameMessageManager
 // with an attribute `content` that corresponds to the window
 
+/*
+
 if (typeof module !== "undefined" && module !== null) {
   module.exports = saveAs;
 } else if ((typeof define !== "undefined" && define !== null) && (define.amd != null)) {
@@ -295,15 +297,18 @@ if (typeof module !== "undefined" && module !== null) {
     return saveAs;
   });
 }
+
+*/var sequencer = {
+    ready: function(cb){
+        cb();
+    }
+};
+
 (function(){
 
     'use strict';
 
     var
-        // satisfy jslint
-        alert = window.alert,
-        console = window.console,
-
         protectedScope,
         initMethods = [],
 
@@ -342,14 +347,6 @@ if (typeof module !== "undefined" && module !== null) {
         }else if(ua.indexOf('Chromium') !== -1){
             browser = 'chromium';
         }
-
-        /*
-        //console.log(new Audio().canPlayType('audio/mp3'));
-        if(new Audio().canPlayType('audio/mp3') !== 'probably'){
-            // chromium does not support mp3
-            browser = 'chromium';
-        }
-        */
     }else if(ua.indexOf('Safari') !== -1){
         browser = 'safari';
     }else if(ua.indexOf('Firefox') !== -1){
@@ -365,8 +362,6 @@ if (typeof module !== "undefined" && module !== null) {
     }
 
     //console.log(os, browser, '---', ua);
-    console.log('heartbeat v0.0.3');
-
 
     if(window.AudioContext){
         context = new window.AudioContext();
@@ -375,52 +370,11 @@ if (typeof module !== "undefined" && module !== null) {
         }
     }else if(window.webkitAudioContext){
         context = new window.webkitAudioContext();
-    }else if(window.oAudioContext){
-        context = new window.oAudioContext();
-    }else if(window.msAudioContext){
-        context = new window.msAudioContext();
     }else{
         //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-        window.sequencer = {
-            browser: browser,
-            os: os
-        };
         alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
-        window.sequencer.ready = function(cb){
-            cb();
-        };
         return;
     }
-
-    // check for older implementations of WebAudio
-    src = context.createBufferSource();
-    if(src.start === undefined){
-        legacy = true;
-    }
-
-
-/*
-    var audioTest = new Audio();
-    //wav = audioTest.canPlayType('audio/wav');// === '' ? false : true;
-    canplayOgg = audioTest.canPlayType('audio/ogg');// === '' ? false : true;
-    canplayMp3 = audioTest.canPlayType('audio/mpeg');// === '' ? false : true;
-    console.log('wav', audioTest.canPlayType('audio/wav'), 'ogg', canplayOgg, 'mp3', canplayMp3);
-    audioTest = null;
-*/
-
-
-    navigator.getUserMedia = (
-        navigator.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia ||
-        navigator.msGetUserMedia
-    );
-
-
-    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
-    window.Blob = window.Blob || window.webkitBlob || window.mozBlob;
-
-    //console.log('iOS', os, context, window.Blob, window.requestAnimationFrame);
 
     compressor = context.createDynamicsCompressor();
     compressor.connect(context.destination);
@@ -458,57 +412,19 @@ if (typeof module !== "undefined" && module !== null) {
                 initMethods[i]();
             }
         }
-/*
-        log: function(msg){
-            if(sequencer.debug >= 1){
-                console.log(msg);
-            }
-        },
-        info: function(msg){
-            if(sequencer.debug >= 2){
-                console.info(msg);
-            }
-        },
-        error: function(msg){
-            if(sequencer.debug >= 3){
-                console.error(msg);
-            }
-        },
-*/
-/*
-        addConstants: function(data){
-            var newSequencer = {};
-            Object.getOwnPropertyNames(data).forEach(function(val, idx, array) {
-                print(val + " -> " + data[val]);
-            });
-        };
-*/
     };
-
 
 
     /**
         @namespace sequencer
     */
-    window.sequencer = {
+    sequencer = {
         name: 'qambi',
         protectedScope: protectedScope,
         ui: {},
         ua: ua,
-        /**
-            The operating system
-            @alias sequencer#os
-        */
         os: os,
-        /**
-            The name of thebrowser in lowercase, e.g. firefox, opera, safari, chromium, etc.
-            @alias sequencer#browser
-        */
         browser: browser,
-        /**
-            Return true if the browser uses an older version of the WebAudio API, source.noteOn() and source.noteOff instead of source.start() and source.stop()
-            @alias sequencer#legacy
-        */
         legacy: false,
         midi: false,
         webmidi: false,
@@ -519,7 +435,7 @@ if (typeof module !== "undefined" && module !== null) {
         record_audio: navigator.getUserMedia !== undefined,
         bitrate_mp3_encoding: 128,
         util: {},
-        debug: 4, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
+        debug: 0, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',
         pitch: 440,
         bufferTime: 350/1000, //seconds
@@ -534,12 +450,7 @@ if (typeof module !== "undefined" && module !== null) {
 
         midiInputs: {},
         midiOutputs: {},
-/*
-        logger: {
-            clear: function(){console.log('create a logger first with sequencer.createLogger()');},
-            print: function(){console.log('create a logger first with sequencer.createLogger()');}
-        },
-*/
+
         storage: {
             midi: {
                 id: 'midi'
@@ -558,38 +469,7 @@ if (typeof module !== "undefined" && module !== null) {
                 id: 'assetpacks'
             }
         },
-/*
-        createLogger: function(){
-            var divLog = document.createElement('div'),
-                clear, print;
 
-            divLog.style.position = 'absolute';
-            divLog.style.zIndex = 100;
-            divLog.style.fontFamily = 'monospace';
-            divLog.style.fontSize = '11px';
-            divLog.style.color = '#00ff00';
-            divLog.style.padding = '2px';
-            divLog.style.width = '500px';
-            divLog.style.backgroundColor = '#000000';
-            document.body.appendChild(divLog);
-
-            clear = function(){
-                divLog.innerHTML = '';
-            };
-
-            print = function(msg, append){
-                append = append === undefined ? false : append;
-                if(append){
-                    divLog.innerHTML += msg + '<br/>';
-                }else{
-                    divLog.innerHTML = msg + '<br/>';
-                }
-            };
-
-            this.logger.clear = clear;
-            this.logger.print = print;
-        },
-*/
         getAudioContext: function(){
             return context;
         },
@@ -644,8 +524,9 @@ if (typeof module !== "undefined" && module !== null) {
         },
 
         unlockWebAudio: function(){
+            // console.log('unlock webaudio');
             if(webaudioUnlocked === true){
-                //console.log('already unlocked');
+                // console.log('already unlocked');
                 return;
             }
             if(typeof context.resume === 'function'){
@@ -674,24 +555,12 @@ if (typeof module !== "undefined" && module !== null) {
     Object.defineProperty(sequencer, 'INFO', {value: 3});
     Object.defineProperty(sequencer, 'LOG', {value: 4});
 
-    //Object.defineProperty(window.sequencer, 'timedTasks', {value: {}});
-    //Object.defineProperty(window.sequencer, 'scheduledTasks', {value: {}});
-    //Object.defineProperty(window.sequencer, 'repetitiveTasks', {value: {}});
-
-    //Object.defineProperty(window.sequencer, 'midiInputs', {value: []});
-    //Object.defineProperty(window.sequencer, 'midiOutputs', {value: []});
-
-
 }());
 (function(){
 
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         loadLoop, //defined in util.js
         findItem, //defined in util.js
@@ -1075,9 +944,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-         // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         index = 0,
         storage, // defined in open_module.js
         ajax, // defined in utils.js
@@ -1385,229 +1251,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        sequencer = window.sequencer,
-        console = window.console,
-        self,
-        importScripts,
-        Lame,
-
-        // import
-        encode64, // defined in util.js
-        base64EncArr, // defined in util.js
-        context, // defined in open_module.js
-
-        oggEncoder,
-        mp3Encoder;
-
-
-    function encodeAudio(audioBuffer, type, bitrate, callback){
-
-        if(type === 'mp3'){
-
-            var interleavedSamples = getInterleavedSamples(audioBuffer);
-
-            bitrate = bitrate || sequencer.bitrate_mp3_encoding; //kbps
-
-            if(mp3Encoder === undefined){
-                mp3Encoder = createWorker();
-                mp3Encoder.onmessage = function(e){
-                    if(e.data.cmd === 'data'){
-                        //console.log(e);
-                        callback({
-                            blob: new Blob([new Uint8Array(e.data.buf)], {type: 'audio/mp3'}),
-                            base64: base64EncArr(e.data.buf),
-                            dataUrl: 'data:audio/mp3;base64,' + encode64(e.data.buf)
-                        });
-                    }
-                };
-            }
-
-            mp3Encoder.postMessage({
-                cmd: 'init',
-                config: {
-                    mode: 3,
-                    channels: 1,
-                    samplerate: context.sampleRate,
-                    bitrate: bitrate
-                }
-            });
-
-            mp3Encoder.postMessage({
-                cmd: 'encode',
-                buf: interleavedSamples
-            });
-
-            mp3Encoder.postMessage({
-                cmd: 'finish'
-            });
-
-        }else if(type === 'ogg'){
-
-            if(sequencer.debug >= sequencer.WARN){
-                console.warn('support for ogg is not yet implemented');
-            }
-            callback(false);
-
-        }else{
-
-            if(sequencer.debug >= sequencer.WARN){
-                console.warn('unsupported type', type);
-            }
-            callback(false);
-        }
-    }
-
-
-    function getInterleavedSamples(audioBuffer){
-        if(audioBuffer.numberOfChannels === 1){
-            return audioBuffer.getChannelData(0);
-        }
-
-        if(audioBuffer.numberOfChannels === 2){
-            var left = audioBuffer.getChannelData(0),
-                right = audioBuffer.getChannelData(1),
-                numFrames = left.length,
-                interleaved = new Float32Array(numFrames),
-                i, index = 0;
-
-            for(i = 0; i < numFrames; i++){
-                interleaved[index++] = left[i];
-                interleaved[index++] = right[i];
-            }
-            return interleaved;
-        }
-    }
-
-
-    function cleanUp(){
-        if(mp3Encoder !== undefined){
-            mp3Encoder.terminate();
-        }
-        if(oggEncoder !== undefined){
-            oggEncoder.terminate();
-        }
-    }
-
-
-    // credits: https://nusofthq.com/blog/recording-mp3-using-only-html5-and-javascript-recordmp3-js/
-    function encoder(){
-        /*
-            credits:
-                https://github.com/akrennmair/libmp3lame-js/
-                https://github.com/kobigurk/libmp3lame-js
-        */
-        importScripts('https://raw.githubusercontent.com/kobigurk/libmp3lame-js/master/dist/libmp3lame.min.js');
-        //importScripts('/heartbeat/src/kobigurk/libmp3lame.min.js');
-
-        var mp3codec,
-            mp3data;
-
-        self.onmessage = function(e) {
-            switch (e.data.cmd) {
-                case 'init':
-                    if (!e.data.config) {
-                        e.data.config = {};
-                    }
-                    mp3codec = Lame.init();
-
-                    Lame.set_mode(mp3codec, e.data.config.mode || Lame.JOINT_STEREO);
-                    Lame.set_num_channels(mp3codec, e.data.config.channels || 2);
-                    Lame.set_num_samples(mp3codec, e.data.config.samples || -1);
-                    Lame.set_in_samplerate(mp3codec, e.data.config.samplerate || 44100);
-                    Lame.set_out_samplerate(mp3codec, e.data.config.samplerate || 44100);
-                    Lame.set_bitrate(mp3codec, e.data.config.bitrate || 128);
-
-                    Lame.init_params(mp3codec);
-                    /*
-                    console.log('Version :'+ Lame.get_version() + ' / ' +
-                        'Mode: ' + Lame.get_mode(mp3codec) + ' / ' +
-                        'Samples: ' + Lame.get_num_samples(mp3codec)  + ' / '  +
-                        'Channels: ' + Lame.get_num_channels(mp3codec)  + ' / ' +
-                        'Input Samplate: ' + Lame.get_in_samplerate(mp3codec) + ' / ' +
-                        'Output Samplate: ' + Lame.get_in_samplerate(mp3codec) + ' / ' +
-                        'Bitlate :' + Lame.get_bitrate(mp3codec) + ' / ' +
-                        'VBR :' + Lame.get_VBR(mp3codec));
-                    */
-                    break;
-                case 'encode':
-                    //console.log('encode');
-                    mp3data = Lame.encode_buffer_ieee_float(mp3codec, e.data.buf, e.data.buf);
-                    self.postMessage({cmd: 'data', buf: mp3data.data});
-                    break;
-                case 'finish':
-                    //console.log('finish');
-                    mp3data = Lame.encode_flush(mp3codec);
-                    self.postMessage({cmd: 'end', buf: mp3data.data});
-                    Lame.close(mp3codec);
-                    mp3codec = null;
-                    break;
-            }
-        };
-    }
-
-
-    function createWorker(){
-        var blob = new Blob(['(', encoder.toString() ,')()'], {type: 'application/javascript'});
-        return new Worker(URL.createObjectURL(blob));
-    }
-
-    sequencer.encodeAudio = encodeAudio;
-    sequencer.protectedScope.cleanupAudioEncoder = cleanUp;
-
-    sequencer.protectedScope.addInitMethod(function(){
-        encode64 = sequencer.util.encode64;
-        base64EncArr = sequencer.util.base64EncArr;
-        context = sequencer.protectedScope.context;
-    });
-
-}());
-
-
-
-
-/*
-    //not needed anymore because we use AudioBuffer for input
-
-    function parseWav(wav) {
-        function readInt(i, bytes) {
-            var ret = 0,
-                shft = 0;
-
-            while (bytes) {
-                ret += wav[i] << shft;
-                shft += 8;
-                i++;
-                bytes--;
-            }
-            return ret;
-        }
-        if (readInt(20, 2) != 1) throw 'Invalid compression code, not PCM';
-        if (readInt(22, 2) != 1) throw 'Invalid number of channels, not 1';
-        return {
-            sampleRate: readInt(24, 4),
-            bitsPerSample: readInt(34, 2),
-            samples: wav.subarray(44)
-        };
-    }
-
-
-    function convertUint8ArrayToFloat32Array(u8a){
-        var f32Buffer = new Float32Array(u8a.length);
-        for (var i = 0; i < u8a.length; i++) {
-            var value = u8a[i<<1] + (u8a[(i<<1)+1]<<8);
-            if (value >= 0x8000) value |= ~0x7FFF;
-            f32Buffer[i] = value / 0x8000;
-        }
-        return f32Buffer;
-    }
-*/
-(function(){
-
-    'use strict';
-
-    var
-        console = window.console,
-        sequencer = window.sequencer,
         slice = Array.prototype.slice,
 
 
@@ -1922,9 +1565,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         context, // defined in open_module.js
         encode64, // defined in util.js
@@ -2301,301 +1941,7 @@ if (typeof module !== "undefined" && module !== null) {
                 }
             );
 */
-(function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console;
-
-
-    function createWorker(){
-
-        var
-            data,
-            bufferIndexStart,
-            bufferIndexEnd,
-            planarSamples,
-            interleavedSamples,
-            numFrames,
-            recBuffersLeft,
-            recBuffersRight,
-            sampleRate,
-            numberOfChannels;
-
-        self.onmessage = function(e){
-            switch(e.data.command){
-                case 'init':
-                    sampleRate = e.data.sampleRate;
-                    numFrames = 0;
-                    recBuffersLeft = [];
-                    recBuffersRight = [];
-                    break;
-                case 'record_mono':
-                    numberOfChannels = 1;
-                    recBuffersLeft.push(e.data.buffer);
-                    numFrames += e.data.buffer.length;
-                    break;
-                case 'record_stereo':
-                    numberOfChannels = 2;
-                    recBuffersLeft.push(e.data.buffer[0]);
-                    recBuffersRight.push(e.data.buffer[1]);
-                    numFrames += e.data.buffer[0].length;
-                    break;
-                case 'get_wavfile':
-                    bufferIndexStart = e.data.bufferIndexStart;
-                    bufferIndexEnd = e.data.bufferIndexEnd;
-                    data = {
-                        id: 'new',
-                        wavArrayBuffer: getWavFile(),
-                        interleavedSamples: interleavedSamples
-                    };
-                    self.postMessage(data, [data.wavArrayBuffer, data.interleavedSamples.buffer]);
-                    /*
-                    // funny: this is something different
-                    data = {
-                        id: 'new',
-                        wavArrayBuffer: getWavFile(),
-                        interleavedSamples: interleavedSamples.buffer
-                    };
-                    self.postMessage(data, [data.wavArrayBuffer, data.interleavedSamples]);
-                    */
-                    break;
-                case 'get_wavfile2':
-                    bufferIndexStart = e.data.bufferIndexStart;
-                    bufferIndexEnd = e.data.bufferIndexEnd;
-                    data = getWavFile2();
-                    data.id = 'new';
-                    self.postMessage(data, [data.planarSamples, data.interleavedSamples, data.wavArrayBuffer]);
-                    break;
-                case 'update_wavfile':
-                    bufferIndexStart = e.data.bufferIndexStart;
-                    bufferIndexEnd = e.data.bufferIndexEnd;
-                    //interleavedSamples = new Float32Array(e.data.samples);
-                    interleavedSamples = e.data.samples;
-                    data = {
-                        id: 'update',
-                        wavArrayBuffer: updateWavFile()
-                    };
-                    self.postMessage(data, [data.wavArrayBuffer]);
-                    break;
-            }
-        };
-
-
-        function getWavFile(){
-            var dataview, i, index = 0, result;
-
-            if(numberOfChannels === 1){
-                interleavedSamples = mergeBuffers(recBuffersLeft, numFrames);
-            }else if(numberOfChannels === 2){
-                interleavedSamples = toInterleavedBuffer(
-                    mergeBuffers(recBuffersLeft, numFrames),
-                    mergeBuffers(recBuffersRight, numFrames)
-                );
-            }
-
-            //console.log('1:' + interleavedSamples.length);
-            if(bufferIndexEnd > 0 || bufferIndexStart > 0){
-                if(bufferIndexEnd === -1){
-                    bufferIndexEnd = interleavedSamples.length;
-                }
-
-                result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-
-                for(i = bufferIndexStart; i < bufferIndexEnd; i++){
-                    result[index++] = interleavedSamples[i];
-                }
-                interleavedSamples = result;
-            }
-            //console.log('2:' + interleavedSamples.length);
-
-            dataview = encodeWAV(interleavedSamples);
-            return dataview.buffer;
-        }
-
-
-        function updateWavFile(){
-            var dataview, i, result, index = 0;
-            //console.log(bufferIndexStart + ':' + interleavedSamples);
-
-            if(bufferIndexEnd === -1){
-                bufferIndexEnd = interleavedSamples.length;
-            }
-            result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-            for(i = bufferIndexStart; i < bufferIndexEnd; i++){
-                result[index++] = interleavedSamples[i];
-            }
-            dataview = encodeWAV(result);
-            return dataview.buffer;
-        }
-
-
-        function mergeBuffers(recBuffers, numFrames){
-            var result = new Float32Array(numFrames);
-            var offset = 0;
-            for (var i = 0, maxi = recBuffers.length; i < maxi; i++){
-                result.set(recBuffers[i], offset);
-                offset += recBuffers[i].length;
-            }
-            return result;
-        }
-
-
-        function toInterleavedBuffer(inputL, inputR){
-            var length = inputL.length + inputR.length,
-                result = new Float32Array(length),
-                index = 0,
-                inputIndex = 0;
-
-            while(index < length){
-                result[index++] = inputL[inputIndex];
-                result[index++] = inputR[inputIndex];
-                inputIndex++;
-            }
-            return result;
-        }
-
-
-        function toPlanarBuffer(inputL, inputR){
-            var length = inputL.length,
-                result = new Float32Array(length * 2),
-                index = 0,
-                inputIndex = 0;
-
-            while(index < length){
-                result[index++] = inputL[inputIndex++];
-            }
-
-            index = 0;
-            while(index < length){
-                result[index++] = inputR[inputIndex++];
-            }
-            return result;
-        }
-
-
-        function floatTo16BitPCM(output, offset, input){
-            for (var i = 0; i < input.length; i++, offset+=2){
-                var s = Math.max(-1, Math.min(1, input[i]));
-                output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-            }
-        }
-
-
-        function writeString(view, offset, string){
-            for (var i = 0; i < string.length; i++){
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        }
-
-
-        // see: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
-        // samples is a Float32Array
-        function encodeWAV(samples){
-            var bitsPerSample = 16,
-                bytesPerSample = bitsPerSample/8,
-                buffer = new ArrayBuffer(44 + samples.length * bytesPerSample),
-                view = new DataView(buffer);
-
-            /* RIFF identifier */
-            writeString(view, 0, 'RIFF');
-            /* RIFF chunk length */
-            view.setUint32(4, 36 + samples.length * bytesPerSample, true);
-            /* RIFF type */
-            writeString(view, 8, 'WAVE');
-            /* format chunk identifier */
-            writeString(view, 12, 'fmt ');
-            /* format chunk length */
-            view.setUint32(16, 16, true);
-            /* sample format (raw) */
-            view.setUint16(20, 1, true);
-            /* channel count */
-            view.setUint16(22, numberOfChannels, true);
-            /* sample rate */
-            view.setUint32(24, sampleRate, true);
-            /* byte rate (sample rate * block align) */
-            view.setUint32(28, sampleRate * numberOfChannels * bytesPerSample, true);
-            /* block align (channel count * bytes per sample) */
-            view.setUint16(32, numberOfChannels * bytesPerSample, true);
-            /* bits per sample */
-            view.setUint16(34, bitsPerSample, true);
-            /* data chunk identifier */
-            writeString(view, 36, 'data');
-            /* data chunk length */
-            view.setUint32(40, samples.length * bytesPerSample, true);
-
-            floatTo16BitPCM(view, 44, samples);
-
-            return view;
-        }
-
-
-        function getWavFile2(){
-            var dataview, i, index = 0,
-                resultLeft, resultRight,
-                mergedBuffersLeft, mergedBuffersRight;
-
-            if(numberOfChannels === 1){
-                mergedBuffersLeft = mergeBuffers(recBuffersLeft, numFrames);
-            }else if(numberOfChannels === 2){
-                mergedBuffersLeft = mergeBuffers(recBuffersLeft, numFrames);
-                mergedBuffersRight = mergeBuffers(recBuffersRight, numFrames);
-            }
-
-            //console.log('1:' + mergedBufferLeft.length);
-            if(bufferIndexEnd > 0 || bufferIndexStart > 0){
-                if(bufferIndexEnd === -1){
-                    bufferIndexEnd = mergedBuffersLeft.length;
-                }
-
-                resultLeft = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-                if(numberOfChannels === 2){
-                    resultRight = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-                }
-
-                for(i = bufferIndexStart; i < bufferIndexEnd; i++){
-                    resultLeft[index] = mergedBuffersLeft[i];
-                    if(numberOfChannels === 2){
-                        resultRight = mergedBuffersRight[i];
-                    }
-                    index++;
-                }
-            }
-            //console.log('2:' + mergedBufferLeft.length);
-
-            if(numberOfChannels === 1){
-                planarSamples = mergedBuffersLeft;
-                interleavedSamples = new Float32Array(numFrames);
-                //planarSamples.copyWithin(interleavedSamples, 0);
-                for(i = 0; i < numFrames; i++){
-                    interleavedSamples[i] = planarSamples[i];
-                }
-            }else if(numberOfChannels === 2){
-                planarSamples = toPlanarBuffer(mergedBuffersLeft, mergedBuffersRight);
-                interleavedSamples = toInterleavedBuffer(mergedBuffersLeft, mergedBuffersRight);
-            }
-
-            dataview = encodeWAV(interleavedSamples);
-
-            return {
-                planarSamples: planarSamples.buffer,
-                interleavedSamples: interleavedSamples.buffer,
-                wavArrayBuffer: dataview.buffer
-            };
-        }
-
-    }
-
-
-    sequencer.protectedScope.createAudioRecorderWorker = function(){
-        var blobURL = URL.createObjectURL(new Blob(['(', createWorker.toString(), ')()'], {type: 'application/javascript'}));
-        return new Worker(blobURL);
-    };
-
-}());/*
+/*
     controls the playback of the audio events in a track
 */
 (function(){
@@ -2603,8 +1949,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        console = window.console,
-        sequencer = window.sequencer,
         slice = Array.prototype.slice,
 
         //import
@@ -2718,9 +2062,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
 
         id = 0,
         context,
@@ -3968,9 +3309,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         debug = sequencer.debug,
 
         //import
@@ -5032,423 +4370,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-        debug = sequencer.debug,
-
-        instrumentId = 0,
-
-        //import
-        repetitiveTasks, // → defined in open_module.js
-        typeString, // → defined in utils.js
-        createSample, // → defined in sample.js
-        round, // defined in util.js
-        parseSamples, // defined in util.js
-        createAutoPanner, // defined in instrument_methods.js
-        createSimpleSynth, // defined in simple_synth.js
-
-        Instrument;
-
-
-
-    Instrument = function(config){
-        //console.log(config);
-        this.className = 'Instrument';
-        this.id = 'I' + instrumentId + new Date().getTime();
-        this.config = config;
-        this.scheduledEvents = {};
-        this.scheduledSamples = {};
-        this.sustainPedalDown = false;
-        this.sustainPedalSamples = {};
-        this.sampleDataByNoteNumber = {};
-        this.sampleData = [];
-
-        this.info = config.info || {};
-        if(this.info.samples !== undefined){
-            if(this.info.sample.filesize !== undefined){
-                this.info.samples.filesize = round(this.samplepack.filesize/1024/1024, 2);
-            }
-        }
-    };
-
-
-    // called by asset manager when a sample pack or an instrument has been unloaded, see asset_manager.js
-    Instrument.prototype.reset = function(){
-        // remove all samples
-    };
-
-
-    Instrument.prototype.parse = function(){
-        var i, maxi, v, v1, v2, length, octave, note, noteName, noteNumber,
-            buffer,
-            id,
-            data, subdata,
-            update,
-            sampleConfig,
-            config = this.config,
-            noteNameMode = config.notename_mode === undefined ? sequencer.noteNameMode : config.notename_mode,
-            me = this;
-
-        this.name = config.name || this.id;
-        this.autopan = config.autopan || false; // for simple synth
-        this.singlePitch = config.single_pitch || false;
-        this.keyScalingRelease = config.keyscaling_release;
-        this.keyScalingPanning = config.keyscaling_panning;
-        this.keyRange = config.keyrange || config.key_range;
-        this.mapping = config.mapping;
-
-        if(this.keyRange === undefined){
-            this.lowestNote = 128;
-            this.highestNote = -1;
-        }else{
-            this.lowestNote = this.keyRange[0];
-            this.highestNote = this.keyRange[1];
-            this.numNotes = this.highestNote - this.lowestNote;
-        }
-
-        if(config.release_duration !== undefined){
-            this.releaseDuration = config.release_duration;
-        }else{
-            this.releaseDuration = 0;
-        }
-
-        this.releaseEnvelope = config.release_envelope || 'equal power';
-
-        if(this.autopan){
-            this.autoPanner = createAutoPanner();
-        }
-
-        if(this.mapping === undefined){
-            this.mapping = {};
-            // use ids of samples as mapping -> the ids of the samples have to be note numbers or note names
-            for(id in this.samples){
-                if(this.samples.hasOwnProperty(id)){
-                    this.mapping[id] = {n:id};
-                }
-            }
-        }
-        //console.log(this.mapping);
-
-        for(id in this.mapping){
-            if(this.mapping.hasOwnProperty(id)){
-                data = this.mapping[id];
-
-                if(isNaN(id)){
-                    // C3, D#5, Bb0, etc.
-                    length = id.length;
-                    octave = id.substring(length - 1);
-                    note = id.substring(0, length - 1);
-                    noteName = id;
-                    noteNumber = sequencer.getNoteNumber(note, octave);
-                }else{
-                    noteName = sequencer.getNoteNameFromNoteNumber(id, noteNameMode);
-                    noteName = noteName.join('');
-                    noteNumber = id;
-                }
-                //console.log(id, noteNameMode);
-
-                noteNumber = parseInt(noteNumber, 10);
-
-                // calculate key range
-                if(this.keyRange === undefined){
-                    this.lowestNote = noteNumber < this.lowestNote ? noteNumber : this.lowestNote;
-                    this.highestNote = noteNumber > this.highestNote ? noteNumber : this.highestNote;
-                }
-
-                //console.log(data,typeString(data));
-
-                if(typeString(data) === 'string'){
-                    // only id of sample is provided
-                    buffer = this.samples[data];
-                }else if(typeString(data) === 'array'){
-                    // multi-layered
-                    this.multiLayered = true;
-                    for(i = 0, maxi = data.length; i < maxi; i++){
-                        subdata = data[i];
-                        createSampleConfig(subdata);
-                        if(this.sampleDataByNoteNumber[noteNumber] === undefined){
-                            this.sampleDataByNoteNumber[noteNumber] = [];
-                        }
-                        // store the same sample config for every step in this velocity range
-                        v1 = subdata.v[0];
-                        v2 = subdata.v[1];
-                        for(v = v1; v <= v2; v++){
-                            this.sampleDataByNoteNumber[noteNumber][v] = sampleConfig;
-                        }
-                        this.sampleData.push(sampleConfig);
-                    }
-                }else{
-                    // single-layered
-                    createSampleConfig(data);
-                    //console.log('--->', sampleConfig);
-                    this.sampleDataByNoteNumber[noteNumber] = sampleConfig;
-                    this.sampleData.push(sampleConfig);
-                }
-            }
-        }
-
-        if(this.keyRange === undefined){
-            //console.log(this.highestNote, this.lowestNote);
-            this.numNotes = this.highestNote - this.lowestNote;
-            this.keyRange = [this.lowestNote, this.highestNote];
-        }
-
-
-        if(this.singlePitch){
-            // TODO: fix this for multi-layered instruments (low prio)
-            for(i = 127; i >= 0; i--){
-                this.sampleData[i] = sampleConfig;
-                this.sampleDataByNoteNumber[i] = sampleConfig;
-            }
-        }
-
-        if(update){
-            this.updateTaskId = 'update_' + this.name + '_' + new Date().getTime();
-            //console.log('start update', this.name);
-            repetitiveTasks[this.updateTaskId] = function(){
-                //console.log('update');
-                if(me.autopan){
-                    me.update(this.autoPanner.getValue());
-                }else{
-                    me.update();
-                }
-            };
-        }
-
-        // inner function of Instrument.parse();
-        function createSampleConfig(data){
-
-            if(data.n){
-                // get the buffer by an id
-                buffer = me.samples[data.n];
-                //console.log(data.n, buffer);
-            }
-
-
-            if(buffer === undefined){
-                if(sequencer.debug){
-                    console.log('no buffer found for ' + id + ' (' + me.name + ')');
-                }
-                sampleConfig = false;
-                return;
-            }
-
-            sampleConfig = {
-                noteNumber: noteNumber,
-                buffer: buffer,
-                autopan: me.autopan
-            };
-
-            // sample pack sustain
-            if(config.sustain === true){
-                sampleConfig.sustain = true;
-                update = true;
-            }
-
-            // sustain
-            if(data.s !== undefined){
-                sampleConfig.sustain_start = data.s[0];
-                sampleConfig.sustain_end = data.s[1];
-                sampleConfig.sustain = true;
-                update = true;
-            }
-
-            // global release
-            if(config.release_duration !== undefined){
-                sampleConfig.release_duration = config.release_duration;
-                sampleConfig.release_envelope = config.release_envelope || me.releaseEnvelope;
-                sampleConfig.release = true;
-                update = true;
-            }
-
-            // release duration and envelope per sample overrules global release duration and envelope
-            if(data.r !== undefined){
-                if(typeString(data.r) === 'array'){
-                    sampleConfig.release_duration = data.r[0];
-                    sampleConfig.release_envelope = data.r[1] || me.releaseEnvelope;
-                }else if(!isNaN(data.r)){
-                    sampleConfig.release_duration = data.r;
-                    sampleConfig.release_envelope = me.releaseEnvelope;
-                }
-                sampleConfig.release = true;
-                update = true;
-                //console.log(data.r, sampleConfig.release_duration, sampleConfig.release_envelope)
-            }
-
-            // panning
-            if(data.p !== undefined){
-                sampleConfig.panPosition = data.p;
-                sampleConfig.panning = true;
-            }
-            //console.log(data.p, sampleConfig.panning);
-            //console.log('ready', sampleConfig);
-        }
-    };
-
-
-    Instrument.prototype.getInfoAsHTML = function(){
-        var html = '',
-            instrumentHtml = '',
-            samplepackHtml = '',
-            instrumentInfo = {},
-            samplesInfo = {};
-
-        if(this.info !== undefined){
-            samplesInfo = this.info.samples;
-            instrumentInfo = this.info.instrument;
-        }
-
-        if(instrumentInfo.descriptiom !== undefined){
-            instrumentHtml += '<tr><td>info</td><td>' + instrumentInfo.description + '</td></tr>';
-        }
-        if(instrumentInfo.author !== undefined){
-            instrumentHtml += '<tr><td>author</td><td>' + instrumentInfo.author + '</td></tr>';
-        }
-        if(instrumentInfo.license !== undefined){
-            instrumentHtml += '<tr><td>license</td><td>' + instrumentInfo.license + '</td></tr>';
-        }
-        instrumentHtml += '<tr><td>keyrange</td><td>' + this.lowestNote + '(' + sequencer.getFullNoteName(this.lowestNote) + ')';
-        instrumentHtml += ' - ' + this.highestNote + '(' + sequencer.getFullNoteName(this.highestNote) + ')</td></tr>';
-
-        if(instrumentHtml !== ''){
-            instrumentHtml = '<table><th colspan="2">instrument</th>' +  instrumentHtml + '</table>';
-            html += instrumentHtml;
-        }
-
-        if(samplesInfo.description !== undefined){
-            samplepackHtml += '<tr><td>info</td><td>' + samplesInfo.description + '</td></tr>';
-        }
-        if(samplesInfo.author !== undefined){
-            samplepackHtml += '<tr><td>author</td><td>' + samplesInfo.author + '</td></tr>';
-        }
-        if(samplesInfo.license !== undefined){
-            samplepackHtml += '<tr><td>license</td><td>' + samplesInfo.license + '</td></tr>';
-        }
-        if(samplesInfo.compression !== undefined){
-            samplepackHtml += '<tr><td>compression</td><td>' + samplesInfo.compression + '</td></tr>';
-        }
-        if(samplesInfo.filesize !== undefined){
-            samplepackHtml += '<tr><td>filesize</td><td>' + samplesInfo.filesize + ' MiB</td></tr>';
-        }
-
-        if(samplepackHtml !== ''){
-            samplepackHtml = '<table><th colspan="2">samplepack</th>' +  samplepackHtml + '</table>';
-            html += samplepackHtml;
-        }
-
-        return html;
-    };
-
-
-    Instrument.prototype.createSample = function(event){
-        var
-            noteNumber = event.noteNumber,
-            velocity = event.velocity,
-            data = this.sampleDataByNoteNumber[noteNumber],
-            type = typeString(data);
-
-        if(type === 'array'){
-            data = data[velocity];
-            //console.log(velocity, data.bufferId);
-        }
-
-        if(data === undefined || data === false){
-            // no buffer data, return a dummy sample
-            return {
-                start: function(){
-                    console.warn('no audio data loaded for', noteNumber);
-                },
-                stop: function(){},
-                update: function(){},
-                addData: function(){},
-                unschedule: function(){}
-            };
-        }
-        //console.log(data);
-        data.track = event.track;
-        return createSample(data);
-    };
-
-
-    sequencer.createInstrument2 = function(config){
-
-        function executor(resolve, reject){
-            var instrument;
-
-            if(config.samples === undefined){
-                reject('instruments must have samples', config);
-            }
-
-            if(config.name === 'sinewave'){
-                instrument = createSimpleSynth(config);
-            }else{
-                instrument = new Instrument(config);
-            }
-
-            parseSamples(config.samples).then(
-                function onFulfilled(samples){
-                    //console.log(samples);
-                    // save memory and delete the base64 data
-                    config.samples = null;
-                    instrument.samples = samples;
-                    instrument.parse();
-                    resolve(instrument);
-                },
-                function onRejected(e){
-                    reject(e);
-                }
-            );
-        }
-
-        return new Promise(executor);
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        var protectedScope = sequencer.protectedScope;
-        createSample = sequencer.createSample;
-        repetitiveTasks = protectedScope.repetitiveTasks;
-        typeString = protectedScope.typeString;
-        round = sequencer.util.round;
-        createSimpleSynth = sequencer.createSimpleSynth;
-        parseSamples = sequencer.util.parseSamples;
-
-        // instrument methods
-        var methodNames = [
-            'createAutoPanner',
-            'setKeyScalingPanning',
-            'setKeyScalingRelease',
-            'setRelease',
-            'transposeSamples',
-            'processEvent',
-            'stopSustain',
-            'playNote',
-            'stopNote',
-            'allNotesOff',
-            'allNotesOffPart',
-            'update',
-            'hasScheduledSamples',
-            'reschedule',
-            'unschedule'
-        ];
-        methodNames.forEach(function(name){
-            var m = protectedScope[name];
-            Instrument.prototype[name] = function(){
-                //console.log(args, this);
-                m.apply(this, arguments);
-            };
-        });
-    });
-}());
-(function(){
-
-    'use strict';
-
-    var
-         // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         ajax, // defined in utils.js
         parseUrl, // defined in utils.js
         findItem, // defined in utils.js
@@ -5630,553 +4551,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        //import
-        typeString, // → defined in util.js
-        remap, // → defined in util.js
-        timedTasks, // → defined in open_module.js
-        createReverb, // → defined in effects.js
-        objectForEach, // → defined in util.js
-        isEmptyObject, // → defined in util.js
-        transpose, // → defined in transpose.js
-        getEqualPowerCurve, // → defined in util.js
-        dispatchEvent, // → defined in song.js
-
-
-        setKeyScalingPanning,
-        setKeyScalingRelease,
-        setRelease,
-        transposeSamples,
-        processEvent,
-        stopSustain,
-        playNote,
-        stopNote,
-        allNotesOff,
-        allNotesOffPart,
-        update,
-        hasScheduledSamples,
-        reschedule,
-        unschedule;
-
-
-
-    setKeyScalingPanning = function(start, end){
-        //console.log('keyScalingPanning', start, end);
-        var i, data, numSamples = this.sampleData.length,
-            panStep, currentPan;
-
-        if(start === false){
-            for(i = 0; i < numSamples; i++){
-                data = this.sampleData[i];
-                data.panning = false;
-            }
-        }
-
-        if(isNaN(start) === false && isNaN(end) === false){
-            panStep = (end - start)/this.numNotes;
-            currentPan = start;
-            for(i = 0; i < numSamples; i++){
-                data = this.sampleData[i];
-                data.panning = true;
-                data.panPosition = currentPan;
-                //console.log(currentPan, panStep, highestNote, lowestNote, data.noteNumber);
-                currentPan += panStep;
-            }
-        }
-    };
-
-
-
-    setRelease = function(millis, envelope){
-        if(millis === undefined){
-            return;
-        }
-        this.releaseEnvelope = envelope || this.releaseEnvelope;
-        this.keyScalingRelease = undefined;
-
-        var i, data, numSamples = this.sampleData.length;
-        for(i = 0; i < numSamples; i++){
-            data = this.sampleData[i];
-            data.release = true;
-            data.release_duration = millis;
-            data.release_envelope = this.releaseEnvelope;
-        }
-        this.releaseDuration = millis;
-    };
-
-
-
-    setKeyScalingRelease = function(start, end, envelope){
-        var i, data, numSamples = this.sampleData.length,
-            releaseStep, currentRelease;
-
-        this.releaseEnvelope = envelope || this.releaseEnvelope;
-
-        if(isNaN(start) === false && isNaN(end) === false){
-            this.keyScalingRelease = [start, end];
-            this.releaseDuration = 0;
-            releaseStep = (end - start)/this.numNotes;
-            currentRelease = start;
-            for(i = 0; i < numSamples; i++){
-                data = this.sampleData[i];
-                data.release_duration = currentRelease;
-                data.release_envelope = currentRelease;
-                //console.log(currentRelease, releaseStep, data.noteNumber);
-                currentRelease += releaseStep;
-            }
-        }
-    };
-
-
-
-    transposeSamples = function(semitones, cb1, cb2){
-        if(transpose === undefined){
-            console.log('transpose is still experimental');
-            return;
-        }
-        var numSamples = this.sampleData.length;
-        function loop(num, samples){
-            var data;
-            if(cb2){
-                cb2('transposing sample ' + (num + 1) +  ' of ' + numSamples);
-            }
-            //console.log(num, numSamples);
-            if(num < numSamples){
-                data = samples[num];
-                setTimeout(function(){
-                    transpose(data.buffer, semitones, function(transposedBuffer){
-                        data.buffer = transposedBuffer;
-                        loop(++num, samples);
-                    });
-                }, 10);
-            }else{
-                if(cb1){
-                    console.log('ready');
-                    cb1();
-                }
-            }
-        }
-        loop(0, this.sampleData);
-    };
-
-
-
-    // called when midi events arrive from a midi input, from processEvent or from the scheduler
-    processEvent = function(midiEvent){
-        //console.log(midiEvent.type, midiEvent.velocity);
-        var type = midiEvent.type,
-            data1, data2, track, output;
-
-        //seconds = seconds === undefined ? 0 : seconds;
-        if(midiEvent.time === undefined){
-            midiEvent.time = 0;
-        }
-
-        if(type === 128 || type === 144){
-            if(type === 128){
-                if(this.sustainPedalDown === true){
-                    midiEvent.sustainPedalDown = true;
-                }
-                this.stopNote(midiEvent);
-            }else{
-                this.playNote(midiEvent);
-            }
-        }else if(type === 176){
-            //return;
-            data1 = midiEvent.data1;
-            data2 = midiEvent.data2;
-            if(data1 === 64){ // sustain pedal
-                //console.log(this.sustainPedalDown, data1, data2)
-                if(data2 === 127){
-                    this.sustainPedalDown = true;
-                    //console.log('sustain pedal down',this.track.song.id);
-                    dispatchEvent(this.track.song, 'sustain_pedal', 'down');
-                }else if(data2 === 0){
-                    this.sustainPedalDown = false;
-                    //console.log('sustain pedal up');
-                    dispatchEvent(this.track.song, 'sustain_pedal', 'up');
-                    this.stopSustain(midiEvent.time);
-                }
-            }else if(data1 === 10){ // panning
-                // panning is *not* exactly timed -> not possible (yet) with WebAudio
-                track = this.track;
-                //console.log(data2, remap(data2, 0, 127, -1, 1));
-                track.setPanning(remap(data2, 0, 127, -1, 1));
-            }else if(data1 === 7){ // volume
-                track = this.track;
-                output = track.output;
-                output.gain.setValueAtTime(data2/127, midiEvent.time);
-                /*
-                //@TODO: this should be done by a plugin
-                if(track.volumeChangeMethod === 'linear'){
-                    output.gain.linearRampToValueAtTime(data2/127, seconds);
-                }else if(track.volumeChangeMethod === 'equal_power'){
-                    volume1 = track.getVolume();
-                    volume2 = data2/127;
-                    if(volume1 > volume2){
-                        values = getEqualPowerCurve(100, 'fadeOut', volume2);
-                    }else{
-                        values = getEqualPowerCurve(100, 'fadeIn', volume2);
-                    }
-                    now = sequencer.getTime();
-                    output.gain.setValueCurveAtTime(values, seconds, seconds + 0.05);
-                }else{
-                    output.gain.setValueAtTime(data2/127, seconds);
-                }
-                */
-            }
-        }
-    };
-
-
-
-    stopSustain = function(seconds){
-        var midiNote,
-            scheduledSamples = this.scheduledSamples,
-            sustainPedalSamples = this.sustainPedalSamples;
-
-        objectForEach(sustainPedalSamples, function(sample){
-            if(sample !== undefined){
-                midiNote = sample.midiNote;
-                midiNote.noteOn.sustainPedalDown = undefined;
-                midiNote.noteOff.sustainPedalDown = undefined;
-                sample.stop(seconds, function(sample){
-                    //console.log('stopped sustain pedal up:', sample.id, sample.sourceId);
-                    scheduledSamples[sample.sourceId] = null;
-                    delete scheduledSamples[sample.sourceId];
-                    //delete sustainPedalSamples[sample.sourceId];
-                });
-            }
-        });
-
-        this.sustainPedalSamples = {};
-    };
-
-
-
-    playNote = function(midiEvent){
-        var
-            sample,
-            sourceId;
-
-        if(!midiEvent.midiNote){
-            if(sequencer.debug){
-                console.warn('playNote() no midi note');
-            }
-            return;
-        }
-
-        sourceId = midiEvent.midiNote.id;
-        sample = this.scheduledSamples[sourceId];
-        //console.log('start', sourceId);
-
-        if(sample !== undefined){
-            //console.log('already scheduled', sourceId);
-            sample.unschedule(0);
-        }
-
-        sample = this.createSample(midiEvent);
-        // add some extra attributes to the sample
-        sample.addData({
-            midiNote: midiEvent.midiNote,
-            noteName: midiEvent.midiNote.note.fullName,
-            sourceId: sourceId
-        });
-        this.scheduledSamples[sourceId] = sample;
-        sample.start(midiEvent);
-    };
-
-
-
-    stopNote = function(midiEvent){
-        if(midiEvent.midiNote === undefined){
-            if(sequencer.debug){
-                console.warn('stopNote() no midi note');
-            }
-            return;
-        }
-
-        var sourceId = midiEvent.midiNote.id,
-            sample = this.scheduledSamples[sourceId],
-            scheduledSamples = this.scheduledSamples,
-            sustainPedalSamples = this.sustainPedalSamples;
-
-        // if(this.song && this.song.bar >= 6 && this.track.name === 'Sonata # 3'){
-        //     console.log('stopNote', midiEvent, seconds, sequencer.getTime());
-        // }
-
-        //console.log(midiEvent.sustainPedalDown);
-        if(midiEvent.sustainPedalDown === true){
-            // while sustain pedal is pressed, bypass note off events
-            //console.log('sustain');
-            sustainPedalSamples[sourceId] = sample;
-            return;
-        }
-
-        if(sample === undefined){
-            // if(sequencer.debug){
-            //     console.log('no sample scheduled (anymore) for this midiEvent', sourceId, seconds);
-            // }
-            return;
-        }
-
-        sample.stop(midiEvent.time, function(){
-            scheduledSamples[sourceId] = null;
-            delete scheduledSamples[sourceId];
-        });
-    };
-
-
-
-    hasScheduledSamples = function(){
-        return isEmptyObject(this.scheduledSamples);
-    };
-
-
-
-    function unscheduleCallback(sample){
-        //console.log(sample.id, 'has been unscheduled');
-        sample = null;
-    }
-
-
-    reschedule = function(song){
-        var
-            min = song.millis,
-            max = min + (sequencer.bufferTime * 1000),
-            //max2 = min + 20,
-            scheduledSamples = this.scheduledSamples,
-            id, note, sample;
-
-        for(id in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(id)){
-                sample = scheduledSamples[id]; // the sample
-                note = sample.midiNote; // the midi note
-
-                if(note === undefined || note.state === 'removed'){
-                    sample.unschedule(0, unscheduleCallback);
-                    delete scheduledSamples[id];
-                }else if(
-                        note.noteOn.millis >= min &&
-                        note.noteOff.millis < max &&
-                        sample.noteName === note.fullName
-                    ){
-                    // nothing has changed, skip
-                    continue;
-                }else{
-                    //console.log('unscheduled', id);
-                    delete scheduledSamples[id];
-                    sample.unschedule(null, unscheduleCallback);
-                }
-            }
-        }
-/*
-        objectForEach(this.scheduledEvents, function(event, eventId){
-            if(event === undefined || event.state === 'removed'){
-                delete sequencer.timedTasks['event_' + eventId];
-                delete this.scheduledEvents[eventId];
-            }else if((event.millis >= min && event.millis < max2) === false){
-                delete sequencer.timedTasks['event_' + eventId];
-                delete this.scheduledEvents[eventId];
-            }
-        });
-*/
-    };
-
-
-    function loop(data, i, maxi, events){
-        var arg;
-        for(i = 0; i < maxi; i++){
-            arg = data[i];
-            if(arg === undefined){
-                continue;
-            }else if(arg.className === 'MidiNote'){
-                events.push(arg.noteOn);
-            }else if(typeString(arg) === 'array'){
-                loop(arg, 0, arg.length);
-            }
-        }
-    }
-
-
-
-    // stop specified events or notes, used by stopProcessEvent()
-    unschedule = function(){
-        var args = Array.prototype.slice.call(arguments),
-            events = [],
-            i, e, id, sample;
-
-        loop(args, 0, args.length, events);
-
-        for(i = events.length - 1; i >= 0; i--){
-            e = events[i];
-            if(e.midiNote !== undefined){
-                // note on and note off events
-                id = e.midiNote.id;
-                sample = this.scheduledSamples[id];
-                if(sample !== undefined){
-                    sample.unschedule(0, unscheduleCallback);
-                    delete this.scheduledSamples[id];
-                }
-            }else if(e.className === 'MidiEvent'){
-                // other channel events
-                id = e.id;
-                delete timedTasks['event_' + id];
-                delete this.scheduledEvents[id];
-            }
-            //console.log(id);
-        }
-    };
-
-
-
-    // stop all events and notes
-    allNotesOff = function(){
-        var sample, sampleId,
-            scheduledSamples = this.scheduledSamples;
-
-        this.stopSustain(0);
-        this.sustainPedalDown = false;
-
-        //console.log(scheduledSamples);
-
-        if(scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true){
-            return;
-        }
-
-        for(sampleId in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(sampleId)){
-                //console.log('allNotesOff', sampleId);
-                sample = scheduledSamples[sampleId];
-                if(sample){
-                    sample.unschedule(0, unscheduleCallback);
-                }
-            }
-        }
-        this.scheduledSamples = {};
-
-        objectForEach(this.scheduledEvents, function(event, eventId){
-            delete timedTasks['event_' + eventId];
-        });
-        this.scheduledEvents = {};
-    };
-
-
-
-    allNotesOffPart = function(partId){
-        var sample, sampleId,
-            scheduledSamples = this.scheduledSamples;
-
-        // make this more subtle
-        this.stopSustain(0);
-        this.sustainPedalDown = false;
-
-        //console.log(scheduledSamples);
-
-        if(scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true){
-            return;
-        }
-
-        for(sampleId in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(sampleId)){
-                //console.log('allNotesOff', sampleId);
-                sample = scheduledSamples[sampleId];
-                if(sample){
-                    sample.unschedule(0, unscheduleCallback);
-                }
-            }
-        }
-        this.scheduledSamples = {};
-
-        objectForEach(this.scheduledEvents, function(event, eventId){
-            delete timedTasks['event_' + eventId];
-        });
-        this.scheduledEvents = {};
-    };
-
-
-
-    update = function(value){
-        var sampleId, sample;
-        //console.log(this.scheduledSamples);
-        for(sampleId in this.scheduledSamples){
-            if(this.scheduledSamples.hasOwnProperty(sampleId)){
-                sample = this.scheduledSamples[sampleId];
-                if(sample){
-                    sample.update(value);
-                }
-            }
-        }
-    };
-
-
-
-    function createAutoPanner(time){
-/*
-        var osc = context.createOscillator();
-        osc.frequency.value = 50;
-        osc.type = 0;
-        var gain = context.createGain();
-        gain.gain.value = 1;
-        osc.connect(gain);
-        gain.connect(context.destination);
-        osc.start();
-        console.log(osc);
-        return {
-            getValue: function(){
-                return osc.frequency.getValueAtTime(time);
-            }
-        };
-*/
-        return {
-            getValue: function(time){
-                return Math.sin(time * 2*Math.PI);
-            }
-        };
-    }
-
-    sequencer.protectedScope.createAutoPanner = createAutoPanner;
-    sequencer.protectedScope.setKeyScalingPanning = setKeyScalingPanning;
-    sequencer.protectedScope.setKeyScalingRelease = setKeyScalingRelease;
-    sequencer.protectedScope.setRelease = setRelease;
-    sequencer.protectedScope.transposeSamples = transposeSamples;
-    sequencer.protectedScope.processEvent = processEvent;
-    sequencer.protectedScope.stopSustain = stopSustain;
-    sequencer.protectedScope.playNote = playNote;
-    sequencer.protectedScope.stopNote = stopNote;
-    sequencer.protectedScope.allNotesOff = allNotesOff;
-    sequencer.protectedScope.allNotesOffPart = allNotesOffPart;
-    sequencer.protectedScope.update = update;
-    sequencer.protectedScope.hasScheduledSamples = hasScheduledSamples;
-    sequencer.protectedScope.reschedule = reschedule;
-    sequencer.protectedScope.unschedule = unschedule;
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        typeString = sequencer.protectedScope.typeString;
-        timedTasks = sequencer.protectedScope.timedTasks;
-        createReverb = sequencer.createReverb;
-        objectForEach = sequencer.protectedScope.objectForEach;
-        isEmptyObject = sequencer.protectedScope.isEmptyObject;
-        transpose = sequencer.protectedScope.transpose;
-        getEqualPowerCurve = sequencer.util.getEqualPowerCurve;
-        remap = sequencer.util.remap;
-        dispatchEvent = sequencer.protectedScope.songDispatchEvent;
-    });
-
-}());(function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-        requestAnimationFrame = window.requestAnimationFrame,
-
         //private
         KeyEditor,
 
@@ -7557,8 +5931,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        sequencer = window.sequencer,
-
         minWidthSixteenth = 0.042,
         minWidthBeat = 0.02,
 /*
@@ -8074,10 +6446,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         context, //defined in open_module.js
         findItem, //defined in asset_manager.js
@@ -8428,9 +6796,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         slice = Array.prototype.slice,
 
         //import
@@ -8962,10 +7327,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         parseUrl, // defined in util.js
         base64ToBinary, // defined in util.js
@@ -9456,10 +7817,6 @@ if (typeof module !== "undefined" && module !== null) {
     var
         MidiNote,
 
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //public
         createMidiEvent,
 
@@ -9650,10 +8007,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         lastEventTypeByte,
         trackName,
         instrumentName,
@@ -9973,14 +8326,8 @@ if (typeof module !== "undefined" && module !== null) {
 
 	'use strict';
 
-	var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-		
-		fcc = String.fromCharCode;
+	var	fcc = String.fromCharCode;
 	
-
 	// buffer is Uint8Array
 	function createStream(buffer) {
 		var position = 0;
@@ -10076,10 +8423,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         context, // defined in open_module.js
         typeString, // defined in util.js
         objectForEach, // defined in util.js
@@ -10664,10 +9007,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         AP = Array.prototype,
         PPQ = sequencer.defaultPPQ,
         HDR_CHUNKID = [
@@ -10920,256 +9259,6 @@ if (typeof module !== "undefined" && module !== null) {
 
 }());
 (function(){
-
-    'use strict';
-
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        //import
-        ajax, // → defined in util.js
-        typeString, // → defined in util.js
-        getNoteNumber, // → defined in note.js
-
-        nsResolver;
-
-
-    function load(url, cb, returnAsXML){
-        if(url === undefined || cb === undefined){
-            if(sequencer.debug >= sequencer.WARN){
-                console.warn('please provide an url and a callback method');
-            }
-        }
-
-        ajax({
-            url: url + '?' + new Date().getTime(),
-            method: 'GET',
-            onError: function(){
-                cb(false);
-            },
-            onSuccess: function(response){
-                if(returnAsXML === true){
-                    cb(response);
-                }else{
-                    cb(parse(response));
-                }
-            },
-            responseType: 'xml'
-        });
-    }
-
-
-    function parse(xml){
-        var parser = new DOMParser(),
-            xmlDoc = parser.parseFromString(xml, 'application/xml'),
-            type = xmlDoc.firstChild.nextSibling.nodeName;
-
-        //console.log('type', type);
-
-        nsResolver = xmlDoc.createNSResolver(xmlDoc.ownerDocument === null ? xmlDoc.documentElement : xmlDoc.ownerDocument.documentElement);
-
-        if(type === 'score-partwise'){
-            return parsePartWise(xmlDoc);
-        }else if(type === 'score-timewise'){
-            return parseTimeWise(xmlDoc);
-        }else{
-            console.log('unknown type', type);
-            return false;
-        }
-    }
-
-
-    function parsePartWise(xmlDoc){
-        var partIterator = xmlDoc.evaluate('//score-part', xmlDoc, nsResolver, XPathResult.ANY_TYPE, null),
-            partNode,
-            measureIterator,
-            measureNode,
-            noteIterator,
-            noteNode,
-            measureNumber,
-            tracks = [],
-            timeEvents = [],
-            tiedNotes = {},
-            tieStart,
-            tieStop,
-            tieIterator, tieNode,
-            events,
-            song, track, part, noteOn, noteOff,
-            name, id, tmp1, tmp2,
-            step, alter, octave, voice, noteType, noteDuration, noteName, noteNumber, velocity,
-            rest, chord,
-            divisions, numerator, denominator,
-            ppq = sequencer.defaultPPQ,
-            ticks;
-
-        while((partNode = partIterator.iterateNext()) !== null) {
-            // get id and name of the part
-            id = xmlDoc.evaluate('@id', partNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-            name = xmlDoc.evaluate('part-name', partNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-            velocity = xmlDoc.evaluate('midi-instrument/volume', partNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-            velocity = parseInt((velocity/100) * 127);
-
-            ticks = 0;
-            track = sequencer.createTrack(name);
-            part = sequencer.createPart();
-            track.addPart(part);
-            tracks.push(track);
-            events = [];
-
-            //console.log(id, name, velocity);
-
-            // get all measures
-            measureIterator = xmlDoc.evaluate('//part[@id="' + id + '"]/measure', partNode, nsResolver, XPathResult.ANY_TYPE, null);
-            while((measureNode = measureIterator.iterateNext()) !== null) {
-
-                measureNumber = xmlDoc.evaluate('@number', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-
-                tmp1 = xmlDoc.evaluate('attributes/divisions', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                if(!isNaN(tmp1)){
-                    divisions = tmp1;
-                }
-
-                tmp1 = xmlDoc.evaluate('attributes/time/beats', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                tmp2 = xmlDoc.evaluate('attributes/time/beat-type', measureNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                if(!isNaN(tmp1)){
-                    numerator = tmp1;
-                    denominator = tmp2;
-                    timeEvents.push(sequencer.createMidiEvent(ticks, sequencer.TIME_SIGNATURE, numerator, denominator));
-                }
-                //console.log(divisions, numerator, denominator);
-
-                // get all notes and backups
-                //noteIterator = xmlDoc.evaluate('note', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
-                noteIterator = xmlDoc.evaluate('*[self::note or self::backup or self::forward]', measureNode, nsResolver, XPathResult.ANY_TYPE, null);
-                while((noteNode = noteIterator.iterateNext()) !== null){
-                    //console.log(noteNode);
-
-                    tieStart = false;
-                    tieStop = false;
-                    tieIterator = xmlDoc.evaluate('tie', noteNode, nsResolver, XPathResult.ANY_TYPE, null);
-                    while((tieNode = tieIterator.iterateNext()) !== null){
-                        tmp1 = xmlDoc.evaluate('@type', tieNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-                        //console.log(tmp1);
-                        if(tmp1 === 'start'){
-                            tieStart = true;
-                        }else if(tmp1 === 'stop'){
-                            tieStop = true;
-                        }
-                        //tieStart = xmlDoc.evaluate('@type="start"', tieNode, nsResolver, XPathResult.BOOLEAN_TYPE, null).booleanValue;
-                        //tieStop = xmlDoc.evaluate('@type="stop"', tieNode, nsResolver, XPathResult.BOOLEAN_TYPE, null).booleanValue;
-                        //console.log(tieStart, tieStop);
-                    }
-
-                    rest = xmlDoc.evaluate('rest', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                    chord = xmlDoc.evaluate('chord', noteNode, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-
-                    if(rest !== null){
-                        //console.log(rest);
-                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        ticks += (noteDuration/divisions) * ppq;
-
-                    }else if(noteNode.nodeName === 'note'){
-
-                        step = xmlDoc.evaluate('pitch/step', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-                        alter = xmlDoc.evaluate('pitch/alter', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        voice = xmlDoc.evaluate('voice', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        octave = xmlDoc.evaluate('pitch/octave', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        noteType = xmlDoc.evaluate('type', noteNode, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-                        noteName = step;
-
-                        if(step !== ''){
-                            if(!isNaN(alter)){
-                                switch(alter){
-                                    case -2:
-                                        noteName += 'bb';
-                                        break;
-                                    case -1:
-                                        noteName += 'b';
-                                        break;
-                                    case 1:
-                                        noteName += '#';
-                                        break;
-                                    case 2:
-                                        noteName += '##';
-                                        break;
-                                }
-                            }
-                            noteNumber = getNoteNumber(noteName, octave);
-                            noteOn = sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity);
-                            ticks += (noteDuration/divisions) * ppq;
-                            noteOff = sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0);
-                            if(chord !== null){
-                                ticks -= (noteDuration/divisions) * ppq;
-                            }
-
-                            //console.log('tie', tieStart, tieStop);
-
-                            if(tieStart === false && tieStop === false){
-                                // no ties
-                                events.push(noteOn, noteOff);
-                                //console.log('no ties', measureNumber, voice, noteNumber, tiedNotes);
-                            }else if(tieStart === true && tieStop === false){
-                                // start of tie
-                                tiedNotes[voice + '-' + noteNumber] = noteOff;
-                                events.push(noteOn, noteOff);
-                                //console.log('start', measureNumber, voice, noteNumber, tiedNotes);
-                            }else if(tieStart === true && tieStop === true){
-                                // tied to yet another note
-                                tiedNotes[voice + '-' + noteNumber].ticks += (noteDuration/divisions) * ppq;
-                                //console.log('thru', measureNumber, voice, noteNumber, tiedNotes);
-                            }else if(tieStart === false && tieStop === true){
-                                // end of tie
-                                tiedNotes[voice + '-' + noteNumber].ticks += (noteDuration/divisions) * ppq;
-                                delete tiedNotes[voice + '-' + noteNumber];
-                                //console.log('end', measureNumber, voice, noteNumber, tiedNotes);
-                            }
-                            //console.log(noteNumber, ticks);
-                        }
-
-                    }else if(noteNode.nodeName === 'backup'){
-                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        ticks -= (noteDuration/divisions) * ppq;
-                        //console.log(noteDuration, divisions);
-                    }else if(noteNode.nodeName === 'forward'){
-                        noteDuration = xmlDoc.evaluate('duration', noteNode, nsResolver, XPathResult.NUMBER_TYPE, null).numberValue;
-                        ticks += (noteDuration/divisions) * ppq;
-                        //console.log(noteDuration, divisions);
-                    }
-                    //console.log(ticks);
-                }
-            }
-            part.addEvents(events);
-            //console.log(tiedNotes);
-        }
-
-        song = sequencer.createSong({
-            bpm: 110,
-            tracks: tracks[0],
-            timeEvents: timeEvents,
-            useMetronome: false
-        });
-
-        return song;
-    }
-
-
-    function parseTimeWise(xmlDoc){
-        return xmlDoc;
-    }
-
-    sequencer.loadMusicXML = load;
-    sequencer.parseMusicXML = parse;
-
-    sequencer.protectedScope.addInitMethod(function(){
-        ajax = sequencer.protectedScope.ajax;
-        typeString = sequencer.protectedScope.typeString;
-        getNoteNumber = sequencer.getNoteNumber;
-    });
-
-}());(function(){
 
     'use strict';
 
@@ -11570,10 +9659,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         round = Math.round,
 
         precision = Math.pow(10, sequencer.precision),
@@ -11755,10 +9840,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         createMidiEvent, // → defined in midi_event.js
 
@@ -12127,10 +10208,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         createMidiNote, // → defined in midi_note.js
         createMidiEvent, // → defined in midi_event.js
@@ -12943,10 +11020,6 @@ if (typeof module !== "undefined" && module !== null) {
 
     'use strict';
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         instanceId = 0,
         range = 10,
 
@@ -13315,10 +11388,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         round, // → defined in util.js
         floor, // → defined in util.js
@@ -13895,10 +11964,166 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
+        copyObject, // defined in util.js
 
+        floor = Math.floor,
+        round = Math.round,
+
+    	noteFractions =
+    	{
+	        '1': 1 * 4, // whole note
+	        '1.': 1.5 * 4,
+	        '1..': 1.75 * 4,
+	        '1...': 1.875 * 4,
+	        '1T': 2/3 * 4,
+
+	        '2': 1 * 2, // half note
+	        '2.': 1.5 * 2,
+	        '2..': 1.75 * 2,
+	        '2...': 1.875 * 2,
+	        '2T': 2/3 * 2,
+
+	        '4': 1 * 1, // quarter note (beat)
+	        '4.': 1.5 * 1,
+	        '4..': 1.75 * 1,
+	        '4...': 1.875 * 1,
+	        '4T': 2/3 * 1,
+
+	        '8': 1 * 1/2, // eighth note
+	        '8.': 1.5 * 1/2,
+	        '8..': 1.75 * 1/2,
+	        '8...': 1.875 * 1/2,
+	        '8T':  2/3 * 1/2,
+
+	        '16': 1 * 1/4, // sixteenth note
+	        '16.': 1.5 * 1/4,
+	        '16..': 1.75 * 1/4,
+	        '16...': 1.875 * 1/4,
+	        '16T': 2/3 * 1/4,
+
+	        '32': 1 * 1/8,
+	        '32.': 1.5 * 1/8,
+	        '32..': 1.75 * 1/8,
+	        '32...': 1.875 * 1/8,
+	        '32T': 2/3 * 1/8,
+
+	        '64': 1 * 1/16,
+	        '64.': 1.5 * 1/16,
+	        '64..': 1.75 * 1/16,
+	        '64...': 1.875 * 1/16,
+	        '64T': 2/3 * 1/16,
+
+	        '128': 1 * 1/32,
+	        '128.': 1.5 * 1/32,
+	        '128..': 1.75 * 1/32,
+	        '128...': 1.875 * 1/32,
+	        '128T': 2/3 * 1/32
+	    };
+
+
+
+
+    function quantize(events, value, ppq, history){
+        var track;
+
+        value = '' + value;
+        value = value.toUpperCase();
+        ppq = ppq || sequencer.defaultPPQ;
+        //console.log('quantize', value);
+        if(value === 0){// pass by
+            return {};
+        }
+        var i, event, ticks, quantized, diff, quantizeTicks,
+           quantizeHistory = history || {};
+
+        if(quantizeHistory.events === undefined){
+            quantizeHistory.events = {};
+        }
+
+        if(quantizeHistory.tracks === undefined){
+            quantizeHistory.tracks = {};
+        }
+
+        //console.log(events, value, ppq, history);
+
+        if(value.indexOf('TICKS') !== -1){
+            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
+        }else{
+            quantizeTicks = noteFractions[value] * ppq;
+        }
+
+        //console.log('quantize', quantizeTicks);
+
+        if(quantizeTicks === undefined){
+            if(sequencer.debug){
+                console.warn('invalid quantize value');
+            }
+            return;
+        }
+
+        for(i = events.length - 1; i >= 0; i--){
+            event = events[i];
+
+            quantizeHistory.events[event.id] = {
+                event: event,
+                ticks: event.ticks
+            };
+
+            if(event.type !== 128){
+                ticks = event.ticks;
+                quantized = round(ticks/quantizeTicks) * quantizeTicks;
+                //console.log(ticks, quantized, '[', ppq, ']');
+                diff = quantized - ticks;
+                event.ticks = quantized;
+                event.state = 'changed';
+                event.part.needsUpdate = true;
+                event.track.needsUpdate = true;
+
+                // add quantize history per track as well
+                track = event.track;
+                if(quantizeHistory.tracks[track.id] === undefined){
+                    quantizeHistory.tracks[track.id] = {
+                        track: track,
+                        quantizedEvents: []
+                    };
+                }
+                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
+
+                // quantize the note off event
+                if(event.midiNote !== undefined){
+                    event.midiNote.noteOff.ticks += diff;
+                    event.midiNote.noteOff.state = 'changed';
+                    event.midiNote.state = 'changed';
+                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
+                }
+            }
+        }
+
+        return quantizeHistory;//copyObject(quantizeHistory);
+    }
+
+
+    function fixedLength(events, value, ppq, history){
+        var fixedLengthHistory = history || {};
+
+    }
+
+
+    sequencer.protectedScope.addInitMethod(function(){
+        copyObject = sequencer.protectedScope.copyObject;
+    });
+
+    sequencer.quantize = quantize;
+    sequencer.fixedLength = fixedLength;
+
+}());
+
+
+(function(){
+
+    'use strict';
+
+    var
         //import
         context, // defined in open_module.js
         timedTasks, // defined in open_module.js
@@ -14342,10 +12567,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         ajax, //defined in util.js
         findItem, //defined in util.js
         storeItem, //defined in util.js
@@ -14799,10 +13020,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         typeString, // defined in util.js
         objectForEach, // defined in util.js
 
@@ -15165,10 +13382,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         slice = Array.prototype.slice,
 
         //import
@@ -15877,10 +14090,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         slice = Array.prototype.slice,
 
         //import
@@ -17839,9 +16048,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         slice = Array.prototype.slice,
 
         // import
@@ -18006,10 +16212,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         //import
         findEvent, // → defined in find_position.js
         typeString, // → defined in util.js
@@ -19392,10 +17594,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-    // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
         // import
         getPosition, // -> defined in position.js
         parseTimeEvents, // -> defined in parse_time_events.js
@@ -20067,9 +18265,6 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         debug = sequencer.debug,
 
         slice = Array.prototype.slice,
@@ -21675,9 +19870,77 @@ if (typeof module !== "undefined" && module !== null) {
 
     var
         // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
+        Pitchshift = window.Pitchshift,
 
+        context,
+        fftFrameSize = 2048,
+        shifter;
+
+    function init(){
+        if(window.Pitchshift){
+            shifter = new Pitchshift(fftFrameSize, context.sampleRate, 'FFT');
+        }
+    }
+
+
+    function transpose(inputBuffer, semitones, cb){
+        if(shifter === undefined){
+            console.log('include Kiev II');
+            return;
+        }
+        if(semitones === 0){
+            if(cb){
+                //console.log(inputBuffer, semitones)
+                cb(inputBuffer);
+                return;
+            }
+        }
+
+        var numChannels = inputBuffer.numberOfChannels,
+            c, input, length, output, outputs = [], shiftValue, i,
+            outputBuffer;
+
+        //console.log(inputBuffer);
+
+        for(c = 0; c < numChannels; c++){
+            input =  inputBuffer.getChannelData(c);
+            length = input.length;
+            output = new Float32Array(length);
+            shiftValue = Math.pow(1.0595, semitones);
+            //shiftValue = 1.01;
+            shifter.process(shiftValue, input.length, 4, input);
+            //shifter.process(shiftValue, input.length, 8, input);
+            for(i = 0; i < length; i++){
+                output[i] = shifter.outdata[i];
+            }
+            outputs[c] = output;
+        }
+
+        outputBuffer = context.createBuffer(
+            numChannels,
+            length,
+            inputBuffer.sampleRate
+        );
+
+        for(c = 0; c < numChannels; c++){
+            outputBuffer.getChannelData(c).set(outputs[c]);
+        }
+
+        cb(outputBuffer);
+    }
+
+    sequencer.protectedScope.transpose = transpose;
+
+    sequencer.protectedScope.addInitMethod(function(){
+        context = sequencer.protectedScope.context;
+        init();
+    });
+
+}());(function(){
+
+    'use strict';
+
+    var
         // import
         context, // defined in open_module.js
 
@@ -23368,178 +21631,11 @@ if (typeof module !== "undefined" && module !== null) {
     'use strict';
 
     var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
-
-        copyObject, // defined in util.js
-
-        floor = Math.floor,
-        round = Math.round,
-
-    	noteFractions =
-    	{
-	        '1': 1 * 4, // whole note
-	        '1.': 1.5 * 4,
-	        '1..': 1.75 * 4,
-	        '1...': 1.875 * 4,
-	        '1T': 2/3 * 4,
-
-	        '2': 1 * 2, // half note
-	        '2.': 1.5 * 2,
-	        '2..': 1.75 * 2,
-	        '2...': 1.875 * 2,
-	        '2T': 2/3 * 2,
-
-	        '4': 1 * 1, // quarter note (beat)
-	        '4.': 1.5 * 1,
-	        '4..': 1.75 * 1,
-	        '4...': 1.875 * 1,
-	        '4T': 2/3 * 1,
-
-	        '8': 1 * 1/2, // eighth note
-	        '8.': 1.5 * 1/2,
-	        '8..': 1.75 * 1/2,
-	        '8...': 1.875 * 1/2,
-	        '8T':  2/3 * 1/2,
-
-	        '16': 1 * 1/4, // sixteenth note
-	        '16.': 1.5 * 1/4,
-	        '16..': 1.75 * 1/4,
-	        '16...': 1.875 * 1/4,
-	        '16T': 2/3 * 1/4,
-
-	        '32': 1 * 1/8,
-	        '32.': 1.5 * 1/8,
-	        '32..': 1.75 * 1/8,
-	        '32...': 1.875 * 1/8,
-	        '32T': 2/3 * 1/8,
-
-	        '64': 1 * 1/16,
-	        '64.': 1.5 * 1/16,
-	        '64..': 1.75 * 1/16,
-	        '64...': 1.875 * 1/16,
-	        '64T': 2/3 * 1/16,
-
-	        '128': 1 * 1/32,
-	        '128.': 1.5 * 1/32,
-	        '128..': 1.75 * 1/32,
-	        '128...': 1.875 * 1/32,
-	        '128T': 2/3 * 1/32
-	    };
-
-
-
-
-    function quantize(events, value, ppq, history){
-        var track;
-
-        value = '' + value;
-        value = value.toUpperCase();
-        ppq = ppq || sequencer.defaultPPQ;
-        //console.log('quantize', value);
-        if(value === 0){// pass by
-            return {};
-        }
-        var i, event, ticks, quantized, diff, quantizeTicks,
-           quantizeHistory = history || {};
-
-        if(quantizeHistory.events === undefined){
-            quantizeHistory.events = {};
-        }
-
-        if(quantizeHistory.tracks === undefined){
-            quantizeHistory.tracks = {};
-        }
-
-        //console.log(events, value, ppq, history);
-
-        if(value.indexOf('TICKS') !== -1){
-            quantizeTicks = parseInt(value.replace(/TICKS/,''), 10);
-        }else{
-            quantizeTicks = noteFractions[value] * ppq;
-        }
-
-        //console.log('quantize', quantizeTicks);
-
-        if(quantizeTicks === undefined){
-            if(sequencer.debug){
-                console.warn('invalid quantize value');
-            }
-            return;
-        }
-
-        for(i = events.length - 1; i >= 0; i--){
-            event = events[i];
-
-            quantizeHistory.events[event.id] = {
-                event: event,
-                ticks: event.ticks
-            };
-
-            if(event.type !== 128){
-                ticks = event.ticks;
-                quantized = round(ticks/quantizeTicks) * quantizeTicks;
-                //console.log(ticks, quantized, '[', ppq, ']');
-                diff = quantized - ticks;
-                event.ticks = quantized;
-                event.state = 'changed';
-                event.part.needsUpdate = true;
-                event.track.needsUpdate = true;
-
-                // add quantize history per track as well
-                track = event.track;
-                if(quantizeHistory.tracks[track.id] === undefined){
-                    quantizeHistory.tracks[track.id] = {
-                        track: track,
-                        quantizedEvents: []
-                    };
-                }
-                quantizeHistory.tracks[track.id].quantizedEvents.push(event);
-
-                // quantize the note off event
-                if(event.midiNote !== undefined){
-                    event.midiNote.noteOff.ticks += diff;
-                    event.midiNote.noteOff.state = 'changed';
-                    event.midiNote.state = 'changed';
-                    quantizeHistory.tracks[track.id].quantizedEvents.push(event.midiNote.noteOff);
-                }
-            }
-        }
-
-        return quantizeHistory;//copyObject(quantizeHistory);
-    }
-
-
-    function fixedLength(events, value, ppq, history){
-        var fixedLengthHistory = history || {};
-
-    }
-
-
-    sequencer.protectedScope.addInitMethod(function(){
-        copyObject = sequencer.protectedScope.copyObject;
-    });
-
-    sequencer.quantize = quantize;
-    sequencer.fixedLength = fixedLength;
-
-}());
-
-
-(function(){
-
-    'use strict';
-
-    var
-        sequencer = window.sequencer,
         context,
         initMidi,
         base64ToBinary,
         ready = false,
-        readyCallbacks = [],
-        emptyOgg = 'T2dnUwACAAAAAAAAAABdxd4XAAAAADaS0jQBHgF2b3JiaXMAAAAAAUSsAAAAAAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAAXcXeFwEAAAAaXK+QDz3/////////////////MgN2b3JiaXMtAAAAWGlwaC5PcmcgbGliVm9yYmlzIEkgMjAxMDExMDEgKFNjaGF1ZmVudWdnZXQpAAAAAAEFdm9yYmlzH0JDVgEAAAEAGGNUKUaZUtJKiRlzlDFGmWKSSomlhBZCSJ1zFFOpOdeca6y5tSCEEBpTUCkFmVKOUmkZY5ApBZlSEEtJJXQSOiedYxBbScHWmGuLQbYchA2aUkwpxJRSikIIGVOMKcWUUkpCByV0DjrmHFOOSihBuJxzq7WWlmOLqXSSSuckZExCSCmFkkoHpVNOQkg1ltZSKR1zUlJqQegghBBCtiCEDYLQkFUAAAEAwEAQGrIKAFAAABCKoRiKAoSGrAIAMgAABKAojuIojiM5kmNJFhAasgoAAAIAEAAAwHAUSZEUybEkS9IsS9NEUVV91TZVVfZ1Xdd1Xdd1IDRkFQAAAQBASKeZpRogwgxkGAgNWQUAIAAAAEYowhADQkNWAQAAAQAAYig5iCa05nxzjoNmOWgqxeZ0cCLV5kluKubmnHPOOSebc8Y455xzinJmMWgmtOaccxKDZiloJrTmnHOexOZBa6q05pxzxjmng3FGGOecc5q05kFqNtbmnHMWtKY5ai7F5pxzIuXmSW0u1eacc84555xzzjnnnHOqF6dzcE4455xzovbmWm5CF+eccz4Zp3tzQjjnnHPOOeecc84555xzgtCQVQAAEAAAQRg2hnGnIEifo4EYRYhpyKQH3aPDJGgMcgqpR6OjkVLqIJRUxkkpnSA0ZBUAAAgAACGEFFJIIYUUUkghhRRSiCGGGGLIKaecggoqqaSiijLKLLPMMssss8wy67CzzjrsMMQQQwyttBJLTbXVWGOtueecaw7SWmmttdZKKaWUUkopCA1ZBQCAAAAQCBlkkEFGIYUUUoghppxyyimooAJCQ1YBAIAAAAIAAAA8yXNER3RER3RER3RER3REx3M8R5RESZRESbRMy9RMTxVV1ZVdW9Zl3fZtYRd23fd13/d149eFYVmWZVmWZVmWZVmWZVmWZVmC0JBVAAAIAACAEEIIIYUUUkghpRhjzDHnoJNQQiA0ZBUAAAgAIAAAAMBRHMVxJEdyJMmSLEmTNEuzPM3TPE30RFEUTdNURVd0Rd20RdmUTdd0Tdl0VVm1XVm2bdnWbV+Wbd/3fd/3fd/3fd/3fd/3dR0IDVkFAEgAAOhIjqRIiqRIjuM4kiQBoSGrAAAZAAABACiKoziO40iSJEmWpEme5VmiZmqmZ3qqqAKhIasAAEAAAAEAAAAAACia4imm4imi4jmiI0qiZVqipmquKJuy67qu67qu67qu67qu67qu67qu67qu67qu67qu67qu67qu67ouEBqyCgCQAADQkRzJkRxJkRRJkRzJAUJDVgEAMgAAAgBwDMeQFMmxLEvTPM3TPE30RE/0TE8VXdEFQkNWAQCAAAACAAAAAAAwJMNSLEdzNEmUVEu1VE21VEsVVU9VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU1TdM0TSA0ZCUAAAQAwGKNweUgISUl5d4QwhCTnjEmIbVeIQSRkt4xBhWDnjKiDHLeQuMQgx4IDVkRAEQBAADGIMcQc8g5R6mTEjnnqHSUGuccpY5SZynFmGLNKJXYUqyNc45SR62jlGIsLXaUUo2pxgIAAAIcAAACLIRCQ1YEAFEAAIQxSCmkFGKMOaecQ4wp55hzhjHmHHOOOeegdFIq55x0TkrEGHOOOaecc1I6J5VzTkonoQAAgAAHAIAAC6HQkBUBQJwAgEGSPE/yNFGUNE8URVN0XVE0XdfyPNX0TFNVPdFUVVNVbdlUVVmWPM80PdNUVc80VdVUVVk2VVWWRVXVbdN1ddt0Vd2Wbdv3XVsWdlFVbd1UXds3Vdf2Xdn2fVnWdWPyPFX1TNN1PdN0ZdV1bVt1XV33TFOWTdeVZdN1bduVZV13Zdn3NdN0XdNVZdl0Xdl2ZVe3XVn2fdN1hd+VZV9XZVkYdl33hVvXleV0Xd1XZVc3Vln2fVvXheHWdWGZPE9VPdN0Xc80XVd1XV9XXdfWNdOUZdN1bdlUXVl2Zdn3XVfWdc80Zdl0Xds2XVeWXVn2fVeWdd10XV9XZVn4VVf2dVnXleHWbeE3Xdf3VVn2hVeWdeHWdWG5dV0YPlX1fVN2heF0Zd/Xhd9Zbl04ltF1fWGVbeFYZVk5fuFYlt33lWV0XV9YbdkYVlkWhl/4neX2feN4dV0Zbt3nzLrvDMfvpPvK09VtY5l93VlmX3eO4Rg6v/Djqaqvm64rDKcsC7/t68az+76yjK7r+6osC78q28Kx677z/L6wLKPs+sJqy8Kw2rYx3L5uLL9wHMtr68ox675RtnV8X3gKw/N0dV15Zl3H9nV040c4fsoAAIABBwCAABPKQKEhKwKAOAEAjySJomRZoihZliiKpui6omi6rqRppqlpnmlammeapmmqsimarixpmmlanmaamqeZpmiarmuapqyKpinLpmrKsmmasuy6sm27rmzbomnKsmmasmyapiy7sqvbruzquqRZpql5nmlqnmeapmrKsmmarqt5nmp6nmiqniiqqmqqqq2qqixbnmeamuippieKqmqqpq2aqirLpqrasmmqtmyqqm27quz6sm3rummqsm2qpi2bqmrbruzqsizbui9pmmlqnmeamueZpmmasmyaqitbnqeaniiqquaJpmqqqiybpqrKlueZqieKquqJnmuaqirLpmraqmmatmyqqi2bpirLrm37vuvKsm6qqmybqmrrpmrKsmzLvu/Kqu6KpinLpqrasmmqsi3bsu/Lsqz7omnKsmmqsm2qqi7Lsm0bs2z7umiasm2qpi2bqirbsi37uizbuu/Krm+rqqzrsi37uu76rnDrujC8smz7qqz6uivbum/rMtv2fUTTlGVTNW3bVFVZdmXZ9mXb9n3RNG1bVVVbNk3VtmVZ9n1Ztm1hNE3ZNlVV1k3VtG1Zlm1htmXhdmXZt2Vb9nXXlXVf133j12Xd5rqy7cuyrfuqq/q27vvCcOuu8AoAABhwAAAIMKEMFBqyEgCIAgAAjGGMMQiNUs45B6FRyjnnIGTOQQghlcw5CCGUkjkHoZSUMucglJJSCKGUlFoLIZSUUmsFAAAUOAAABNigKbE4QKEhKwGAVAAAg+NYlueZomrasmNJnieKqqmqtu1IlueJommqqm1bnieKpqmqruvrmueJommqquvqumiapqmqruu6ui6aoqmqquu6sq6bpqqqriu7suzrpqqqquvKriz7wqq6rivLsm3rwrCqruvKsmzbtm/cuq7rvu/7wpGt67ou/MIxDEcBAOAJDgBABTasjnBSNBZYaMhKACADAIAwBiGDEEIGIYSQUkohpZQSAAAw4AAAEGBCGSg0ZEUAECcAABhDKaSUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJIKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKqaSUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKZVSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUgoAkIpwAJB6MKEMFBqyEgBIBQAAjFFKKcacgxAx5hhj0EkoKWLMOcYclJJS5RyEEFJpLbfKOQghpNRSbZlzUlqLMeYYM+ekpBRbzTmHUlKLseaaa+6ktFZrrjXnWlqrNdecc825tBZrrjnXnHPLMdecc8455xhzzjnnnHPOBQDgNDgAgB7YsDrCSdFYYKEhKwGAVAAAAhmlGHPOOegQUow55xyEECKFGHPOOQghVIw55xx0EEKoGHPMOQghhJA55xyEEEIIIXMOOugghBBCBx2EEEIIoZTOQQghhBBKKCGEEEIIIYQQOgghhBBCCCGEEEIIIYRSSgghhBBCCaGUUAAAYIEDAECADasjnBSNBRYashIAAAIAgByWoFLOhEGOQY8NQcpRMw1CTDnRmWJOajMVU5A5EJ10EhlqQdleMgsAAIAgACDABBAYICj4QgiIMQAAQYjMEAmFVbDAoAwaHOYBwANEhEQAkJigSLu4gC4DXNDFXQdCCEIQglgcQAEJODjhhife8IQbnKBTVOogAAAAAAAMAOABAOCgACIimquwuMDI0Njg6PAIAAAAAAAWAPgAADg+gIiI5iosLjAyNDY4OjwCAAAAAAAAAACAgIAAAAAAAEAAAACAgE9nZ1MABAEAAAAAAAAAXcXeFwIAAABq2npxAgEBAAo=',
-        emptyMp3 = '//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuOTkuNVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=';
+        readyCallbacks = [];
 
 
     sequencer.protectedScope.callInitMethods(); // defined in open_module.js
@@ -23595,50 +21691,6 @@ if (typeof module !== "undefined" && module !== null) {
 
     //console.log(initMidi);
 
-
-    function testType(base64, type, callback){
-        try{
-            context.decodeAudioData(base64ToBinary(base64), function(){
-                window.sequencer[type] = true;
-                callback();
-            }, function(){
-                callback();
-            });
-        }catch(e){
-            //console.log(e);
-            callback();
-        }
-    }
-
-    sequencer.addTask({
-        type: 'test mp3',
-        method: function(cb){
-            testType(emptyMp3, 'mp3', cb);
-        },
-        params: []
-    });
-
-    sequencer.addTask({
-        type: 'test ogg',
-        method: function(cb){
-            testType(emptyOgg, 'ogg', cb);
-        },
-        params: []
-    });
-/*
-    , function(){
-        console.log('another callback');
-    }, true);
-*/
-/*
-    sequencer.addTask({
-        type: 'delay',
-        method: function(cb){
-            setTimeout(cb, 3000);
-        },
-        params: []
-    });
-*/
     sequencer.addTask({
         type: 'init midi',
         method: initMidi,
@@ -23647,19 +21699,14 @@ if (typeof module !== "undefined" && module !== null) {
         readyCallbacks.forEach(function(cb){
             cb();
         });
-        if(sequencer.debug >= 4){
-            var msg = 'sequencer ready, support for:';
-            if(sequencer.ogg === true){
-                msg +=  ' ogg';
-            }
-            if(sequencer.mp3 === true){
-                msg +=  ' mp3';
-            }
-            console.log(msg);
-        }
+        // console.log('sequencer ready');
+        console.log('heartbeat v0.0.4');
         ready = true;
     }, false); // @TODO: check this true | false
 
     //sequencer.startTaskQueue();
 
 }());
+
+// hail hail esnext!
+export default sequencer;

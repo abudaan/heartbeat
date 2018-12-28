@@ -1,6 +1,5 @@
 #!/bin/bash
 files="../src/license.js
-    ../src/chris-wilson/WebMIDIAPIShim.js
     ../src/w3c-polyfill/saveAs.js
     ../src/heartbeat/open_module.js
     ../src/heartbeat/asset_manager.js
@@ -47,5 +46,5 @@ files="../src/license.js
 
 
 cat $files > ../build/heartbeat.js
-uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
+# uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
 #echo $files

@@ -3,8 +3,6 @@
     'use strict';
 
     var
-        console = window.console,
-        sequencer = window.sequencer,
         slice = Array.prototype.slice,
 
 

@@ -3,9 +3,6 @@
     'use strict';
 
     var
-         // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
         ajax, // defined in utils.js
         parseUrl, // defined in utils.js
         findItem, // defined in utils.js
