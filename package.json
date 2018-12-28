@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "parcel": "^1.11.0"
+  },
+  "scripts": {
+    "clean": "rm -rf .cache && rm -rf dist",
+    "start": "parcel test.html",
+    "help": "parcel help"
+  }
+}
