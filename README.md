@@ -12,10 +12,10 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 #### example
 
 Install heartbeat:
-`yarn add heartbeat`
+`yarn add @abumarkub/heartbeat`
 
 or:
-`npm install --save heartbeat`
+`npm install --save @abumarkub/heartbeat`
 
 
 ```javascript
