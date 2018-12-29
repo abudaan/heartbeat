@@ -1,5 +1,5 @@
 {
-  "name": "heartbeat",
+  "name": "heartbeatjs",
   "version": "0.0.4",
   "description": "javascript sequencer",
   "main": "./build/init.js",
