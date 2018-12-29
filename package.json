@@ -1,6 +1,6 @@
 {
   "name": "heartbeat-sequencer",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "javascript sequencer",
   "main": "./build/init.js",
   "directories": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abudaan/heartbeat.git"
+    "url": "git+https://github.com/abudaan/heartbeat.git#npm"
   },
   "keywords": [
     "MIDI",
@@ -25,5 +25,5 @@
   "bugs": {
     "url": "https://github.com/abudaan/heartbeat/issues"
   },
-  "homepage": "https://github.com/abudaan/heartbeat#readme"
+  "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md"
 }
