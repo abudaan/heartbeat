@@ -45,6 +45,7 @@ files="../src/license.js
     ../src/heartbeat/close_module.js"
 
 
-cat $files > ../build/heartbeat.js
+cat $files > ../build/init.js
+# cat $files > ../build/heartbeat.js
 # uglifyjs ../build/heartbeat.js -c > ../build/heartbeat.min.js
 #echo $files

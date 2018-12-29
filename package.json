@@ -1,10 +1,29 @@
 {
-  "dependencies": {
-    "parcel": "^1.11.0"
+  "name": "heartbeat",
+  "version": "0.0.4",
+  "description": "javascript sequencer",
+  "main": "./build/init.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "test"
   },
   "scripts": {
-    "clean": "rm -rf .cache && rm -rf dist",
-    "start": "parcel test.html",
-    "help": "parcel help"
-  }
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abudaan/heartbeat.git"
+  },
+  "keywords": [
+    "MIDI",
+    "sequencer",
+    "audio"
+  ],
+  "author": "abudaan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abudaan/heartbeat/issues"
+  },
+  "homepage": "https://github.com/abudaan/heartbeat#readme"
 }
