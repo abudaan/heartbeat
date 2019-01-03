@@ -55,29 +55,16 @@ function closeModule(cb) {
         method: initMidi,
         params: []
     }, function () {
-        console.timeEnd(label);
         sequencer.initialized = true;  
+        console.timeEnd(label);
     }, false); // @TODO: check this true | false
 
     // sequencer.startTaskQueue();
 }
 
-var version = '0.0.7'
 var label = 'heartbeat ' + version + ', initializing took';
-var sequencer = {
-    version: version,
-    initialized: false,
-    ready: function(cb) {
-        console.info('this method has been deprecated; you can directly access the sequencer object');
-        cb();
-    }
-};
 
-function initSequencer (cb) {
-    if (sequencer.initialized === true) {
-        cb(sequencer);
-        return;
-    }
+function initSequencer () {
     console.time(label);
     openModule();
     assetManager();

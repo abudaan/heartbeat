@@ -1,6 +1,6 @@
 {
   "name": "heartbeat-sequencer",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "javascript sequencer",
   "main": "./build/init.js",
   "directories": {
