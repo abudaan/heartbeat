@@ -1,10 +1,4 @@
-var sequencer = {
-    ready: function(cb){
-        cb();
-    }
-};
-
-(function(){
+function openModule() {
 
     'use strict';
 
@@ -25,56 +19,56 @@ var sequencer = {
         browser,
         legacy = false;
 
-    if(ua.match(/(iPad|iPhone|iPod)/g)){
+    if (ua.match(/(iPad|iPhone|iPod)/g)) {
         os = 'ios';
         // webaudioUnlocked = false;
-    }else if(ua.indexOf('Android') !== -1){
+    } else if (ua.indexOf('Android') !== -1) {
         os = 'android';
-    }else if(ua.indexOf('Linux') !== -1){
+    } else if (ua.indexOf('Linux') !== -1) {
         os = 'linux';
-    }else if(ua.indexOf('Macintosh') !== -1){
+    } else if (ua.indexOf('Macintosh') !== -1) {
         os = 'osx';
-    }else if(ua.indexOf('Windows') !== -1){
+    } else if (ua.indexOf('Windows') !== -1) {
         os = 'windows';
     }
 
-    if(ua.indexOf('Chrome') !== -1){
+    if (ua.indexOf('Chrome') !== -1) {
         // chrome, chromium and canary
         browser = 'chrome';
 
-        if(ua.indexOf('OPR') !== -1){
+        if (ua.indexOf('OPR') !== -1) {
             browser = 'opera';
-        }else if(ua.indexOf('Chromium') !== -1){
+        } else if (ua.indexOf('Chromium') !== -1) {
             browser = 'chromium';
         }
-    }else if(ua.indexOf('Safari') !== -1){
+    } else if (ua.indexOf('Safari') !== -1) {
         browser = 'safari';
-    }else if(ua.indexOf('Firefox') !== -1){
+    } else if (ua.indexOf('Firefox') !== -1) {
         browser = 'firefox';
-    }else if(ua.indexOf('Trident') !== -1){
+    } else if (ua.indexOf('Trident') !== -1) {
         browser = 'Internet Explorer';
     }
 
-    if(os === 'ios'){
-        if(ua.indexOf('CriOS') !== -1){
+    if (os === 'ios') {
+        if (ua.indexOf('CriOS') !== -1) {
             browser = 'chrome';
         }
     }
 
-    //console.log(os, browser, '---', ua);
-
-    if(window.AudioContext){
+    // console.log(os, browser, '---', ua);
+    
+    if (window.AudioContext) {
         context = new window.AudioContext();
-        if(context.createGainNode === undefined){
+        if (context.createGainNode === undefined) {
             context.createGainNode = context.createGain;
         }
-    }else if(window.webkitAudioContext){
+    } else if (window.webkitAudioContext) {
         context = new window.webkitAudioContext();
-    }else{
+    } else {
         //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-        alert('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
-        return;
+        throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
     }
+    
 
     compressor = context.createDynamicsCompressor();
     compressor.connect(context.destination);
@@ -98,17 +92,17 @@ var sequencer = {
         scheduledTasks: {},
         repetitiveTasks: {},
 
-        getSampleId: function(){
+        getSampleId: function () {
             return 'S' + sampleIndex++ + new Date().getTime();
         },
 
-        addInitMethod: function(method){
+        addInitMethod: function (method) {
             initMethods.push(method);
         },
 
-        callInitMethods: function(){
+        callInitMethods: function () {
             var i, maxi = initMethods.length;
-            for(i = 0; i < maxi; i++){
+            for (i = 0; i < maxi; i++) {
                 initMethods[i]();
             }
         }
@@ -138,7 +132,7 @@ var sequencer = {
         debug: 0, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
         defaultInstrument: 'sinewave',
         pitch: 440,
-        bufferTime: 350/1000, //seconds
+        bufferTime: 350 / 1000, //seconds
         autoAdjustBufferTime: false,
         noteNameMode: 'sharp',
         minimalSongLength: 60000, //millis
@@ -170,42 +164,42 @@ var sequencer = {
             }
         },
 
-        getAudioContext: function(){
+        getAudioContext: function () {
             return context;
         },
 
-        getTime: function(){
+        getTime: function () {
             return context.currentTime;
         },
 
-        setMasterVolume: function(value){
+        setMasterVolume: function (value) {
             value = value < 0 ? 0 : value > 1 ? 1 : value;
             gainNode.gain.value = value;
         },
 
-        getMasterVolume: function(){
+        getMasterVolume: function () {
             return gainNode.gain.value;
         },
 
-        getCompressionReduction: function(){
+        getCompressionReduction: function () {
             //console.log(compressor);
             return compressor.reduction.value;
         },
 
-        enableMasterCompressor: function(flag){
-            if(flag){
+        enableMasterCompressor: function (flag) {
+            if (flag) {
                 gainNode.disconnect(0);
                 gainNode.connect(compressor);
                 compressor.disconnect(0);
                 compressor.connect(context.destination);
-            }else{
+            } else {
                 compressor.disconnect(0);
                 gainNode.disconnect(0);
                 gainNode.connect(context.destination);
             }
         },
 
-        configureMasterCompressor: function(cfg){
+        configureMasterCompressor: function (cfg) {
             /*
                 readonly attribute AudioParam threshold; // in Decibels
                 readonly attribute AudioParam knee; // in Decibels
@@ -215,29 +209,29 @@ var sequencer = {
                 readonly attribute AudioParam release; // in Seconds
             */
             var i, param;
-            for(i = compressorParams.length; i >= 0; i--){
+            for (i = compressorParams.length; i >= 0; i--) {
                 param = compressorParams[i];
-                if(cfg[param] !== undefined){
+                if (cfg[param] !== undefined) {
                     compressor[param].value = cfg[param];
                 }
             }
         },
 
-        unlockWebAudio: function(){
+        unlockWebAudio: function () {
             // console.log('unlock webaudio');
-            if(webaudioUnlocked === true){
+            if (webaudioUnlocked === true) {
                 // console.log('already unlocked');
                 return;
             }
-            if(typeof context.resume === 'function'){
-              context.resume();
+            if (typeof context.resume === 'function') {
+                context.resume();
             }
             var src = context.createOscillator(),
                 gainNode = context.createGainNode();
             gainNode.gain.value = 0;
             src.connect(gainNode);
             gainNode.connect(context.destination);
-            if(src.noteOn !== undefined){
+            if (src.noteOn !== undefined) {
                 src.start = src.noteOn;
                 src.stop = src.noteOff;
             }
@@ -250,9 +244,9 @@ var sequencer = {
     };
 
     // debug levels
-    Object.defineProperty(sequencer, 'ERROR', {value: 1});
-    Object.defineProperty(sequencer, 'WARN', {value: 2});
-    Object.defineProperty(sequencer, 'INFO', {value: 3});
-    Object.defineProperty(sequencer, 'LOG', {value: 4});
+    Object.defineProperty(sequencer, 'ERROR', { value: 1 });
+    Object.defineProperty(sequencer, 'WARN', { value: 2 });
+    Object.defineProperty(sequencer, 'INFO', { value: 3 });
+    Object.defineProperty(sequencer, 'LOG', { value: 4 });
 
-}());
+}

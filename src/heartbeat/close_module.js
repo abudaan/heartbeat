@@ -1,14 +1,11 @@
-(function(){
+function closeModule(cb) {
 
     'use strict';
 
     var
         context,
         initMidi,
-        base64ToBinary,
-        ready = false,
-        readyCallbacks = [];
-
+        base64ToBinary;
 
     sequencer.protectedScope.callInitMethods(); // defined in open_module.js
     context = sequencer.protectedScope.context; // defined in open_module.js
@@ -16,22 +13,12 @@
     base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
     delete sequencer.protectedScope; //seal
 
-
-    sequencer.ready = function(cb){
-        if(ready === true){
-            cb();
-        }else{
-            readyCallbacks.push(cb);
-        }
-    };
-
-
     sequencer.addInstrument({
         name: 'sinewave',
         folder: 'heartbeat',
         autopan: false,
         attack: 200,
-        keyrange: [21,108],
+        keyrange: [21, 108],
         release_duration: 50
     });
 
@@ -41,10 +28,10 @@
         folder: 'heartbeat',
         //release_duration: 250,
         sample_path: 'heartbeat/metronome',
-        keyrange: [60,61],
+        keyrange: [60, 61],
         mapping: {
-            '60': {n: 'lowtick'},
-            '61': {n: 'hightick'}
+            '60': { n: 'lowtick' },
+            '61': { n: 'hightick' }
         }
     });
 
@@ -61,24 +48,85 @@
         }
     });
 
-    //console.log(initMidi);
+    // console.log(initMidi);
 
     sequencer.addTask({
         type: 'init midi',
         method: initMidi,
         params: []
-    }, function(){
-        readyCallbacks.forEach(function(cb){
-            cb();
-        });
-        // console.log('sequencer ready');
-        console.log('heartbeat v0.0.4');
-        ready = true;
+    }, function () {
+        console.timeEnd(label);
+        sequencer.initialized = true;  
     }, false); // @TODO: check this true | false
 
-    //sequencer.startTaskQueue();
+    // sequencer.startTaskQueue();
+}
 
-}());
+var version = '0.0.5'
+var label = 'heartbeat ' + version + ', initializing took';
+var sequencer = {
+    version: version,
+    initialized: false,
+    ready: function(cb) {
+        console.info('this method has been deprecated; you can directly access the sequencer object');
+        cb();
+    }
+};
+
+function initSequencer (cb) {
+    if (sequencer.initialized === true) {
+        cb(sequencer);
+        return;
+    }
+    console.time(label);
+    openModule();
+    assetManager();
+    assetPack();
+    // audioEncoder();
+    audioEvent();
+    audioRecorder();
+    // audioRecordingWorker();
+    audioTrack();
+    channelEffects();
+    eventStatistics();
+    findEvent();
+    instrument();
+    instrumentConfig();
+    keyEditor();
+    keyEditorIteratorFactory();
+    metronome();
+    midiEvent();
+    midiEventNames();
+    midiFile();
+    midiNote();
+    midiParse();
+    midiStream();
+    midiSystem();
+    midiWrite();
+    // musicXMLParser();
+    note();
+    parseEvents();
+    parseTimeEvents();
+    part();
+    playhead();
+    position();
+    quantizeFixedLength();
+    sample();
+    samplePack();
+    scheduler();
+    createSequencer();
+    song();
+    songEventListener();
+    songFollowEvent();
+    songGrid();
+    songUpdate();
+    track();
+    transpose();
+    util();
+    closeModule();
+}
+
+initSequencer();
 
 // hail hail esnext!
 export default sequencer;

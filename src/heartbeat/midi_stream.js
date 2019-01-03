@@ -5,12 +5,12 @@
 	adapted to work with ArrayBuffer -> Uint8Array
 */
 
-(function(){
+function midiStream() {
 
 	'use strict';
 
-	var	fcc = String.fromCharCode;
-	
+	var fcc = String.fromCharCode;
+
 	// buffer is Uint8Array
 	function createStream(buffer) {
 		var position = 0;
@@ -20,27 +20,27 @@
 			var result, i;
 			toString = toString === undefined ? true : toString;
 
-			if(toString){
+			if (toString) {
 				result = '';
-				for(i = 0; i < length; i++, position++){
+				for (i = 0; i < length; i++ , position++) {
 					result += fcc(buffer[position]);
-				}			
+				}
 				return result;
-			}else{
+			} else {
 				result = [];
-				for(i = 0; i < length; i++, position++){
+				for (i = 0; i < length; i++ , position++) {
 					result.push(buffer[position]);
-				}						
+				}
 				return result;
 			}
 		}
-		
+
 		/* read a big-endian 32-bit integer */
 		function readInt32() {
 			var result = (
 				(buffer[position] << 24) +
 				(buffer[position + 1] << 16) +
-				(buffer[position + 2] << 8) + 
+				(buffer[position + 2] << 8) +
 				buffer[position + 3]
 			);
 			position += 4;
@@ -50,13 +50,13 @@
 		/* read a big-endian 16-bit integer */
 		function readInt16() {
 			var result = (
-				(buffer[position] << 8) + 
+				(buffer[position] << 8) +
 				buffer[position + 1]
 			);
 			position += 2;
 			return result;
 		}
-		
+
 		/* read an 8-bit integer */
 		function readInt8(signed) {
 			var result = buffer[position];
@@ -64,11 +64,11 @@
 			position += 1;
 			return result;
 		}
-		
+
 		function eof() {
 			return position >= buffer.length;
 		}
-		
+
 		/* read a MIDI-style variable-length integer
 			(big-endian value in groups of 7 bits,
 			with top bit set to signify that another byte follows)
@@ -86,7 +86,7 @@
 				}
 			}
 		}
-		
+
 		return {
 			'eof': eof,
 			'read': read,
@@ -98,6 +98,6 @@
 	}
 
 	sequencer.protectedScope.createStream = createStream;
-	
-}());
+
+}
 

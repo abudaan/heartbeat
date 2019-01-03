@@ -1,4 +1,4 @@
-(function(){
+function instrumentConfig() {
 
     'use strict';
 
@@ -15,44 +15,44 @@
         InstrumentConfig;
 
 
-    InstrumentConfig = function(config){
+    InstrumentConfig = function (config) {
         this.id = 'IC' + index++ + new Date().getTime();
         this.className = 'InstrumentConfig';
         var instrument = this;
-        objectForEach(config, function(val, key){
+        objectForEach(config, function (val, key) {
             instrument[key] = val;
         });
         //console.log(instrument);
     };
 
 
-    function cleanup(instrument, callback){
+    function cleanup(instrument, callback) {
         instrument = undefined;
-        if(callback){
+        if (callback) {
             callback(false);
         }
     }
 
 
-    function store(instrument){
+    function store(instrument) {
         var occupied = findItem(instrument.localPath, sequencer.storage.instruments, true),
             action = instrument.action;
 
         //console.log(instrument.localPath, occupied);
-        if(occupied && occupied.className === 'InstrumentConfig' && action !== 'overwrite'){
-            if(sequencer.debug >= 2){
+        if (occupied && occupied.className === 'InstrumentConfig' && action !== 'overwrite') {
+            if (sequencer.debug >= 2) {
                 console.warn('there is already an Instrument at', instrument.localPath);
                 cleanup(instrument);
             }
-        }else{
+        } else {
             storeItem(instrument, instrument.localPath, sequencer.storage.instruments);
         }
     }
 
 
-    function load(instrument, callback){
+    function load(instrument, callback) {
 
-        if(instrument.url === undefined){
+        if (instrument.url === undefined) {
             instrument.localPath = instrument.folder !== undefined ? instrument.folder + '/' + instrument.name : instrument.name;
             callback();
             return;
@@ -62,32 +62,32 @@
         ajax({
             url: instrument.url,
             responseType: 'json',
-            onError: function(){
+            onError: function () {
                 cleanup(instrument, callback);
             },
-            onSuccess: function(data){
+            onSuccess: function (data) {
                 // if the json data is corrupt (for instance because of a trailing comma) data will be null
-                if(data === null){
+                if (data === null) {
                     callback(false);
                     return;
                 }
 
                 //console.log(data);
-                if(data.name !== undefined && instrument.name === undefined){
+                if (data.name !== undefined && instrument.name === undefined) {
                     instrument.name = data.name;
                 }
 
-                if(data.folder !== undefined && instrument.folder === undefined){
+                if (data.folder !== undefined && instrument.folder === undefined) {
                     instrument.folder = data.folder;
                 }
 
-                if(instrument.name === undefined){
+                if (instrument.name === undefined) {
                     instrument.name = parseUrl(instrument.url).name;
                 }
 
                 instrument.localPath = instrument.folder !== undefined ? instrument.folder + '/' + instrument.name : instrument.name;
-                objectForEach(data, function(val, key){
-                    if(key !== 'name' && key !== 'folder'){
+                objectForEach(data, function (val, key) {
+                    if (key !== 'name' && key !== 'folder') {
                         instrument[key] = val;
                     }
                 });
@@ -97,13 +97,13 @@
     }
 
 
-    sequencer.addInstrument = function(config, callback, callbackAfterAllTasksAreDone){
+    sequencer.addInstrument = function (config, callback, callbackAfterAllTasksAreDone) {
         var type = typeString(config),
             instrument, json, name, folder;
 
 
-        if(type !== 'object'){
-            if(sequencer.debug >= 2){
+        if (type !== 'object') {
+            if (sequencer.debug >= 2) {
                 console.warn('can\'t add an Instrument with this data', config);
             }
             return false;
@@ -111,22 +111,22 @@
 
         //console.log(config);
 
-        if(config.json){
+        if (config.json) {
             json = config.json;
             name = config.name;
             folder = config.folder;
-            if(typeString(json) === 'string'){
-                try{
+            if (typeString(json) === 'string') {
+                try {
                     json = JSON.parse(json);
-                }catch(e){
-                    if(sequencer.debug >= 2){
+                } catch (e) {
+                    if (sequencer.debug >= 2) {
                         console.warn('can\'t add an Instrument with this data', config);
                     }
                     return false;
                 }
             }
-            if(json.mapping === undefined){
-                if(sequencer.debug >= 2){
+            if (json.mapping === undefined) {
+                if (sequencer.debug >= 2) {
                     console.warn('can\'t add an Instrument with this data', config);
                 }
                 return false;
@@ -146,10 +146,10 @@
             type: 'load instrument config',
             method: load,
             params: instrument
-        }, function(value){
+        }, function (value) {
             //console.log(instrument, callback);
             store(instrument);
-            if(callback){
+            if (callback) {
                 //console.log('callback', callback.name)
                 callback(instrument);
             }
@@ -169,7 +169,7 @@
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         ajax = sequencer.protectedScope.ajax;
         findItem = sequencer.protectedScope.findItem;
         parseUrl = sequencer.protectedScope.parseUrl;
@@ -178,4 +178,4 @@
         objectForEach = sequencer.protectedScope.objectForEach;
     });
 
-}());
+}

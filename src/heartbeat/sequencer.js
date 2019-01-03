@@ -1,4 +1,4 @@
-(function(){
+function createSequencer() {
 
     'use strict';
 
@@ -31,28 +31,28 @@
         snapshots = {};
 
 
-    function addSong(song){
+    function addSong(song) {
         activeSongs[song.id] = song;
     }
 
 
-    sequencer.getSongs = function(){
+    sequencer.getSongs = function () {
         return activeSongs;
     };
 
 
-    function removeProperties(obj){
+    function removeProperties(obj) {
         var i;
-        for(i in obj){
-            if(obj.hasOwnProperty(i)){
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
                 //console.log(i);
                 obj[i] = null;
             }
         }
     }
 
-    sequencer.deleteSong = function(song){
-        if(song === undefined || song === null || song.className !== 'Song'){
+    sequencer.deleteSong = function (song) {
+        if (song === undefined || song === null || song.className !== 'Song') {
             return;
         }
 
@@ -69,30 +69,30 @@
             k, note, event;
 
         //console.log(allEvents.length, song.events.length, metronome.events.length);
-///*
-        for(i = song.eventsMidiAudioMetronome.length - 1; i >= 0; i--){
+        ///*
+        for (i = song.eventsMidiAudioMetronome.length - 1; i >= 0; i--) {
             event = song.eventsMidiAudioMetronome[i];
             removeProperties(event);
         }
 
-        for(i = song.timeEvents.length - 1; i >= 0; i--){
+        for (i = song.timeEvents.length - 1; i >= 0; i--) {
             event = song.timeEvents[i];
             //removeProperties(event);
         }
-//*/
+        //*/
 
-        for(i = song.numTracks - 1; i >= 0; i--){
+        for (i = song.numTracks - 1; i >= 0; i--) {
 
             track = song.tracks[i];
 
-            if(track.audio !== undefined){
+            if (track.audio !== undefined) {
                 track.audio.recorder.cleanup();
             }
 
-            for(j = track.numParts - 1; j >= 0; j--){
+            for (j = track.numParts - 1; j >= 0; j--) {
                 part = track.parts[j];
 
-                for(k = part.numNotes - 1; k >= 0; k--){
+                for (k = part.numNotes - 1; k >= 0; k--) {
                     note = part.notes[k];
                     removeProperties(note);
                 }
@@ -114,9 +114,9 @@
     };
 
 
-    sequencer.getSnapshot = function(song, id){
+    sequencer.getSnapshot = function (song, id) {
 
-        if(song === undefined){
+        if (song === undefined) {
             console.error('song is undefined');
             return;
         }
@@ -135,32 +135,32 @@
             prevActiveParts,
             e, n, p, i;
 
-        if(snapshot !== undefined){
+        if (snapshot !== undefined) {
             prevActiveEvents = snapshot.activeEvents;
             prevActiveNotes = snapshot.activeNotes;
             prevActiveParts = snapshot.activeParts;
 
-            for(i = prevActiveEvents.length - 1; i >= 0; i--){
+            for (i = prevActiveEvents.length - 1; i >= 0; i--) {
                 e = prevActiveEvents[i];
-                if(activeEvents[e.id] === undefined){
-                    if(song.eventsLib[e.id] !== undefined){
+                if (activeEvents[e.id] === undefined) {
+                    if (song.eventsLib[e.id] !== undefined) {
                         nonActiveEvents.push(e);
                     }
                 }
             }
 
-            for(i = prevActiveNotes.length - 1; i >= 0; i--){
+            for (i = prevActiveNotes.length - 1; i >= 0; i--) {
                 n = prevActiveNotes[i];
-                if(activeNotes[n.id] === undefined){
-                    if(song.notesLib[n.id] !== undefined){
+                if (activeNotes[n.id] === undefined) {
+                    if (song.notesLib[n.id] !== undefined) {
                         nonActiveNotes.push(n);
                     }
                 }
             }
 
-            for(i = prevActiveParts.length - 1; i >= 0; i--){
+            for (i = prevActiveParts.length - 1; i >= 0; i--) {
                 p = prevActiveParts[i];
-                if(activeParts[p.id] === undefined){
+                if (activeParts[p.id] === undefined) {
                     nonActiveParts.push(p);
                 }
             }
@@ -181,7 +181,7 @@
     };
 
 
-    heartbeat = function(timestamp) {
+    heartbeat = function (timestamp) {
         var i, diff, task, now = sequencer.getTime();
 
         // if(isEmptyObject(timedTasks) === false){
@@ -189,10 +189,10 @@
         // }
 
         // for instance: the callback of sample.unschedule;
-        for(i in timedTasks){
-            if(timedTasks.hasOwnProperty(i)){
+        for (i in timedTasks) {
+            if (timedTasks.hasOwnProperty(i)) {
                 task = timedTasks[i];
-                if(task.time >= now){
+                if (task.time >= now) {
                     task.execute();
                     task = null;
                     delete timedTasks[i];
@@ -202,34 +202,34 @@
 
 
         // for instance: song.update();
-        for(i in scheduledTasks){
-            if(scheduledTasks.hasOwnProperty(i)){
+        for (i in scheduledTasks) {
+            if (scheduledTasks.hasOwnProperty(i)) {
                 scheduledTasks[i]();
             }
         }
 
         // for instance: song.pulse();
-        for(i in repetitiveTasks){
-            if(repetitiveTasks.hasOwnProperty(i)){
+        for (i in repetitiveTasks) {
+            if (repetitiveTasks.hasOwnProperty(i)) {
                 repetitiveTasks[i]();
             }
         }
 
         // skip the first 10 frames because they tend to have weird intervals
-        if(r >= 10){
-            diff = (timestamp - lastTimeStamp)/1000;
+        if (r >= 10) {
+            diff = (timestamp - lastTimeStamp) / 1000;
             sequencer.diff = diff;
             // if(r < 40){
             //     console.log(diff);
             //     r++;
             // }
-            if(diff > sequencer.bufferTime && sequencer.autoAdjustBufferTime === true){
-                if(sequencer.debug){
-                    console.log('adjusted buffertime:' + sequencer.bufferTime + ' -> ' +  diff);
+            if (diff > sequencer.bufferTime && sequencer.autoAdjustBufferTime === true) {
+                if (sequencer.debug) {
+                    console.log('adjusted buffertime:' + sequencer.bufferTime + ' -> ' + diff);
                 }
                 sequencer.bufferTime = diff;
             }
-        }else{
+        } else {
             r++;
         }
         lastTimeStamp = timestamp;
@@ -240,7 +240,7 @@
     };
 
 
-    sequencer.processEvent = sequencer.processEvents = function(){
+    sequencer.processEvent = sequencer.processEvents = function () {
         var args = slice.call(arguments),
             loop, arg, i, maxi, time, contextTime, event,
             bpm = 60,
@@ -250,24 +250,24 @@
 
         events = [];
 
-        loop = function(data, i, maxi){
-            for(i = 0; i < maxi; i++){
+        loop = function (data, i, maxi) {
+            for (i = 0; i < maxi; i++) {
                 arg = data[i];
                 type = typeString(arg);
-                if(arg === undefined){
+                if (arg === undefined) {
                     //console.log(i, arg);
                     continue;
-                }else if(type === 'midimessageevent'){
+                } else if (type === 'midimessageevent') {
                     data = arg.data;
                     midiEvent = createMidiEvent(0, data[0], data[1], data[2]);
                     events.push(midiEvent);
-                }else if(arg.className === 'MidiEvent'){
+                } else if (arg.className === 'MidiEvent') {
                     events.push(arg);
-                }else if(type === 'array'){
+                } else if (type === 'array') {
                     loop(arg, 0, arg.length);
-                }else if(type === 'string'){
+                } else if (type === 'string') {
                     instrument = arg;
-                }else if(isNaN(arg) === false){
+                } else if (isNaN(arg) === false) {
                     bpm = arg;
                 }
             }
@@ -279,11 +279,11 @@
         track = sequencer.createTrack();
         track.setInstrument(instrument);
 
-        if(processEventTracks[track.instrumentId] === undefined){
+        if (processEventTracks[track.instrumentId] === undefined) {
             processEventTracks[track.instrumentId] = track;
             track.addPart(part);
             track.connect(context.destination);
-        }else{
+        } else {
             track = processEventTracks[track.instrumentId];
             part = track.parts[0];
         }
@@ -293,10 +293,10 @@
 
         maxi = events.length;
         contextTime = sequencer.getTime();
-        secondsPerTick = 60/bpm/sequencer.defaultPPQ;
-        for(i = 0; i < maxi; i++){
+        secondsPerTick = 60 / bpm / sequencer.defaultPPQ;
+        for (i = 0; i < maxi; i++) {
             event = events[i];
-            event.time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
+            event.time = contextTime + (event.ticks * secondsPerTick) + (2 / 1000);//ms -> sec, add 2 ms prebuffer time
             //time = contextTime + (event.ticks * secondsPerTick) + (2/1000);//ms -> sec, add 2 ms prebuffer time
             //console.log(event.ticks, time, contextTime);
             //track.instrument.processEvent(event, time);
@@ -305,8 +305,8 @@
     };
 
 
-    sequencer.stopProcessEvent = sequencer.stopProcessEvents = function(){
-        objectForEach(processEventTracks, function(track){
+    sequencer.stopProcessEvent = sequencer.stopProcessEvents = function () {
+        objectForEach(processEventTracks, function (track) {
             track.instrument.allNotesOff();
             track = undefined;
         });
@@ -314,7 +314,7 @@
     };
 
 
-    sequencer.play = function(){
+    sequencer.play = function () {
         var args = slice.call(arguments),
             events = [],
             parts = [],
@@ -326,67 +326,67 @@
 
         //console.log('sequencer.play()', args);
 
-        loop = function(data, i, maxi, indentation){
-            for(i = 0; i < maxi; i++){
+        loop = function (data, i, maxi, indentation) {
+            for (i = 0; i < maxi; i++) {
                 arg = data[i];
-                if(arg === undefined){
+                if (arg === undefined) {
                     //console.log(indentation, i, arg);
                     continue;
-                }else if(typeString(arg) === 'string'){
+                } else if (typeString(arg) === 'string') {
                     instrument = arg;
-                }else if(arg.className === 'Song'){
-                    if(bpm === undefined){
+                } else if (arg.className === 'Song') {
+                    if (bpm === undefined) {
                         bpm = arg.bpm;
                         nominator = arg.nominator;
                         denominator = arg.denominator;
                     }
                     songs.push(arg);
-                }else if(arg.className === 'Track'){
-                    if(bpm === undefined){
+                } else if (arg.className === 'Track') {
+                    if (bpm === undefined) {
                         song = arg.song;
-                        if(song !== undefined){
+                        if (song !== undefined) {
                             bpm = song.bpm;
                             nominator = song.nominator;
                             denominator = song.denominator;
                         }
                     }
                     tracks.push(arg);
-                }else if(arg.className === 'Part'){
-                    if(bpm === undefined){
+                } else if (arg.className === 'Part') {
+                    if (bpm === undefined) {
                         song = arg.song;
-                        if(song !== undefined){
+                        if (song !== undefined) {
                             bpm = song.bpm;
                             nominator = song.nominator;
                             denominator = song.denominator;
                         }
                     }
                     parts.push(arg);
-                }else if(arg.className === 'MidiEvent' || arg.className === 'AudioEvent'){
-                    if(bpm === undefined){
+                } else if (arg.className === 'MidiEvent' || arg.className === 'AudioEvent') {
+                    if (bpm === undefined) {
                         part = arg.part;
-                        if(part !== undefined){
+                        if (part !== undefined) {
                             song = part.song;
-                            if(song !== undefined){
+                            if (song !== undefined) {
                                 bpm = song.bpm;
                                 nominator = song.nominator;
                                 denominator = song.denominator;
                             }
                         }
                     }
-                    if(arg.type === 0x51 || arg.type === 0x58){
+                    if (arg.type === 0x51 || arg.type === 0x58) {
                         timeEvents.push(arg);
-                    }else{
+                    } else {
                         events.push(arg);
                     }
-                }else if(typeString(arg) === 'array'){
+                } else if (typeString(arg) === 'array') {
                     //console.log('recursive loop')
                     loop(arg, 0, arg.length, '    ');
-                }else if(arg === true || arg === false){
+                } else if (arg === true || arg === false) {
                     store = arg;
-                }else if(arg.indexOf('S') === 0){
+                } else if (arg.indexOf('S') === 0) {
                     // play song by id, not sure if this is useful
                     song = activeSongs[arg];
-                    if(song){
+                    if (song) {
                         song.play();
                     }
                 }
@@ -395,7 +395,7 @@
 
         loop(args, 0, args.length, '  ');
 
-        for(i = songs.length - 1; i >= 0; i--){
+        for (i = songs.length - 1; i >= 0; i--) {
             song = songs[i];
             //console.log(song.numEvents);
             tracks = tracks.concat(song.tracks);
@@ -404,14 +404,14 @@
             timeEvents = timeEvents.concat(song.timeEvents);
         }
 
-        if(parts.length > 0){
+        if (parts.length > 0) {
             track = sequencer.createTrack();
             track.instrument = instrument;
             track.addParts(parts);
             tracks.push(track);
         }
 
-        if(events.length > 0){
+        if (events.length > 0) {
             track = sequencer.createTrack();
             track.instrument = instrument;
             part = sequencer.createPart();
@@ -437,27 +437,27 @@
     };
 
 
-/*
-    animationFrame = function(cb) {
-        animationFrameRequests.push(cb);
-
-        if (animationFrameTimer !== undefined) {
-            return animationFrameTimer;
-        }
-
-        animationFrameTimer = setTimeout(function() {
-            while (animationFrameRequests.length > 0) {
-                animationFrameRequests.shift()();
+    /*
+        animationFrame = function(cb) {
+            animationFrameRequests.push(cb);
+    
+            if (animationFrameTimer !== undefined) {
+                return animationFrameTimer;
             }
-            animationFrameTimer = undefined;
-        }, animationFrameInterval);
+    
+            animationFrameTimer = setTimeout(function() {
+                while (animationFrameRequests.length > 0) {
+                    animationFrameRequests.shift()();
+                }
+                animationFrameTimer = undefined;
+            }, animationFrameInterval);
+    
+            return animationFrameTimer;
+        };
+    */
 
-        return animationFrameTimer;
-    };
-*/
 
-
-    sequencer.setAnimationFrameType = function(type, interval) {
+    sequencer.setAnimationFrameType = function (type, interval) {
         type = type || 'default';
         type = type.toLowerCase();
         interval = interval || 15;
@@ -469,7 +469,7 @@
                 window.requestAnimationFrame = animationFrame;
                 */
                 // quick and dirty
-                window.requestAnimationFrame = function(cb) {
+                window.requestAnimationFrame = function (cb) {
                     setTimeout(cb, interval);
                 };
                 break;
@@ -483,14 +483,14 @@
 
 
     // used by asset_manager.js if an instrument or a sample pack has been unloaded
-    sequencer.protectedScope.updateInstruments = function(){
+    sequencer.protectedScope.updateInstruments = function () {
         var i, j, tracks, track, song;
 
-        for(i in activeSongs){
-            if(activeSongs.hasOwnProperty(i)){
+        for (i in activeSongs) {
+            if (activeSongs.hasOwnProperty(i)) {
                 song = activeSongs[i];
                 tracks = song.tracks;
-                for(j = tracks.length - 1; j >= 0; j--){
+                for (j = tracks.length - 1; j >= 0; j--) {
                     track = tracks[j];
                     //console.log(track.id);
                     track.instrument.reset();
@@ -500,23 +500,23 @@
     };
 
 
-    sequencer.allNotesOff = function(){
-        objectForEach(activeSongs, function(song){
+    sequencer.allNotesOff = function () {
+        objectForEach(activeSongs, function (song) {
             song.allNotesOff();
         });
     };
 
 
-    window.onblur = function(){
-        if(sequencer.pauseOnBlur === false){
+    window.onblur = function () {
+        if (sequencer.pauseOnBlur === false) {
             return;
         }
         //console.log('blur', sequencer.getTime() * 1000);
         sequencer.allNotesOff();
         pausedSongs = [];
-        objectForEach(activeSongs, function(song){
-            if(song.playing === true){
-                if(sequencer.debug){
+        objectForEach(activeSongs, function (song) {
+            if (song.playing === true) {
+                if (sequencer.debug) {
                     console.log('pause song', song.id);
                 }
                 pausedSongs.push(song);
@@ -527,18 +527,18 @@
     };
 
 
-    window.onfocus = function(){
-        if(sequencer.pauseOnBlur === false){
+    window.onfocus = function () {
+        if (sequencer.pauseOnBlur === false) {
             return;
         }
         //console.log('focus', sequencer.getTime() * 1000);
         var song, millis, i, maxi = pausedSongs.length;
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             song = pausedSongs[i];
             millis = song.millis;
             song.stop();
             song.setPlayhead('millis', millis);
-            if(sequencer.restartOnFocus){
+            if (sequencer.restartOnFocus) {
                 song.play();
             }
         }
@@ -548,7 +548,7 @@
 
     sequencer.protectedScope.addSong = addSong;
 
-    sequencer.protectedScope.addInitMethod(function() {
+    sequencer.protectedScope.addInitMethod(function () {
         objectToArray = sequencer.protectedScope.objectToArray;
         isEmptyObject = sequencer.protectedScope.isEmptyObject;
         isEmptyObject = sequencer.protectedScope.isEmptyObject;
@@ -564,7 +564,7 @@
         heartbeat();
     });
 
-}());
+}
 
 
 

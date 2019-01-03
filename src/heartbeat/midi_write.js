@@ -1,7 +1,7 @@
 //http://www.deluge.co/?q=midi-tempo-bpm
 // This code is based on https://github.com/sergi/jsmidi
 
-(function() {
+function midiWrite() {
 
     'use strict';
 
@@ -15,7 +15,7 @@
             'd'.charCodeAt(0)
         ],
         HDR_CHUNK_SIZE = [0x0, 0x0, 0x0, 0x6], // Header size for SMF
-        HDR_TYPE0 = [0x0, 0x0], // Midi Type 0 id
+        // HDR_TYPE0 = [0x0, 0x0], // Midi Type 0 id
         HDR_TYPE1 = [0x0, 0x1], // Midi Type 1 id
         //HDR_PPQ = [0x01, 0xE0], // Defaults to 480 ticks per beat
         //HDR_PPQ = [0x00, 0x80], // Defaults to 128 ticks per beat
@@ -59,7 +59,7 @@
         byteArray = byteArray.concat(trackToBytes(song.timeEvents, song.durationTicks, 'tempo'));
         //console.log(song.durationMillis);
 
-        for(i = 0, maxi = tracks.length; i < maxi; i++){
+        for (i = 0, maxi = tracks.length; i < maxi; i++) {
             track = tracks[i];
             byteArray = byteArray.concat(trackToBytes(track.events, song.durationTicks, track.name, track.instrumentId));
         }
@@ -71,16 +71,16 @@
         maxi = byteArray.length;
         arrayBuffer = new ArrayBuffer(maxi);
         uintArray = new Uint8Array(arrayBuffer);
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             uintArray[i] = byteArray[i];
         }
-        midiFile = new Blob([uintArray], {type: 'application/x-midi', endings: 'transparent'});
+        midiFile = new Blob([uintArray], { type: 'application/x-midi', endings: 'transparent' });
         saveAs(midiFile, song.name);
         //window.location.assign(window.URL.createObjectURL(midiFile));
     }
 
 
-    function trackToBytes(events, lastEventTicks, trackName, instrumentName){
+    function trackToBytes(events, lastEventTicks, trackName, instrumentName) {
         var lengthBytes,
             i, maxi, event, status,
             trackLength, // number of bytes in track chunk
@@ -88,7 +88,7 @@
             delta = 0,
             trackBytes = [];
 
-        if(trackName){
+        if (trackName) {
             trackBytes.push(0x00);
             trackBytes.push(0xFF);
             trackBytes.push(0x03);
@@ -96,7 +96,7 @@
             trackBytes = trackBytes.concat(stringToNumArray(trackName));
         }
 
-        if(instrumentName){
+        if (instrumentName) {
             trackBytes.push(0x00);
             trackBytes.push(0xFF);
             trackBytes.push(0x04);
@@ -104,37 +104,37 @@
             trackBytes = trackBytes.concat(stringToNumArray(instrumentName));
         }
 
-        for(i = 0, maxi = events.length; i < maxi; i++){
+        for (i = 0, maxi = events.length; i < maxi; i++) {
             event = events[i];
             delta = event.ticks - ticks;
             delta = convertToVLQ(delta);
             //console.log(delta);
             trackBytes = trackBytes.concat(delta);
             //trackBytes.push.apply(trackBytes, delta);
-            if(event.type === 0x80 || event.type === 0x90){ // note off, note on
+            if (event.type === 0x80 || event.type === 0x90) { // note off, note on
                 //status = parseInt(event.type.toString(16) + event.channel.toString(16), 16);
                 status = event.type + event.channel;
                 trackBytes.push(status);
                 trackBytes.push(event.noteNumber);
                 trackBytes.push(event.velocity);
-            }else if(event.type === 0x51){ // tempo
+            } else if (event.type === 0x51) { // tempo
                 trackBytes.push(0xFF);
                 trackBytes.push(0x51);
                 trackBytes.push(0x03);// length
                 //trackBytes = trackBytes.concat(convertToVLQ(3));// length
-                var microSeconds = Math.round(60000000/event.bpm);
+                var microSeconds = Math.round(60000000 / event.bpm);
                 trackBytes = trackBytes.concat(str2Bytes(microSeconds.toString(16), 3));
-            }else if(event.type === 0x58){ // time signature
+            } else if (event.type === 0x58) { // time signature
                 var denom = event.denominator;
-                if(denom === 2){
+                if (denom === 2) {
                     denom = 0x01;
-                }else if(denom === 4){
+                } else if (denom === 4) {
                     denom = 0x02;
-                }else if(denom === 8){
+                } else if (denom === 8) {
                     denom = 0x03;
-                }else if(denom === 16){
+                } else if (denom === 16) {
                     denom = 0x04;
-                }else if(denom === 32){
+                } else if (denom === 32) {
                     denom = 0x05;
                 }
                 trackBytes.push(0xFF);
@@ -143,7 +143,7 @@
                 //trackBytes = trackBytes.concat(convertToVLQ(4));// length
                 trackBytes.push(event.nominator);
                 trackBytes.push(denom);
-                trackBytes.push(PPQ/event.nominator);
+                trackBytes.push(PPQ / event.nominator);
                 trackBytes.push(0x08); // 32nd notes per crotchet
                 //console.log(trackName, event.nominator, event.denominator, denom, PPQ/event.nominator);
             }
@@ -247,7 +247,7 @@
      * @returns array with the charcode values of the string
      */
     function stringToNumArray(str) {
-        return AP.map.call(str, function(char) {
+        return AP.map.call(str, function (char) {
             return char.charCodeAt(0);
         });
     }
@@ -256,4 +256,4 @@
     sequencer.protectedScope.saveToMidiFile = write;
     sequencer.saveSongAsMidiFile = write;
 
-}());
+}

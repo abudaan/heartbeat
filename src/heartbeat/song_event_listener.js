@@ -1,4 +1,4 @@
-(function(){
+function songEventListener() {
 
     'use strict';
 
@@ -14,7 +14,7 @@
         dispatchEvent;
 
 
-    dispatchEvent = function() {
+    dispatchEvent = function () {
         var i, tmp, listener,
             args = slice.call(arguments),
             numArgs = args.length,
@@ -25,9 +25,9 @@
         //console.log(arguments, args);
 
         // if there are arguments specified, put them before the argument song
-        if(numArgs > 2){
+        if (numArgs > 2) {
             i = 2;
-            while(i < numArgs){
+            while (i < numArgs) {
                 params.push(args[i]);
                 i++;
             }
@@ -35,7 +35,7 @@
         params.push(song);
 
         tmp = song.listeners[type];
-        if(tmp === undefined || tmp.length === undefined){
+        if (tmp === undefined || tmp.length === undefined) {
             return;
         }
 
@@ -48,7 +48,7 @@
 
     //@param: type, callback
     //@param: type, data, callback
-    addEventListener = function(){
+    addEventListener = function () {
         var args = slice.call(arguments),
             listenerId,
             type = args[0];
@@ -83,31 +83,31 @@
             case 'position':
                 //console.log(type, args[1], args[2]);
                 return this.followEvent.addEventListener(type, args[1], args[2]);
-           default:
+            default:
                 console.log(type, 'is not a supported event');
         }
     };
 
 
-    removeEventListener = function(){
+    removeEventListener = function () {
         var args = slice.call(arguments),
             tmp,
             arg0 = args[0],
             callback = args[1],
-            type,id,
+            type, id,
             filteredListeners = [],
             i, listener;
 
-        if(arg0.indexOf('_') !== -1){
+        if (arg0.indexOf('_') !== -1) {
             tmp = arg0.split('_');
             type = tmp[0];
             id = arg0;
-        }else{
+        } else {
             type = arg0;
         }
 
         // an array of listener ids is provided so this is not a transport event -> send to FollowEvent
-        if(typeString(type) === 'array'){
+        if (typeString(type) === 'array') {
             return this.followEvent.removeEventListener(args);
         }
 
@@ -129,19 +129,19 @@
             case 'sustain_pedal':
                 tmp = this.listeners[type];
                 if (tmp && tmp.length > 0) {
-                  for(i = tmp.length - 1; i >= 0; i--){
-                      listener = tmp[i];
-                      // remove by id
-                      if(id !== undefined){
-                          if(listener.id !== id){
-                              filteredListeners.push(listener);
-                          }
-                      // remove by callback
-                      }else if(callback !== undefined && listener.callback !== callback){
-                          filteredListeners.push(listener);
-                      }
-                  }
-                  this.listeners[type] = [].concat(filteredListeners);
+                    for (i = tmp.length - 1; i >= 0; i--) {
+                        listener = tmp[i];
+                        // remove by id
+                        if (id !== undefined) {
+                            if (listener.id !== id) {
+                                filteredListeners.push(listener);
+                            }
+                            // remove by callback
+                        } else if (callback !== undefined && listener.callback !== callback) {
+                            filteredListeners.push(listener);
+                        }
+                    }
+                    this.listeners[type] = [].concat(filteredListeners);
                 }
                 break;
             case 'note':
@@ -158,8 +158,8 @@
     sequencer.protectedScope.songRemoveEventListener = removeEventListener;
     sequencer.protectedScope.songDispatchEvent = dispatchEvent;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         typeString = sequencer.protectedScope.typeString;
     });
 
-}());
+}

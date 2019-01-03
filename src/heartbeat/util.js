@@ -1,4 +1,4 @@
-(function(){
+function util() {
 
     'use strict';
 
@@ -28,12 +28,12 @@
         foundFolder;
 
 
-    function typeString(o){
-        if(typeof o != 'object'){
+    function typeString(o) {
+        if (typeof o != 'object') {
             return typeof o;
         }
 
-        if(o === null){
+        if (o === null) {
             return 'null';
         }
 
@@ -44,12 +44,12 @@
     }
 
 
-    function getNiceTime(millis){
-        var h,m,s,ms,
+    function getNiceTime(millis) {
+        var h, m, s, ms,
             seconds,
             timeAsString = '';
 
-        seconds = millis/1000; // → millis to seconds
+        seconds = millis / 1000; // → millis to seconds
         h = floor(seconds / (60 * 60));
         m = floor((seconds % (60 * 60)) / 60);
         s = floor(seconds % (60));
@@ -65,12 +65,12 @@
         //console.log(h, m, s, ms);
 
         return {
-            hour:h,
-            minute:m,
-            second:s,
-            millisecond:ms,
-            timeAsString:timeAsString,
-            timeAsArray:[h,m,s,ms]
+            hour: h,
+            minute: m,
+            second: s,
+            millisecond: ms,
+            timeAsString: timeAsString,
+            timeAsArray: [h, m, s, ms]
         };
     }
 
@@ -90,13 +90,13 @@
     }
 
 
-    function copyObject(obj){
+    function copyObject(obj) {
         var prop, copy = {};
-        if(typeString(obj) !== 'object'){
+        if (typeString(obj) !== 'object') {
             return {};
         }
-        for(prop in obj){
-            if(obj.hasOwnProperty(prop)){
+        for (prop in obj) {
+            if (obj.hasOwnProperty(prop)) {
                 copy[prop] = obj[prop];
             }
         }
@@ -104,25 +104,25 @@
     }
 
 
-    function copyName(name){
+    function copyName(name) {
         var i = name.indexOf('_copy'),
-            copy,numCopies;
+            copy, numCopies;
 
-        if(i === -1){
+        if (i === -1) {
             copy = name + '_copy';
-        }else{
-            numCopies = name.substring(i+5);
-            if(numCopies === ''){
+        } else {
+            numCopies = name.substring(i + 5);
+            if (numCopies === '') {
                 copy = name + '2';
-            }else{
-                copy = name.slice(0,-1) + (parseInt(numCopies,10) + 1);
+            } else {
+                copy = name.slice(0, -1) + (parseInt(numCopies, 10) + 1);
             }
         }
         return copy;
     }
 
 
-    function removeFromArray(tobeRemoved, array){
+    function removeFromArray(tobeRemoved, array) {
         var i, j,
             maxi,
             maxj,
@@ -130,23 +130,23 @@
             remove,
             elementA, elementB;
 
-        if(typeString(tobeRemoved) !== 'array'){
+        if (typeString(tobeRemoved) !== 'array') {
             tobeRemoved = [tobeRemoved];
         }
         maxi = array.length;
         maxj = tobeRemoved.length;
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             elementA = array[i];
             remove = false;
-            for(j = 0; j < maxj; j++){
+            for (j = 0; j < maxj; j++) {
                 elementB = tobeRemoved[j];
-                if(elementA === elementB){
+                if (elementA === elementB) {
                     remove = true;
                     break;
                 }
             }
-            if(remove === false){
+            if (remove === false) {
                 newArray.push(elementA);
             }
         }
@@ -155,14 +155,14 @@
     }
 
 
-    function removeFromArray2(array, callback){
+    function removeFromArray2(array, callback) {
         var i, maxi = array.length,
             element,
             newArray = [];
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             element = array[i];
-            if(callback(element) === false){
+            if (callback(element) === false) {
                 newArray.push(element);
             }
         }
@@ -170,36 +170,36 @@
     }
 
 
-    function round(value, decimals){
-        if(decimals === undefined || decimals <= 0){
+    function round(value, decimals) {
+        if (decimals === undefined || decimals <= 0) {
             return mRound(value);
         }
         var p = mPow(10, decimals);
         //console.log(p, decimals)
-        return mRound(value * p)/p;
+        return mRound(value * p) / p;
     }
 
 
-    function floor(value, decimals){
-        if(decimals === undefined || decimals <= 0){
+    function floor(value, decimals) {
+        if (decimals === undefined || decimals <= 0) {
             return mFloor(value);
         }
-        var p = mPow(10,decimals);
+        var p = mPow(10, decimals);
         //console.log(p,decimals)
-        return mFloor(value * p)/p;
+        return mFloor(value * p) / p;
     }
 
 
     function isEmptyObject(obj, ignore_keys) {
         //console.log('empty',obj)
-        if(obj === undefined){
+        if (obj === undefined) {
             return false;
         }
         var i, isEmpty = true;
         ignore_keys = ignore_keys || '';
-        for(i in obj){
+        for (i in obj) {
             //console.log(i, ignore_keys.indexOf(i));
-            if(obj.hasOwnProperty(i) && ignore_keys.indexOf(i) === -1){
+            if (obj.hasOwnProperty(i) && ignore_keys.indexOf(i) === -1) {
                 isEmpty = false;
                 break;
             }
@@ -221,19 +221,19 @@
     }
 
 
-    function objectToArray(obj){
+    function objectToArray(obj) {
         var i, a = [];
-        for(i in obj) {
-            if(obj.hasOwnProperty(i)) {
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
                 a.push(obj[i]);
             }
         }
         return a;
     }
 
-    function arrayToObject(arr, property){
+    function arrayToObject(arr, property) {
         var i, o = {};
-        for(i = arr.length - 1; i >= 0; i--){
+        for (i = arr.length - 1; i >= 0; i--) {
             o[arr[i][property]] = arr[i];
         }
         return o;
@@ -243,7 +243,7 @@
     function createClass(parent, constructor) {
         var thisClass;
         // class constructor
-        thisClass = function() {
+        thisClass = function () {
             this.parent = parent;
             if (arguments.length > 0) {
                 parent.apply(this, arguments);
@@ -257,56 +257,56 @@
         return thisClass;
     }
 
-    function ajax(config){
+    function ajax(config) {
         var
             request = new XMLHttpRequest(),
             method = config.method === undefined ? 'GET' : config.method,
             fileSize, promise;
 
-        function executor(resolve, reject){
+        function executor(resolve, reject) {
 
-            reject = reject || function(){};
-            resolve = resolve || function(){};
+            reject = reject || function () { };
+            resolve = resolve || function () { };
 
-            request.onload = function(){
-                if(request.status !== 200){
+            request.onload = function () {
+                if (request.status !== 200) {
                     reject(request.status);
                     return;
                 }
 
-                if(config.responseType === 'json'){
+                if (config.responseType === 'json') {
                     fileSize = request.response.length;
                     resolve(JSON.parse(request.response), fileSize);
-                }else{
+                } else {
                     resolve(request.response);
                 }
             };
 
-            request.onerror = function(e){
+            request.onerror = function (e) {
                 config.onError(e);
             };
 
             request.open(method, config.url, true);
 
-            if(config.overrideMimeType){
+            if (config.overrideMimeType) {
                 request.overrideMimeType(config.overrideMimeType);
             }
 
-            if(config.responseType){
-                if(config.responseType === 'json'){
+            if (config.responseType) {
+                if (config.responseType === 'json') {
                     request.responseType = 'text';
-                }else{
+                } else {
                     request.responseType = config.responseType;
                 }
             }
 
-            if(method === 'POST') {
+            if (method === 'POST') {
                 request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
             }
 
-            if(config.data){
+            if (config.data) {
                 request.send(config.data);
-            }else{
+            } else {
                 request.send();
             }
         }
@@ -314,9 +314,9 @@
         promise = new Promise(executor);
         //console.log(promise);
 
-        if(config.onSuccess !== undefined){
+        if (config.onSuccess !== undefined) {
             promise.then(config.onSuccess, config.onError);
-        }else{
+        } else {
             return promise;
         }
     }
@@ -328,15 +328,15 @@
             method = config.method === undefined ? 'GET' : config.method,
             fileSize;
 
-        request.onreadystatechange = function() {
-            if(request.request === 404){
+        request.onreadystatechange = function () {
+            if (request.request === 404) {
                 //console.error(config.url, '404');
                 config.onError(404);
             }
         };
 
-        request.onload = function(){
-            if(request.status !== 200){
+        request.onload = function () {
+            if (request.status !== 200) {
                 //console.error(config.url, request.status);
                 config.onError(request.status);
                 return;
@@ -348,78 +348,78 @@
             //console.log(sequencer.os, request.response);
 
             //if(sequencer.os === 'ios' && config.responseType === 'json'){
-            if(config.responseType === 'json'){
+            if (config.responseType === 'json') {
                 //fileSize = round(request.response.length/1024/1024, 2);
                 fileSize = request.response.length;
                 //console.log(config.url, fileSize)
                 config.onSuccess(JSON.parse(request.response), fileSize);
                 //config.onSuccess(JSON.parse(request.response));
-            }else{
+            } else {
                 //config.onSuccess(request.response, fileSize);
                 config.onSuccess(request.response);
             }
         };
 
-        request.onerror = function(e){
+        request.onerror = function (e) {
             //console.error(e);
             config.onError(e);
         };
 
-/*
-        request.onreadystatechange = function() {
-            if (success !== undefined && xmlhttp.readyState === 4 && xmlhttp.status === 200) {
-                success(request.responseText);
-            } else if (error !== undefined ) {
-                error(request);
-            }
-        };
-*/
+        /*
+                request.onreadystatechange = function() {
+                    if (success !== undefined && xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+                        success(request.responseText);
+                    } else if (error !== undefined ) {
+                        error(request);
+                    }
+                };
+        */
         request.open(method, config.url, true);
 
 
-        if(config.overrideMimeType){
+        if (config.overrideMimeType) {
             request.overrideMimeType(config.overrideMimeType);
         }
 
-        if(config.responseType){
+        if (config.responseType) {
             //console.log(config.responseType, config.url);
             //request.setRequestHeader('Content-type', 'application/' + config.responseType);
 
             //if(sequencer.os === 'ios' && config.responseType === 'json'){
-            if(config.responseType === 'json'){
+            if (config.responseType === 'json') {
                 request.responseType = 'text';
-            }else{
+            } else {
                 request.responseType = config.responseType;
             }
 
             //request.setRequestHeader('Content-type', config.responseType);
         }
 
-        if(method === 'POST') {
+        if (method === 'POST') {
             request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         }
 
-        if(config.data){
+        if (config.data) {
             request.send(config.data);
-        }else{
+        } else {
             request.send();
         }
     }
 
-    function loop2(root, id, indent){
+    function loop2(root, id, indent) {
         var i, tmp;
-        for(i in root){
-            if(foundFolder !== false){
+        for (i in root) {
+            if (foundFolder !== false) {
                 return;
             }
-            if(root.hasOwnProperty(i)){
+            if (root.hasOwnProperty(i)) {
                 tmp = root[i];
-                if(tmp !== undefined && tmp.className === 'Folder'){
+                if (tmp !== undefined && tmp.className === 'Folder') {
                     //console.log(indent, i, id);
-                    if(i === id){
+                    if (i === id) {
                         foundFolder = tmp;
                         return;
-                    }else{
+                    } else {
                         loop2(tmp, id, indent + '.');
                     }
                 }
@@ -428,29 +428,29 @@
     }
 
 
-    function loop3(folder, items, search_subfolders, indent){
+    function loop3(folder, items, search_subfolders, indent) {
         var i, item;
-        for(i in folder){
-            if(folder.hasOwnProperty(i)){
-                if(i === 'id' || i === 'path' || i === 'className'){
+        for (i in folder) {
+            if (folder.hasOwnProperty(i)) {
+                if (i === 'id' || i === 'path' || i === 'className') {
                     continue;
                 }
                 item = folder[i];
 
-                if(item === undefined){
+                if (item === undefined) {
                     continue;
                 }
 
                 //console.log(indent, i, item, item.className);
-                if(item.className === 'Folder'){
-                    if(search_subfolders === true){
+                if (item.className === 'Folder') {
+                    if (search_subfolders === true) {
                         loop3(item, items, search_subfolders, indent + '.');
                     }
-                }else{
+                } else {
                     // loaded samples are audio object so they don't have a name, we use the key of the storage for name
-                    if(item.name === undefined){
-                        items.push({name:i, data: item});
-                    }else{
+                    if (item.name === undefined) {
+                        items.push({ name: i, data: item });
+                    } else {
                         items.push(item);
                     }
                 }
@@ -459,7 +459,7 @@
     }
 
 
-    function findItemsInFolder(path, root, search_subfolders){
+    function findItemsInFolder(path, root, search_subfolders) {
         search_subfolders = search_subfolders === undefined ? true : search_subfolders;
         var folders = pathToArray(path),
             numFolders = folders.length,
@@ -467,23 +467,23 @@
             searchFolder = folders[numFolders - 1],
             items = [];
 
-        if(numFolders === 0){
+        if (numFolders === 0) {
             // return all items in root folder (for instance sequencer.storage.midi)
             loop3(root, items, search_subfolders, '.');
-        }else{
+        } else {
             currentFolder = root;
 
-            for(i = 0; i < numFolders; i++){
+            for (i = 0; i < numFolders; i++) {
                 folder = folders[i];
                 currentFolder = currentFolder[folder];
-                if(currentFolder === undefined){
+                if (currentFolder === undefined) {
                     break;
                 }
             }
             //console.log(root, currentFolder);
-            if(currentFolder){
+            if (currentFolder) {
                 loop3(currentFolder, items, search_subfolders, '.');
-            }else{
+            } else {
                 // declared on top of this file
                 foundFolder = false;
                 loop2(root, searchFolder, '.');
@@ -491,12 +491,12 @@
             }
         }
 
-        items.sort(function(a, b){
+        items.sort(function (a, b) {
             var nameA = a.name.toLowerCase(),
                 nameB = b.name.toLowerCase();
-            if(nameA < nameB){ //sort string ascending
+            if (nameA < nameB) { //sort string ascending
                 return -1;
-            }else if (nameA > nameB){
+            } else if (nameA > nameB) {
                 return 1;
             }
             return 0; //default return value (no sorting)
@@ -506,23 +506,23 @@
     }
 
 
-    function loop(obj, id, indent){
+    function loop(obj, id, indent) {
         var i, tmp, type;
-        for(i in obj){
-            if(foundItem !== false){
+        for (i in obj) {
+            if (foundItem !== false) {
                 return;
             }
-            if(obj.hasOwnProperty(i)){
+            if (obj.hasOwnProperty(i)) {
                 tmp = obj[i];
                 type = typeString(tmp);
                 //console.log(indent, i, id, tmp, type, tmp.className)
-                if(i === id){
+                if (i === id) {
                     foundItem = tmp;
                     break;
                 }
                 //console.log(tmp);
                 // tmp can be null if the sample has not been loaded!
-                if(tmp !== undefined && tmp.className === 'Folder'){
+                if (tmp !== undefined && tmp.className === 'Folder') {
                     indent = indent + '.';
                     loop(tmp, id, indent);
                 }
@@ -531,9 +531,9 @@
     }
 
 
-    function findItem(path, root, exact_match){
+    function findItem(path, root, exact_match) {
         exact_match = exact_match === undefined ? false : exact_match;
-        if(path === undefined || path === ''){
+        if (path === undefined || path === '') {
             return root;
         }
 
@@ -544,63 +544,63 @@
         numFolders = folders.length;
         //console.log(folders, itemId);
 
-        if(itemId === ''){
+        if (itemId === '') {
             return root;
         }
 
         // declared on top of util.js
         foundItem = false;
 
-        if(folders.length > 0){
+        if (folders.length > 0) {
             currentFolder = root;
 
-            for(i = 0; i < numFolders; i++){
+            for (i = 0; i < numFolders; i++) {
                 folder = folders[i];
                 currentFolder = currentFolder[folder];
-                if(currentFolder === undefined){
+                if (currentFolder === undefined) {
                     break;
                 }
             }
             //console.log(root, currentFolder);
-            if(currentFolder){
+            if (currentFolder) {
                 item = currentFolder[itemId];
             }
         }
 
-        if(item === undefined){
-            if(exact_match === true){
+        if (item === undefined) {
+            if (exact_match === true) {
                 item = root[itemId];
-            }else{
+            } else {
                 loop(root, itemId, '.');
                 item = foundItem;
             }
         }
         //console.log(item, itemId, exact_match);
         //console.log('found', root.id, folders, itemId, item);
-        if(item === undefined){
+        if (item === undefined) {
             item = false;
         }
         return item;
     }
 
 
-    function storeItem(item, path, root){
+    function storeItem(item, path, root) {
         var folder, folders, numFolders, currentFolder, i, pathString = '';
         folders = pathToArray(path);
         numFolders = folders.length;
         currentFolder = root;
 
-        for(i = 0; i < numFolders; i++){
+        for (i = 0; i < numFolders; i++) {
             folder = folders[i];
             pathString += '/' + folder;
             //console.log(folder);
-            if(currentFolder[folder] === undefined){
+            if (currentFolder[folder] === undefined) {
                 currentFolder[folder] = {
                     path: pathString,
                     className: 'Folder'
                 };
             }
-            if(i === numFolders - 1){
+            if (i === numFolders - 1) {
                 currentFolder[folder] = item;
                 break;
             }
@@ -610,7 +610,7 @@
 
 
     // -> classical/mozart/sonatas/early
-    function deleteItem(path, root){
+    function deleteItem(path, root) {
         var item, itemId, i, obj = root;
 
         // for deleting items you need to specify the complete path, hence the 3rd argument is set to true
@@ -626,13 +626,13 @@
         */
 
 
-        if(!item){
+        if (!item) {
             return false;
-        }else if(item.className === 'Folder'){
+        } else if (item.className === 'Folder') {
             // remove files in folder
-            for(i in item){
-                if(item.hasOwnProperty(i)){
-                    if(i !== 'className'){
+            for (i in item) {
+                if (item.hasOwnProperty(i)) {
+                    if (i !== 'className') {
                         delete item[i];
                     }
                 }
@@ -641,11 +641,11 @@
 
         path = pathToArray(path);
 
-        while(path.length > 1){
+        while (path.length > 1) {
             i = 0;
             obj = root;
 
-            while(i < path.length - 1){
+            while (i < path.length - 1) {
                 //console.log(path[i],obj);
                 obj = obj[path[i++]];
             }
@@ -653,12 +653,12 @@
             itemId = path[i];
             item = obj[itemId];
 
-            if(item.className === 'Folder'){
-                if(isEmptyObject(item, 'path className')){
+            if (item.className === 'Folder') {
+                if (isEmptyObject(item, 'path className')) {
                     delete obj[itemId];
                     //console.log('deleting empty folder', itemId);
                 }
-            }else{
+            } else {
                 delete obj[itemId];
                 //console.log('deleting item', itemId);
             }
@@ -668,16 +668,16 @@
 
         //console.log(path, path[0] === '', root[path[0]]);
 
-        if(path.length === 1 && path[0] !== ''){
+        if (path.length === 1 && path[0] !== '') {
             itemId = path[0];
             item = root[itemId];
             //console.log(path, path.length, itemId);
-            if(item.className === 'Folder'){
-                if(isEmptyObject(root[itemId], 'path className')){
+            if (item.className === 'Folder') {
+                if (isEmptyObject(root[itemId], 'path className')) {
                     delete root[itemId];
                     //console.log('deleting empty folder', itemId, '(2)');
                 }
-            }else{
+            } else {
                 delete root[itemId];
                 //console.log('deleting item', itemId, '(2)');
             }
@@ -686,69 +686,69 @@
     }
 
 
-    function parseSample(id, sample){
-        return new Promise(function(resolve, reject){
-            try{
+    function parseSample(id, sample) {
+        return new Promise(function (resolve, reject) {
+            try {
                 context.decodeAudioData(sample,
-                    function onSuccess(buffer){
+                    function onSuccess(buffer) {
                         //console.log(id, buffer);
-                        resolve({'id': id, 'buffer': buffer});
+                        resolve({ 'id': id, 'buffer': buffer });
                     },
-                    function onError(e){
+                    function onError(e) {
                         console.log('error decoding audiodata', id, e);
                         //reject(e); // don't use reject because we don't want the parent promise to reject
-                        resolve({'id': id, 'buffer': undefined});
+                        resolve({ 'id': id, 'buffer': undefined });
                     }
                 );
-            }catch(e){
+            } catch (e) {
                 console.log('error decoding audiodata', id, e);
                 //reject(e);
-                resolve({'id': id, 'buffer': undefined});
+                resolve({ 'id': id, 'buffer': undefined });
             }
         });
     }
 
 
-    function loadAndParseSample(id, url){
-        return new Promise(function(resolve, reject){
-            ajax({url: url, responseType: 'arraybuffer'}).then(
-                function onFulfilled(data){
+    function loadAndParseSample(id, url) {
+        return new Promise(function (resolve, reject) {
+            ajax({ url: url, responseType: 'arraybuffer' }).then(
+                function onFulfilled(data) {
                     parseSample(id, data).then(resolve, reject);
                 },
-                function onRejected(){
-                    resolve({'id': id, 'buffer': undefined});
+                function onRejected() {
+                    resolve({ 'id': id, 'buffer': undefined });
                 }
             );
         });
     }
 
 
-    function parseSamples(mapping){
+    function parseSamples(mapping) {
         var key, sample,
             promises = [];
 
-        for(key in mapping){
-            if(mapping.hasOwnProperty(key)){
+        for (key in mapping) {
+            if (mapping.hasOwnProperty(key)) {
                 sample = mapping[key];
-                if(sample.indexOf('http://') === -1){
+                if (sample.indexOf('http://') === -1) {
                     promises.push(parseSample(key, base64ToBinary(sample)));
-                }else{
+                } else {
                     promises.push(loadAndParseSample(key, sample));
                 }
             }
         }
 
-        return new Promise(function(resolve, reject){
+        return new Promise(function (resolve, reject) {
             Promise.all(promises).then(
-                function onFulfilled(values){
+                function onFulfilled(values) {
                     var mapping = {};
 
-                    values.forEach(function(value){
+                    values.forEach(function (value) {
                         mapping[value.id] = value.buffer;
                     });
                     resolve(mapping);
                 },
-                function onRejected(e){
+                function onRejected(e) {
                     reject(e);
                 }
             );
@@ -758,13 +758,13 @@
 
     // use xhr.overrideMimeType('text/plain; charset=x-user-defined');
     // all credits: https://github.com/gasman/jasmid
-    function toBinaryString(input){
+    function toBinaryString(input) {
         /* munge input into a binary string */
-        var t,ff,mx,scc,z;
-        t = input || '' ;
+        var t, ff, mx, scc, z;
+        t = input || '';
         ff = [];
         mx = t.length;
-        scc= String.fromCharCode;
+        scc = String.fromCharCode;
         for (z = 0; z < mx; z++) {
             ff[z] = scc(t.charCodeAt(z) & 255);
         }
@@ -772,13 +772,13 @@
     }
 
 
-    function toUint8Array(input){
+    function toUint8Array(input) {
         /* munge input into a binary string */
-        var t,uint,mx,scc,z;
-        t = input || '' ;
+        var t, uint, mx, scc, z;
+        t = input || '';
         mx = t.length;
         uint = new Uint8Array(mx);
-        scc= String.fromCharCode;
+        scc = String.fromCharCode;
         for (z = 0; z < mx; z++) {
             uint[z] = scc(t.charCodeAt(z) & 255);
         }
@@ -787,7 +787,7 @@
 
 
     // adapted version of https://github.com/danguer/blog-examples/blob/master/js/base64-binary.js
-    function base64ToBinary(input){
+    function base64ToBinary(input) {
         var keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
             bytes, uarray, buffer,
             lkey1, lkey2,
@@ -799,14 +799,14 @@
         buffer = new ArrayBuffer(bytes);
         uarray = new Uint8Array(buffer);
 
-        lkey1 = keyStr.indexOf(input.charAt(input.length-1));
-        lkey2 = keyStr.indexOf(input.charAt(input.length-1));
+        lkey1 = keyStr.indexOf(input.charAt(input.length - 1));
+        lkey2 = keyStr.indexOf(input.charAt(input.length - 1));
         if (lkey1 == 64) bytes--; //padding chars, so skip
         if (lkey2 == 64) bytes--; //padding chars, so skip
 
         input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
 
-        for(i = 0; i < bytes; i += 3) {
+        for (i = 0; i < bytes; i += 3) {
             //get the 3 octects in 4 ascii chars
             enc1 = keyStr.indexOf(input.charAt(j++));
             enc2 = keyStr.indexOf(input.charAt(j++));
@@ -818,49 +818,49 @@
             chr3 = ((enc3 & 3) << 6) | enc4;
 
             uarray[i] = chr1;
-            if (enc3 != 64) uarray[i+1] = chr2;
-            if (enc4 != 64) uarray[i+2] = chr3;
+            if (enc3 != 64) uarray[i + 1] = chr2;
+            if (enc4 != 64) uarray[i + 2] = chr3;
         }
         //console.log(buffer);
         return buffer;
     }
 
 
-    function pathToArray(path){
-        if(path === undefined){
+    function pathToArray(path) {
+        if (path === undefined) {
             return [];
         }
         //console.log('path', path);
-        path = path.replace(/undefined/g,'');
-        path = path.replace(/\/{2,}/g,'/');
-        path = path.replace(/^\//,'');
-        path = path.replace(/\/$/,'');
+        path = path.replace(/undefined/g, '');
+        path = path.replace(/\/{2,}/g, '/');
+        path = path.replace(/^\//, '');
+        path = path.replace(/\/$/, '');
         path = path.split('/');
         return path;
     }
 
 
-    function parseUrl(url){
+    function parseUrl(url) {
         var filePath = '',
             fileName = url,
             fileExtension = '',
             slash, dot, ext;
 
-        url = url.replace(/\/{2,}/g,'/');
-        url = url.replace(/^\//,'');
-        url = url.replace(/\/$/,'');
+        url = url.replace(/\/{2,}/g, '/');
+        url = url.replace(/^\//, '');
+        url = url.replace(/\/$/, '');
 
         // check if the url has a path and/or an extension
         slash = url.lastIndexOf('/');
-        if(slash !== -1){
+        if (slash !== -1) {
             fileName = url.substring(slash + 1);
             filePath = url.substring(0, slash);
         }
 
         dot = url.lastIndexOf('.');
-        if(dot !== -1){
+        if (dot !== -1) {
             ext = url.substring(dot + 1);
-            if(ext.length >= 3 && ext.length <= 4){
+            if (ext.length >= 3 && ext.length <= 4) {
                 fileExtension = ext;
                 fileName = url.substring(slash + 1, dot);
             }
@@ -876,24 +876,24 @@
 
     // generic load method that calls the load() method of the item to be loaded
     // callback2 is called every time an item is loaded, callback1 is called after all items have been loaded
-    function loadLoop(i, numItems, items, callback1, callback2){
-        if(numItems === 0){
-            if(callback1){
+    function loadLoop(i, numItems, items, callback1, callback2) {
+        if (numItems === 0) {
+            if (callback1) {
                 callback1();
             }
             return;
         }
         var item = items[i];
-        item.load(function(){
+        item.load(function () {
             //console.log(item.name, 'loaded', i, numItems);
-            if(callback2){
+            if (callback2) {
                 callback2(arguments);
             }
             i++;
-            if(i < numItems){
+            if (i < numItems) {
                 loadLoop(i, numItems, items, callback1, callback2);
-            }else{
-                if(callback1){
+            } else {
+                if (callback1) {
                     callback1();
                 }
             }
@@ -901,18 +901,18 @@
     }
 
 
-    function getArguments(args){
+    function getArguments(args) {
         var result = [],
             loop, arg;
 
         args = slice.call(args);
 
-        loop = function(data, i, maxi){
-            for(i = 0; i < maxi; i++){
+        loop = function (data, i, maxi) {
+            for (i = 0; i < maxi; i++) {
                 arg = data[i];
-                if(typeString(arg) === 'array'){
+                if (typeString(arg) === 'array') {
                     loop(arg, 0, arg.length);
-                }else{
+                } else {
                     result.push(arg);
                 }
             }
@@ -926,15 +926,15 @@
     function getEqualPowerCurve(numSteps, type, maxValue) {
         var i, value, percent,
             values = new Float32Array(numSteps);
-        for(i = 0; i < numSteps; i++){
-            percent = i/numSteps;
-            if(type === 'fadeIn'){
+        for (i = 0; i < numSteps; i++) {
+            percent = i / numSteps;
+            if (type === 'fadeIn') {
                 value = Math.cos((1.0 - percent) * 0.5 * Math.PI) * maxValue;
-            }else if(type === 'fadeOut'){
+            } else if (type === 'fadeOut') {
                 value = Math.cos(percent * 0.5 * Math.PI) * maxValue;
             }
             values[i] = value;
-            if(i === numSteps - 1){
+            if (i === numSteps - 1) {
                 values[i] = type === 'fadeIn' ? 1 : 0;
             }
         }
@@ -942,7 +942,7 @@
     }
 
 
-    function remap(value, oldMin, oldMax, newMin, newMax){
+    function remap(value, oldMin, oldMax, newMin, newMax) {
         var oldRange = oldMax - oldMin,
             newRange = newMax - newMin,
             result;
@@ -952,17 +952,17 @@
 
 
     // filters assets with classname "name" from object "obj" and stores them in array "result"
-    function filterItemsByClassName(obj, name, result){
+    function filterItemsByClassName(obj, name, result) {
         var i, item, type;
 
-        for(i in obj){
-            if(obj.hasOwnProperty(i)){
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
                 item = obj[i];
-                if(item.className === name){
+                if (item.className === name) {
                     result.push(item);
-                }else{
+                } else {
                     type = typeString(item);
-                    if(type === 'object'){
+                    if (type === 'object') {
                         loop(item, name, result);
                     }
                 }
@@ -970,119 +970,119 @@
         }
     }
 
-    function createSlider(config){
+    function createSlider(config) {
         var slider = config.slider,
             message = config.message,
             label = config.label,
             sliderWrapper;
-            //mouseDownCalls = [],
-            //mouseMoveCalls = [],
-            //mouseUpCalls = [];
+        //mouseDownCalls = [],
+        //mouseMoveCalls = [],
+        //mouseUpCalls = [];
 
-        if(config.label === undefined){
+        if (config.label === undefined) {
             label = slider.parentNode.firstChild;
         }
 
-        if(config.initialSliderValue !== undefined){
+        if (config.initialSliderValue !== undefined) {
             slider.value = config.initialSliderValue;
         }
 
-        if(config.initialLabelValue !== undefined){
+        if (config.initialLabelValue !== undefined) {
             label.innerHTML = message.replace('{value}', config.initialLabelValue);
         }
 
-        if(config.min !== undefined){
+        if (config.min !== undefined) {
             slider.min = config.min;
         }
 
-        if(config.max !== undefined){
+        if (config.max !== undefined) {
             slider.max = config.max;
         }
 
-        if(config.step !== undefined){
+        if (config.step !== undefined) {
             slider.step = config.step;
         }
 
 
-        function onMouseDown(e){
+        function onMouseDown(e) {
             var value = slider.valueAsNumber;
-            if(config.onMouseDown){
+            if (config.onMouseDown) {
                 config.onMouseDown(value, e);
             }
-            if(sliderWrapper.onMouseDown){
+            if (sliderWrapper.onMouseDown) {
                 sliderWrapper.onMouseDown(value, e);
             }
         }
 
-        function onMouseUp(e){
+        function onMouseUp(e) {
             var value = slider.valueAsNumber;
-            if(config.onMouseUp){
+            if (config.onMouseUp) {
                 config.onMouseUp(value, e);
             }
-            if(sliderWrapper.onMouseUp){
+            if (sliderWrapper.onMouseUp) {
                 sliderWrapper.onMouseUp(value, e);
             }
         }
 
-        function onMouseMove(e){
+        function onMouseMove(e) {
             var value = slider.valueAsNumber;
-            if(config.onMouseMove){
+            if (config.onMouseMove) {
                 config.onMouseMove(value, e);
             }
-            if(sliderWrapper.onMouseMove){
+            if (sliderWrapper.onMouseMove) {
                 sliderWrapper.onMouseMove(value, e);
             }
         }
 
-        function onChange(e){
+        function onChange(e) {
             var value = slider.valueAsNumber;
-            if(config.onChange){
+            if (config.onChange) {
                 config.onChange(value, e);
             }
-            if(sliderWrapper.onChange){
+            if (sliderWrapper.onChange) {
                 sliderWrapper.onChange(value, e);
             }
         }
 
-        slider.addEventListener('mousedown', function(e){
+        slider.addEventListener('mousedown', function (e) {
             setTimeout(onMouseDown, 0, e);
             slider.addEventListener('mousemove', onMouseMove, false);
         }, false);
 
 
-        slider.addEventListener('mouseup', function(e){
+        slider.addEventListener('mouseup', function (e) {
             setTimeout(onMouseUp, 0, e);
             slider.removeEventListener('mousemove', onMouseMove, false);
         }, false);
 
-        slider.addEventListener('change', function(e){
+        slider.addEventListener('change', function (e) {
             //console.log('change');
             onChange(e);
         }, false);
 
         sliderWrapper = {
-            getValue: function(){
-                if(config.getValue){
+            getValue: function () {
+                if (config.getValue) {
                     return config.getValue(slider.valueAsNumber);
-                }else{
+                } else {
                     return slider.valueAsNumber;
                 }
             },
-            setValue: function(value){
-                if(config.setValue){
+            setValue: function (value) {
+                if (config.setValue) {
                     slider.value = config.setValue(value);
-                }else{
+                } else {
                     slider.value = value;
                 }
             },
-            setLabel: function(value){
+            setLabel: function (value) {
                 label.innerHTML = message.replace('{value}', value);
             },
             elem: slider,
             element: slider,
         };
 
-        sliderWrapper.set = function(value){
+        sliderWrapper.set = function (value) {
             setLabel(value);
             setValue(value);
         };
@@ -1090,110 +1090,110 @@
         return sliderWrapper;
     }
 
-    function createSlider2(config){
+    function createSlider2(config) {
         var slider = config.slider,
             message = config.message,
             label = slider.parentNode.firstChild;
 
 
-        if(config.initialValueSlider){
+        if (config.initialValueSlider) {
             slider.value = config.initialValueSlider;
             label.innerHTML = message.replace('{value}', calculate());
         }
 
 
-        if(config.initialValueLabel){
+        if (config.initialValueLabel) {
             label.innerHTML = message.replace('{value}', config.initialValueLabel);
             slider.value = calculateFromLabel(config.initialValueLabel);
         }
 
 
-        function onMouseMove(){
+        function onMouseMove() {
             var value = calculate();
-            if(config.onMouseMove !== undefined){
+            if (config.onMouseMove !== undefined) {
                 config.onMouseMove(slider.valueAsNumber, value);
             }
             label.innerHTML = message.replace('{value}', value);
         }
 
 
-        function onMouseUp(){
+        function onMouseUp() {
             var value = calculate();
-            if(config.onMouseUp !== undefined){
+            if (config.onMouseUp !== undefined) {
                 config.onMouseUp(slider.valueAsNumber, value);
             }
             label.innerHTML = message.replace('{value}', value);
         }
 
 
-        function onMouseDown(){
+        function onMouseDown() {
             var value = calculate();
-            if(config.onMouseDown !== undefined){
+            if (config.onMouseDown !== undefined) {
                 config.onMouseDown(slider.valueAsNumber, value);
             }
             label.innerHTML = message.replace('{value}', value);
         }
 
 
-        function calculate(){
+        function calculate() {
             var value = slider.valueAsNumber;
-            if(config.calculate !== undefined){
+            if (config.calculate !== undefined) {
                 value = config.calculate(value);
             }
             return value;
         }
 
 
-        function calculateFromLabel(value){
-            if(config.calculateFromLabel !== undefined){
+        function calculateFromLabel(value) {
+            if (config.calculateFromLabel !== undefined) {
                 value = config.calculateFromLabel(value);
             }
             return value;
         }
 
 
-        slider.addEventListener('mousedown', function(){
+        slider.addEventListener('mousedown', function () {
             setTimeout(onMouseDown, 0);
             slider.addEventListener('mousemove', onMouseMove, false);
         }, false);
 
 
-        slider.addEventListener('mouseup', function(){
+        slider.addEventListener('mouseup', function () {
             setTimeout(onMouseUp, 0);
             slider.removeEventListener('mousemove', onMouseMove, false);
         }, false);
 
 
         return {
-            updateSlider: function(value){
+            updateSlider: function (value) {
                 slider.value = value;
                 label.innerHTML = message.replace('{value}', calculate(value));
             },
-            updateLabel: function(value){
+            updateLabel: function (value) {
                 label.innerHTML = message.replace('{value}', value);
                 slider.value = calculateFromLabel(value);
             },
-            getValue1: function(){
+            getValue1: function () {
                 return slider.valueAsNumber;
             },
-            getValue2: function(){
+            getValue2: function () {
                 return calculate(slider.valueAsNumber);
             }
         };
     }
 
 
-    function getRandom(min, max, round){
+    function getRandom(min, max, round) {
         var r = mRandom() * (max - min) + min;
-        if(round === true){
+        if (round === true) {
             return mRound(r);
-        }else{
+        } else {
             return r;
         }
     }
 
 
-    function getRandomNotes(config){
+    function getRandomNotes(config) {
         var i,
             ticks = 0,
             events = [],
@@ -1213,20 +1213,20 @@
         config = config || {};
         ppq = config.ppq || sequencer.defaultPPQ;
         numNotes = config.numNotes || 20;
-        noteLength = config.noteLength || ppq/2; // ticks
+        noteLength = config.noteLength || ppq / 2; // ticks
         minVelocity = config.minVelocity || 30;
         maxVelocity = config.maxVelocity || 127;
         minNoteNumber = config.minNoteNumber || 60;
         maxNoteNumber = config.maxNoteNumber || 127;
 
-        if(noteLength > ppq){
+        if (noteLength > ppq) {
             noteLength = ppq;
         }
 
         //console.log(ppq, numNotes, noteLength, minVelocity, maxVelocity, minNoteNumber, maxNoteNumber);
 
 
-        for(i = 0; i < numNotes; i++){
+        for (i = 0; i < numNotes; i++) {
             noteNumber = getRandom(minNoteNumber, maxNoteNumber, true);
             velocity = getRandom(minVelocity, maxVelocity, true);
 
@@ -1245,39 +1245,39 @@
     }
 
 
-    function convertPPQ(){//oldPPQ, newPPQ, data, ..., ...
+    function convertPPQ() {//oldPPQ, newPPQ, data, ..., ...
         var args = slice.call(arguments),
             oldPPQ = args[0],
             newPPQ = args[1],
-            ratio = newPPQ/oldPPQ,
+            ratio = newPPQ / oldPPQ,
             i, event;
 
-        if(isNaN(oldPPQ) || isNaN(newPPQ)){
-            if(sequencer.debug === 4){
+        if (isNaN(oldPPQ) || isNaN(newPPQ)) {
+            if (sequencer.debug === 4) {
                 console.error('PPQ values must be numbers');
             }
             return;
         }
 
-        function loop(data, i, maxi){
+        function loop(data, i, maxi) {
             var arg, type, track, j, t;
-            for(j = i; j < maxi; j++){
+            for (j = i; j < maxi; j++) {
                 arg = data[j];
                 type = typeString(arg);
                 //console.log(type, arg.className);
-                if(type === 'array'){
+                if (type === 'array') {
                     convert(arg);
-                }else if(type === 'object'){
-                    if(arg.className === 'Part' || arg.className === 'Track' || arg.className === 'Song'){
+                } else if (type === 'object') {
+                    if (arg.className === 'Part' || arg.className === 'Track' || arg.className === 'Song') {
                         convert(arg.events);
-                    }else if(arg.className === 'MidiFile'){
+                    } else if (arg.className === 'MidiFile') {
                         //console.log(arg.numTracks, arg.tracks[0].events);
-                        for(t = arg.numTracks - 1; t >= 0; t--){
+                        for (t = arg.numTracks - 1; t >= 0; t--) {
                             track = arg.tracks[t];
                             //console.log(track.needsUpdate);
-                            if(track.needsUpdate === true){
+                            if (track.needsUpdate === true) {
                                 track.update();
-                                if(track.events){
+                                if (track.events) {
                                     convert(track.events);
                                 }
                             }
@@ -1289,11 +1289,11 @@
 
         loop(args, 2, args.length);
 
-        function convert(events){
-            for(i = events.length - 1; i >= 0; i--){
+        function convert(events) {
+            for (i = events.length - 1; i >= 0; i--) {
                 event = events[i];
                 event.ticks = ratio * event.ticks;
-                if(event.state !== 'new'){
+                if (event.state !== 'new') {
                     event.state = 'changed';
                 }
             }
@@ -1301,11 +1301,11 @@
     }
 
 
-    function getNoteLengthName(song, value){
-        for(var divider in noteLengthNames){
-            if(noteLengthNames.hasOwnProperty(divider)){
+    function getNoteLengthName(song, value) {
+        for (var divider in noteLengthNames) {
+            if (noteLengthNames.hasOwnProperty(divider)) {
                 //console.log(value, song.ppq/divider);
-                if(value === song.ppq/divider){
+                if (value === song.ppq / divider) {
                     return noteLengthNames[divider];
                 }
             }
@@ -1314,19 +1314,19 @@
     }
 
 
-    function getMicrosecondsFromBPM(bpm){
-        return round(60000000/bpm);
+    function getMicrosecondsFromBPM(bpm) {
+        return round(60000000 / bpm);
     }
 
 
-    function insertLink(s){
+    function insertLink(s) {
         // @TODO: fix this -> should be md syntax
         var href,
             i = s.indexOf('http://');
-        if(i !== -1){
+        if (i !== -1) {
             href = s.substring(i);
             i = href.indexOf(' ');
-            if(i !== -1){
+            if (i !== -1) {
                 href = href.substring(0, i);
             }
         }
@@ -1334,7 +1334,7 @@
     }
 
 
-    function getWaveformData(buffer, config, callback){
+    function getWaveformData(buffer, config, callback) {
         var i, maxi,
             canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d'),
@@ -1360,14 +1360,14 @@
 
         //console.log(pcmRight.length, pcmLeft.length, config.samples.length);
 
-        if(config.width !== undefined){
+        if (config.width !== undefined) {
             width = config.width;
             density = width / numSamples;
-        }else {
+        } else {
             density = config.density || 1;
             width = 1000;
             lastWidth = (numSamples * config.density) % width;
-            numImages = Math.ceil((numSamples * config.density)/width);
+            numImages = Math.ceil((numSamples * config.density) / width);
             currentImage = 0;
         }
 
@@ -1383,17 +1383,17 @@
         ctx.moveTo(0, scale);
 
 
-        for(i = 0; i < numSamples; i += sampleStep){
+        for (i = 0; i < numSamples; i += sampleStep) {
             xPos = (i - offset) * density;
-            if(xPos >= width){
+            if (xPos >= width) {
                 //console.log(width, height)
                 //ctx.closePath();
                 ctx.stroke();
                 urls.push(canvas.toDataURL('image/png'));
                 currentImage++;
-                if(currentImage === numImages - 1){
+                if (currentImage === numImages - 1) {
                     canvas.width = lastWidth;
-                }else{
+                } else {
                     canvas.width = width;
                 }
                 ctx.beginPath();
@@ -1401,13 +1401,13 @@
                 offset = i;
                 xPos = 0;
                 ctx.moveTo(xPos, scale - (pcmRight[i] * scale));
-            }else{
+            } else {
                 ctx.lineTo(xPos, scale - (pcmRight[i] * scale));
                 //console.log(scale - (pcmRight[i] * scale));
             }
         }
 
-        if(xPos < width){
+        if (xPos < width) {
             //ctx.closePath();
             ctx.stroke();
             urls.push(canvas.toDataURL('image/png'));
@@ -1454,171 +1454,171 @@
 
     /* Array of bytes to base64 string decoding */
 
-    function b64ToUint6 (nChr) {
+    function b64ToUint6(nChr) {
 
-      return nChr > 64 && nChr < 91 ?
-          nChr - 65
-        : nChr > 96 && nChr < 123 ?
-          nChr - 71
-        : nChr > 47 && nChr < 58 ?
-          nChr + 4
-        : nChr === 43 ?
-          62
-        : nChr === 47 ?
-          63
-        :
-          0;
+        return nChr > 64 && nChr < 91 ?
+            nChr - 65
+            : nChr > 96 && nChr < 123 ?
+                nChr - 71
+                : nChr > 47 && nChr < 58 ?
+                    nChr + 4
+                    : nChr === 43 ?
+                        62
+                        : nChr === 47 ?
+                            63
+                            :
+                            0;
 
     }
 
 
-    function base64DecToArr (sBase64, nBlocksSize) {
+    function base64DecToArr(sBase64, nBlocksSize) {
 
-      var
-        sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, ""),
-        nInLen = sB64Enc.length,
-        nOutLen = nBlocksSize ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize : nInLen * 3 + 1 >> 2,
-        taBytes = new Uint8Array(nOutLen);
+        var
+            sB64Enc = sBase64.replace(/[^A-Za-z0-9\+\/]/g, ""),
+            nInLen = sB64Enc.length,
+            nOutLen = nBlocksSize ? Math.ceil((nInLen * 3 + 1 >> 2) / nBlocksSize) * nBlocksSize : nInLen * 3 + 1 >> 2,
+            taBytes = new Uint8Array(nOutLen);
 
-      for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
-        nMod4 = nInIdx & 3;
-        nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4;
-        if (nMod4 === 3 || nInLen - nInIdx === 1) {
-          for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
-            taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
-          }
-          nUint24 = 0;
+        for (var nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+            nMod4 = nInIdx & 3;
+            nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << 18 - 6 * nMod4;
+            if (nMod4 === 3 || nInLen - nInIdx === 1) {
+                for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++ , nOutIdx++) {
+                    taBytes[nOutIdx] = nUint24 >>> (16 >>> nMod3 & 24) & 255;
+                }
+                nUint24 = 0;
 
+            }
         }
-      }
 
-      return taBytes;
+        return taBytes;
     }
 
     /* Base64 string to array encoding */
 
-    function uint6ToB64 (nUint6) {
+    function uint6ToB64(nUint6) {
 
-      return nUint6 < 26 ?
-          nUint6 + 65
-        : nUint6 < 52 ?
-          nUint6 + 71
-        : nUint6 < 62 ?
-          nUint6 - 4
-        : nUint6 === 62 ?
-          43
-        : nUint6 === 63 ?
-          47
-        :
-          65;
+        return nUint6 < 26 ?
+            nUint6 + 65
+            : nUint6 < 52 ?
+                nUint6 + 71
+                : nUint6 < 62 ?
+                    nUint6 - 4
+                    : nUint6 === 62 ?
+                        43
+                        : nUint6 === 63 ?
+                            47
+                            :
+                            65;
 
     }
 
-    function base64EncArr (aBytes) {
+    function base64EncArr(aBytes) {
 
-      var nMod3 = 2, sB64Enc = "";
+        var nMod3 = 2, sB64Enc = "";
 
-      for (var nLen = aBytes.length, nUint24 = 0, nIdx = 0; nIdx < nLen; nIdx++) {
-        nMod3 = nIdx % 3;
-        if (nIdx > 0 && (nIdx * 4 / 3) % 76 === 0) { sB64Enc += "\r\n"; }
-        nUint24 |= aBytes[nIdx] << (16 >>> nMod3 & 24);
-        if (nMod3 === 2 || aBytes.length - nIdx === 1) {
-          sB64Enc += String.fromCharCode(uint6ToB64(nUint24 >>> 18 & 63), uint6ToB64(nUint24 >>> 12 & 63), uint6ToB64(nUint24 >>> 6 & 63), uint6ToB64(nUint24 & 63));
-          nUint24 = 0;
+        for (var nLen = aBytes.length, nUint24 = 0, nIdx = 0; nIdx < nLen; nIdx++) {
+            nMod3 = nIdx % 3;
+            if (nIdx > 0 && (nIdx * 4 / 3) % 76 === 0) { sB64Enc += "\r\n"; }
+            nUint24 |= aBytes[nIdx] << (16 >>> nMod3 & 24);
+            if (nMod3 === 2 || aBytes.length - nIdx === 1) {
+                sB64Enc += String.fromCharCode(uint6ToB64(nUint24 >>> 18 & 63), uint6ToB64(nUint24 >>> 12 & 63), uint6ToB64(nUint24 >>> 6 & 63), uint6ToB64(nUint24 & 63));
+                nUint24 = 0;
+            }
         }
-      }
 
-      return sB64Enc.substr(0, sB64Enc.length - 2 + nMod3) + (nMod3 === 2 ? '' : nMod3 === 1 ? '=' : '==');
+        return sB64Enc.substr(0, sB64Enc.length - 2 + nMod3) + (nMod3 === 2 ? '' : nMod3 === 1 ? '=' : '==');
 
     }
 
     /* UTF-8 array to DOMString and vice versa */
 
-    function UTF8ArrToStr (aBytes) {
+    function UTF8ArrToStr(aBytes) {
 
-      var sView = "";
+        var sView = "";
 
-      for (var nPart, nLen = aBytes.length, nIdx = 0; nIdx < nLen; nIdx++) {
-        nPart = aBytes[nIdx];
-        sView += String.fromCharCode(
-          nPart > 251 && nPart < 254 && nIdx + 5 < nLen ? /* six bytes */
-            /* (nPart - 252 << 30) may be not so safe in ECMAScript! So...: */
-            (nPart - 252) * 1073741824 + (aBytes[++nIdx] - 128 << 24) + (aBytes[++nIdx] - 128 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
-          : nPart > 247 && nPart < 252 && nIdx + 4 < nLen ? /* five bytes */
-            (nPart - 248 << 24) + (aBytes[++nIdx] - 128 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
-          : nPart > 239 && nPart < 248 && nIdx + 3 < nLen ? /* four bytes */
-            (nPart - 240 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
-          : nPart > 223 && nPart < 240 && nIdx + 2 < nLen ? /* three bytes */
-            (nPart - 224 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
-          : nPart > 191 && nPart < 224 && nIdx + 1 < nLen ? /* two bytes */
-            (nPart - 192 << 6) + aBytes[++nIdx] - 128
-          : /* nPart < 127 ? */ /* one byte */
-            nPart
-        );
-      }
-
-      return sView;
-
-    }
-
-    function strToUTF8Arr (sDOMStr) {
-
-      var aBytes, nChr, nStrLen = sDOMStr.length, nArrLen = 0;
-
-      /* mapping... */
-
-      for (var nMapIdx = 0; nMapIdx < nStrLen; nMapIdx++) {
-        nChr = sDOMStr.charCodeAt(nMapIdx);
-        nArrLen += nChr < 0x80 ? 1 : nChr < 0x800 ? 2 : nChr < 0x10000 ? 3 : nChr < 0x200000 ? 4 : nChr < 0x4000000 ? 5 : 6;
-      }
-
-      aBytes = new Uint8Array(nArrLen);
-
-      /* transcription... */
-
-      for (var nIdx = 0, nChrIdx = 0; nIdx < nArrLen; nChrIdx++) {
-        nChr = sDOMStr.charCodeAt(nChrIdx);
-        if (nChr < 128) {
-          /* one byte */
-          aBytes[nIdx++] = nChr;
-        } else if (nChr < 0x800) {
-          /* two bytes */
-          aBytes[nIdx++] = 192 + (nChr >>> 6);
-          aBytes[nIdx++] = 128 + (nChr & 63);
-        } else if (nChr < 0x10000) {
-          /* three bytes */
-          aBytes[nIdx++] = 224 + (nChr >>> 12);
-          aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
-          aBytes[nIdx++] = 128 + (nChr & 63);
-        } else if (nChr < 0x200000) {
-          /* four bytes */
-          aBytes[nIdx++] = 240 + (nChr >>> 18);
-          aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
-          aBytes[nIdx++] = 128 + (nChr & 63);
-        } else if (nChr < 0x4000000) {
-          /* five bytes */
-          aBytes[nIdx++] = 248 + (nChr >>> 24);
-          aBytes[nIdx++] = 128 + (nChr >>> 18 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
-          aBytes[nIdx++] = 128 + (nChr & 63);
-        } else /* if (nChr <= 0x7fffffff) */ {
-          /* six bytes */
-          aBytes[nIdx++] = 252 + (nChr >>> 30);
-          aBytes[nIdx++] = 128 + (nChr >>> 24 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 18 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
-          aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
-          aBytes[nIdx++] = 128 + (nChr & 63);
+        for (var nPart, nLen = aBytes.length, nIdx = 0; nIdx < nLen; nIdx++) {
+            nPart = aBytes[nIdx];
+            sView += String.fromCharCode(
+                nPart > 251 && nPart < 254 && nIdx + 5 < nLen ? /* six bytes */
+                    /* (nPart - 252 << 30) may be not so safe in ECMAScript! So...: */
+                    (nPart - 252) * 1073741824 + (aBytes[++nIdx] - 128 << 24) + (aBytes[++nIdx] - 128 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
+                    : nPart > 247 && nPart < 252 && nIdx + 4 < nLen ? /* five bytes */
+                        (nPart - 248 << 24) + (aBytes[++nIdx] - 128 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
+                        : nPart > 239 && nPart < 248 && nIdx + 3 < nLen ? /* four bytes */
+                            (nPart - 240 << 18) + (aBytes[++nIdx] - 128 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
+                            : nPart > 223 && nPart < 240 && nIdx + 2 < nLen ? /* three bytes */
+                                (nPart - 224 << 12) + (aBytes[++nIdx] - 128 << 6) + aBytes[++nIdx] - 128
+                                : nPart > 191 && nPart < 224 && nIdx + 1 < nLen ? /* two bytes */
+                                    (nPart - 192 << 6) + aBytes[++nIdx] - 128
+                                    : /* nPart < 127 ? */ /* one byte */
+                                    nPart
+            );
         }
-      }
 
-      return aBytes;
+        return sView;
 
     }
 
-    sequencer.protectedScope.addInitMethod(function(){
+    function strToUTF8Arr(sDOMStr) {
+
+        var aBytes, nChr, nStrLen = sDOMStr.length, nArrLen = 0;
+
+        /* mapping... */
+
+        for (var nMapIdx = 0; nMapIdx < nStrLen; nMapIdx++) {
+            nChr = sDOMStr.charCodeAt(nMapIdx);
+            nArrLen += nChr < 0x80 ? 1 : nChr < 0x800 ? 2 : nChr < 0x10000 ? 3 : nChr < 0x200000 ? 4 : nChr < 0x4000000 ? 5 : 6;
+        }
+
+        aBytes = new Uint8Array(nArrLen);
+
+        /* transcription... */
+
+        for (var nIdx = 0, nChrIdx = 0; nIdx < nArrLen; nChrIdx++) {
+            nChr = sDOMStr.charCodeAt(nChrIdx);
+            if (nChr < 128) {
+                /* one byte */
+                aBytes[nIdx++] = nChr;
+            } else if (nChr < 0x800) {
+                /* two bytes */
+                aBytes[nIdx++] = 192 + (nChr >>> 6);
+                aBytes[nIdx++] = 128 + (nChr & 63);
+            } else if (nChr < 0x10000) {
+                /* three bytes */
+                aBytes[nIdx++] = 224 + (nChr >>> 12);
+                aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
+                aBytes[nIdx++] = 128 + (nChr & 63);
+            } else if (nChr < 0x200000) {
+                /* four bytes */
+                aBytes[nIdx++] = 240 + (nChr >>> 18);
+                aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
+                aBytes[nIdx++] = 128 + (nChr & 63);
+            } else if (nChr < 0x4000000) {
+                /* five bytes */
+                aBytes[nIdx++] = 248 + (nChr >>> 24);
+                aBytes[nIdx++] = 128 + (nChr >>> 18 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
+                aBytes[nIdx++] = 128 + (nChr & 63);
+            } else /* if (nChr <= 0x7fffffff) */ {
+                /* six bytes */
+                aBytes[nIdx++] = 252 + (nChr >>> 30);
+                aBytes[nIdx++] = 128 + (nChr >>> 24 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 18 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 12 & 63);
+                aBytes[nIdx++] = 128 + (nChr >>> 6 & 63);
+                aBytes[nIdx++] = 128 + (nChr & 63);
+            }
+        }
+
+        return aBytes;
+
+    }
+
+    sequencer.protectedScope.addInitMethod(function () {
         context = sequencer.protectedScope.context;
     });
 
@@ -1688,4 +1688,4 @@
 
     sequencer.getMicrosecondsFromBPM = getMicrosecondsFromBPM;
     sequencer.getWaveformData = getWaveformData;
-}());
+}

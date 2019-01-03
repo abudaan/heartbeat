@@ -1,4 +1,4 @@
-(function(){
+function parseTimeEvents() {
 
     'use strict';
 
@@ -34,32 +34,32 @@
         index;
 
 
-    function setTickDuration(){
-        secondsPerTick = (1/playbackSpeed * 60)/bpm/ppq;
+    function setTickDuration() {
+        secondsPerTick = (1 / playbackSpeed * 60) / bpm / ppq;
         millisPerTick = secondsPerTick * 1000;
         //console.log(millisPerTick, bpm, ppq, playbackSpeed, (ppq * millisPerTick));
         //console.log(ppq);
     }
 
 
-    function setTicksPerBeat(){
-        factor = (4/denominator);
+    function setTicksPerBeat() {
+        factor = (4 / denominator);
         numSixteenth = factor * 4;
         ticksPerBeat = ppq * factor;
         ticksPerBar = ticksPerBeat * nominator;
-        ticksPerSixteenth = ppq/4;
+        ticksPerSixteenth = ppq / 4;
         //console.log(denominator, factor, numSixteenth, ticksPerBeat, ticksPerBar, ticksPerSixteenth);
     }
 
 
-    function parse(song){
+    function parse(song) {
         //console.time('parse time events ' + song.name);
         var diffTicks,
             event,
             type,
             i = 0;
 
-        if(song === undefined){
+        if (song === undefined) {
             timeEvents = [];
             console.log('reset', timeEvents);
             return;
@@ -71,11 +71,11 @@
         setTickDuration();
         setTicksPerBeat();
 
-        timeEvents.sort(function(a,b){
+        timeEvents.sort(function (a, b) {
             return a.ticks - b.ticks;
         });
 
-        for(i = 0; i < numTimeEvents; i++){
+        for (i = 0; i < numTimeEvents; i++) {
 
             event = timeEvents[i];
             event.song = song;
@@ -86,20 +86,20 @@
             //console.log(diffTicks, millisPerTick);
             millis += diffTicks * millisPerTick;
 
-            while(tick >= ticksPerSixteenth){
+            while (tick >= ticksPerSixteenth) {
                 sixteenth++;
                 tick -= ticksPerSixteenth;
-                while(sixteenth > numSixteenth){
+                while (sixteenth > numSixteenth) {
                     sixteenth -= numSixteenth;
                     beat++;
-                    while(beat > nominator){
+                    while (beat > nominator) {
                         beat -= nominator;
                         bar++;
                     }
                 }
             }
 
-            switch(type){
+            switch (type) {
 
                 case 0x51:
                     bpm = event.bpm;
@@ -127,7 +127,7 @@
     }
 
 
-    function reset(song){
+    function reset(song) {
         playbackSpeed = song.playbackSpeed;
         timeEvents = song.timeEvents;
         numTimeEvents = timeEvents.length;
@@ -150,7 +150,7 @@
     }
 
 
-    function updateEvent(event){
+    function updateEvent(event) {
 
         //console.log(event, bpm, millisPerTick, ticks, millis);
 
@@ -171,7 +171,7 @@
         event.ticks = ticks;
 
         event.millis = millis;
-        event.seconds = millis/1000;
+        event.seconds = millis / 1000;
 
 
         event.bar = bar;
@@ -197,11 +197,11 @@
 
     sequencer.protectedScope.parseTimeEvents = parse;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         createMidiEvent = sequencer.createMidiEvent;
     });
 
-}());
+}
 
 
 /*

@@ -1,8 +1,8 @@
-(function(){
+function audioRecorderWorker() {
 
     'use strict';
 
-    function createWorker(){
+    function createWorker() {
 
         var
             data,
@@ -16,8 +16,8 @@
             sampleRate,
             numberOfChannels;
 
-        self.onmessage = function(e){
-            switch(e.data.command){
+        self.onmessage = function (e) {
+            switch (e.data.command) {
                 case 'init':
                     sampleRate = e.data.sampleRate;
                     numFrames = 0;
@@ -76,12 +76,12 @@
         };
 
 
-        function getWavFile(){
+        function getWavFile() {
             var dataview, i, index = 0, result;
 
-            if(numberOfChannels === 1){
+            if (numberOfChannels === 1) {
                 interleavedSamples = mergeBuffers(recBuffersLeft, numFrames);
-            }else if(numberOfChannels === 2){
+            } else if (numberOfChannels === 2) {
                 interleavedSamples = toInterleavedBuffer(
                     mergeBuffers(recBuffersLeft, numFrames),
                     mergeBuffers(recBuffersRight, numFrames)
@@ -89,14 +89,14 @@
             }
 
             //console.log('1:' + interleavedSamples.length);
-            if(bufferIndexEnd > 0 || bufferIndexStart > 0){
-                if(bufferIndexEnd === -1){
+            if (bufferIndexEnd > 0 || bufferIndexStart > 0) {
+                if (bufferIndexEnd === -1) {
                     bufferIndexEnd = interleavedSamples.length;
                 }
 
                 result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
 
-                for(i = bufferIndexStart; i < bufferIndexEnd; i++){
+                for (i = bufferIndexStart; i < bufferIndexEnd; i++) {
                     result[index++] = interleavedSamples[i];
                 }
                 interleavedSamples = result;
@@ -108,15 +108,15 @@
         }
 
 
-        function updateWavFile(){
+        function updateWavFile() {
             var dataview, i, result, index = 0;
             //console.log(bufferIndexStart + ':' + interleavedSamples);
 
-            if(bufferIndexEnd === -1){
+            if (bufferIndexEnd === -1) {
                 bufferIndexEnd = interleavedSamples.length;
             }
             result = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-            for(i = bufferIndexStart; i < bufferIndexEnd; i++){
+            for (i = bufferIndexStart; i < bufferIndexEnd; i++) {
                 result[index++] = interleavedSamples[i];
             }
             dataview = encodeWAV(result);
@@ -124,10 +124,10 @@
         }
 
 
-        function mergeBuffers(recBuffers, numFrames){
+        function mergeBuffers(recBuffers, numFrames) {
             var result = new Float32Array(numFrames);
             var offset = 0;
-            for (var i = 0, maxi = recBuffers.length; i < maxi; i++){
+            for (var i = 0, maxi = recBuffers.length; i < maxi; i++) {
                 result.set(recBuffers[i], offset);
                 offset += recBuffers[i].length;
             }
@@ -135,13 +135,13 @@
         }
 
 
-        function toInterleavedBuffer(inputL, inputR){
+        function toInterleavedBuffer(inputL, inputR) {
             var length = inputL.length + inputR.length,
                 result = new Float32Array(length),
                 index = 0,
                 inputIndex = 0;
 
-            while(index < length){
+            while (index < length) {
                 result[index++] = inputL[inputIndex];
                 result[index++] = inputR[inputIndex];
                 inputIndex++;
@@ -150,34 +150,34 @@
         }
 
 
-        function toPlanarBuffer(inputL, inputR){
+        function toPlanarBuffer(inputL, inputR) {
             var length = inputL.length,
                 result = new Float32Array(length * 2),
                 index = 0,
                 inputIndex = 0;
 
-            while(index < length){
+            while (index < length) {
                 result[index++] = inputL[inputIndex++];
             }
 
             index = 0;
-            while(index < length){
+            while (index < length) {
                 result[index++] = inputR[inputIndex++];
             }
             return result;
         }
 
 
-        function floatTo16BitPCM(output, offset, input){
-            for (var i = 0; i < input.length; i++, offset+=2){
+        function floatTo16BitPCM(output, offset, input) {
+            for (var i = 0; i < input.length; i++ , offset += 2) {
                 var s = Math.max(-1, Math.min(1, input[i]));
                 output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
             }
         }
 
 
-        function writeString(view, offset, string){
-            for (var i = 0; i < string.length; i++){
+        function writeString(view, offset, string) {
+            for (var i = 0; i < string.length; i++) {
                 view.setUint8(offset + i, string.charCodeAt(i));
             }
         }
@@ -185,9 +185,9 @@
 
         // see: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
         // samples is a Float32Array
-        function encodeWAV(samples){
+        function encodeWAV(samples) {
             var bitsPerSample = 16,
-                bytesPerSample = bitsPerSample/8,
+                bytesPerSample = bitsPerSample / 8,
                 buffer = new ArrayBuffer(44 + samples.length * bytesPerSample),
                 view = new DataView(buffer);
 
@@ -224,32 +224,32 @@
         }
 
 
-        function getWavFile2(){
+        function getWavFile2() {
             var dataview, i, index = 0,
                 resultLeft, resultRight,
                 mergedBuffersLeft, mergedBuffersRight;
 
-            if(numberOfChannels === 1){
+            if (numberOfChannels === 1) {
                 mergedBuffersLeft = mergeBuffers(recBuffersLeft, numFrames);
-            }else if(numberOfChannels === 2){
+            } else if (numberOfChannels === 2) {
                 mergedBuffersLeft = mergeBuffers(recBuffersLeft, numFrames);
                 mergedBuffersRight = mergeBuffers(recBuffersRight, numFrames);
             }
 
             //console.log('1:' + mergedBufferLeft.length);
-            if(bufferIndexEnd > 0 || bufferIndexStart > 0){
-                if(bufferIndexEnd === -1){
+            if (bufferIndexEnd > 0 || bufferIndexStart > 0) {
+                if (bufferIndexEnd === -1) {
                     bufferIndexEnd = mergedBuffersLeft.length;
                 }
 
                 resultLeft = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
-                if(numberOfChannels === 2){
+                if (numberOfChannels === 2) {
                     resultRight = new Float32Array(bufferIndexEnd - bufferIndexStart + 1);
                 }
 
-                for(i = bufferIndexStart; i < bufferIndexEnd; i++){
+                for (i = bufferIndexStart; i < bufferIndexEnd; i++) {
                     resultLeft[index] = mergedBuffersLeft[i];
-                    if(numberOfChannels === 2){
+                    if (numberOfChannels === 2) {
                         resultRight = mergedBuffersRight[i];
                     }
                     index++;
@@ -257,14 +257,14 @@
             }
             //console.log('2:' + mergedBufferLeft.length);
 
-            if(numberOfChannels === 1){
+            if (numberOfChannels === 1) {
                 planarSamples = mergedBuffersLeft;
                 interleavedSamples = new Float32Array(numFrames);
                 //planarSamples.copyWithin(interleavedSamples, 0);
-                for(i = 0; i < numFrames; i++){
+                for (i = 0; i < numFrames; i++) {
                     interleavedSamples[i] = planarSamples[i];
                 }
-            }else if(numberOfChannels === 2){
+            } else if (numberOfChannels === 2) {
                 planarSamples = toPlanarBuffer(mergedBuffersLeft, mergedBuffersRight);
                 interleavedSamples = toInterleavedBuffer(mergedBuffersLeft, mergedBuffersRight);
             }
@@ -280,10 +280,9 @@
 
     }
 
-
-    sequencer.protectedScope.createAudioRecorderWorker = function(){
-        var blobURL = URL.createObjectURL(new Blob(['(', createWorker.toString(), ')()'], {type: 'application/javascript'}));
+    sequencer.protectedScope.createAudioRecorderWorker = function () {
+        var blobURL = URL.createObjectURL(new Blob(['(', createWorker.toString(), ')()'], { type: 'application/javascript' }));
         return new Worker(blobURL);
     };
 
-}());
+}

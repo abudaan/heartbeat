@@ -8,7 +8,7 @@
 
 */
 
-(function () {
+function track() {
 
     'use strict';
 
@@ -1611,4 +1611,4 @@
         handleMidiMessageTrack = protectedScope.handleMidiMessageTrack;
     });
 
-}());
+}

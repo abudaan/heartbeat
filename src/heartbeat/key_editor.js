@@ -1,4 +1,4 @@
-(function(){
+function keyEditor() {
 
     'use strict';
 
@@ -46,7 +46,7 @@
 
 
 
-    KeyEditor = function(song, config){
+    KeyEditor = function (song, config) {
         this.song = song;
         this.song.keyEditor = this;
         this.playhead = createPlayhead(this.song, 'barsbeats ticks millis', 'keyeditor');
@@ -105,7 +105,7 @@
         };
 
 
-        if(config.paginate){
+        if (config.paginate) {
             this.paginate = true;
             this.pageNo = 0;
             this.barsPerPage = config.barsPerPage;
@@ -115,10 +115,10 @@
             this.lowestNote = config.lowestNote || song.lowestNote;
             this.highestNote = config.highestNote || song.highestNote;
             this.pitchRange = this.highestNote - this.lowestNote;
-            if(this.exactFitVertical){
-                this.pitchHeight = this.height/this.pitchRange;
+            if (this.exactFitVertical) {
+                this.pitchHeight = this.height / this.pitchRange;
                 this.height = this.pageHeight;
-            }else{
+            } else {
                 this.pitchHeight = config.pitchHeight || pitchHeight;
                 this.height = this.pitchHeight * this.pitchRange;
             }
@@ -126,37 +126,37 @@
             setPageData(this, 0);
             checkNextPage(this);
 
-        }else{
+        } else {
 
             this.setStartPosition(config.startPosition || 1);
             this.setEndPosition(config.endPosition || song.bars + 1);
             this.numTicks = this.endTicks - this.startTicks;
 
-            if(config.width){
+            if (config.width) {
                 this.width = config.width;
-                this.tickWidth = this.width/this.numTicks;
-            }else if(config.tickWidth){
+                this.tickWidth = this.width / this.numTicks;
+            } else if (config.tickWidth) {
                 this.tickWidth = config.tickWidth;
                 this.width = this.numTicks * this.tickWidth;
                 this.exactFitHorizontal = false;
-            }else if(config.barsPerPage && config.viewportWidth){
+            } else if (config.barsPerPage && config.viewportWidth) {
                 //@TODO: add support for time measurement changes
                 this.barsPerPage = config.barsPerPage;
                 this.viewportWidth = config.viewportWidth;
-                this.tickWidth = this.viewportWidth/(this.startPosition.ticksPerBar * this.barsPerPage);
+                this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
                 this.width = this.numTicks * this.tickWidth;
                 this.scrollX = 0;
                 this.scrollPosition = 0;
                 this.viewportTicks = this.viewportWidth / this.tickWidth;
-                this.maxScrollPosition = ceil(this.width/this.viewportWidth);
-                this.scrollLimit = this.viewportWidth/this.tickWidth;
+                this.maxScrollPosition = ceil(this.width / this.viewportWidth);
+                this.scrollLimit = this.viewportWidth / this.tickWidth;
                 checkScrollPosition(this);
                 this.exactFitHorizontal = false;
-            }else if(config.viewportWidth){
+            } else if (config.viewportWidth) {
                 this.viewportWidth = this.width = config.viewportWidth;
-                this.tickWidth = this.viewportWidth/this.numTicks;
+                this.tickWidth = this.viewportWidth / this.numTicks;
                 this.exactFitHorizontal = true;
-            }else{
+            } else {
                 this.tickWidth = tickWidth;
                 this.width = this.numTicks * this.tickWidth;
                 this.exactFitHorizontal = false;
@@ -168,18 +168,18 @@
             this.pitchRange = config.pitchRange || this.highestNote - this.lowestNote + 1;
             //console.log(this.pitchRange);
 
-            if(config.height){
+            if (config.height) {
                 this.height = config.height;
-                this.pitchHeight = this.height/this.pitchRange;
-            }else if(config.pitchHeight){
+                this.pitchHeight = this.height / this.pitchRange;
+            } else if (config.pitchHeight) {
                 this.pitchHeight = config.pitchHeight;
                 this.height = this.pitchRange * this.pitchHeight;
                 this.exactFitVertical = false;
-            }else if(config.viewportHeight){
+            } else if (config.viewportHeight) {
                 this.viewportHeight = this.height = config.viewportHeight;
-                this.pitchHeight = this.viewportHeight/this.pitchRange;
+                this.pitchHeight = this.viewportHeight / this.pitchRange;
                 this.exactFitVertical = true;
-            }else{
+            } else {
                 this.pitchHeight = pitchHeight;
                 this.height = this.pitchRange * this.pitchHeight;
                 this.exactFitVertical = false;
@@ -198,7 +198,7 @@
         this.scrollX = 0;
         this.scrollY = 0;
         this.currentPage = 1;
-        this.numPages = ceil(this.width/this.viewportWidth);
+        this.numPages = ceil(this.width / this.viewportWidth);
 
         this.snapValueX = config.snapX === undefined ? snapValueX : config.snapX;
         this.snapValueY = config.snapY === undefined ? snapValueY : config.snapY;
@@ -209,61 +209,61 @@
     };
 
 
-    KeyEditor.prototype.setBarsPerPage = function(bbp){
+    KeyEditor.prototype.setBarsPerPage = function (bbp) {
         this.interrupt = true;
 
-        var tmp = round(this.scrollX/(this.viewportWidth/this.barsPerPage));
+        var tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
         this.barsPerPage = bbp;
-        this.tickWidth = this.viewportWidth/(this.startPosition.ticksPerBar * this.barsPerPage);
+        this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
         this.viewportTicks = this.viewportWidth / this.tickWidth;
         this.width = this.numTicks * this.tickWidth;
         this.verticalLine.reset();
         this.horizontalLine.reset();
         this.eventIterator.reset();
         this.partIterator.reset();
-        this.scrollLimit = this.viewportWidth/this.tickWidth;
-        this.maxScrollPosition = ceil(this.width/this.viewportWidth);
+        this.scrollLimit = this.viewportWidth / this.tickWidth;
+        this.maxScrollPosition = ceil(this.width / this.viewportWidth);
         this.snapWidth = this.tickWidth * this.snapTicks;
 
-        this.numPages = ceil(this.numBars/this.barsPerPage);
+        this.numPages = ceil(this.numBars / this.barsPerPage);
         this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
 
         dispatchEvent(this, 'scale', {});
 
-        if(this.song.playing){
-            this.scrollPosition = floor(this.song.ticks/this.viewportTicks);
-        }else{
+        if (this.song.playing) {
+            this.scrollPosition = floor(this.song.ticks / this.viewportTicks);
+        } else {
             //console.log(tmp,this.scrollPosition);
-            this.scrollPosition = ((this.viewportWidth/this.barsPerPage) * tmp)/this.viewportWidth;
-            dispatchEvent(this, 'scroll', {x:(this.scrollPosition * this.viewportWidth)});
+            this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
+            dispatchEvent(this, 'scroll', { x: (this.scrollPosition * this.viewportWidth) });
         }
         this.interrupt = false;
     };
 
 
-    KeyEditor.prototype.setViewport = function(w, h){
+    KeyEditor.prototype.setViewport = function (w, h) {
         var draw = false;
 
-        if(this.barsPerPage && w !== this.viewportWidth){
+        if (this.barsPerPage && w !== this.viewportWidth) {
             //@TODO: add support for time measurement changes
             this.viewportWidth = w;
-            this.tickWidth = this.viewportWidth/(this.startPosition.ticksPerBar * this.barsPerPage);
+            this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
             this.viewportTicks = this.viewportWidth / this.tickWidth;
             this.width = this.numTicks * this.tickWidth;
             draw = true;
-        }else if(this.exactFitHorizontal === true && w !== this.width){
+        } else if (this.exactFitHorizontal === true && w !== this.width) {
             this.viewportWidth = this.width = w;
-            this.tickWidth = this.width/this.numTicks;
+            this.tickWidth = this.width / this.numTicks;
             draw = true;
         }
 
-        if(this.exactFitVertical === true && h !== this.height){
+        if (this.exactFitVertical === true && h !== this.height) {
             this.viewportHeight = this.height = h;
-            this.pitchHeight = this.height/this.pitchRange;
+            this.pitchHeight = this.height / this.pitchRange;
             draw = true;
         }
 
-        if(draw){
+        if (draw) {
             this.verticalLine.reset();
             this.horizontalLine.reset();
             this.eventIterator.reset();
@@ -275,18 +275,18 @@
     };
 
 
-    KeyEditor.prototype.updateSong = function(data){
+    KeyEditor.prototype.updateSong = function (data) {
         this.iteratorFactory.updateSong();
 
         var key, i = 0, j, k, arr, tmp;
 
-        for(i = updateDataKeys.length - 1; i >= 0; i--){
+        for (i = updateDataKeys.length - 1; i >= 0; i--) {
             key = updateDataKeys[i];
-            switch(key){
+            switch (key) {
                 case 'newNotes':
                 case 'changedNotes':
                     arr = data[key];
-                    for(j = arr.length - 1; j >= 0; j--){
+                    for (j = arr.length - 1; j >= 0; j--) {
                         tmp = arr[j];
                         tmp.bbox = this.getNoteRect(tmp);
                     }
@@ -295,7 +295,7 @@
                 case 'newParts':
                 case 'changedParts':
                     arr = data[key];
-                    for(j = arr.length - 1; j >= 0; j--){
+                    for (j = arr.length - 1; j >= 0; j--) {
                         tmp = arr[j];
                         tmp.bbox = this.getPartRect(tmp);
                     }
@@ -303,52 +303,52 @@
             }
         }
 
-/*
-        this.newNumBars = data.numBars;
-        // delete numBars otherwise the for loop below doesn't work anymore
-        delete data.numBars;
-
-        for(key in data){
-            if(data.hasOwnProperty(key)){
-                arr = data[key];
-                for(j = arr.length - 1; j >= 0; j--){
-                    tmp = arr[j];
-                    k = floor(i/3);
-                    //console.log(i,k);
-                    switch(k){
-                        case 0: // event arrays
-                            //console.log(k,i);
-                            //tmp.bbox = getEventRect(tmp);
-                            // arr[j] = {
-                            //     event: tmp
-                            // }
-                            break;
-                        case 1: // note arrays
-                            //console.log(k,i);
-                            if(tmp.bbox)
-                            console.log(1,tmp.bbox.x)
-                            tmp.bbox = this.getNoteRect(tmp);
-                            console.log(2,tmp.bbox.x)
-                            // arr[j] = {
-                            //     note: tmp,
-                            //     bbox: this.getNoteRect(tmp)
-                            // }
-                            break;
-                        case 2: // part arrays
-                            //console.log(k,i);
-                            //console.log(tmp);
-                            tmp.bbox = this.getPartRect(tmp);
-                            // arr[j] = {
-                            //     part: tmp,
-                            //     bbox: this.getPartRect(tmp)
-                            // }
-                            break;
+        /*
+                this.newNumBars = data.numBars;
+                // delete numBars otherwise the for loop below doesn't work anymore
+                delete data.numBars;
+        
+                for(key in data){
+                    if(data.hasOwnProperty(key)){
+                        arr = data[key];
+                        for(j = arr.length - 1; j >= 0; j--){
+                            tmp = arr[j];
+                            k = floor(i/3);
+                            //console.log(i,k);
+                            switch(k){
+                                case 0: // event arrays
+                                    //console.log(k,i);
+                                    //tmp.bbox = getEventRect(tmp);
+                                    // arr[j] = {
+                                    //     event: tmp
+                                    // }
+                                    break;
+                                case 1: // note arrays
+                                    //console.log(k,i);
+                                    if(tmp.bbox)
+                                    console.log(1,tmp.bbox.x)
+                                    tmp.bbox = this.getNoteRect(tmp);
+                                    console.log(2,tmp.bbox.x)
+                                    // arr[j] = {
+                                    //     note: tmp,
+                                    //     bbox: this.getNoteRect(tmp)
+                                    // }
+                                    break;
+                                case 2: // part arrays
+                                    //console.log(k,i);
+                                    //console.log(tmp);
+                                    tmp.bbox = this.getPartRect(tmp);
+                                    // arr[j] = {
+                                    //     part: tmp,
+                                    //     bbox: this.getPartRect(tmp)
+                                    // }
+                                    break;
+                            }
+                        }
+                        i++;
                     }
                 }
-                i++;
-            }
-        }
-*/
+        */
         this.newNumBars = data.numBars;
 
         this.newEvents = this.newEvents.concat(data.newEvents);
@@ -368,8 +368,8 @@
     };
 
 
-    KeyEditor.prototype.setStartPosition = function(pos){
-        if(typeString(pos) !== 'array'){
+    KeyEditor.prototype.setStartPosition = function (pos) {
+        if (typeString(pos) !== 'array') {
             pos = ['barsandbeats', pos, 1, 1, 0];
         }
 
@@ -380,8 +380,8 @@
     };
 
 
-    KeyEditor.prototype.setEndPosition = function(pos){
-        if(typeString(pos) !== 'array'){
+    KeyEditor.prototype.setEndPosition = function (pos) {
+        if (typeString(pos) !== 'array') {
             pos = ['barsandbeats', pos, 1, 1, 0];
         }
 
@@ -392,17 +392,17 @@
     };
 
 
-    KeyEditor.prototype.addEventListener = function(id, cb){
+    KeyEditor.prototype.addEventListener = function (id, cb) {
         var ids = id.split(' '),
             tmp,
             editor = this,
             eventId;
 
-        ids.forEach(function(id){
+        ids.forEach(function (id) {
 
             tmp = editor.eventListeners[id];
 
-            if(tmp === undefined){
+            if (tmp === undefined) {
                 editor.eventListeners[id] = [];
                 tmp = editor.eventListeners[id];
             }
@@ -413,40 +413,40 @@
     };
 
 
-    KeyEditor.prototype.nextPage = function(){
+    KeyEditor.prototype.nextPage = function () {
         setPageData(this, this.startBar + this.barsPerPage);
-        dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
+        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
     };
 
 
-    KeyEditor.prototype.prevPage = function(){
+    KeyEditor.prototype.prevPage = function () {
         setPageData(this, this.startBar - this.barsPerPage);
-        dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
+        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
     };
 
 
-    KeyEditor.prototype.gotoPage = function(n){
+    KeyEditor.prototype.gotoPage = function (n) {
         console.warn('ooops, not implemented yet!');
         return;
         n = n - 1;
-        if(n < 0 || n > this.lastPage){
+        if (n < 0 || n > this.lastPage) {
             return;
         }
         this.pageNo = n;
-        dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
+        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
         setPageData(this, this.pageNo);
     };
 
 
-    KeyEditor.prototype.scroll = function(action){
+    KeyEditor.prototype.scroll = function (action) {
 
         //this.scrollPosition = floor(this.scrollX/this.viewportWidth);
         var x,
-            tmp = round(this.scrollX/(this.viewportWidth/this.barsPerPage));
+            tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
 
-        this.scrollPosition = ((this.viewportWidth/this.barsPerPage) * tmp)/this.viewportWidth;
+        this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
 
-        switch(action){
+        switch (action) {
             case '>':
                 this.scrollPosition += 1;
                 this.scrollPosition = this.scrollPosition > this.maxScrollPosition ? this.maxScrollPosition : this.scrollPosition;
@@ -462,33 +462,33 @@
                 this.scrollPosition = 0;
                 break;
             default:
-                if(isNaN(action)){
+                if (isNaN(action)) {
                     return;
                 }
                 this.scrollPosition = parseInt(action);
         }
 
         x = this.scrollPosition * this.viewportWidth;
-        this.scrollLimit = (x + this.viewportWidth)/this.tickWidth;
-        this.currentPage = ceil(x/this.viewportWidth) + 1;
-        if(this.currentPage === 0){
+        this.scrollLimit = (x + this.viewportWidth) / this.tickWidth;
+        this.currentPage = ceil(x / this.viewportWidth) + 1;
+        if (this.currentPage === 0) {
             this.currentPage = 1;
-        }else if(this.currentPage > this.maxScrollPosition){
+        } else if (this.currentPage > this.maxScrollPosition) {
             this.currentPage = this.maxScrollPosition;
         }
         //console.log('bar',(this.scrollPosition * this.barsPerPage),'scroll',this.scrollPosition);
-        dispatchEvent(this, 'scroll', {x:x});
+        dispatchEvent(this, 'scroll', { x: x });
     };
 
 
-    KeyEditor.prototype.updateScroll = function(scrollX, scrollY){
+    KeyEditor.prototype.updateScroll = function (scrollX, scrollY) {
         this.scrollX = scrollX;
         this.scrollY = scrollY;
-        this.scrollLimit = (scrollX + this.viewportWidth)/this.tickWidth;
+        this.scrollLimit = (scrollX + this.viewportWidth) / this.tickWidth;
     };
 
 
-    KeyEditor.prototype.getEventRect = function(event){
+    KeyEditor.prototype.getEventRect = function (event) {
         //console.log(note.number);
         var
             x = this.ticksToX(event.ticks - this.startTicks, false),
@@ -496,7 +496,7 @@
             w = eventWidth * this.tickWidth,
             h = this.pitchHeight;
 
-        return{
+        return {
             x: x,
             y: y,
             width: w,
@@ -509,7 +509,7 @@
     };
 
 
-    KeyEditor.prototype.getNoteRect = function(note){
+    KeyEditor.prototype.getNoteRect = function (note) {
         //console.log(note.number);
         var
             x = this.ticksToX(note.ticks - this.startTicks, false),//(note.ticks - this.startTicks) * this.tickWidth,
@@ -518,31 +518,31 @@
             h = this.pitchHeight,
             start, end, diff;
 
-        if(note.endless){
+        if (note.endless) {
             w = (this.song.ticks - note.noteOn.ticks) * this.tickWidth;
         }
 
-///*
-        if(this.paginate){
+        ///*
+        if (this.paginate) {
 
             start = note.ticks;
             end = note.noteOff.ticks;
 
-            if(start < this.startTicks){
+            if (start < this.startTicks) {
                 diff = this.startTicks - start;
                 start = start + diff - this.startTicks;
                 x = start * this.tickWidth;
 
                 end = end > this.endTicks ? this.endTicks : end;
                 w = (end - this.startTicks) * this.tickWidth;
-            }else{
+            } else {
                 return false;
             }
         }
 
-//*/
+        //*/
 
-        return{
+        return {
             x: x,
             y: y,
             width: w,
@@ -555,7 +555,7 @@
     };
 
 
-    KeyEditor.prototype.getPartRect = function(part){
+    KeyEditor.prototype.getPartRect = function (part) {
         var stats = part.getStats('noteNumber all'),
             //firstEvent = part.events[0],
             //lastEvent = part.events[part.events.length - 1],
@@ -586,15 +586,15 @@
     };
 
 
-    KeyEditor.prototype.getBBox = function(arg){
+    KeyEditor.prototype.getBBox = function (arg) {
         var type, data;
-        if(typeString(arg) === 'string'){
-            switch(arg.substring(0,1)){
+        if (typeString(arg) === 'string') {
+            switch (arg.substring(0, 1)) {
                 case 'E':
                     type = 'event';
-                    if(event.type === 144 && event.endEvent !== undefined){
+                    if (event.type === 144 && event.endEvent !== undefined) {
                         data = this.song.findEvent('id = ' + arg);
-                    }else{
+                    } else {
                         console.error('argument not supported, please check documentation');
                         return;
                     }
@@ -610,8 +610,8 @@
                     console.error('argument not supported, please check documentation');
                     return;
             }
-        }else{
-            switch(arg.className){
+        } else {
+            switch (arg.className) {
                 case 'AudioEvent':
                     type = 'audio';
                     break;
@@ -630,25 +630,25 @@
             }
         }
 
-        if(data === undefined){
+        if (data === undefined) {
             console.error(arg, 'could not be found');
             return;
         }
 
-        switch(type){
+        switch (type) {
             case 'event':
                 return this.getNoteRect(data);
-                //break;
+            //break;
             case 'part':
                 return this.getPartRect(data);
-                //break;
+            //break;
         }
     };
 
 
-    KeyEditor.prototype.startMoveNote = function(note, x, y){
-        if(note.className !== 'MidiNote'){
-            if(sequencer.debug >= sequencer.WARN){
+    KeyEditor.prototype.startMoveNote = function (note, x, y) {
+        if (note.className !== 'MidiNote') {
+            if (sequencer.debug >= sequencer.WARN) {
                 console.warn(note, 'is not a MidiNote');
             }
             return;
@@ -659,13 +659,13 @@
     };
 
 
-    KeyEditor.prototype.stopMoveNote = function(){
+    KeyEditor.prototype.stopMoveNote = function () {
         this.selectedNote = undefined;
     };
 
 
-    KeyEditor.prototype.moveNote = function(x, y){
-        if(this.selectedNote === undefined){
+    KeyEditor.prototype.moveNote = function (x, y) {
+        if (this.selectedNote === undefined) {
             return;
         }
 
@@ -679,25 +679,25 @@
 
         //console.log(newTicks, oldTicks, this.gripX, x);
 
-        if(newPitch !== oldPitch){
+        if (newPitch !== oldPitch) {
             part.transposeNote(this.selectedNote, newPitch - oldPitch);
             update = true;
         }
 
-        if(newTicks !== oldTicks){
+        if (newTicks !== oldTicks) {
             part.moveNote(this.selectedNote, newTicks - oldTicks);
             update = true;
         }
 
-        if(update === true){
+        if (update === true) {
             this.song.update();
         }
     };
 
 
-    KeyEditor.prototype.startMovePart = function(part, x, y){
-        if(part.className !== 'Part'){
-            if(sequencer.debug >= sequencer.WARN){
+    KeyEditor.prototype.startMovePart = function (part, x, y) {
+        if (part.className !== 'Part') {
+            if (sequencer.debug >= sequencer.WARN) {
                 console.warn(part, 'is not a Part');
             }
             return;
@@ -708,13 +708,13 @@
     };
 
 
-    KeyEditor.prototype.stopMovePart = function(){
+    KeyEditor.prototype.stopMovePart = function () {
         this.selectedPart = undefined;
     };
 
 
-    KeyEditor.prototype.movePart = function(x, y){
-        if(this.selectedPart === undefined){
+    KeyEditor.prototype.movePart = function (x, y) {
+        if (this.selectedPart === undefined) {
             return;
         }
 
@@ -725,63 +725,63 @@
             oldTicks = this.selectedPart.ticks,
             update = false;
 
-        if(newPitch !== oldPitch){
+        if (newPitch !== oldPitch) {
             this.selectedPart.track.transposePart(this.selectedPart, newPitch - oldPitch);
             this.selectedPart.pitch = newPitch;
             update = true;
         }
 
 
-        if(newTicks !== oldTicks){
+        if (newTicks !== oldTicks) {
             this.selectedPart.track.movePart(this.selectedPart, newTicks - oldTicks);
             update = true;
         }
 
-        if(update === true){
+        if (update === true) {
             this.song.update();
         }
     };
 
 
-    KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function(x, snap){
-        var ticks = ((x + this.scrollX)/this.width) * this.numTicks;
+    KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function (x, snap) {
+        var ticks = ((x + this.scrollX) / this.width) * this.numTicks;
         //console.log(this.scrollX,this.width,this.numTicks,ticks);
-        if(snap !== false && this.snapTicks !== 0){
+        if (snap !== false && this.snapTicks !== 0) {
             //ticks = floor(ticks/this.snapTicks) * this.snapTicks;
-            ticks = round(ticks/this.snapTicks) * this.snapTicks;
+            ticks = round(ticks / this.snapTicks) * this.snapTicks;
         }
         //console.log(ticks, this.snapTicks);
         return ticks;
     };
 
 
-    KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function(y){
+    KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function (y) {
         //var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
-        var note = this.highestNote - round(((y + this.scrollY)/this.height) * this.pitchRange);
+        var note = this.highestNote - round(((y + this.scrollY) / this.height) * this.pitchRange);
         note = createNote(note);
         return note;
     };
 
 
-    KeyEditor.prototype.getXAt = KeyEditor.prototype.ticksToX = function(ticks, snap){
+    KeyEditor.prototype.getXAt = KeyEditor.prototype.ticksToX = function (ticks, snap) {
         // var p = ticks/this.numTicks,
         //     x = (p * this.width) - this.scrollX;
         var x = (ticks - this.startTicks) * this.tickWidth;
-        if(snap !== false && this.snapWidth !== 0){
+        if (snap !== false && this.snapWidth !== 0) {
             //x = (floor(x/this.snapWidth) * this.snapWidth);
-            x = (round(x/this.snapWidth) * this.snapWidth);
+            x = (round(x / this.snapWidth) * this.snapWidth);
         }
         return x;
     };
 
 
-    KeyEditor.prototype.getYAt = KeyEditor.prototype.pitchToY = function(noteNumber){
+    KeyEditor.prototype.getYAt = KeyEditor.prototype.pitchToY = function (noteNumber) {
         var y = this.height - ((noteNumber - this.lowestNote + 1) * this.pitchHeight);
         return y;
     };
 
 
-    KeyEditor.prototype.getPositionAt = function(x){
+    KeyEditor.prototype.getPositionAt = function (x) {
         var ticks = this.getTicksAt(x);
         // console.time('get position')
         // var position = getPosition(this.song,['ticks',ticks]);
@@ -794,8 +794,8 @@
     };
 
 
-    KeyEditor.prototype.getPlayheadX = function(compensateForScroll){
-        var x = ((this.song.ticks/this.song.durationTicks) * this.width);
+    KeyEditor.prototype.getPlayheadX = function (compensateForScroll) {
+        var x = ((this.song.ticks / this.song.durationTicks) * this.width);
         //var x = ((this.song.millis/this.song.durationMillis) * this.width);
         //var x = (this.song.percentage * this.width);
         x = compensateForScroll === true ? x - this.scrollX : x;
@@ -803,26 +803,26 @@
     };
 
 
-   KeyEditor.prototype.setPlayheadToX = function(x){
+    KeyEditor.prototype.setPlayheadToX = function (x) {
         var ticks = this.xToTicks(x, false);
         this.song.setPlayhead('ticks', ticks);
     };
 
-    KeyEditor.prototype.getPlayheadPosition = function(compensateForScroll){
+    KeyEditor.prototype.getPlayheadPosition = function (compensateForScroll) {
         //return (sequencer.percentage * this.width);// - this.scrollX;
         //return ((sequencer.millis/song.durationMillis) * this.width);// - this.scrollX;
         //var x = ((this.song.millis/this.song.durationMillis) * this.width);
         // change to ticks to make tempo changes visible by a faster moving playhead
-        var x = ((this.song.ticks/this.song.durationTicks) * this.width);
+        var x = ((this.song.ticks / this.song.durationTicks) * this.width);
         x = compensateForScroll === true ? x - this.scrollX : x;
         return x;
     };
 
 
-    KeyEditor.prototype.setPlayheadPosition = function(type, value){
+    KeyEditor.prototype.setPlayheadPosition = function (type, value) {
         //console.log(this.scrollX,value, this.scrollX + value);
         var ticks;
-        switch(type){
+        switch (type) {
             case 'x':
                 ticks = this.xToTicks(value, false);
                 break;
@@ -841,13 +841,13 @@
     };
 
 
-    KeyEditor.prototype.getEventAt = function(x, y){
+    KeyEditor.prototype.getEventAt = function (x, y) {
         var position = this.getSongPosition(x),
             pitch = this.getPitchAt(y);
     };
 
 
-    KeyEditor.prototype.getEventsInRect = function(x, y, w, h){
+    KeyEditor.prototype.getEventsInRect = function (x, y, w, h) {
         var startPos = this.getSongPosition(x),
             endPos = this.getSongPosition(x + w),
             startPitch = this.getPitchAt(y + h),
@@ -856,13 +856,13 @@
     };
 
 
-    KeyEditor.prototype.getNoteAt = function(x, y){
+    KeyEditor.prototype.getNoteAt = function (x, y) {
         var position = this.getSongPosition(x),
             pitch = this.getPitchAt(y);
     };
 
 
-    KeyEditor.prototype.getNotesInRect = function(x, y, w, h){
+    KeyEditor.prototype.getNotesInRect = function (x, y, w, h) {
         var startPos = this.getSongPosition(x),
             endPos = this.getSongPosition(x + w),
             startPitch = this.getPitchAt(y + h),
@@ -871,8 +871,8 @@
 
 
     // takes x,y and returns snapped x,y
-    KeyEditor.prototype.snap = function(x, y){
-        return{
+    KeyEditor.prototype.snap = function (x, y) {
+        return {
             x: this.snapX(x),
             y: this.snapY(y)
         };
@@ -880,53 +880,53 @@
 
 
     // takes x returns snapped x
-    KeyEditor.prototype.snapX = function(x){
+    KeyEditor.prototype.snapX = function (x) {
         //return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
-        return round((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+        return round((x + this.scrollX) / this.snapWidth) * this.snapWidth;
 
     };
 
 
     // takes y returns snapped y
-    KeyEditor.prototype.snapY = function(y){
+    KeyEditor.prototype.snapY = function (y) {
         //return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
-        return round((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+        return round((y + this.scrollY) / this.snapHeight) * this.snapHeight;
     };
 
 
-    KeyEditor.prototype.setSnapX = function(snapX){
-        if(snapX === undefined){
+    KeyEditor.prototype.setSnapX = function (snapX) {
+        if (snapX === undefined) {
             return;
         }
         //console.log('in', snapX);
         // 4 -> 1, 8 -> 0.5 16 -> 0.25
-        var beatLength = 4/this.song.denominator;
+        var beatLength = 4 / this.song.denominator;
 
-        if(snapX === 'off'){
+        if (snapX === 'off') {
             this.snapTicks = 0;
-        }else if(snapX === 'tick'){
+        } else if (snapX === 'tick') {
             this.snapTicks = 1;
-        }else if(snapX === 'beat'){
+        } else if (snapX === 'beat') {
             // TODO: dependent on current time signature!
             this.snapTicks = this.song.ppq * beatLength;
-        }else if(snapX === 'bar'){
+        } else if (snapX === 'bar') {
             // TODO: dependent on current time signature!
             this.snapTicks = (this.song.ppq * this.song.nominator) * beatLength;
-        }else if(isNaN(snapX) && snapX.indexOf('ticks') !== -1){
-            this.snapTicks = snapX.replace(/ticks/,'');
-            if(isNaN(this.snapTicks)){
-                this.snapTicks = this.song.ppq/4;// sixteenth note
-            }else{
+        } else if (isNaN(snapX) && snapX.indexOf('ticks') !== -1) {
+            this.snapTicks = snapX.replace(/ticks/, '');
+            if (isNaN(this.snapTicks)) {
+                this.snapTicks = this.song.ppq / 4;// sixteenth note
+            } else {
                 this.snapTicks = parseInt(this.snapTicks);
             }
-        }else{
-            if(isNaN(snapX) || snapX === 0){
+        } else {
+            if (isNaN(snapX) || snapX === 0) {
                 // by default snap is off
                 snapX = 0;
                 this.snapTicks = 0;
-            }else{
+            } else {
                 snapX = parseInt(snapX);
-                this.snapTicks = (4/snapX) * this.song.ppq;
+                this.snapTicks = (4 / snapX) * this.song.ppq;
             }
         }
 
@@ -936,8 +936,8 @@
     };
 
 
-    KeyEditor.prototype.setSnapY = function(snapY){
-        if(snapY === undefined){
+    KeyEditor.prototype.setSnapY = function (snapY) {
+        if (snapY === undefined) {
             return;
         }
         this.snapValueY = snapY;
@@ -946,7 +946,7 @@
     };
 
 
-    KeyEditor.prototype.removeNote = function(note){
+    KeyEditor.prototype.removeNote = function (note) {
         //note.part.removeNote(note);
         //console.log(note.id);
         note.part.removeEvents(note.noteOn, note.noteOff);
@@ -954,19 +954,19 @@
     };
 
 
-    KeyEditor.prototype.removePart = function(part){
+    KeyEditor.prototype.removePart = function (part) {
         part.track.removePart(part);
         this.song.update();
     };
 
 
-    KeyEditor.prototype.prepareForRecording = function(){
+    KeyEditor.prototype.prepareForRecording = function () {
         this.recordedEventsObj = {};
         this.recordedNotesObj = {};
     };
 
 
-    KeyEditor.prototype.getSnapshot = function(){
+    KeyEditor.prototype.getSnapshot = function () {
 
         var activeEventsObj,
             activeNotesObj,
@@ -1002,7 +1002,7 @@
         this.activeStateChangedParts = [];
 
         //if(this.song.bars > this.numBars){
-        if(this.newNumBars !== this.numBars){
+        if (this.newNumBars !== this.numBars) {
             startBar = this.numBars;
             endBar = this.song.lastBar + 1;
             //console.log(startBar,endBar)
@@ -1019,19 +1019,19 @@
             this.width = this.numTicks * this.tickWidth;
             //console.log('new width', this.width, this.numTicks, this.tickWidth);
             //console.log('song has gotten longer boy!', this.song.bars, this.newNumBars, this.numBars, this.width);
-            this.maxScrollPosition = ceil(this.width/this.viewportWidth);
+            this.maxScrollPosition = ceil(this.width / this.viewportWidth);
             //this.numPages = ceil(this.width/this.viewportWidth);
-            this.numPages = ceil(this.numBars/this.barsPerPage);
+            this.numPages = ceil(this.numBars / this.barsPerPage);
         }
 
 
 
         activeEventsObj = this.song.activeEvents;
-        for(i in activeEventsObj){
-            if(activeEventsObj.hasOwnProperty(i)){
+        for (i in activeEventsObj) {
+            if (activeEventsObj.hasOwnProperty(i)) {
                 tmp = activeEventsObj[i];
                 this.activeEvents.push(tmp);
-                if(tmp.active !== true){
+                if (tmp.active !== true) {
                     tmp.active = true;
                     this.activeStateChangedEvents.push(tmp);
                 }
@@ -1039,12 +1039,12 @@
         }
 
         activeNotesObj = this.song.activeNotes;
-        for(i in activeNotesObj){
-            if(activeNotesObj.hasOwnProperty(i)){
+        for (i in activeNotesObj) {
+            if (activeNotesObj.hasOwnProperty(i)) {
                 tmp = activeNotesObj[i];
                 this.activeNotes.push(tmp);
                 //console.log(tmp, tmp.active);
-                if(tmp.active !== true){
+                if (tmp.active !== true) {
                     tmp.active = true;
                     this.activeStateChangedNotes.push(tmp);
                 }
@@ -1052,11 +1052,11 @@
         }
 
         activePartsObj = this.song.activeParts;
-        for(i in activePartsObj){
-            if(activePartsObj.hasOwnProperty(i)){
+        for (i in activePartsObj) {
+            if (activePartsObj.hasOwnProperty(i)) {
                 tmp = activePartsObj[i];
                 this.activeParts.push(tmp);
-                if(tmp.active !== true){
+                if (tmp.active !== true) {
                     tmp.active = true;
                     this.activeStateChangedParts.push(tmp);
                 }
@@ -1065,11 +1065,11 @@
 
         // fixing issue #4
         recordedEventsSong = this.song.recordedEvents;
-        if(recordedEventsSong){
+        if (recordedEventsSong) {
             length = recordedEventsSong.length;
-            for(i = 0; i < length; i++){
+            for (i = 0; i < length; i++) {
                 tmp = recordedEventsSong[i];
-                if(this.recordedEventsObj[tmp.id] === undefined){
+                if (this.recordedEventsObj[tmp.id] === undefined) {
                     tmp.bbox = this.getEventRect(tmp);
                     recordedEvents.push(tmp);
                     this.recordedEventsObj[tmp.id] = tmp;
@@ -1079,20 +1079,20 @@
 
         // fixing issue #4
         recordedNotesSong = this.song.recordedNotes;
-        if(recordedNotesSong){
+        if (recordedNotesSong) {
             length = recordedNotesSong.length;
-            for(i = 0; i < length; i++){
+            for (i = 0; i < length; i++) {
                 tmp = recordedNotesSong[i];
-                if(this.recordedNotesObj[tmp.id] === undefined){
+                if (this.recordedNotesObj[tmp.id] === undefined) {
                     this.recordedNotesObj[tmp.id] = tmp;
                     tmp.bbox = this.getNoteRect(tmp);
                     recordedNotes.push(tmp);
                     //console.log('recordedNotes', tmp);
-                }else if(tmp.endless === true){
+                } else if (tmp.endless === true) {
                     tmp.bbox = this.getNoteRect(tmp);
                     recordingNotes.push(tmp);
                     //console.log('endless1', tmp);
-                }else if(tmp.endless === false){
+                } else if (tmp.endless === false) {
                     tmp.bbox = this.getNoteRect(tmp);
                     recordingNotes.push(tmp);
                     //console.log('endless2', tmp);
@@ -1101,88 +1101,88 @@
                 //console.log(tmp.bbox.width);
             }
         }
-/*
-        recordingNotesObj = this.song.recordingNotes;
-        for(i in recordingNotesObj){
-            if(recordingNotesObj.hasOwnProperty(i)){
-                tmp = recordingNotesObj[i];
-                tmp.bbox = this.getNoteRect(tmp);
-                recordingNotes.push(tmp);
-            }
-        }
-*/
+        /*
+                recordingNotesObj = this.song.recordingNotes;
+                for(i in recordingNotesObj){
+                    if(recordingNotesObj.hasOwnProperty(i)){
+                        tmp = recordingNotesObj[i];
+                        tmp.bbox = this.getNoteRect(tmp);
+                        recordingNotes.push(tmp);
+                    }
+                }
+        */
 
-        for(i = prevActiveEvents.length - 1; i >= 0; i--){
+        for (i = prevActiveEvents.length - 1; i >= 0; i--) {
             tmp = prevActiveEvents[i];
-            if(tmp === undefined){
+            if (tmp === undefined) {
                 console.warn('event is undefined');
                 continue;
             }
-            if(activeEventsObj[tmp.id] === undefined){
+            if (activeEventsObj[tmp.id] === undefined) {
                 nonActiveEvents.push(tmp);
-                if(tmp.active !== false){
+                if (tmp.active !== false) {
                     tmp.active = false;
                     this.activeStateChangedEvents.push(tmp);
                 }
             }
         }
 
-        for(i = prevActiveNotes.length - 1; i >= 0; i--){
+        for (i = prevActiveNotes.length - 1; i >= 0; i--) {
             tmp = prevActiveNotes[i];
-            if(tmp === undefined){
+            if (tmp === undefined) {
                 console.warn('note is undefined');
                 continue;
             }
-            if(activeNotesObj[tmp.id] === undefined){
+            if (activeNotesObj[tmp.id] === undefined) {
                 nonActiveNotes.push(tmp);
-                if(tmp.active !== false){
+                if (tmp.active !== false) {
                     tmp.active = false;
                     this.activeStateChangedNotes.push(tmp);
                 }
             }
         }
 
-        for(i = prevActiveParts.length - 1; i >= 0; i--){
+        for (i = prevActiveParts.length - 1; i >= 0; i--) {
             tmp = prevActiveParts[i];
-            if(tmp === undefined){
+            if (tmp === undefined) {
                 console.warn('part is undefined');
                 continue;
             }
-            if(activePartsObj[tmp.id] === undefined){
+            if (activePartsObj[tmp.id] === undefined) {
                 nonActiveParts.push(tmp);
-                if(tmp.active !== false){
+                if (tmp.active !== false) {
                     tmp.active = false;
                     this.activeStateChangedParts.push(tmp);
                 }
             }
         }
 
-        if(this.song.playing){
-//            this.currentPage = floor(sequencer.ticks / this.viewportTicks) + 1;
+        if (this.song.playing) {
+            //            this.currentPage = floor(sequencer.ticks / this.viewportTicks) + 1;
             this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
         }
 
-/*
-
-        tmp = this.song.parts;
-        n = false;
-        // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
-        for(i = tmp.length - 1; i >= 0; i--){
-            p = tmp[i];
-            console.log(p.keepWhenEmpty);
-            if(p.keepWhenEmpty === true){
-                continue;
-            }
-            if(p.events.length === 0){
-                //console.log('empty part!');
-                p.track.removePart(p);
-                n = true;
-            }
-        }
-        if(n){
-            this.song.update();
-        }
-*/
+        /*
+        
+                tmp = this.song.parts;
+                n = false;
+                // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+                for(i = tmp.length - 1; i >= 0; i--){
+                    p = tmp[i];
+                    console.log(p.keepWhenEmpty);
+                    if(p.keepWhenEmpty === true){
+                        continue;
+                    }
+                    if(p.events.length === 0){
+                        //console.log('empty part!');
+                        p.track.removePart(p);
+                        n = true;
+                    }
+                }
+                if(n){
+                    this.song.update();
+                }
+        */
 
         s = {
 
@@ -1244,26 +1244,26 @@
         this.changedParts = [];
         this.removedParts = [];
 
-/*
-        tmp = this.song.parts;
-        n = false;
-
-        // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
-        for(i = tmp.length - 1; i >= 0; i--){
-            p = tmp[i];
-            if(p.keepWhenEmpty === true){
-                continue;
-            }
-            if(p.events.length === 0){
-                //console.log('empty part!');
-                p.track.removePart(p);
-                n = true;
-            }
-        }
-        if(n){
-            this.song.update();
-        }
-*/
+        /*
+                tmp = this.song.parts;
+                n = false;
+        
+                // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+                for(i = tmp.length - 1; i >= 0; i--){
+                    p = tmp[i];
+                    if(p.keepWhenEmpty === true){
+                        continue;
+                    }
+                    if(p.events.length === 0){
+                        //console.log('empty part!');
+                        p.track.removePart(p);
+                        n = true;
+                    }
+                }
+                if(n){
+                    this.song.update();
+                }
+        */
 
         return s;
     };
@@ -1271,7 +1271,7 @@
 
     // flipping pages
 
-    setPageData = function(editor, startBar){
+    setPageData = function (editor, startBar) {
         //editor.pageNo = no;
         editor.numTicks = 0;
 
@@ -1281,13 +1281,13 @@
         editor.endBar = editor.endBar > editor.numBars ? editor.numBars : editor.endBar;
         editor.endBar = editor.endBar < editor.barsPerPage ? editor.barsPerPage : editor.endBar;
 
-        console.log(startBar,editor.startBar,editor.endBar,editor.numBars,editor.numBars - editor.barsPerPage);
+        console.log(startBar, editor.startBar, editor.endBar, editor.numBars, editor.numBars - editor.barsPerPage);
         var i;
 
-        for(i = editor.startBar; i < editor.endBar; i++){
+        for (i = editor.startBar; i < editor.endBar; i++) {
             editor.numTicks += editor.bars[i].ticksPerBar;
         }
-        editor.tickWidth = editor.pageWidth/editor.numTicks;
+        editor.tickWidth = editor.pageWidth / editor.numTicks;
 
         editor.startPosition = editor.bars[editor.startBar];
         editor.endPosition = editor.bars[editor.endBar];
@@ -1301,69 +1301,69 @@
     };
 
 
-    checkNextPage = function(editor){
-        if(editor.song.playing() && editor.song.ticks >= editor.endTicks){
+    checkNextPage = function (editor) {
+        if (editor.song.playing() && editor.song.ticks >= editor.endTicks) {
             //console.log('nextpage');
             editor.nextPage();
             //dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
         }
-        requestAnimationFrame(function(){
+        requestAnimationFrame(function () {
             checkNextPage(editor);
         });
     };
 
 
-    checkScrollPosition = function(editor){
+    checkScrollPosition = function (editor) {
         //console.log(editor.song.ticks,editor.scrollLimit,interrupt);
-        if(editor.song.playing && editor.interrupt === false){
-            if(editor.song.ticks >= editor.scrollLimit){
-                dispatchEvent(editor, 'scroll', {x: editor.scrollX + editor.viewportWidth});
-                editor.scrollLimit += (editor.viewportWidth/editor.tickWidth);
+        if (editor.song.playing && editor.interrupt === false) {
+            if (editor.song.ticks >= editor.scrollLimit) {
+                dispatchEvent(editor, 'scroll', { x: editor.scrollX + editor.viewportWidth });
+                editor.scrollLimit += (editor.viewportWidth / editor.tickWidth);
                 //editor.currentPage++;
-            }else{
-                var x = (floor(editor.song.ticks/editor.viewportTicks) * editor.viewportTicks) * editor.tickWidth;
-                if(editor.scrollX !== x){
-                    dispatchEvent(editor, 'scroll', {x:x});
+            } else {
+                var x = (floor(editor.song.ticks / editor.viewportTicks) * editor.viewportTicks) * editor.tickWidth;
+                if (editor.scrollX !== x) {
+                    dispatchEvent(editor, 'scroll', { x: x });
                 }
             }
         }
-        requestAnimationFrame(function(){
+        requestAnimationFrame(function () {
             checkScrollPosition(editor);
         });
     };
 
 
-    dispatchEvent = function(editor, id, data){
+    dispatchEvent = function (editor, id, data) {
         //console.log(id,eventListeners);
         var listeners = editor.eventListeners[id];
         if (listeners) {
-          listeners.forEach(function(cb){
-              cb(data);
-          });
+            listeners.forEach(function (cb) {
+                cb(data);
+            });
         }
     };
 
 
-    handleKeys = function(editor){
+    handleKeys = function (editor) {
         var p = editor.selectedPart,
             n = editor.selectedNote;
 
-        if(p !== undefined){
+        if (p !== undefined) {
             p.track.removePart(p);
             this.song.update();
-        }else if(n !== undefined){
+        } else if (n !== undefined) {
             n.part.removeNote(n);
             this.song.update();
         }
     };
 
 
-    sequencer.createKeyEditor = function(song, config){
-        return  new KeyEditor(song, config);
+    sequencer.createKeyEditor = function (song, config) {
+        return new KeyEditor(song, config);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         getPosition = sequencer.protectedScope.getPosition;
         createPlayhead = sequencer.protectedScope.createPlayhead;
         createNote = sequencer.createNote;
@@ -1377,4 +1377,4 @@
         createIteratorFactory = sequencer.protectedScope.createKeyEditorIteratorFactory;
     });
 
-}());
+}

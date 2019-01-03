@@ -3,7 +3,7 @@
     adapted to work with heartbeatjs' type MidiEvent and Track
 */
 
-(function(){
+function midiParse() {
 
     'use strict';
 
@@ -42,7 +42,7 @@
                 event.type = 'meta';
                 var subtypeByte = stream.readInt8();
                 length = stream.readVarInt();
-                switch(subtypeByte) {
+                switch (subtypeByte) {
                     case 0x00:
                         event.subtype = 'sequenceNumber';
                         if (length !== 2) throw 'Expected length for sequenceNumber event is 2, got ' + length;
@@ -220,12 +220,12 @@
                     event.value = stream.readInt8();
                     event.subtype = 'unknown';
                     //console.log(event);
-/*
-                    event.noteNumber = param1;
-                    event.velocity = stream.readInt8();
-                    event.subtype = 'noteOn';
-                    console.log('weirdo', trackName, param1, event.velocity);
-*/
+                    /*
+                                        event.noteNumber = param1;
+                                        event.velocity = stream.readInt8();
+                                        event.subtype = 'noteOn';
+                                        console.log('weirdo', trackName, param1, event.velocity);
+                    */
 
                     return event;
             }
@@ -268,7 +268,7 @@
             trackNames[i] = trackName;
             trackChunk = readChunk(stream);
             if (trackChunk.id !== 'MTrk') {
-                throw 'Unexpected chunk - expected MTrk, got '+ trackChunk.id;
+                throw 'Unexpected chunk - expected MTrk, got ' + trackChunk.id;
             }
             trackStream = createStream(trackChunk.data);
             while (!trackStream.eof()) {
@@ -304,15 +304,15 @@
     */
 
 
-    sequencer.protectedScope.parseMidiFile = function(buffer){
+    sequencer.protectedScope.parseMidiFile = function (buffer) {
         return parseStream(createStream(buffer));
         //var dv = new DataView(buffer);
         //return parseStream(dv);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         createStream = sequencer.protectedScope.createStream;
     });
-}());
+}
 

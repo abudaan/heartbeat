@@ -1,4 +1,4 @@
-(function(){
+function songFollowEvent() {
 
     'use strict';
 
@@ -34,7 +34,7 @@
 
         supportedOperators = '= == === > >= < <= != !== %=', //'= == === > >= < <= != !== *= ^= ~= $=',
         //supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g,' | ').replace(/\*/,'\\*') + ' '),
-        supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g,' | ') + ' '),
+        supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g, ' | ') + ' '),
 
 
         //private
@@ -45,7 +45,7 @@
         FollowEvent;
 
 
-    FollowEvent = function(song){
+    FollowEvent = function (song) {
         this.song = song;
 
         this.allListenersById = {};
@@ -76,7 +76,7 @@
     };
 
 
-    FollowEvent.prototype.updateSong = function(){
+    FollowEvent.prototype.updateSong = function () {
 
         //adjust all event listeners based on registered events and events found by a searchstring
 
@@ -86,13 +86,13 @@
 
         listeners = this.allListenersByType.event.instance;
         // loop over event ids
-        for(eventId in listeners){
-            if(listeners.hasOwnProperty(eventId)){
+        for (eventId in listeners) {
+            if (listeners.hasOwnProperty(eventId)) {
                 // check if event has been removed
-                if(this.song.eventsById[eventId] === undefined){
+                if (this.song.eventsById[eventId] === undefined) {
                     // get all listeners that are registered to this event and delete them
                     listenerIds = listeners[eventId];
-                    for(i = listenerIds.length - 1; i >= 0; i--){
+                    for (i = listenerIds.length - 1; i >= 0; i--) {
                         listenerId = listenerIds[i];
                         delete this.allListenersById[listenerId];
                     }
@@ -107,14 +107,14 @@
         // remove all listeners that are currently bound to found events
         listeners = this.allListenersByType.event.searchstring;
         listenerIds = [];
-        for(eventId in listeners){
+        for (eventId in listeners) {
             // step 1: collect all ids of listeners
-            if(listeners.hasOwnProperty(eventId)){
+            if (listeners.hasOwnProperty(eventId)) {
                 listenerIds = listenerIds.concat(listeners[eventId]);
             }
         }
         // step 2: delete the listeners
-        for(i = listenerIds.length - 1; i >= 0; i--){
+        for (i = listenerIds.length - 1; i >= 0; i--) {
             delete this.allListenersById[listenerIds[i]];
         }
 
@@ -122,19 +122,19 @@
         this.allListenersByType.event.searchstring = {};
         tmp = this.allListenersByType.event.searchstring;
 
-//@TODO: this can't possibly work!! -> but it actually does..
+        //@TODO: this can't possibly work!! -> but it actually does..
 
-        for(i = this.searchPatterns.length - 1; i >= 0; i--){
+        for (i = this.searchPatterns.length - 1; i >= 0; i--) {
             data = this.searchPatterns[i];
             events = findEvent(this.song, data.searchstring);
             //console.log(data, events);
 
             //add listeners for both note on and note off and ignore the other event types
-            if(tmp.type === 'note'){
+            if (tmp.type === 'note') {
                 events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
             }
 
-            for(j = events.length - 1; j >= 0; j--){
+            for (j = events.length - 1; j >= 0; j--) {
                 e = events[j];
 
                 listenerId = 'event_' + listenerIndex++;
@@ -148,7 +148,7 @@
 
                 this.allListenersById[listenerId] = listener;
 
-                if(tmp[e.id] === undefined){
+                if (tmp[e.id] === undefined) {
                     tmp[e.id] = [];
                 }
                 tmp[e.id].push(listenerId);
@@ -162,7 +162,7 @@
     };
 
 
-    FollowEvent.prototype.update = function(){
+    FollowEvent.prototype.update = function () {
         var
             i,
             position = this.song,
@@ -173,15 +173,15 @@
 
         //events = this.song.playhead.activeEvents;
         events = this.song.playhead.collectedEvents;
-//      events = this.song.playhead.changedEvents; -> do something with a snapshot here
+        //      events = this.song.playhead.changedEvents; -> do something with a snapshot here
         numEvents = events.length;
-/*
-        if(numEvents !== undefined && numEvents > 0){
-            console.log(numEvents, position.barsAsString, this.bar, this.beat);
-        }
-*/
+        /*
+                if(numEvents !== undefined && numEvents > 0){
+                    console.log(numEvents, position.barsAsString, this.bar, this.beat);
+                }
+        */
         //call event listeners registered to specific midi events
-        for(i = 0; i < numEvents; i++){
+        for (i = 0; i < numEvents; i++) {
             event = events[i];
             //console.log(event, event.ticks);
             this.callEventListeners(event.id, event);
@@ -189,42 +189,42 @@
 
         this.callListenersPositionTicks(ticks);
 
-        if(position.bar !== this.bar){
+        if (position.bar !== this.bar) {
             this.bar = position.bar;
             this.callListenersPositionRepetitive('bar');
             this.callListenersPositionConditionalSimple('bar', this.bar);
             this.callListenersPositionConditionalComplex('bar', this.bar);
         }
 
-        if(position.beat !== this.beat){
+        if (position.beat !== this.beat) {
             this.beat = position.beat;
             this.callListenersPositionRepetitive('beat');
             this.callListenersPositionConditionalSimple('beat', this.beat);
             this.callListenersPositionConditionalComplex('beat', this.beat);
         }
 
-        if(position.sixteenth !== this.sixteenth){
+        if (position.sixteenth !== this.sixteenth) {
             this.sixteenth = position.sixteenth;
             this.callListenersPositionRepetitive('sixteenth');
             this.callListenersPositionConditionalSimple('sixteenth', this.sixteenth);
             this.callListenersPositionConditionalComplex('sixteenth', this.sixteenth);
         }
 
-        if(position.hour !== this.hour){
+        if (position.hour !== this.hour) {
             this.hour = position.hour;
             this.callListenersPositionRepetitive('hour');
             this.callListenersPositionConditionalSimple('hour', this.hour);
             this.callListenersPositionConditionalComplex('hour', this.hour);
         }
 
-        if(position.minute !== this.minute){
+        if (position.minute !== this.minute) {
             this.minute = position.minute;
             this.callListenersPositionRepetitive('minute');
             this.callListenersPositionConditionalSimple('minute', this.minute);
             this.callListenersPositionConditionalComplex('minute', this.minute);
         }
 
-        if(position.second !== this.second){
+        if (position.second !== this.second) {
             this.second = position.second;
             this.callListenersPositionRepetitive('second');
             this.callListenersPositionConditionalSimple('second', this.second);
@@ -234,29 +234,29 @@
 
 
     // call callbacks that are bound to a specific event
-    FollowEvent.prototype.callEventListeners = function(eventId, event){
+    FollowEvent.prototype.callEventListeners = function (eventId, event) {
         var i, id, tmp,
             listener,
             listenerIds = [];
 
         tmp = this.allListenersByType.event.instance;
-        if(tmp[eventId]){
+        if (tmp[eventId]) {
             listenerIds = listenerIds.concat(tmp[eventId]);
         }
 
         tmp = this.allListenersByType.event.searchstring;
-        if(tmp[eventId]){
+        if (tmp[eventId]) {
             listenerIds = listenerIds.concat(tmp[eventId]);
         }
 
-        if(listenerIds.length > 0){
+        if (listenerIds.length > 0) {
             //console.log(listenerIds, event.id, event.ticks);
         }
 
-        for(i = listenerIds.length - 1; i >= 0; i--){
+        for (i = listenerIds.length - 1; i >= 0; i--) {
             id = listenerIds[i];
             listener = this.allListenersById[id];
-            if(listener.called !== true){
+            if (listener.called !== true) {
                 listener.called = true;
                 listener.callback(event);
                 //console.log('called', event.id)
@@ -266,13 +266,13 @@
 
 
     // for instance: addEventListener('position', 'bar') -> call callback every bar
-    FollowEvent.prototype.callListenersPositionRepetitive = function(positionType){
+    FollowEvent.prototype.callListenersPositionRepetitive = function (positionType) {
         var listener,
             listenerIds = this.allListenersByType.position.repetitive[positionType],
             me = this;
 
-        if(listenerIds){
-            listenerIds.forEach(function(id){
+        if (listenerIds) {
+            listenerIds.forEach(function (id) {
                 listener = me.allListenersById[id];
                 listener.callback(listener.searchstring);
             });
@@ -283,7 +283,7 @@
     // can be repetitive or fire once:
     // addEventListener('position', 'beat === 2') -> call callback every second beat
     // addEventListener('position', 'bar === 2') -> call callback at start of bar 2
-    FollowEvent.prototype.callListenersPositionConditionalSimple = function(positionType, value){
+    FollowEvent.prototype.callListenersPositionConditionalSimple = function (positionType, value) {
         var listener,
             data,
             operator,
@@ -293,14 +293,14 @@
 
         //console.log(positionType, listenerIds);
 
-        if(listenerIds){
-            listenerIds.forEach(function(id){
+        if (listenerIds) {
+            listenerIds.forEach(function (id) {
                 // -> check condition
                 listener = me.allListenersById[id];
                 data = listener.data;
                 operator = listener.operator;
 
-                switch(operator){
+                switch (operator) {
                     case '>':
                         call = value > data;
                         break;
@@ -320,7 +320,7 @@
                         break;
                 }
 
-                if(call === true){
+                if (call === true) {
                     listener.callback(listener.searchstring);
                 }
             });
@@ -329,7 +329,7 @@
 
 
     // for instance: addEventListener('position', 'bar > 2 < 7') -> call callback every bar from bar 3 to 6
-    FollowEvent.prototype.callListenersPositionConditionalComplex = function(positionType, value){
+    FollowEvent.prototype.callListenersPositionConditionalComplex = function (positionType, value) {
         var listener,
             value1,
             value2,
@@ -338,21 +338,21 @@
             listenerIds = this.allListenersByType.position.conditional_complex[positionType],
             me = this;
 
-        if(listenerIds){
-            listenerIds.forEach(function(id){
+        if (listenerIds) {
+            listenerIds.forEach(function (id) {
                 // -> check condition(s)
                 listener = me.allListenersById[id];
                 value1 = listener.value1;
                 value2 = listener.value2;
                 operator1 = listener.operator1;
                 operator2 = listener.operator2;
-                if(operator1 === '<'){
-                    if(value < value1 || value > value2){
+                if (operator1 === '<') {
+                    if (value < value1 || value > value2) {
                         listener.callback(listener.searchstring);
                     }
-                }else if(operator1 === '>'){
+                } else if (operator1 === '>') {
                     //console.log(value1,value2,value,operator1,operator2);
-                    if(value > value1 && value < value2){
+                    if (value > value1 && value < value2) {
                         listener.callback(listener.searchstring);
                     }
                 }
@@ -361,15 +361,15 @@
     };
 
 
-    FollowEvent.prototype.callListenersPositionTicks = function(ticks){
+    FollowEvent.prototype.callListenersPositionTicks = function (ticks) {
         var tmp = this.allListenersByType.position.ticks,
             i, maxi = tmp.length,
             listener;
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             listener = this.allListenersById[tmp[i]];
             //console.log(listener,ticks);
-            if(ticks >= listener.ticks && ! listener.called){
+            if (ticks >= listener.ticks && !listener.called) {
                 listener.callback(listener.searchstring);
                 listener.called = true;
             }
@@ -417,7 +417,7 @@
 
     */
 
-    FollowEvent.prototype.addEventListener = function(type, data, callback){
+    FollowEvent.prototype.addEventListener = function (type, data, callback) {
         var i, events, event, storeArray, tmp, subtype,
             listener, listenerId, listenerIds = [],
             dataType = typeString(data);
@@ -425,20 +425,20 @@
         //console.log(type,data,callback);
         //console.log(dataType, data);
 
-        if(typeString(callback) !== 'function'){
+        if (typeString(callback) !== 'function') {
             console.error(callback, 'is not a function; please provide a function for callback');
             return -1;
         }
 
 
-        if(type === 'position'){
+        if (type === 'position') {
             listenerId = this.addPositionEventListener(data, callback);
             //console.log(allListenersByType, allListenersById);
             return listenerId;
         }
 
 
-        if(dataType === 'string'){
+        if (dataType === 'string') {
             events = findEvent(this.song, data);
             // store the search string so we can run it again after the song has changed
             this.searchPatterns.push({
@@ -449,15 +449,15 @@
             });
             //console.log(data, events);
 
-            if(events.length === 0){
+            if (events.length === 0) {
                 return -1;
             }
             subtype = 'searchstring';
             storeArray = this.allListenersByType.event.searchstring;
             this.eventListenersBySearchstring[data] = tmp = [];
-        }else{
+        } else {
             events = getEvents(type, data);
-            if(events === -1){
+            if (events === -1) {
                 return -1;
             }
             subtype = 'instance';
@@ -466,11 +466,11 @@
 
 
         //add listeners for both note on and note off and ignore the other event types
-        if(type === 'note'){
+        if (type === 'note') {
             events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
         }
 
-        for(i = events.length - 1; i >= 0; i--){
+        for (i = events.length - 1; i >= 0; i--) {
             event = events[i];
             listenerId = 'event_' + listenerIndex++;
             listener = {
@@ -484,21 +484,21 @@
             //allListeners.push(listener);
             this.allListenersById[listenerId] = listener;
 
-            if(storeArray[event.id] === undefined){
+            if (storeArray[event.id] === undefined) {
                 storeArray[event.id] = [];
             }
             storeArray[event.id].push(listenerId);
             listenerIds.push(listenerId);
 
-            if(subtype === 'searchstring'){
+            if (subtype === 'searchstring') {
                 tmp.push(listenerId);
             }
         }
         //console.log(this.allListenersById, this.allListenersByType);
 
-        if(subtype === 'searchstring' || dataType === 'array' || type === 'note'){
+        if (subtype === 'searchstring' || dataType === 'array' || type === 'note') {
             return listenerIds;
-        }else{
+        } else {
             //console.log('num listeners:', listenerIds.length);
             return listenerIds[0];
         }
@@ -518,7 +518,7 @@
         - split into repetitive and one-shot listeners
 
     */
-    FollowEvent.prototype.addPositionEventListener = function(data, callback){
+    FollowEvent.prototype.addPositionEventListener = function (data, callback) {
         var tmp,
             listenerId, listener,
             millis,
@@ -530,39 +530,39 @@
             operator2 = searchString[3],
             value2 = searchString[4],
             value1Type = typeString(value1);
-            //hasOperator = supportedOperatorsRegex.test(data);
+        //hasOperator = supportedOperatorsRegex.test(data);
 
         //console.log(data, searchString, len);
         //console.log(type, value1, operator1, value2, operator2);
 
-        if(len !== 1 && len !== 3 && len !== 5){
+        if (len !== 1 && len !== 3 && len !== 5) {
             console.error('invalid search string, please consult documentation');
             return false;
         }
-/*
-        //split position data into an array -> is now done in find_event.js -> not anymore ;)
-        if(value1 && value1.indexOf(',') !== -1){
-            value1 = value1.split(',');
-        }
+        /*
+                //split position data into an array -> is now done in find_event.js -> not anymore ;)
+                if(value1 && value1.indexOf(',') !== -1){
+                    value1 = value1.split(',');
+                }
+        
+                if(value2 && value2.indexOf(',') !== -1){
+                    value2 = value2.split(',');
+                }
+        */
 
-        if(value2 && value2.indexOf(',') !== -1){
-            value2 = value2.split(',');
-        }
-*/
-
-        if(supportedTimeEvents[type] !== 1){
-            console.error(type,'is not a supported event id, please consult documentation');
+        if (supportedTimeEvents[type] !== 1) {
+            console.error(type, 'is not a supported event id, please consult documentation');
             return -1;
         }
 
-        if(operator1 === '=' || operator1 === '=='){
+        if (operator1 === '=' || operator1 === '==') {
             operator1 = '===';
         }
 
 
         // check values per type
 
-        switch(type){
+        switch (type) {
             // these type can only fire once
             case 'barsbeats':
             case 'barsandbeats':
@@ -571,15 +571,15 @@
             //case 'linear_time':
             case 'ticks':
             case 'millis':
-                if(operator1 === undefined || operator1 !== '==='){
-                    console.error(type,'can only be used conditionally with the operators \'===\', \'==\' or \'=\'');
+                if (operator1 === undefined || operator1 !== '===') {
+                    console.error(type, 'can only be used conditionally with the operators \'===\', \'==\' or \'=\'');
                     return -1;
                 }
                 // if(isNaN(value1) && typeString(value1) !== 'array'){
                 //  console.error('please provide a number or an array of numbers');
                 //  return -1;
                 // }
-                if(operator2){
+                if (operator2) {
                     console.warn('this position event type can only be used with a single condition, ignoring second condition');
                 }
                 break;
@@ -592,13 +592,13 @@
             case 'hour': // -> fired once if used with === operator
             case 'minute':
             case 'second':
-            //case 'millisecond':
+                //case 'millisecond':
 
-                if(value1 && isNaN(value1)){
+                if (value1 && isNaN(value1)) {
                     console.error('please provide a number');
                     return -1;
                 }
-                if(value2 && isNaN(value2)){
+                if (value2 && isNaN(value2)) {
                     console.error('please provide a number');
                     return -1;
                 }
@@ -608,27 +608,27 @@
 
         // check operators
 
-        if(operator1 && supportedOperators.indexOf(operator1) === -1){
-            console.error(operator1,'is not a supported operator, please use any of',supportedOperators);
+        if (operator1 && supportedOperators.indexOf(operator1) === -1) {
+            console.error(operator1, 'is not a supported operator, please use any of', supportedOperators);
             return -1;
         }
 
-        if(operator1 && value1 === undefined){
+        if (operator1 && value1 === undefined) {
             console.error('operator without value');
             return;
         }
 
-        if(operator2 && supportedOperators.indexOf(operator1) === -1){
-            console.error(operator2,'is not a supported operator, please use any of',supportedOperators);
+        if (operator2 && supportedOperators.indexOf(operator1) === -1) {
+            console.error(operator2, 'is not a supported operator, please use any of', supportedOperators);
             return -1;
         }
 
-        if(operator2 && value2 === undefined){
+        if (operator2 && value2 === undefined) {
             console.error('operator without value');
             return;
         }
 
-        if(operator1 && operator2 && checkOperatorConflict(operator1, operator2) === false){
+        if (operator1 && operator2 && checkOperatorConflict(operator1, operator2) === false) {
             console.error('you can\'t use ' + operator1 + ' together with ' + operator2);
             return -1;
         }
@@ -636,7 +636,7 @@
 
         // check callback
 
-        if(typeString(callback) !== 'function'){
+        if (typeString(callback) !== 'function') {
             console.error(callback, 'is not a function; please provide a function for callback');
             return -1;
         }
@@ -644,7 +644,7 @@
 
         // simplify searchstring and adjust values
 
-        switch(type){
+        switch (type) {
 
             // event types that fire repeatedly or once
 
@@ -658,27 +658,27 @@
             case 'hour':
             case 'minute':
             case 'second':
-            //case 'millisecond':
+                //case 'millisecond':
                 // make zero based
                 value1 = value1 - 0;
                 value2 = value2 - 0;
 
                 // convert <= to < and >= to > to make it easier
-                if(operator1){
-                    if(operator1 === '<='){
+                if (operator1) {
+                    if (operator1 === '<=') {
                         value1++;
                         operator1 = '<';
-                    }else if(operator1 === '>='){
+                    } else if (operator1 === '>=') {
                         value1--;
                         operator1 = '>';
                     }
                 }
 
-                if(operator2){
-                    if(operator2 === '<='){
+                if (operator2) {
+                    if (operator2 === '<=') {
                         value2++;
                         operator2 = '<';
-                    }else if(operator2 === '>='){
+                    } else if (operator2 === '>=') {
                         value2--;
                         operator2 = '>';
                     }
@@ -697,23 +697,23 @@
 
             case 'barsbeats':
             case 'barsandbeats':
-            //case 'musical_time':
+                //case 'musical_time':
 
                 // convert position value to ticks
-                if(!isNaN(value1)){
+                if (!isNaN(value1)) {
                     // only a single number is provided, we consider it to be the bar number
                     value1 = getPosition(this.song, ['barsbeats', value1, 1, 1, 0]).ticks;
-                }else if(value1Type === 'string'){
+                } else if (value1Type === 'string') {
                     // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
                     value1 = value1.replace(/[\[\]\s]/g, '');
                     value1 = value1.split(',');
                     value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1] || 1, value1[2] || 1, value1[3] || 0]).ticks;
-/*
-                }else if(value1Type === 'array'){
-                    // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
-                    value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1], value1[2], value1[3]]).ticks;
-*/
-                }else{
+                    /*
+                                    }else if(value1Type === 'array'){
+                                        // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
+                                        value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1], value1[2], value1[3]]).ticks;
+                    */
+                } else {
                     console.error('please provide a number or an array of numbers');
                 }
                 type = 'ticks';
@@ -728,29 +728,29 @@
 
 
             case 'time':
-            //case 'linear_time':
+                //case 'linear_time':
                 // convert position value to ticks
-                if(!isNaN(value1)){
+                if (!isNaN(value1)) {
                     // a single number is provided, we treat this as the value for minutes
                     millis = value1 * 60 * 1000; //seconds
                     value1 = getPosition(this.song, ['millis', millis]).ticks;
-                }else if(value1Type === 'string'){
+                } else if (value1Type === 'string') {
                     // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
                     value1 = value1.replace(/[\[\]\s]/g, '');
                     console.log(value1);
                     value1 = value1.split(',');
-                    if(value1.length === 1){
+                    if (value1.length === 1) {
                         millis = value1[0] * 60 * 1000;
                         value1 = getPosition(this.song, ['millis', millis]).ticks;
-                    }else{
+                    } else {
                         value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
                     }
-/*
-                }else if(value1Type === 'array'){
-                    // a full time array is provided: hours, minutes, seconds, millis
-                    value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
-*/
-                }else{
+                    /*
+                                    }else if(value1Type === 'array'){
+                                        // a full time array is provided: hours, minutes, seconds, millis
+                                        value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
+                    */
+                } else {
                     console.error('please provide a number or an array of numbers');
                 }
                 console.log(value1);
@@ -763,7 +763,7 @@
 
         //console.log(value1,value2);
 
-        if(type === 'ticks'){
+        if (type === 'ticks') {
             //console.log(value1,listenerId)
 
             listener = {
@@ -777,7 +777,7 @@
 
             this.allListenersByType.position.ticks.push(listenerId);
 
-        }else if(!operator1 && !operator2){
+        } else if (!operator1 && !operator2) {
             // every bar, beat, sixteenth, hour, minute, second
             listener = {
                 id: listenerId,
@@ -789,12 +789,12 @@
             };
 
             tmp = this.allListenersByType.position.repetitive;
-            if(tmp[type] === undefined){
+            if (tmp[type] === undefined) {
                 tmp[type] = [];
             }
             tmp[type].push(listenerId);
 
-        }else if(operator1 && !operator2){
+        } else if (operator1 && !operator2) {
             // every time a bar, beat, sixteenth, hour, minute, second meets a certain simple condition, can be both repetitive and fire once
             listener = {
                 id: listenerId,
@@ -808,12 +808,12 @@
             };
 
             tmp = this.allListenersByType.position.conditional_simple;
-            if(tmp[type] === undefined){
+            if (tmp[type] === undefined) {
                 tmp[type] = [];
             }
             tmp[type].push(listenerId);
 
-        }else if(operator1 && operator2){
+        } else if (operator1 && operator2) {
             // every time a bar, beat, sixteenth, hour, minute, second meets a certain complex condition
             listener = {
                 id: listenerId,
@@ -829,7 +829,7 @@
             };
 
             tmp = this.allListenersByType.position.conditional_complex;
-            if(tmp[type] === undefined){
+            if (tmp[type] === undefined) {
                 tmp[type] = [];
             }
             tmp[type].push(listenerId);
@@ -843,7 +843,7 @@
 
     // @param type, data, callback
     // @param id
-    FollowEvent.prototype.removeEventListener = function(args){
+    FollowEvent.prototype.removeEventListener = function (args) {
         var
             //args = Array.prototype.slice.call(arguments),
             arg0,
@@ -862,29 +862,29 @@
         arg0 = args[0];
         numArgs = args.length;
 
-        if(numArgs === 1){
-            if(typeString(arg0) === 'array'){
+        if (numArgs === 1) {
+            if (typeString(arg0) === 'array') {
                 ids = arg0;
-            }else{
+            } else {
                 ids = [arg0];
             }
             //console.log(ids);
 
-            for(i = ids.length - 1; i >= 0; i--){
+            for (i = ids.length - 1; i >= 0; i--) {
                 id = ids[i];
                 //console.log(id);
-                if(this.allListenersById[id] !== undefined){
+                if (this.allListenersById[id] !== undefined) {
                     listener = this.allListenersById[id];
                     type = listener.type;
                     subtype = listener.subtype;
 
-                    if(type === 'position'){
+                    if (type === 'position') {
                         // reference to an array of all the listeners bound to this event type
                         listenerIds = this.allListenersByType[type][subtype][listener.position_type];
                         // loop over listeners and filter the one that has to be removed
-                        for(j = listenerIds.length - 1; j >= 0; j--){
+                        for (j = listenerIds.length - 1; j >= 0; j--) {
                             listenerId = listenerIds[j];
-                            if(listenerId !== id){
+                            if (listenerId !== id) {
                                 filteredListenerIds.push(listenerId);
                             }
                         }
@@ -892,14 +892,14 @@
                         this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
                         delete this.allListenersById[id];
 
-                    }else if(type === 'event' || type === 'note'){
+                    } else if (type === 'event' || type === 'note') {
                         event = listener.event;
                         eventId = event.id;
                         listenerIds = this.allListenersByType.event[subtype][eventId];
-                        for(j = listenerIds.length - 1; j >= 0; j--){
+                        for (j = listenerIds.length - 1; j >= 0; j--) {
                             listenerId = listenerIds[j];
                             listener = this.allListenersById[listenerId];
-                            if(listenerId !== id){
+                            if (listenerId !== id) {
                                 filteredListenerIds.push(listenerId);
                                 break;
                             }
@@ -909,42 +909,42 @@
                         delete this.allListenersById[id];
 
                         //@TODO: we have to add allListenersByType.notes
-/*
-                        if(type === 'note'){
-                            console.log(event);
-                            if(event.type === sequencer.NOTE_ON){
-                                eventId = event.midiNote.noteOff.id;
-                                tmp = allListenersByType.event[subtype][eventId];
-                                listenerIds = listenerIds.concat(tmp);
-                            }else if(event.type === sequencer.NOTE_OFF){
-                                eventId = event.midiNote.noteOn.id;
-                                tmp = allListenersByType.event[subtype][eventId];
-                                listenerIds = listenerIds.concat(tmp);
-                            }
-
-                            for(j = listenerIds.length - 1; j >= 0; j--){
-                                listenerId = listenerIds[j];
-                                listener = allListenersById[listenerId];
-                                if(listenerId !== id){
-                                    filteredListenerIds.push(listenerId);
-                                    break;
-                                }
-                            }
-                            // add the filtered array back per event
-                            allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
-                            delete allListenersById[id];
-                        }
-*/
+                        /*
+                                                if(type === 'note'){
+                                                    console.log(event);
+                                                    if(event.type === sequencer.NOTE_ON){
+                                                        eventId = event.midiNote.noteOff.id;
+                                                        tmp = allListenersByType.event[subtype][eventId];
+                                                        listenerIds = listenerIds.concat(tmp);
+                                                    }else if(event.type === sequencer.NOTE_OFF){
+                                                        eventId = event.midiNote.noteOn.id;
+                                                        tmp = allListenersByType.event[subtype][eventId];
+                                                        listenerIds = listenerIds.concat(tmp);
+                                                    }
+                        
+                                                    for(j = listenerIds.length - 1; j >= 0; j--){
+                                                        listenerId = listenerIds[j];
+                                                        listener = allListenersById[listenerId];
+                                                        if(listenerId !== id){
+                                                            filteredListenerIds.push(listenerId);
+                                                            break;
+                                                        }
+                                                    }
+                                                    // add the filtered array back per event
+                                                    allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
+                                                    delete allListenersById[id];
+                                                }
+                        */
                     }
 
                     //console.log(this.allListenersById,this.allListenersByType);
 
-                }else{
+                } else {
                     console.warn('no event listener found with id', id);
                 }
             }
 
-        }else if(numArgs === 2 || numArgs === 3){
+        } else if (numArgs === 2 || numArgs === 3) {
 
             type = args[0];
             data = args[1];
@@ -953,9 +953,9 @@
 
             //console.log(type, data, callback, dataType);
 
-            switch(type){
+            switch (type) {
                 case 'position':
-                    if(dataType === 'string'){
+                    if (dataType === 'string') {
                         // get the id of the listener by the searchstring
                         id = this.positionListenersBySearchstring[data];
                         // get the listener by id
@@ -963,9 +963,9 @@
                         // reference to an array of all the listeners bound to this event type
                         listenerIds = this.allListenersByType[listener.type][listener.subtype][listener.position_type];
                         // loop over listeners and filter the one that has to be removed
-                        for(i = listenerIds.length - 1; i >= 0; i--){
+                        for (i = listenerIds.length - 1; i >= 0; i--) {
                             listenerId = listenerIds[i];
-                            if(listenerId !== id){
+                            if (listenerId !== id) {
                                 filteredListenerIds.push(listenerId);
                             }
                         }
@@ -980,26 +980,26 @@
                 case 'event':
                 case 'note':
 
-                    if(dataType === 'string'){
+                    if (dataType === 'string') {
                         // get all listener ids that are connected to this searchstring
                         listenerIds = this.eventListenersBySearchstring[data];
-                        for(i = listenerIds.length - 1; i >= 0; i--){
+                        for (i = listenerIds.length - 1; i >= 0; i--) {
                             // collect all ids of listeners that need to be removed
                             removedListenerIds.push(listenerIds[i]);
                         }
 
                         // loop over all searchstring listeners and filter the ones that have to be removed
                         eventIds = this.allListenersByType.event.searchstring;
-                        for(eventId in eventIds){
-                            if(eventIds.hasOwnProperty(eventId)){
+                        for (eventId in eventIds) {
+                            if (eventIds.hasOwnProperty(eventId)) {
                                 listenerIds = eventIds[eventId];
                                 filteredListenerIds = [];
-                                for(i = listenerIds.length - 1; i >= 0; i--){
+                                for (i = listenerIds.length - 1; i >= 0; i--) {
                                     listenerId = listenerIds[i];
                                     removeMe = false;
-                                    for(j = removedListenerIds.length - 1; j >= 0; j--){
+                                    for (j = removedListenerIds.length - 1; j >= 0; j--) {
                                         //console.log(listenerId, removedListenerIds[j], callback);
-                                        if(listenerId === removedListenerIds[j]){
+                                        if (listenerId === removedListenerIds[j]) {
                                             removeMe = true;
                                             /*
                                             if(callback === undefined){
@@ -1011,9 +1011,9 @@
                                             break;
                                         }
                                     }
-                                    if(removeMe === false){
+                                    if (removeMe === false) {
                                         filteredListenerIds.push(listenerId);
-                                    }else{
+                                    } else {
                                         // remove the listeners from the id library
                                         delete this.allListenersById[listenerIds[i]];
                                     }
@@ -1026,38 +1026,38 @@
                         delete this.eventListenersBySearchstring[data];
                         //console.log(allListenersById,eventListenersBySearchstring,allListenersByType);
 
-                    }else if(dataType === 'object'){
-                        if(data.className !== 'MidiEvent' && data.className !== 'MidiNote'){
+                    } else if (dataType === 'object') {
+                        if (data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
                             console.error('please provide a midi event or a midi note');
                             return;
                         }
-                        if(data.className === 'MidiNote'){
+                        if (data.className === 'MidiNote') {
                             id = data.noteOn.id;
-                        }else if(data.className === 'MidiEvent'){
+                        } else if (data.className === 'MidiEvent') {
                             id = data.id;
                         }
-                        if(this.allListenersByType.event.instance[id] !== undefined){
+                        if (this.allListenersByType.event.instance[id] !== undefined) {
                             type = 'instance';
                             listenerIds = this.allListenersByType.event.instance[id];
-                        }else if(this.allListenersByType.event.searchstring[id] !== undefined){
+                        } else if (this.allListenersByType.event.searchstring[id] !== undefined) {
                             type = 'searchstring';
                             listenerIds = this.allListenersByType.event.searchstring[id];
                         }
-                        if(listenerIds === undefined){
+                        if (listenerIds === undefined) {
                             console.warn('no event listener bound to event with id', id);
                             return;
                         }
-                        if(data.className === 'MidiNote'){
+                        if (data.className === 'MidiNote') {
                             ids = this.allListenersByType.event[type][data.noteOff.id];
                             listenerIds = listenerIds.concat(ids);
                         }
                         //console.log(listenerIds);
-                        for(i = listenerIds.length - 1; i >= 0; i--){
+                        for (i = listenerIds.length - 1; i >= 0; i--) {
                             listenerId = listenerIds[i];
                             listener = this.allListenersById[listenerId];
-                            if(callback && listener.callback !== callback){
+                            if (callback && listener.callback !== callback) {
                                 filteredListenerIds.push(listener.id);
-                            }else{
+                            } else {
                                 delete this.allListenersById[listener.id];
                             }
                             this.allListenersByType.event[type][listener.event.id] = [].concat(filteredListenerIds);
@@ -1071,11 +1071,11 @@
 
 
     // set the 'called' key of every listener to false, this is necessary if the playhead is moved (by a loop of by the user)
-    FollowEvent.prototype.resetAllListeners = function(){
+    FollowEvent.prototype.resetAllListeners = function () {
         var listeners = this.allListenersById, key, listener;
 
-        for(key in listeners){
-            if(listeners.hasOwnProperty(key)){
+        for (key in listeners) {
+            if (listeners.hasOwnProperty(key)) {
                 listener = listeners[key];
                 listener.called = false;
                 //console.log(listener);
@@ -1084,41 +1084,41 @@
     };
 
 
-    getEvents = function(type, data){
+    getEvents = function (type, data) {
 
         var dataType = typeString(data),
             events = [], i, e;
 
-        if(dataType !== 'array' && data !== undefined && data.className !== 'MidiEvent' && data.className !== 'MidiNote'){
+        if (dataType !== 'array' && data !== undefined && data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
             console.error(data, ' is not valid data for event type \'event\', please consult documentation');
             return -1;
         }
 
-        if(dataType === 'array'){
-            for(i = data.length - 1; i >= 0; i--){
+        if (dataType === 'array') {
+            for (i = data.length - 1; i >= 0; i--) {
                 e = data[i];
-                if(type === 'event' && e.className !== 'MidiEvent' && e.className !== 'AudioEvent'){
+                if (type === 'event' && e.className !== 'MidiEvent' && e.className !== 'AudioEvent') {
                     console.warn('skipping', e, 'because it is not a MidiEvent nor an AudioEvent');
                     continue;
-                }else if(type === 'note' && e.className !== 'MidiNote'){
+                } else if (type === 'note' && e.className !== 'MidiNote') {
                     console.warn('skipping', e, 'because it is not a MidiNote');
                     continue;
                 }
                 events.push(e);
             }
-        }else{
-            if(type === 'event'){
-                if(data.className !== 'MidiEvent' && data.className !== 'AudioEvent'){
+        } else {
+            if (type === 'event') {
+                if (data.className !== 'MidiEvent' && data.className !== 'AudioEvent') {
                     console.error(data, ' is not a MidiEvent nor an AudioEvent');
                     return -1;
-                }else{
+                } else {
                     events = [data];
                 }
-            }else if(type === 'note'){
-                if(data.className !== 'MidiNote'){
+            } else if (type === 'note') {
+                if (data.className !== 'MidiNote') {
                     console.error(data, ' is not a MidiNote');
                     return -1;
-                }else{
+                } else {
                     events = [data.noteOn, data.noteOff];
                 }
             }
@@ -1128,16 +1128,16 @@
     };
 
 
-    checkOperatorConflict = function(operator1, operator2){
+    checkOperatorConflict = function (operator1, operator2) {
 
-        switch(operator1){
+        switch (operator1) {
             case '=':
             case '==':
             case '===':
                 return false;
         }
 
-        switch(operator2){
+        switch (operator2) {
             case '=':
             case '==':
             case '===':
@@ -1148,16 +1148,16 @@
     };
 
 
-    sequencer.protectedScope.createFollowEvent = function(song){
+    sequencer.protectedScope.createFollowEvent = function (song) {
         return new FollowEvent(song);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         typeString = sequencer.protectedScope.typeString;
         getPosition = sequencer.protectedScope.getPosition;
         midiEventNumberByName = sequencer.midiEventNumberByName;
         midiEventNameByNumber = sequencer.midiEventNameByNumber;
         findEvent = sequencer.findEvent;
     });
-}());
+}

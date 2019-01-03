@@ -4,7 +4,7 @@
 // Song.gain (Song.setVolume()) ->
 // Sequencer.gain (sequencer.setMasterVolume()) -> Sequencer.compressor -> context.destiny
 
-(function(){
+function channelEffects() {
 
     'use strict';
 
@@ -26,7 +26,7 @@
         Compressor;
 
 
-    function Effect(config){
+    function Effect(config) {
         this.id = 'FX' + id++ + '' + new Date().getTime();
         this.type = config.type;
         this.buffer = config.buffer;
@@ -45,7 +45,7 @@
     }
 
 
-    Effect.prototype.setInput = function(input){
+    Effect.prototype.setInput = function (input) {
         // input.connect(this.node);
         // return;
 
@@ -59,14 +59,14 @@
         this.wetGain.connect(this.output);
     };
 
-/*
-    Effect.prototype.setOutput = function(output){
-        this.output.disconnect(0);
-        this.output.connect(output);
-    };
-*/
+    /*
+        Effect.prototype.setOutput = function(output){
+            this.output.disconnect(0);
+            this.output.connect(output);
+        };
+    */
 
-    Effect.prototype.setAmount = function(value){
+    Effect.prototype.setAmount = function (value) {
         /*
         this.amount = value < 0 ? 0 : value > 1 ? 1 : value;
         var gain1 = Math.cos(this.amount * 0.5 * Math.PI),
@@ -81,8 +81,8 @@
     };
 
 
-    Effect.prototype.copy = function(){
-        switch(this.type){
+    Effect.prototype.copy = function () {
+        switch (this.type) {
             case 'reverb':
                 return new Reverb(this.config);
             case 'panner':
@@ -97,9 +97,9 @@
     };
 
 
-    sequencer.createReverb = function(id){
+    sequencer.createReverb = function (id) {
         var buffer = getSample(id);
-        if(buffer === false){
+        if (buffer === false) {
             console.warn('no reverb with id', id, 'loaded');
             return false;
         }
@@ -111,75 +111,75 @@
     };
 
 
-    sequencer.createPanner = function(config){
+    sequencer.createPanner = function (config) {
         config = config || {};
         config.type = 'panner';
         return new Panner(config);
     };
 
 
-    sequencer.createPanner2 = function(config){
+    sequencer.createPanner2 = function (config) {
         config = config || {};
         config.type = 'panner2';
         return new Panner2(config);
     };
 
 
-    sequencer.createDelay = function(config){
+    sequencer.createDelay = function (config) {
         config = config || {};
         config.type = 'delay';
         return new Delay(config);
     };
 
 
-    sequencer.createCompressor = function(config){
+    sequencer.createCompressor = function (config) {
         config = config || {};
         config.type = 'compressor';
         return new Compressor(config);
     };
 
 
-    sequencer.createBiQuadFilter = function(config){
+    sequencer.createBiQuadFilter = function (config) {
         config = config || {};
         config.type = 'biquadfilter';
         return new BiQuadFilter(config);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         context = sequencer.protectedScope.context;
         createClass = sequencer.protectedScope.createClass;
         getSample = sequencer.getSample;
 
-        Reverb = createClass(Effect, function(config){
+        Reverb = createClass(Effect, function (config) {
             this.node = context.createConvolver();
             this.node.buffer = config.buffer;
             //console.log(this.node.buffer);
         });
 
-        Panner = createClass(Effect, function(config){
+        Panner = createClass(Effect, function (config) {
             this.node = context.createPanner();
             this.node.panningModel = 'equalpower';
             this.node.setPosition(zeroValue, zeroValue, zeroValue);
         });
 
-        Panner2 = createClass(Effect, function(config){
+        Panner2 = createClass(Effect, function (config) {
             this.node = context.createPanner();
             this.node.panningModel = 'HRTF';
             this.node.setPosition(zeroValue, zeroValue, zeroValue);
         });
 
-        Delay = createClass(Effect, function(config){
+        Delay = createClass(Effect, function (config) {
             this.node = context.createDelay();
             this.node.delayTime.value = 0.3;
         });
 
-        Compressor = createClass(Effect, function(config){
+        Compressor = createClass(Effect, function (config) {
             this.node = context.createDynamicsCompressor();
         });
 
 
-        BiQuadFilter = createClass(Effect, function(config){
+        BiQuadFilter = createClass(Effect, function (config) {
             this.node = context.createBiquadFilter();
             this.node.type = 0;
             this.node.Q.value = 4;
@@ -194,7 +194,7 @@
         };
         */
 
-        Panner.prototype.setPosition = function(value){
+        Panner.prototype.setPosition = function (value) {
             var x = value,
                 y = 0,
                 z = 1 - Math.abs(x);
@@ -206,7 +206,7 @@
             //console.log(1,x,y,z);
         };
 
-        Panner2.prototype.setPosition = function(value){
+        Panner2.prototype.setPosition = function (value) {
             var xDeg = parseInt(value),
                 zDeg = xDeg + 90,
                 x, y, z;
@@ -223,12 +223,12 @@
             //console.log(2,x,y,z);
         };
 
-        Delay.prototype.setTime = function(value){
+        Delay.prototype.setTime = function (value) {
             this.node.delayTime.value = value;
         };
 
     });
-}());
+}
 
 
 /*

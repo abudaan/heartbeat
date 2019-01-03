@@ -1,4 +1,4 @@
-(function () {
+function scheduler() {
 
     'use strict';
 
@@ -360,4 +360,4 @@
         return new Scheduler(song);
     };
 
-}());
+}

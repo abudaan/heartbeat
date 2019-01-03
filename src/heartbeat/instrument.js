@@ -1,4 +1,4 @@
-(function(){
+function instrument() {
 
     'use strict';
 
@@ -29,13 +29,13 @@
         SimpleSynth;
 
 
-    function unscheduleCallback(sample){
+    function unscheduleCallback(sample) {
         //console.log(sample.id, 'has been unscheduled');
         sample = null;
     }
 
 
-    Instrument = function(config){
+    Instrument = function (config) {
         //console.log(config);
         this.className = 'Instrument';
         this.config = config;
@@ -56,28 +56,28 @@
 
 
     // called by asset manager when a sample pack or an instrument has been unloaded, see asset_manager.js
-    Instrument.prototype.reset = function(){
+    Instrument.prototype.reset = function () {
         var instrument = sequencer.getInstrument(this.config.localPath),
             samplepack = sequencer.getSamplePack(this.config.sample_path);
 
-        if(samplepack === false || instrument === false){
+        if (samplepack === false || instrument === false) {
             this.scheduledEvents = {};
             this.scheduledSamples = {};
             this.sustainPedalSamples = {};
             this.sampleDataByNoteNumber = {};
             this.sampleData = [];
-            if(this.update){
+            if (this.update) {
                 delete repetitiveTasks[this.updateTaskId];
             }
             // if the instrument has been unloaded, set the track to the default instrument
-            if(instrument === false){
+            if (instrument === false) {
                 this.track.setInstrument();
             }
         }
     };
 
 
-    Instrument.prototype.parse = function(){
+    Instrument.prototype.parse = function () {
         var i, maxi, v, v1, v2, length, octave, note, noteName, noteNumber,
             pathArray,
             buffer, names,
@@ -92,12 +92,12 @@
             mapping = config.mapping,
             me = this;
 
-        if(config.name === undefined){
+        if (config.name === undefined) {
             console.error('instruments must have a name', config);
             return false;
         }
 
-        if(mapping === undefined){
+        if (mapping === undefined) {
             console.error('instruments must have a mapping to samples', config);
             return false;
         }
@@ -116,9 +116,9 @@
         //console.log(this.keyScalingRelease, config);
 
         samplePack = storage.samplepacks;
-        for(i = 0, maxi = pathArray.length; i < maxi; i++){
-            if(samplePack === undefined){
-                if(sequencer.debug){
+        for (i = 0, maxi = pathArray.length; i < maxi; i++) {
+            if (samplePack === undefined) {
+                if (sequencer.debug) {
                     console.log('sample pack not found', pathArray.join('/'));
                 }
                 return;
@@ -128,20 +128,20 @@
         //console.log(samplePack.name);
 
         audioFolder = storage.audio;
-        try{
-            for(i = 0, maxi = pathArray.length; i < maxi; i++){
+        try {
+            for (i = 0, maxi = pathArray.length; i < maxi; i++) {
                 audioFolder = audioFolder[pathArray[i]];
             }
-        }catch(e){
-            if(sequencer.debug){
+        } catch (e) {
+            if (sequencer.debug) {
                 console.log('sample pack "' + pathArray[i] + '" is not loaded');
             }
             //sampleConfig = false;
             return;
         }
 
-        if(audioFolder === undefined){
-            if(sequencer.debug){
+        if (audioFolder === undefined) {
+            if (sequencer.debug) {
                 console.log('sample pack not found', pathArray.join('/'));
             }
             //sampleConfig = false;
@@ -149,52 +149,52 @@
         }
 
 
-        if(typeString(mapping) === 'array'){
+        if (typeString(mapping) === 'array') {
             this.keyRange = mapping;
             mapping = {};
-            for(i = this.keyRange[0]; i <= this.keyRange[1]; i++){
+            for (i = this.keyRange[0]; i <= this.keyRange[1]; i++) {
                 mapping[i] = '';
             }
         }
 
-        if(this.keyRange === undefined){
+        if (this.keyRange === undefined) {
             this.lowestNote = 128;
             this.highestNote = -1;
-        }else{
+        } else {
             this.lowestNote = this.keyRange[0];
             this.highestNote = this.keyRange[1];
             this.numNotes = this.highestNote - this.lowestNote;
         }
 
 
-        if(config.release_duration !== undefined){
+        if (config.release_duration !== undefined) {
             this.releaseDuration = config.release_duration;
-        }else{
+        } else {
             this.releaseDuration = 0;
         }
 
         this.releaseEnvelope = config.release_envelope || 'equal power';
 
 
-        if(this.autopan){
+        if (this.autopan) {
             this.autoPanner = createAutoPanner();
         }
 
         this.samplepack = samplePack;
         //console.log(samplePack);
 
-        for(id in mapping){
-            if(mapping.hasOwnProperty(id)){
+        for (id in mapping) {
+            if (mapping.hasOwnProperty(id)) {
                 data = mapping[id];
 
-                if(isNaN(id)){
+                if (isNaN(id)) {
                     // C3, D#5, Bb0, etc.
                     length = id.length;
                     octave = id.substring(length - 1);
                     note = id.substring(0, length - 1);
                     noteName = id;
                     noteNumber = sequencer.getNoteNumber(note, octave);
-                }else{
+                } else {
                     noteName = sequencer.getNoteNameFromNoteNumber(id, noteNameMode);
                     noteName = noteName.join('');
                     noteNumber = id;
@@ -203,31 +203,31 @@
 
                 noteNumber = parseInt(noteNumber, 10);
 
-                if(this.keyRange === undefined){
+                if (this.keyRange === undefined) {
                     this.lowestNote = noteNumber < this.lowestNote ? noteNumber : this.lowestNote;
                     this.highestNote = noteNumber > this.highestNote ? noteNumber : this.highestNote;
                 }
 
                 //console.log(data,typeString(data));
 
-                if(typeString(data) === 'array'){
+                if (typeString(data) === 'array') {
                     // multi-layered
                     this.multiLayered = true;
-                    for(i = 0, maxi = data.length; i < maxi; i++){
+                    for (i = 0, maxi = data.length; i < maxi; i++) {
                         subdata = data[i];
                         parseSampleData(subdata);
-                        if(this.sampleDataByNoteNumber[noteNumber] === undefined){
+                        if (this.sampleDataByNoteNumber[noteNumber] === undefined) {
                             this.sampleDataByNoteNumber[noteNumber] = [];
                         }
                         // store the same sample config for every step in this velocity range
                         v1 = subdata.v[0];
                         v2 = subdata.v[1];
-                        for(v = v1; v <= v2; v++){
+                        for (v = v1; v <= v2; v++) {
                             this.sampleDataByNoteNumber[noteNumber][v] = sampleConfig;
                         }
                         this.sampleData.push(sampleConfig);
                     }
-                }else{
+                } else {
                     // single-layered
                     parseSampleData(data);
                     //console.log('--->', sampleConfig);
@@ -237,7 +237,7 @@
             }
         }
 
-        if(this.keyRange === undefined){
+        if (this.keyRange === undefined) {
             //console.log(this.highestNote, this.lowestNote);
             this.numNotes = this.highestNote - this.lowestNote;
             this.keyRange = [this.lowestNote, this.highestNote];
@@ -248,52 +248,52 @@
         // the mapping object to the config to make it available for unloading
         this.config.mapping = mapping;
 
-        if(this.singlePitch){
+        if (this.singlePitch) {
             // TODO: fix this for multi-layered instruments (low prio)
-            for(i = 127; i >= 0; i--){
+            for (i = 127; i >= 0; i--) {
                 this.sampleData[i] = sampleConfig;
                 this.sampleDataByNoteNumber[i] = sampleConfig;
             }
         }
 
-        if(update){
+        if (update) {
             this.updateTaskId = 'update_' + this.name + '_' + new Date().getTime();
             //console.log('start update', this.name);
-            repetitiveTasks[this.updateTaskId] = function(){
+            repetitiveTasks[this.updateTaskId] = function () {
                 //console.log('update');
-                if(me.autopan){
+                if (me.autopan) {
                     me.update(this.autoPanner.getValue());
-                }else{
+                } else {
                     me.update();
                 }
             };
         }
 
         // inner function of Instrument.parse();
-        function parseSampleData(data){
+        function parseSampleData(data) {
             var tmp, n;
             //console.log('find', this.samplePath + '/' + data.n);
             //buffer = findItem(this.samplePath + '/' + data.n, storage.audio);
             //console.log(data);
 
-            if(data.n){
+            if (data.n) {
                 // get the buffer by an id
                 buffer = audioFolder[data.n];
                 //console.log(data.n, buffer);
-            }else{
+            } else {
                 // get the buffer by a note number or note name if a keyrange is specified
                 names = [noteNumber, noteName, noteName.toLowerCase()];
-                for(n = 2; n >= 0; n--){
+                for (n = 2; n >= 0; n--) {
                     buffer = audioFolder[names[n]];
-                    if(buffer !== undefined){
-                        mapping[id] = {n: names[n]};
+                    if (buffer !== undefined) {
+                        mapping[id] = { n: names[n] };
                         break;
                     }
                 }
             }
 
-            if(buffer === undefined){
-                if(sequencer.debug){
+            if (buffer === undefined) {
+                if (sequencer.debug) {
                     console.log('no buffer found for ' + id + ' (' + me.name + ')');
                 }
                 sampleConfig = false;
@@ -308,32 +308,32 @@
             };
 
             // sample pack sustain
-            if(config.sustain === true){
+            if (config.sustain === true) {
                 sampleConfig.sustain = true;
                 update = true;
             }
 
             // sustain
-            if(data.s !== undefined){
+            if (data.s !== undefined) {
                 sampleConfig.sustain_start = data.s[0];
                 sampleConfig.sustain_end = data.s[1];
                 sampleConfig.sustain = true;
                 update = true;
-            }else if(config.sustain === true){
+            } else if (config.sustain === true) {
                 tmp = samplePack.samplesById[data.n].sustain;
-                if(tmp !== undefined){
+                if (tmp !== undefined) {
                     sampleConfig.sustain_start = tmp[0];
                     sampleConfig.sustain_end = tmp[1];
                     //sampleConfig.sustain = true;
                     //console.log(tmp, update, sampleConfig.sustain);
-                }else{
+                } else {
                     sampleConfig.sustain = false;
                 }
                 //console.log(data.n, samplePack.samplesById[data.n]);
             }
 
             // global release
-            if(config.release_duration !== undefined){
+            if (config.release_duration !== undefined) {
                 sampleConfig.release_duration = config.release_duration;
                 sampleConfig.release_envelope = config.release_envelope || me.releaseEnvelope;
                 sampleConfig.release = true;
@@ -341,11 +341,11 @@
             }
 
             // release duration and envelope per sample overrules global release duration and envelope
-            if(data.r !== undefined){
-                if(typeString(data.r) === 'array'){
+            if (data.r !== undefined) {
+                if (typeString(data.r) === 'array') {
                     sampleConfig.release_duration = data.r[0];
                     sampleConfig.release_envelope = data.r[1] || me.releaseEnvelope;
-                }else if(!isNaN(data.r)){
+                } else if (!isNaN(data.r)) {
                     sampleConfig.release_duration = data.r;
                     sampleConfig.release_envelope = me.releaseEnvelope;
                 }
@@ -355,7 +355,7 @@
             }
 
             // panning
-            if(data.p !== undefined){
+            if (data.p !== undefined) {
                 sampleConfig.panPosition = data.p;
                 sampleConfig.panning = true;
             }
@@ -365,51 +365,51 @@
     };
 
 
-    Instrument.prototype.getInfoAsHTML = function(){
+    Instrument.prototype.getInfoAsHTML = function () {
         var html = '',
             instrumentInfo = '',
             samplepackInfo = '',
             sp = this.samplepack;
 
-        if(this.info !== undefined){
+        if (this.info !== undefined) {
             instrumentInfo += '<tr><td>info</td><td>' + this.info + '</td></tr>';
         }
-        if(this.author !== undefined){
+        if (this.author !== undefined) {
             instrumentInfo += '<tr><td>author</td><td>' + this.author + '</td></tr>';
         }
-        if(this.license !== undefined){
+        if (this.license !== undefined) {
             instrumentInfo += '<tr><td>license</td><td>' + this.license + '</td></tr>';
         }
         instrumentInfo += '<tr><td>keyrange</td><td>' + this.lowestNote + '(' + sequencer.getFullNoteName(this.lowestNote) + ')';
         instrumentInfo += ' - ' + this.highestNote + '(' + sequencer.getFullNoteName(this.highestNote) + ')</td></tr>';
 
-        if(instrumentInfo !== ''){
-            instrumentInfo = '<table><th colspan="2">instrument</th>' +  instrumentInfo + '</table>';
+        if (instrumentInfo !== '') {
+            instrumentInfo = '<table><th colspan="2">instrument</th>' + instrumentInfo + '</table>';
             html += instrumentInfo;
         }
 
-        if(sp === undefined){
+        if (sp === undefined) {
             return html;
         }
 
-        if(sp.info !== undefined){
+        if (sp.info !== undefined) {
             samplepackInfo += '<tr><td>info</td><td>' + sp.info + '</td></tr>';
         }
-        if(sp.author !== undefined){
+        if (sp.author !== undefined) {
             samplepackInfo += '<tr><td>author</td><td>' + sp.author + '</td></tr>';
         }
-        if(sp.license !== undefined){
+        if (sp.license !== undefined) {
             samplepackInfo += '<tr><td>license</td><td>' + sp.license + '</td></tr>';
         }
-        if(sp.compression !== undefined){
+        if (sp.compression !== undefined) {
             samplepackInfo += '<tr><td>compression</td><td>' + sp.compression + '</td></tr>';
         }
-        if(sp.filesize !== undefined){
-            samplepackInfo += '<tr><td>filesize</td><td>' + round(sp.filesize/1024/1024, 2) + ' MiB</td></tr>';
+        if (sp.filesize !== undefined) {
+            samplepackInfo += '<tr><td>filesize</td><td>' + round(sp.filesize / 1024 / 1024, 2) + ' MiB</td></tr>';
         }
 
-        if(samplepackInfo !== ''){
-            samplepackInfo = '<table><th colspan="2">samplepack</th>' +  samplepackInfo + '</table>';
+        if (samplepackInfo !== '') {
+            samplepackInfo = '<table><th colspan="2">samplepack</th>' + samplepackInfo + '</table>';
             html += samplepackInfo;
         }
 
@@ -417,68 +417,68 @@
     };
 
 
-    Instrument.prototype.getInfo = function(){
+    Instrument.prototype.getInfo = function () {
         var info = {
             instrument: {},
             samplepack: {}
         };
 
-        if(this.info !== undefined){
+        if (this.info !== undefined) {
             info.instrument.info = this.info;
         }
-        if(this.author !== undefined){
+        if (this.author !== undefined) {
             info.instrument.author = this.author;
         }
-        if(this.license !== undefined){
+        if (this.license !== undefined) {
             info.instrument.license = this.license;
         }
-        if(this.keyrange !== undefined){
+        if (this.keyrange !== undefined) {
             info.instrument.keyrange = this.keyrange;
         }
 
 
-        if(this.info !== undefined){
+        if (this.info !== undefined) {
             info.samplepack.info = this.info;
         }
-        if(this.author !== undefined){
+        if (this.author !== undefined) {
             info.samplepack.author = this.author;
         }
-        if(this.license !== undefined){
+        if (this.license !== undefined) {
             info.samplepack.license = this.license;
         }
-        if(this.compression !== undefined){
+        if (this.compression !== undefined) {
             info.samplepack.compression = this.compression;
         }
-        if(this.filesize !== undefined){
-            info.samplepack.filesize = round(this.samplepack.filesize/1024/1024, 2);
+        if (this.filesize !== undefined) {
+            info.samplepack.filesize = round(this.samplepack.filesize / 1024 / 1024, 2);
         }
 
         return info;
     };
 
 
-    Instrument.prototype.createSample = function(event){
+    Instrument.prototype.createSample = function (event) {
         var
             noteNumber = event.noteNumber,
             velocity = event.velocity,
             data = this.sampleDataByNoteNumber[noteNumber],
             type = typeString(data);
 
-        if(type === 'array'){
+        if (type === 'array') {
             data = data[velocity];
             //console.log(velocity, data.bufferId);
         }
 
-        if(data === undefined || data === false){
+        if (data === undefined || data === false) {
             // no buffer data, return a dummy sample
             return {
-                start: function(){
+                start: function () {
                     console.warn('no audio data loaded for', noteNumber);
                 },
-                stop: function(){},
-                update: function(){},
-                addData: function(){},
-                unschedule: function(){}
+                stop: function () { },
+                update: function () { },
+                addData: function () { },
+                unschedule: function () { }
             };
         }
         //console.log(data);
@@ -487,22 +487,22 @@
     };
 
 
-    Instrument.prototype.setKeyScalingPanning = function(start, end){
+    Instrument.prototype.setKeyScalingPanning = function (start, end) {
         //console.log('keyScalingPanning', start, end);
         var i, data, numSamples = this.sampleData.length,
             panStep, currentPan;
 
-        if(start === false){
-            for(i = 0; i < numSamples; i++){
+        if (start === false) {
+            for (i = 0; i < numSamples; i++) {
                 data = this.sampleData[i];
                 data.panning = false;
             }
         }
 
-        if(isNaN(start) === false && isNaN(end) === false){
-            panStep = (end - start)/this.numNotes;
+        if (isNaN(start) === false && isNaN(end) === false) {
+            panStep = (end - start) / this.numNotes;
             currentPan = start;
-            for(i = 0; i < numSamples; i++){
+            for (i = 0; i < numSamples; i++) {
                 data = this.sampleData[i];
                 data.panning = true;
                 data.panPosition = currentPan;
@@ -513,15 +513,15 @@
     };
 
 
-    Instrument.prototype.setRelease = function(millis, envelope){
-        if(millis === undefined){
+    Instrument.prototype.setRelease = function (millis, envelope) {
+        if (millis === undefined) {
             return;
         }
         this.releaseEnvelope = envelope || this.releaseEnvelope;
         this.keyScalingRelease = undefined;
 
         var i, data, numSamples = this.sampleData.length;
-        for(i = 0; i < numSamples; i++){
+        for (i = 0; i < numSamples; i++) {
             data = this.sampleData[i];
             data.release = true;
             data.release_duration = millis;
@@ -531,18 +531,18 @@
     };
 
 
-    Instrument.prototype.setKeyScalingRelease = function(start, end, envelope){
+    Instrument.prototype.setKeyScalingRelease = function (start, end, envelope) {
         var i, data, numSamples = this.sampleData.length,
             releaseStep, currentRelease;
 
         this.releaseEnvelope = envelope || this.releaseEnvelope;
 
-        if(isNaN(start) === false && isNaN(end) === false){
+        if (isNaN(start) === false && isNaN(end) === false) {
             this.keyScalingRelease = [start, end];
             this.releaseDuration = 0;
-            releaseStep = (end - start)/this.numNotes;
+            releaseStep = (end - start) / this.numNotes;
             currentRelease = start;
-            for(i = 0; i < numSamples; i++){
+            for (i = 0; i < numSamples; i++) {
                 data = this.sampleData[i];
                 data.release_duration = currentRelease;
                 data.release_envelope = currentRelease;
@@ -553,28 +553,28 @@
     };
 
 
-    Instrument.prototype.transpose = function(semitones, cb1, cb2){
-        if(transpose === undefined){
+    Instrument.prototype.transpose = function (semitones, cb1, cb2) {
+        if (transpose === undefined) {
             console.log('transpose is still experimental');
             return;
         }
         var numSamples = this.sampleData.length;
-        function loop(num, samples){
+        function loop(num, samples) {
             var data;
-            if(cb2){
-                cb2('transposing sample ' + (num + 1) +  ' of ' + numSamples);
+            if (cb2) {
+                cb2('transposing sample ' + (num + 1) + ' of ' + numSamples);
             }
             //console.log(num, numSamples);
-            if(num < numSamples){
+            if (num < numSamples) {
                 data = samples[num];
-                setTimeout(function(){
-                    transpose(data.buffer, semitones, function(transposedBuffer){
+                setTimeout(function () {
+                    transpose(data.buffer, semitones, function (transposedBuffer) {
                         data.buffer = transposedBuffer;
                         loop(++num, samples);
                     });
                 }, 10);
-            }else{
-                if(cb1){
+            } else {
+                if (cb1) {
                     console.log('ready');
                     cb1();
                 }
@@ -585,52 +585,52 @@
 
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
-    Instrument.prototype.processEvent = function(midiEvent){
+    Instrument.prototype.processEvent = function (midiEvent) {
         //console.log(midiEvent.type + ' : ' + midiEvent.velocity);
         var type = midiEvent.type,
             data1, data2, track, output;
 
         //seconds = seconds === undefined ? 0 : seconds;
-        if(midiEvent.time === undefined){
+        if (midiEvent.time === undefined) {
             midiEvent.time = 0;
         }
 
-        if(type === 128 || type === 144){
-            if(type === 128){
-                if(this.sustainPedalDown === true){
+        if (type === 128 || type === 144) {
+            if (type === 128) {
+                if (this.sustainPedalDown === true) {
                     midiEvent.sustainPedalDown = true;
                 }
                 //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.id);
                 this.stopNote(midiEvent);
-            }else{
+            } else {
                 //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.noteOff.ticks, midiEvent.midiNote.id);
                 this.playNote(midiEvent);
             }
-        }else if(midiEvent.type === 176){
+        } else if (midiEvent.type === 176) {
             //return;
             data1 = midiEvent.data1;
             data2 = midiEvent.data2;
-            if(data1 === 64){ // sustain pedal
+            if (data1 === 64) { // sustain pedal
                 //console.log(this.sustainPedalDown, data1, data2)
-                if(data2 === 127){
+                if (data2 === 127) {
                     this.sustainPedalDown = true;
                     //console.log('sustain pedal down', this.track.song.id);
                     dispatchEvent(this.track.song, 'sustain_pedal', 'down');
-                }else if(data2 === 0){
+                } else if (data2 === 0) {
                     this.sustainPedalDown = false;
                     //console.log('sustain pedal up');
                     dispatchEvent(this.track.song, 'sustain_pedal', 'up');
                     this.stopSustain(midiEvent.time);
                 }
-            }else if(data1 === 10){ // panning
+            } else if (data1 === 10) { // panning
                 // panning is *not* exactly timed -> not possible (yet) with WebAudio
                 track = this.track;
                 //console.log(data2, remap(data2, 0, 127, -1, 1));
                 track.setPanning(remap(data2, 0, 127, -1, 1));
-            }else if(data1 === 7){ // volume
+            } else if (data1 === 7) { // volume
                 track = this.track;
                 output = track.output;
-                output.gain.setValueAtTime(data2/127, midiEvent.time);
+                output.gain.setValueAtTime(data2 / 127, midiEvent.time);
                 /*
                 //@TODO: this should be done by a plugin
                 if(track.volumeChangeMethod === 'linear'){
@@ -654,17 +654,17 @@
     };
 
 
-    Instrument.prototype.stopSustain = function(seconds){
+    Instrument.prototype.stopSustain = function (seconds) {
         var midiNote,
             scheduledSamples = this.scheduledSamples,
             sustainPedalSamples = this.sustainPedalSamples;
 
-        objectForEach(sustainPedalSamples, function(sample){
-            if(sample !== undefined){
+        objectForEach(sustainPedalSamples, function (sample) {
+            if (sample !== undefined) {
                 midiNote = sample.midiNote;
                 midiNote.noteOn.sustainPedalDown = undefined;
                 midiNote.noteOff.sustainPedalDown = undefined;
-                sample.stop(seconds, function(sample){
+                sample.stop(seconds, function (sample) {
                     //console.log('stopped sustain pedal up:', sample.id, sample.sourceId);
                     scheduledSamples[sample.sourceId] = null;
                     delete scheduledSamples[sample.sourceId];
@@ -677,13 +677,13 @@
     };
 
 
-    Instrument.prototype.playNote = function(midiEvent){
+    Instrument.prototype.playNote = function (midiEvent) {
         var
             sample,
             sourceId;
 
-        if(!midiEvent.midiNote){
-            if(sequencer.debug){
+        if (!midiEvent.midiNote) {
+            if (sequencer.debug) {
                 console.warn('playNote() no midi note');
             }
             return;
@@ -693,7 +693,7 @@
         sample = this.scheduledSamples[sourceId];
         //console.log('start', sourceId);
 
-        if(sample !== undefined){
+        if (sample !== undefined) {
             //console.log('already scheduled', sourceId);
             sample.unschedule(0);
         }
@@ -710,9 +710,9 @@
     };
 
 
-    Instrument.prototype.stopNote = function(midiEvent){
-        if(midiEvent.midiNote === undefined){
-            if(sequencer.debug){
+    Instrument.prototype.stopNote = function (midiEvent) {
+        if (midiEvent.midiNote === undefined) {
+            if (sequencer.debug) {
                 console.warn('stopNote() no midi note', midiEvent.ticks, midiEvent.noteNumber);
             }
             return;
@@ -728,33 +728,33 @@
         // }
 
         //console.log(midiEvent.sustainPedalDown);
-        if(midiEvent.sustainPedalDown === true){
+        if (midiEvent.sustainPedalDown === true) {
             // while sustain pedal is pressed, bypass note off events
             //console.log('sustain');
             sustainPedalSamples[sourceId] = sample;
             return;
         }
 
-        if(sample === undefined){
+        if (sample === undefined) {
             // if(sequencer.debug){
             //     console.log('no sample scheduled (anymore) for this midiEvent', sourceId, seconds);
             // }
             return;
         }
 
-        sample.stop(midiEvent.time, function(){
+        sample.stop(midiEvent.time, function () {
             scheduledSamples[sourceId] = null;
             delete scheduledSamples[sourceId];
         });
     };
 
 
-    Instrument.prototype.hasScheduledSamples = function(){
+    Instrument.prototype.hasScheduledSamples = function () {
         return isEmptyObject(this.scheduledSamples);
     };
 
 
-    Instrument.prototype.reschedule = function(song){
+    Instrument.prototype.reschedule = function (song) {
         var
             min = song.millis,
             max = min + (sequencer.bufferTime * 1000),
@@ -762,51 +762,51 @@
             scheduledSamples = this.scheduledSamples,
             id, note, sample;
 
-        for(id in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(id)){
+        for (id in scheduledSamples) {
+            if (scheduledSamples.hasOwnProperty(id)) {
                 sample = scheduledSamples[id]; // the sample
                 note = sample.midiNote; // the midi note
 
-                if(note === undefined || note.state === 'removed'){
+                if (note === undefined || note.state === 'removed') {
                     sample.unschedule(0, unscheduleCallback);
                     delete scheduledSamples[id];
-                }else if(
-                        note.noteOn.millis >= min &&
-                        note.noteOff.millis < max &&
-                        sample.noteName === note.fullName
-                    ){
+                } else if (
+                    note.noteOn.millis >= min &&
+                    note.noteOff.millis < max &&
+                    sample.noteName === note.fullName
+                ) {
                     // nothing has changed, skip
                     continue;
-                }else{
+                } else {
                     //console.log('unscheduled', id);
                     delete scheduledSamples[id];
                     sample.unschedule(null, unscheduleCallback);
                 }
             }
         }
-/*
-        objectForEach(this.scheduledEvents, function(event, eventId){
-            if(event === undefined || event.state === 'removed'){
-                delete sequencer.timedTasks['event_' + eventId];
-                delete this.scheduledEvents[eventId];
-            }else if((event.millis >= min && event.millis < max2) === false){
-                delete sequencer.timedTasks['event_' + eventId];
-                delete this.scheduledEvents[eventId];
-            }
-        });
-*/
+        /*
+                objectForEach(this.scheduledEvents, function(event, eventId){
+                    if(event === undefined || event.state === 'removed'){
+                        delete sequencer.timedTasks['event_' + eventId];
+                        delete this.scheduledEvents[eventId];
+                    }else if((event.millis >= min && event.millis < max2) === false){
+                        delete sequencer.timedTasks['event_' + eventId];
+                        delete this.scheduledEvents[eventId];
+                    }
+                });
+        */
     };
 
 
-    function loop(data, i, maxi, events){
+    function loop(data, i, maxi, events) {
         var arg;
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             arg = data[i];
-            if(arg === undefined){
+            if (arg === undefined) {
                 continue;
-            }else if(arg.className === 'MidiNote'){
+            } else if (arg.className === 'MidiNote') {
                 events.push(arg.noteOn);
-            }else if(typeString(arg) === 'array'){
+            } else if (typeString(arg) === 'array') {
                 loop(arg, 0, arg.length);
             }
         }
@@ -814,24 +814,24 @@
 
 
     // stop specified events or notes, used by stopProcessEvent()
-    Instrument.prototype.unschedule = function(){
+    Instrument.prototype.unschedule = function () {
         var args = Array.prototype.slice.call(arguments),
             events = [],
             i, e, id, sample;
 
         loop(args, 0, args.length, events);
 
-        for(i = events.length - 1; i >= 0; i--){
+        for (i = events.length - 1; i >= 0; i--) {
             e = events[i];
-            if(e.midiNote !== undefined){
+            if (e.midiNote !== undefined) {
                 // note on and note off events
                 id = e.midiNote.id;
                 sample = this.scheduledSamples[id];
-                if(sample !== undefined){
+                if (sample !== undefined) {
                     sample.unschedule(0, unscheduleCallback);
                     delete this.scheduledSamples[id];
                 }
-            }else if(e.className === 'MidiEvent'){
+            } else if (e.className === 'MidiEvent') {
                 // other channel events
                 id = e.id;
                 delete timedTasks['event_' + id];
@@ -843,7 +843,7 @@
 
 
     // stop all events and notes
-    Instrument.prototype.allNotesOff = function(){
+    Instrument.prototype.allNotesOff = function () {
         var sample, sampleId,
             scheduledSamples = this.scheduledSamples;
 
@@ -852,29 +852,29 @@
 
         //console.log(scheduledSamples);
 
-        if(scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true){
+        if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
             return;
         }
 
-        for(sampleId in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(sampleId)){
+        for (sampleId in scheduledSamples) {
+            if (scheduledSamples.hasOwnProperty(sampleId)) {
                 //console.log('allNotesOff', sampleId);
                 sample = scheduledSamples[sampleId];
-                if(sample){
+                if (sample) {
                     sample.unschedule(0, unscheduleCallback);
                 }
             }
         }
         this.scheduledSamples = {};
 
-        objectForEach(this.scheduledEvents, function(event, eventId){
+        objectForEach(this.scheduledEvents, function (event, eventId) {
             delete timedTasks['event_' + eventId];
         });
         this.scheduledEvents = {};
     };
 
 
-    Instrument.prototype.allNotesOffPart = function(partId){
+    Instrument.prototype.allNotesOffPart = function (partId) {
         var sample, sampleId,
             scheduledSamples = this.scheduledSamples;
 
@@ -884,80 +884,80 @@
 
         //console.log(scheduledSamples);
 
-        if(scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true){
+        if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
             return;
         }
 
-        for(sampleId in scheduledSamples){
-            if(scheduledSamples.hasOwnProperty(sampleId)){
+        for (sampleId in scheduledSamples) {
+            if (scheduledSamples.hasOwnProperty(sampleId)) {
                 //console.log('allNotesOff', sampleId);
                 sample = scheduledSamples[sampleId];
-                if(sample){
+                if (sample) {
                     sample.unschedule(0, unscheduleCallback);
                 }
             }
         }
         this.scheduledSamples = {};
 
-        objectForEach(this.scheduledEvents, function(event, eventId){
+        objectForEach(this.scheduledEvents, function (event, eventId) {
             delete timedTasks['event_' + eventId];
         });
         this.scheduledEvents = {};
     };
 
-    Instrument.prototype.update = function(value){
+    Instrument.prototype.update = function (value) {
         var sampleId, sample;
         //console.log(this.scheduledSamples);
-        for(sampleId in this.scheduledSamples){
-            if(this.scheduledSamples.hasOwnProperty(sampleId)){
+        for (sampleId in this.scheduledSamples) {
+            if (this.scheduledSamples.hasOwnProperty(sampleId)) {
                 sample = this.scheduledSamples[sampleId];
-                if(sample){
+                if (sample) {
                     sample.update(value);
                 }
             }
         }
     };
 
-    function createAutoPanner(time){
-/*
-        var osc = context.createOscillator();
-        osc.frequency.value = 50;
-        osc.type = 0;
-        var gain = context.createGain();
-        gain.gain.value = 1;
-        osc.connect(gain);
-        gain.connect(context.destination);
-        osc.start();
-        console.log(osc);
+    function createAutoPanner(time) {
+        /*
+                var osc = context.createOscillator();
+                osc.frequency.value = 50;
+                osc.type = 0;
+                var gain = context.createGain();
+                gain.gain.value = 1;
+                osc.connect(gain);
+                gain.connect(context.destination);
+                osc.start();
+                console.log(osc);
+                return {
+                    getValue: function(){
+                        return osc.frequency.getValueAtTime(time);
+                    }
+                };
+        */
         return {
-            getValue: function(){
-                return osc.frequency.getValueAtTime(time);
-            }
-        };
-*/
-        return {
-            getValue: function(time){
-                return Math.sin(time * 2*Math.PI);
+            getValue: function (time) {
+                return Math.sin(time * 2 * Math.PI);
             }
         };
 
     }
 
 
-    sequencer.createInstrument = function(arg){
+    sequencer.createInstrument = function (arg) {
         var type = typeString(arg),
             config,
             instrument;
 
         //console.log(arg, type, arg.className);
 
-        if(type === 'object'){
-            if(arg.className === 'Instrument'){
+        if (type === 'object') {
+            if (arg.className === 'Instrument') {
                 instrument = arg;
-            }else if(arg.className === 'InstrumentConfig'){
-                if(arg.name === 'sinewave'){
+            } else if (arg.className === 'InstrumentConfig') {
+                if (arg.name === 'sinewave') {
                     instrument = new SimpleSynth(arg);
-                }else{
+                } else {
                     instrument = new Instrument(arg);
                 }
             }
@@ -965,23 +965,23 @@
         }
 
 
-        if(type === 'string'){
+        if (type === 'string') {
             //@TODO what happens if we have 2 instruments with the same name?
             config = findItem(arg, storage.instruments);
             //console.log('string', arg, config, storage.instruments);
         }
 
-        if(config === false || config.className !== 'InstrumentConfig'){
-            if(debug >= 2){
+        if (config === false || config.className !== 'InstrumentConfig') {
+            if (debug >= 2) {
                 console.info('can not create instrument from', arg);
             }
             return false;
         }
 
 
-        if(config.name === 'sinewave'){
+        if (config.name === 'sinewave') {
             instrument = new SimpleSynth(config);
-        }else{
+        } else {
             instrument = new Instrument(config);
         }
 
@@ -989,7 +989,7 @@
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         var protectedScope = sequencer.protectedScope;
 
         storage = sequencer.storage;
@@ -1013,7 +1013,7 @@
         round = sequencer.util.round;
         getEqualPowerCurve = sequencer.util.getEqualPowerCurve;
 
-        SimpleSynth.prototype.parse = function(){
+        SimpleSynth.prototype.parse = function () {
             var me = this,
                 config = this.config;
 
@@ -1023,39 +1023,39 @@
             this.autopan = config.autopan || false;
             this.folder = config.folder || 'heartbeat';
             this.releaseDuration = config.release_duration || 1500;
-            if(this.autopan){
+            if (this.autopan) {
                 this.autoPanner = createAutoPanner();
             }
 
-            repetitiveTasks['update_' + this.name + '_' + new Date().getTime()] = function(){
-                if(me.autopan){
+            repetitiveTasks['update_' + this.name + '_' + new Date().getTime()] = function () {
+                if (me.autopan) {
                     //console.log('update',me.autoPanner.getValue(context.currentTime), me.autopan);
                     //me.update(me.autoPanner.getValue(context.currentTime));
-                    me.update(Math.sin(context.currentTime * 2*Math.PI));
-                }else{
+                    me.update(Math.sin(context.currentTime * 2 * Math.PI));
+                } else {
                     me.update();
                 }
             };
         };
 
-        SimpleSynth.prototype.createSample = function(event){
+        SimpleSynth.prototype.createSample = function (event) {
             var data = {
-                    oscillator: true,
-                    track: event.track,
-                    event: event,
-                    autopan: this.autopan,
-                    wave_form: this.waveForm,
-                    release_envelope: 'equal power',
-                    release_duration: this.releaseDuration
-                };
+                oscillator: true,
+                track: event.track,
+                event: event,
+                autopan: this.autopan,
+                wave_form: this.waveForm,
+                release_envelope: 'equal power',
+                release_duration: this.releaseDuration
+            };
             //console.log(data);
             return createSample(data);
         };
 
-        sequencer.createSimpleSynth = function(config){
+        sequencer.createSimpleSynth = function (config) {
             config = config || {};
             //console.log('creating sinewave');
             return new SimpleSynth(config);
         };
     });
-}());
+}

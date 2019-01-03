@@ -1,4 +1,4 @@
-    (function(){
+function parseEvents() {
 
     'use strict';
 
@@ -29,7 +29,7 @@
         bpm;
 
     // public
-    function parse(song, events){
+    function parse(song, events) {
 
         var event,
             numEvents,
@@ -40,26 +40,26 @@
 
         numEvents = events.length;
         //console.log('parseEvents', numEvents);
-        events.sort(function(a, b){
+        events.sort(function (a, b) {
             return a.sortIndex - b.sortIndex;
         });
 
         getDataFromEvent(song.timeEvents[0]);
 
-        for(i = startEvent; i < numEvents; i++){
+        for (i = startEvent; i < numEvents; i++) {
 
             event = events[i];
             //console.log(i, event);
             diffTicks = event.ticks - lastEventTick;
             tick += diffTicks;
 
-            while(tick >= ticksPerSixteenth){
+            while (tick >= ticksPerSixteenth) {
                 sixteenth++;
                 tick -= ticksPerSixteenth;
-                while(sixteenth > numSixteenth){
+                while (sixteenth > numSixteenth) {
                     sixteenth -= numSixteenth;
                     beat++;
-                    while(beat > nominator){
+                    while (beat > nominator) {
                         beat -= nominator;
                         bar++;
                     }
@@ -67,7 +67,7 @@
             }
 
 
-            switch(event.type){
+            switch (event.type) {
 
                 case 0x51:
                     bpm = event.bpm;
@@ -102,7 +102,7 @@
     }
 
 
-    function getDataFromEvent(event){
+    function getDataFromEvent(event) {
 
         bpm = event.bpm;
         factor = event.factor;
@@ -127,7 +127,7 @@
     }
 
 
-    function updateEvent(event){
+    function updateEvent(event) {
         var timeData, tickAsString;
 
         timeData = sequencer.getNiceTime(millis);
@@ -146,7 +146,7 @@
         event.millisPerTick = millisPerTick;
         event.secondsPerTick = secondsPerTick;
 
-        event.millis = round(millis * precision)/precision;
+        event.millis = round(millis * precision) / precision;
         //event.millis = millis;
         //event.seconds = millis/1000;
 
@@ -175,7 +175,7 @@
 
     sequencer.protectedScope.parseEvents = parse;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
     });
 
-}());
+}

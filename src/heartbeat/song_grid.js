@@ -1,4 +1,4 @@
-(function(){
+function songGrid() {
 
 	/*
 
@@ -48,7 +48,7 @@
 
 	'use strict';
 
-	var 
+	var
 		//import
 		getPosition, // → defined in get_position.js
 		floor, // → defined in util.js
@@ -60,75 +60,75 @@
 		positionToGrid,
 		eventToGrid,
 		noteToGrid,
-		
+
 		gridToSong, // catch all -> may be remove this
 		positionToSong;
 
 
-	positionToSong = function(song,x,y,width,height){
-		var ticks,note,position,coordinate;
+	positionToSong = function (song, x, y, width, height) {
+		var ticks, note, position, coordinate;
 		//console.log(song.millis,x,y,width,height);
 
-		if(song === undefined){
+		if (song === undefined) {
 			console.error('please provide a song');
 			return;
 		}
 
-		if(x === undefined || y === undefined){
+		if (x === undefined || y === undefined) {
 			console.error('please provide a coordinate');
 			return;
 		}
 
-		if(width === undefined || height === undefined){
+		if (width === undefined || height === undefined) {
 			console.error('please provide width and height');
 			return;
 		}
 
-		ticks = floor((x/width) * song.ticks);
+		ticks = floor((x / width) * song.ticks);
 		//note = 127 - floor((y/height) * 128);
-		note = song.highestNote - floor((y/height) * song.pitchRange);
+		note = song.highestNote - floor((y / height) * song.pitchRange);
 		//note = song.highestNote - round((y/height) * song.numNotes);
-		
-		position = getPosition(song,['ticks',ticks]);
+
+		position = getPosition(song, ['ticks', ticks]);
 		note = sequencer.createNote(note);
 
 		//console.log(position,note);
 
-		return{
+		return {
 			position: position,
 			note: note
 		};
 	};
 
 	//[song],x,y,width,height
-	sequencer.positionToSong = sequencer.coordinatesToPosition = sequencer.gridToSong = function(){
+	sequencer.positionToSong = sequencer.coordinatesToPosition = sequencer.gridToSong = function () {
 		var args = Array.prototype.slice.call(arguments),
 			numArgs = args.length,
 			arg0 = args[0];
 
 		//todo: add error messages here
-		if(numArgs === 4 && arg0.className !== 'Song'){
+		if (numArgs === 4 && arg0.className !== 'Song') {
 			return positionToSong(sequencer.getSong(), arg0, args[1], args[2], args[3]);
 		}
 		return positionToSong(arg0, args[1], args[2], args[3], args[4]);
 	};
 
 
-	sequencer.songToGrid = function(){
+	sequencer.songToGrid = function () {
 		var args = Array.prototype.slice.call(arguments),
 			numArgs = args.length,
 			arg0 = args[0],
 			arg1 = args[1];
 
-		switch(numArgs){
+		switch (numArgs) {
 			case 3:
-				eventToGrid(arg0,arg1,args[2]);//event,width,height
+				eventToGrid(arg0, arg1, args[2]);//event,width,height
 				break;
 			case 4:
-				if(arg0 === 'x'){
-					positionToGrid(arg1,args[2],args[3]);//[position], width, height
-				}else if(arg0 === 'y'){
-					noteToGrid(arg1,args[2],args[3]);//note, width, height
+				if (arg0 === 'x') {
+					positionToGrid(arg1, args[2], args[3]);//[position], width, height
+				} else if (arg0 === 'y') {
+					noteToGrid(arg1, args[2], args[3]);//note, width, height
 				}
 				break;
 			case 6:
@@ -140,81 +140,78 @@
 
 	};
 
-	
-	eventToGrid = function(event, width, height, song){
-		if(song === undefined){
+
+	eventToGrid = function (event, width, height, song) {
+		if (song === undefined) {
 			song = sequencer.getSong();
 		}
 
-		if(event.type !== sequencer.NOTE_ON && event.type !== sequencer.NOTE_OFF){
+		if (event.type !== sequencer.NOTE_ON && event.type !== sequencer.NOTE_OFF) {
 			console.error('please provide a NOTE_ON or a NOTE_OFF event');
 			return null;
 		}
 
-		var x = (event.millis/song.durationMillis) * width,
+		var x = (event.millis / song.durationMillis) * width,
 			y,
 			note = sequencer.createNote(event.noteNumber);
-			//position = sequencer.createPosition('ticks', event.ticks);
+		//position = sequencer.createPosition('ticks', event.ticks);
 
 		return {
-			x: positionToGrid(['ticks', event.ticks],width,song),
-			y: noteToGrid(note,height,song)
+			x: positionToGrid(['ticks', event.ticks], width, song),
+			y: noteToGrid(note, height, song)
 		};
 	};
-	
-	
-	positionToGrid = function(position, width, song){
-		if(song === undefined){
+
+
+	positionToGrid = function (position, width, song) {
+		if (song === undefined) {
 			song = sequencer.getSong();
 		}
 
-		if(typeString(position) === 'array' || position.type !== 'ticks'){
+		if (typeString(position) === 'array' || position.type !== 'ticks') {
 			position = getPosition(song, position);
 		}
 		//console.log(position)
-		var x = floor(position.ticks/song.quantizeTicks) * song.quantizeTicks;
+		var x = floor(position.ticks / song.quantizeTicks) * song.quantizeTicks;
 		//console.log(x, song.ticks, position.data, song.quantizeTicks);
-			x = x / song.ticks;
-			x = x * width;
-		
+		x = x / song.ticks;
+		x = x * width;
+
 		//return round(x);
 		return x;
 	};
-	
-	
-	noteToGrid = function(note, height, song){
-		if(song === undefined){
+
+
+	noteToGrid = function (note, height, song) {
+		if (song === undefined) {
 			song = sequencer.getSong();
 		}
 
 		var noteNumber = note.number,
 			y;
 
-		if(noteNumber < song.lowestNote || noteNumber > song.highestNote){
+		if (noteNumber < song.lowestNote || noteNumber > song.highestNote) {
 			console.error('note is out of range of the pitch range of this song');
 			return null;
 		}
 
-		y = (noteNumber - song.highestNote)/song.pitchRange;
+		y = (noteNumber - song.highestNote) / song.pitchRange;
 		y = y < 0 ? -y : y;
 		y = y * height;
 		//return round(y);
 		return y;
 	};
-	
+
 	// should this be added to sequencer publically? -> no, add to song
-/*
-	sequencer.positionToGrid = positionToGrid;
-	sequencer.eventToGrid = eventToGrid;
-	sequencer.noteToGrid = noteToGrid;
-*/	
-	sequencer.protectedScope.addInitMethod(function(){
-		getPosition = sequencer.protectedScope.getPosition; 
-		floor = sequencer.protectedScope.floor; 
-		round = sequencer.protectedScope.round; 
+	/*
+		sequencer.positionToGrid = positionToGrid;
+		sequencer.eventToGrid = eventToGrid;
+		sequencer.noteToGrid = noteToGrid;
+	*/
+	sequencer.protectedScope.addInitMethod(function () {
+		getPosition = sequencer.protectedScope.getPosition;
+		floor = sequencer.protectedScope.floor;
+		round = sequencer.protectedScope.round;
 		typeString = sequencer.protectedScope.typeString;
 	});
-
-}());
-
-
+}

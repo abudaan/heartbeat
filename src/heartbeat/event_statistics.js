@@ -37,7 +37,7 @@
 
 */
 
-(function(){
+function eventStatistics() {
 
     'use strict';
 
@@ -63,7 +63,7 @@
         @param {string} searchString
         @description Get statistics of an array of events, see [documentation]{@link http://heartbeatjs.org/docs/statistics}
     */
-    getStats = function(){
+    getStats = function () {
         var args = Array.prototype.slice.call(arguments),
             numArgs = args.length,
             property,
@@ -71,7 +71,7 @@
             events,
             searchPattern,
             patternLength,
-            i,maxi,event,propValue,
+            i, maxi, event, propValue,
             minNoteName,
             maxNoteName,
             min = 128,//Number.MAX_VALUE,
@@ -83,19 +83,19 @@
 
         events = getEvents(args[0]);
 
-        if(events.length === 0){
+        if (events.length === 0) {
             //console.warn('getStats: no events');
             return -1;
         }
 
         searchPattern = args[1];
 
-        if(typeString(searchPattern) !== 'string'){
+        if (typeString(searchPattern) !== 'string') {
             console.error('please provide a search string like for instance get(\'velocity max bar >= 1 < 8\')');
             return -1;
         }
 
-        if(numArgs > 2){
+        if (numArgs > 2) {
             console.warn('ignoring invalid arguments, please consult documentation');
         }
 
@@ -105,21 +105,21 @@
         property = searchPattern[0];
         operator = searchPattern[1];
 
-        if(supportedProperties.indexOf(property) === -1){
+        if (supportedProperties.indexOf(property) === -1) {
             console.error('you can\'t use \'min\', \'max\' or \'avg\'', 'on the property', property);
             return -1;
         }
 
-        if(supportedOperators.indexOf(operator) === -1){
+        if (supportedOperators.indexOf(operator) === -1) {
             console.error(operator, 'is not a valid operator');
             return -1;
         }
 
 
-        if(patternLength > 2){
+        if (patternLength > 2) {
 
             //if(patternLength !== 5 && !(patternLength >= 7)){
-            if(patternLength === 6){
+            if (patternLength === 6) {
                 console.warn('ignoring cruft found in search string, please consult documentation');
             }
 
@@ -132,65 +132,64 @@
 
         //console.log(events);
 
-        if(property === 'noteName'){
+        if (property === 'noteName') {
             property = 'noteNumber';
             useNoteName = true;
         }
 
-        for(i = 0, maxi = events.length; i < maxi; i++){
+        for (i = 0, maxi = events.length; i < maxi; i++) {
             event = events[i];
             propValue = event[property];
 
-            if(propValue > max){
+            if (propValue > max) {
                 //console.log('max', propValue, max);
                 max = propValue;
                 maxNoteName = event.noteName;
             }
-            if(propValue < min){
+            if (propValue < min) {
                 //console.log('min', propValue, min);
                 min = propValue;
                 minNoteName = event.noteName;
             }
 
-            if(propValue !== undefined){
+            if (propValue !== undefined) {
                 sum += propValue;
             }
         }
 
-        avg = sum/maxi;
+        avg = sum / maxi;
 
-        if(useNoteName){
+        if (useNoteName) {
             avg = round(avg);
             avg = createNote(avg).name;
             min = minNoteName;
             max = maxNoteName;
         }
 
-        if(operator === 'max'){
+        if (operator === 'max') {
             return max;
         }
 
-        if(operator === 'min'){
+        if (operator === 'min') {
             return min;
         }
 
-        if(operator === 'avg'){
+        if (operator === 'avg') {
             return avg;
         }
 
-        if(operator === 'all'){
+        if (operator === 'all') {
             return {
-                min:min,
-                max:max,
-                avg:avg
+                min: min,
+                max: max,
+                avg: avg
             };
         }
     };
 
-
     sequencer.getStats = getStats;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         createNote = sequencer.createNote;
         findEvent = sequencer.findEvent;
         round = sequencer.protectedScope.round;
@@ -198,4 +197,4 @@
         typeString = sequencer.protectedScope.typeString;
     });
 
-}());
+}

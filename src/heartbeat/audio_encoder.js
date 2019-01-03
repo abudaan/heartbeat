@@ -1,4 +1,4 @@
-(function(){
+function audioEncoder() {
 
     'use strict';
 
@@ -16,21 +16,21 @@
         mp3Encoder;
 
 
-    function encodeAudio(audioBuffer, type, bitrate, callback){
+    function encodeAudio(audioBuffer, type, bitrate, callback) {
 
-        if(type === 'mp3'){
+        if (type === 'mp3') {
 
             var interleavedSamples = getInterleavedSamples(audioBuffer);
 
             bitrate = bitrate || sequencer.bitrate_mp3_encoding; //kbps
 
-            if(mp3Encoder === undefined){
+            if (mp3Encoder === undefined) {
                 mp3Encoder = createWorker();
-                mp3Encoder.onmessage = function(e){
-                    if(e.data.cmd === 'data'){
+                mp3Encoder.onmessage = function (e) {
+                    if (e.data.cmd === 'data') {
                         //console.log(e);
                         callback({
-                            blob: new Blob([new Uint8Array(e.data.buf)], {type: 'audio/mp3'}),
+                            blob: new Blob([new Uint8Array(e.data.buf)], { type: 'audio/mp3' }),
                             base64: base64EncArr(e.data.buf),
                             dataUrl: 'data:audio/mp3;base64,' + encode64(e.data.buf)
                         });
@@ -57,16 +57,16 @@
                 cmd: 'finish'
             });
 
-        }else if(type === 'ogg'){
+        } else if (type === 'ogg') {
 
-            if(sequencer.debug >= sequencer.WARN){
+            if (sequencer.debug >= sequencer.WARN) {
                 console.warn('support for ogg is not yet implemented');
             }
             callback(false);
 
-        }else{
+        } else {
 
-            if(sequencer.debug >= sequencer.WARN){
+            if (sequencer.debug >= sequencer.WARN) {
                 console.warn('unsupported type', type);
             }
             callback(false);
@@ -74,19 +74,19 @@
     }
 
 
-    function getInterleavedSamples(audioBuffer){
-        if(audioBuffer.numberOfChannels === 1){
+    function getInterleavedSamples(audioBuffer) {
+        if (audioBuffer.numberOfChannels === 1) {
             return audioBuffer.getChannelData(0);
         }
 
-        if(audioBuffer.numberOfChannels === 2){
+        if (audioBuffer.numberOfChannels === 2) {
             var left = audioBuffer.getChannelData(0),
                 right = audioBuffer.getChannelData(1),
                 numFrames = left.length,
                 interleaved = new Float32Array(numFrames),
                 i, index = 0;
 
-            for(i = 0; i < numFrames; i++){
+            for (i = 0; i < numFrames; i++) {
                 interleaved[index++] = left[i];
                 interleaved[index++] = right[i];
             }
@@ -95,18 +95,18 @@
     }
 
 
-    function cleanUp(){
-        if(mp3Encoder !== undefined){
+    function cleanUp() {
+        if (mp3Encoder !== undefined) {
             mp3Encoder.terminate();
         }
-        if(oggEncoder !== undefined){
+        if (oggEncoder !== undefined) {
             oggEncoder.terminate();
         }
     }
 
 
     // credits: https://nusofthq.com/blog/recording-mp3-using-only-html5-and-javascript-recordmp3-js/
-    function encoder(){
+    function encoder() {
         /*
             credits:
                 https://github.com/akrennmair/libmp3lame-js/
@@ -118,7 +118,7 @@
         var mp3codec,
             mp3data;
 
-        self.onmessage = function(e) {
+        self.onmessage = function (e) {
             switch (e.data.cmd) {
                 case 'init':
                     if (!e.data.config) {
@@ -148,12 +148,12 @@
                 case 'encode':
                     //console.log('encode');
                     mp3data = Lame.encode_buffer_ieee_float(mp3codec, e.data.buf, e.data.buf);
-                    self.postMessage({cmd: 'data', buf: mp3data.data});
+                    self.postMessage({ cmd: 'data', buf: mp3data.data });
                     break;
                 case 'finish':
                     //console.log('finish');
                     mp3data = Lame.encode_flush(mp3codec);
-                    self.postMessage({cmd: 'end', buf: mp3data.data});
+                    self.postMessage({ cmd: 'end', buf: mp3data.data });
                     Lame.close(mp3codec);
                     mp3codec = null;
                     break;
@@ -162,21 +162,21 @@
     }
 
 
-    function createWorker(){
-        var blob = new Blob(['(', encoder.toString() ,')()'], {type: 'application/javascript'});
+    function createWorker() {
+        var blob = new Blob(['(', encoder.toString(), ')()'], { type: 'application/javascript' });
         return new Worker(URL.createObjectURL(blob));
     }
 
     sequencer.encodeAudio = encodeAudio;
     sequencer.protectedScope.cleanupAudioEncoder = cleanUp;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         encode64 = sequencer.util.encode64;
         base64EncArr = sequencer.util.base64EncArr;
         context = sequencer.protectedScope.context;
     });
 
-}());
+}
 
 
 

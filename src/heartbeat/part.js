@@ -1,4 +1,4 @@
-(function(){
+function part() {
 
     'use strict';
 
@@ -30,7 +30,7 @@
         Part;
 
 
-    Part = function(name){
+    Part = function (name) {
         this.className = 'Part';
         this.id = 'P' + partId++ + '' + new Date().getTime();
         this.partIndex = partId;
@@ -75,7 +75,7 @@
         this.keepWhenEmpty = true; // if set to false, the parts gets deleted automatically if it contains no events
     };
 
-    getEventsAndConfig = function(args, part){
+    getEventsAndConfig = function (args, part) {
 
         args = Array.prototype.slice.call(args);
 
@@ -91,12 +91,12 @@
 
         //console.log(args, arg0);
 
-        if(typeString(arg0) === 'array'){
+        if (typeString(arg0) === 'array') {
 
-            for(i = arg0.length - 1; i >= 0; i--){
+            for (i = arg0.length - 1; i >= 0; i--) {
                 arg = arg0[i];
                 e = getEvent(arg, part);
-                if(e){
+                if (e) {
                     events.push(e);
                 }
             }
@@ -104,25 +104,25 @@
         }
 
         maxi = args.length;
-        for(i = j; i < maxi; i++){
+        for (i = j; i < maxi; i++) {
             arg = args[i];
             e = getEvent(arg, part);
-            if(e){
+            if (e) {
                 events.push(e);
-            }else{
+            } else {
                 config.push(arg);
             }
         }
 
-        if(events.length === 0){
+        if (events.length === 0) {
             //console.error('Please provide one or more events, event ids, event indices, or an array of events, events ids, event indices');
-            if(sequencer.debug){
+            if (sequencer.debug) {
                 console.warn('no events added', part.name);
             }
             return false;
         }
 
-        if(config.length === 1 && typeString(config[0]) === 'array'){
+        if (config.length === 1 && typeString(config[0]) === 'array') {
             config = config[0];
         }
 
@@ -136,20 +136,20 @@
 
 
 
-    getEvent = function(data, part){
+    getEvent = function (data, part) {
         var event = false;
-        if(!data){
+        if (!data) {
             event = false;
-        }else if(data.className === 'MidiEvent' || data.className === 'AudioEvent'){
+        } else if (data.className === 'MidiEvent' || data.className === 'AudioEvent') {
             // new event
             event = data;
-        }else if(typeString(data) === 'array' && data.length === 4){
+        } else if (typeString(data) === 'array' && data.length === 4) {
             // new event as array
             event = createMidiEvent(data);
-        }else if(typeString(data) === 'string'){
+        } else if (typeString(data) === 'string') {
             // get by id
             event = part.eventsById[data];
-        }else if(isNaN(data) === false){
+        } else if (isNaN(data) === false) {
             // get by index
             event = part.events[data];
         }
@@ -158,11 +158,11 @@
 
 
 
-    addEvents = function(args, part, relative){
-        if(args === false){
+    addEvents = function (args, part, relative) {
+        if (args === false) {
             return;
         }
-        var i,e,
+        var i, e,
             newEvents = args.events,
             ticks = part.ticks,
             maxi = newEvents.length,
@@ -172,18 +172,18 @@
         //console.log(newEvents);
 
         //for(i = newEvents.length - 1; i >=0; i--){
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
 
             e = newEvents[i];
 
-            if(e.type === sequencer.END_OF_TRACK || (e.className !== 'MidiEvent' && e.className !== 'AudioEvent')){
+            if (e.type === sequencer.END_OF_TRACK || (e.className !== 'MidiEvent' && e.className !== 'AudioEvent')) {
                 continue;
             }
-            if(e.className === 'AudioEvent' && part.hasAudioEvents !== true){
+            if (e.className === 'AudioEvent' && part.hasAudioEvents !== true) {
                 part.hasAudioEvents = true;
             }
 
-            if(e.part !== undefined){
+            if (e.part !== undefined) {
                 //console.warn('this event has already been added to part', e.part.id, ', adding a copy to', part.id);
                 e = e.clone();
             }
@@ -191,7 +191,7 @@
             e.part = part;
             e.partId = part.id;
 
-            if(relative){
+            if (relative) {
                 ticks += e.ticks;
                 e.ticks = ticks;
             }
@@ -200,26 +200,26 @@
             e.trackId = track ? track.id : undefined;
 
             e.song = undefined;
-            if(track !== undefined){
+            if (track !== undefined) {
                 e.song = track.song;
             }
 
-            if(e.state !== 'recorded'){
+            if (e.state !== 'recorded') {
                 e.state = 'new';
             }
             eventsById[e.id] = e;
         }
 
-        if(part.state !== 'new'){
+        if (part.state !== 'new') {
             part.state = 'changed';
         }
         part.needsUpdate = true;
     };
 
 
-    transposeEvents = function(args, part){
+    transposeEvents = function (args, part) {
         //if(args === false || part.fixedPitch === true){
-        if(args === false){
+        if (args === false) {
             return;
         }
         var i, e,
@@ -228,72 +228,72 @@
 
         //console.log(semi, args);
 
-        for(i = events.length - 1; i >= 0; i--){
+        for (i = events.length - 1; i >= 0; i--) {
             e = events[i];
             e.transpose(semi);
-        /*
-            // moved to midi_event.js
-            if(e.state !== 'new'){
-                e.state = 'changed';
-            }
-        */
+            /*
+                // moved to midi_event.js
+                if(e.state !== 'new'){
+                    e.state = 'changed';
+                }
+            */
             //console.log(e.state);
         }
         //part.needsUpdate = true; -> moved to midi_event.js
-        if(part.state !== 'new' && part.track !== undefined){
+        if (part.state !== 'new' && part.track !== undefined) {
             part.state = 'changed';
             part.track.needsUpdate = true;
         }
     };
 
 
-    moveEvents = function(args, part){
-        if(args === false){
+    moveEvents = function (args, part) {
+        if (args === false) {
             return;
         }
         var i, e, newTicks,
             events = args.events,
             ticks = args.config[0];
         //console.log('moveEvents', events, ticks, events.length);
-        if(isNaN(ticks)){
+        if (isNaN(ticks)) {
             console.warn('Part.moveEvent(s) -> please provide a number');
             return;
         }
 
-        for(i = events.length - 1; i >= 0; i--){
+        for (i = events.length - 1; i >= 0; i--) {
             e = events[i];
             newTicks = e.ticks + ticks;
 
-            if(newTicks < 0){
+            if (newTicks < 0) {
                 newTicks = 0;
             }
             e.ticks = newTicks;
 
-            if(e.state !== 'new'){
+            if (e.state !== 'new') {
                 e.state = 'changed';
             }
         }
         part.needsUpdate = true;
-        if(part.state !== 'new' && part.track){
+        if (part.state !== 'new' && part.track) {
             part.state = 'changed';
             part.track.needsUpdate = true;
         }
     };
 
 
-    removeEvents = function(tobeRemoved, part){
+    removeEvents = function (tobeRemoved, part) {
         var i, event,
             removed = [];
 
         //console.log('removeEvents', tobeRemoved);
 
-        for(i = tobeRemoved.length - 1; i >= 0; i--){
+        for (i = tobeRemoved.length - 1; i >= 0; i--) {
             event = getEvent(tobeRemoved[i], part);
-            if(event === false){
+            if (event === false) {
                 continue;
             }
             //console.log('removing event', e);
-            if(event.part !== part){
+            if (event.part !== part) {
                 console.warn('can\'t remove: this event belongs to part', event.part.id);
                 continue;
             }
@@ -301,7 +301,7 @@
             event.reset();
             removed.push(event);
         }
-        if(part.track !== undefined){
+        if (part.track !== undefined) {
             part.track.needsUpdate = true;
         }
         part.needsUpdate = true;
@@ -309,14 +309,14 @@
     };
 
 
-    reverseByPitch = function(part){
+    reverseByPitch = function (part) {
         var notes = part.notes,
             min = part.lowestNote,
             max = part.highestNote,
             on, off,
             i, note;
 
-        for(i = notes.length - 1; i >= 0; i--){
+        for (i = notes.length - 1; i >= 0; i--) {
             note = notes[i];
             note.setPitch(min + (max - note.number));
             on = note.noteOn;
@@ -326,20 +326,20 @@
             note.state = 'changed';
         }
         part.needsUpdate = true;
-        if(part.state !== 'new' && part.track){
+        if (part.state !== 'new' && part.track) {
             part.state = 'changed';
             part.track.needsUpdate = true;
         }
     };
 
 
-    reverseByTicks = function(part, durationTicks){
+    reverseByTicks = function (part, durationTicks) {
         var notes = part.notes,
             note, on, off, onTicks, offTicks, i;
 
         durationTicks = durationTicks || part.duration.ticks;
 
-        for(i = notes.length - 1; i >= 0; i--){
+        for (i = notes.length - 1; i >= 0; i--) {
             note = notes[i];
             on = note.noteOn;
             off = note.noteOff;
@@ -356,14 +356,14 @@
             note.state = 'changed';
         }
         part.needsUpdate = true;
-        if(part.state !== 'new' && part.track){
+        if (part.state !== 'new' && part.track) {
             part.state = 'changed';
             part.track.needsUpdate = true;
         }
     };
 
 
-    Part.prototype.addEvent = Part.prototype.addEvents = function(){//events
+    Part.prototype.addEvent = Part.prototype.addEvents = function () {//events
         //console.log(arguments);
         var args = getEventsAndConfig(arguments, this);
         //console.log(args.events, args.config);
@@ -371,100 +371,100 @@
     };
 
 
-    Part.prototype.addEventsRelative = function(){//events
+    Part.prototype.addEventsRelative = function () {//events
         var args = getEventsAndConfig(arguments, this);
         addEvents(args, this, true);
     };
 
 
-    Part.prototype.removeEvent = Part.prototype.removeEvents = function(){//events
+    Part.prototype.removeEvent = Part.prototype.removeEvents = function () {//events
         var args = getEventsAndConfig(arguments, this);
-        if(args === false){
+        if (args === false) {
             return false;
         }
         return removeEvents(args.events, this);
     };
 
 
-    Part.prototype.moveEvent = Part.prototype.moveEvents = function(){//events, ticks
+    Part.prototype.moveEvent = Part.prototype.moveEvents = function () {//events, ticks
         var args = getEventsAndConfig(arguments, this);
         //console.log(args)
         moveEvents(args, this);
     };
 
-    Part.prototype.moveAllEvents = function(ticks){//events, ticks
+    Part.prototype.moveAllEvents = function (ticks) {//events, ticks
         //console.log(args)
-        moveEvents({events: this.events, config:[ticks]}, this);
+        moveEvents({ events: this.events, config: [ticks] }, this);
     };
 
 
-    Part.prototype.moveNote = function(note, ticks){
-        moveEvents({events:[note.noteOn, note.noteOff], config:[ticks]}, this);
+    Part.prototype.moveNote = function (note, ticks) {
+        moveEvents({ events: [note.noteOn, note.noteOff], config: [ticks] }, this);
     };
 
 
-    Part.prototype.transposeEvents = function(){//events, semi
+    Part.prototype.transposeEvents = function () {//events, semi
         var args = getEventsAndConfig(arguments, this);
         transposeEvents(args, this);
     };
 
 
-    Part.prototype.transposeAllEvents = function(semi){
+    Part.prototype.transposeAllEvents = function (semi) {
         //console.log('transposeAllEvents', semi);
-        transposeEvents({events:this.events, config:[semi]}, this);
+        transposeEvents({ events: this.events, config: [semi] }, this);
     };
 
 
-    Part.prototype.transposeNote = function(note, semi){
+    Part.prototype.transposeNote = function (note, semi) {
         //console.log('transposeNote', semi);
-        transposeEvents({events:[note.noteOn, note.noteOff], config:[semi]}, this);
+        transposeEvents({ events: [note.noteOn, note.noteOff], config: [semi] }, this);
     };
-/*
-    Part.prototype.setNotePitch = function(note, pitch){
-        note.setPitch(pitch);
-    };
-*/
+    /*
+        Part.prototype.setNotePitch = function(note, pitch){
+            note.setPitch(pitch);
+        };
+    */
 
-    Part.prototype.reverseByTicks = function(duration){
-        if(this.needsUpdate){
+    Part.prototype.reverseByTicks = function (duration) {
+        if (this.needsUpdate) {
             this.update();
         }
         reverseByTicks(this, duration);
     };
 
 
-    Part.prototype.reverseByPitch = function(){
-        if(this.needsUpdate){
+    Part.prototype.reverseByPitch = function () {
+        if (this.needsUpdate) {
             this.update();
         }
         reverseByPitch(this);
     };
 
 
-    Part.prototype.findEvents = function(pattern){
+    Part.prototype.findEvents = function (pattern) {
         return findEvent(this, pattern);
     };
 
 
-    Part.prototype.findNotes = function(pattern){
+    Part.prototype.findNotes = function (pattern) {
         return findNote(this, pattern);
     };
 
 
-    Part.prototype.getStats = function(pattern){
+    Part.prototype.getStats = function (pattern) {
         return getStats(this, pattern);
     };
 
 
-    Part.prototype.getIndex = function(){
+    Part.prototype.getIndex = function () {
         var parts, part, i;
 
-        if(this.track){
+        if (this.track) {
             parts = this.track.parts;
 
-            for(i = this.track.numParts - 1; i >= 0; i--){
+            for (i = this.track.numParts - 1; i >= 0; i--) {
                 part = parts[i];
-                if(part.id === this.id){
+                if (part.id === this.id) {
                     return i;
                 }
             }
@@ -473,20 +473,20 @@
     };
 
 
-    Part.prototype.copy = function(){
+    Part.prototype.copy = function () {
         var part = new Part(copyName(this.name)),
             partTicks = this.ticks,
             eventsById = this.eventsById,
             copies = [],
             copy, id, event;
-            //console.log('Part.copy', events);
+        //console.log('Part.copy', events);
 
         part.song = undefined;
         part.track = undefined;
         part.trackId = undefined;
 
-        for(id in eventsById){
-            if(eventsById.hasOwnProperty(id)){
+        for (id in eventsById) {
+            if (eventsById.hasOwnProperty(id)) {
                 event = eventsById[id];
                 copy = event.copy();
                 //console.log(copy.ticks, partTicks);
@@ -498,23 +498,23 @@
         return part;
     };
 
-    Part.prototype.setSolo = function(flag){
-        if(flag === undefined){
+    Part.prototype.setSolo = function (flag) {
+        if (flag === undefined) {
             flag = !this.solo;
         }
         this.mute = false;
         this.solo = flag;
         // stop all sounds here
         this.allNotesOff();
-        if(this.track){
+        if (this.track) {
             this.track.setPartSolo(this, flag);
         }
         //console.log(this.solo, this.mute);
     };
 
 
-    Part.prototype.allNotesOff = function(){
-        if(this.track === undefined){
+    Part.prototype.allNotesOff = function () {
+        if (this.track === undefined) {
             return;
         }
         this.track.instrument.allNotesOffPart(this.id);
@@ -522,22 +522,22 @@
 
 
     // called by Track if a part gets removed from a track
-    Part.prototype.reset = function(fromTrack, fromSong){
+    Part.prototype.reset = function (fromTrack, fromSong) {
         var eventsById = this.eventsById,
             id, event;
 
-        if(fromSong){
+        if (fromSong) {
             this.song = undefined;
         }
-        if(fromTrack){
+        if (fromTrack) {
             this.track = undefined;
         }
         this.trackId = undefined;
         this.start.millis = undefined;
         this.end.millis = undefined;
 
-        for(id in eventsById){
-            if(eventsById.hasOwnProperty(id)){
+        for (id in eventsById) {
+            if (eventsById.hasOwnProperty(id)) {
                 event = eventsById[id];
                 event.ticks -= this.ticks;
                 event.reset(false, fromTrack, fromSong);
@@ -549,7 +549,7 @@
     };
 
 
-    Part.prototype.update = function(){
+    Part.prototype.update = function () {
         //console.log('part update');
 
         var i, maxi, j, maxj, id, event, noteNumber, note, onEvents, onEvent,
@@ -570,34 +570,34 @@
 
         this.events = [];
 
-        for(id in this.eventsById){
-            if(this.eventsById.hasOwnProperty(id)){
+        for (id in this.eventsById) {
+            if (this.eventsById.hasOwnProperty(id)) {
                 event = this.eventsById[id];
                 //console.log(event);
-                if(event.state !== 'clean'){
+                if (event.state !== 'clean') {
                     //console.log(event.state);
                     this.dirtyEvents[event.id] = event;
                 }
 
-                if(event.state !== 'removed'){
+                if (event.state !== 'removed') {
                     this.events.push(event);
                 }
             }
         }
 
-        this.events.sort(function(a, b){
+        this.events.sort(function (a, b) {
             return a.sortIndex - b.sortIndex;
         });
 
 
-        for(i = 0, maxi = this.notes.length; i < maxi; i++){
+        for (i = 0, maxi = this.notes.length; i < maxi; i++) {
             note = this.notes[i];
             //console.log(note.noteOn.state);
-            if(note.noteOn.state === 'removed' || (note.noteOff !== undefined && note.noteOff.state === 'removed')){
+            if (note.noteOn.state === 'removed' || (note.noteOff !== undefined && note.noteOff.state === 'removed')) {
                 note.state = 'removed';
                 this.dirtyNotes[note.id] = note;
                 delete this.notesById[note.id];
-            }else if(note.noteOn.state === 'changed' || (note.noteOff !== undefined && note.noteOff.state === 'changed')){
+            } else if (note.noteOn.state === 'changed' || (note.noteOff !== undefined && note.noteOff.state === 'changed')) {
                 note.state = 'changed';
                 this.dirtyNotes[note.id] = note;
             }
@@ -605,12 +605,12 @@
 
         //console.log('part', this.events.length);
 
-        for(i = 0, maxi = this.events.length; i < maxi; i++){
+        for (i = 0, maxi = this.events.length; i < maxi; i++) {
             event = this.events[i];
             noteNumber = event.noteNumber;
 
-            if(event.type === sequencer.NOTE_ON){
-                if(event.midiNote === undefined){
+            if (event.type === sequencer.NOTE_ON) {
+                if (event.midiNote === undefined) {
 
                     /*
                     if(noteOnEvents[noteNumber] === undefined){
@@ -629,50 +629,50 @@
                     note.state = 'new';
                     this.notesById[note.id] = note;
                     this.dirtyNotes[note.id] = note;
-                    if(notes[noteNumber] === undefined){
+                    if (notes[noteNumber] === undefined) {
                         notes[noteNumber] = [];
                     }
                     notes[noteNumber].push(note);
                     //console.log('create note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks);
                 }
-            }else if(event.type === sequencer.NOTE_OFF){
+            } else if (event.type === sequencer.NOTE_OFF) {
                 //console.log(event.midiNote);
-                if(event.midiNote === undefined){
-                    if(notes[noteNumber] === undefined){
+                if (event.midiNote === undefined) {
+                    if (notes[noteNumber] === undefined) {
                         //console.log('no note!', noteNumber);
                         continue;
                     }
 
                     var l = notes[noteNumber].length - 1;
                     note = notes[noteNumber][l];
-                    if(note.noteOff !== undefined && note.durationTicks > 0){
+                    if (note.noteOff !== undefined && note.durationTicks > 0) {
                         //console.log('has already a note off event!', noteNumber, note.durationTicks, note.noteOff.ticks, event.ticks);
                         continue;
                     }
-/*
-                    // get the lastly added note
-                    var l = notes[noteNumber].length - 1;
-                    var t = 0;
-                    note = null;
-
-                    while(t <= l){
-                        note = notes[noteNumber][t];
-                        if(note.noteOff === undefined){
-                            break;
-                        }
-                        t++
-                    }
-*/
-                    if(note === null){
+                    /*
+                                        // get the lastly added note
+                                        var l = notes[noteNumber].length - 1;
+                                        var t = 0;
+                                        note = null;
+                    
+                                        while(t <= l){
+                                            note = notes[noteNumber][t];
+                                            if(note.noteOff === undefined){
+                                                break;
+                                            }
+                                            t++
+                                        }
+                    */
+                    if (note === null) {
                         continue;
                     }
 
                     //console.log('add note off to note:', note.id, 'for:', noteNumber, 'ticks:', event.ticks, 'num note on:', l, 'index:', t);
-                    if(note.noteOn === undefined){
+                    if (note.noteOn === undefined) {
                         //console.log('no NOTE ON');
                         continue;
                     }
-                    if(note.state !== 'new'){
+                    if (note.state !== 'new') {
                         note.state = 'changed';
                     }
                     this.dirtyNotes[note.id] = note;
@@ -713,7 +713,7 @@
                     }
                     */
 
-                }else if(this.notesById[event.midiNote.id] === undefined){
+                } else if (this.notesById[event.midiNote.id] === undefined) {
                     //console.log('not here');
                     // note is recorded and has already a duration
                     note = event.midiNote;
@@ -725,7 +725,7 @@
                     note.trackId = trackId;
                     //this.dirtyNotes[note.id] = note;
                     this.notesById[note.id] = note;
-                }else{
+                } else {
                     //console.log('certainly not here');
                 }
             }
@@ -733,14 +733,14 @@
 
         this.notes = [];
         notes = null;
-        for(id in this.notesById){
-            if(this.notesById.hasOwnProperty(id)){
+        for (id in this.notesById) {
+            if (this.notesById.hasOwnProperty(id)) {
                 note = this.notesById[id];
                 this.notes.push(note);
             }
         }
 
-        this.notes.sort(function(a, b){
+        this.notes.sort(function (a, b) {
             return a.ticks - b.ticks;
         });
 
@@ -754,12 +754,12 @@
 
         //console.log(firstEvent.ticks, lastEvent.ticks);
 
-        if(firstEvent){
-            if(firstEvent.ticks < this.ticks){
+        if (firstEvent) {
+            if (firstEvent.ticks < this.ticks) {
                 this.autoSize = 'both';
             }
 
-            switch(this.autoSize){
+            switch (this.autoSize) {
                 case 'right':
                     this.start.ticks = this.ticks;
                     this.end.ticks = lastEvent.ticks;
@@ -771,7 +771,7 @@
                     this.duration.ticks = lastEvent.ticks - firstEvent.ticks;
                     break;
             }
-        }else{
+        } else {
             // fixing issue #6
             this.start.ticks = this.ticks;
             this.end.ticks = this.ticks + 100; // give the part a minimal duration of 100 ticks
@@ -784,7 +784,7 @@
 
         this.ticks = this.start.ticks;
 
-        if(this.state === 'clean'){
+        if (this.state === 'clean') {
             //@TODO: check if this is the preferred way of doing it after all, add: part.track.needsUpdate = true;
             //console.log('part sets its own status in update() -> this shouldn\'t happen');
             this.state = 'changed';
@@ -793,12 +793,12 @@
         this.needsUpdate = false;
     };
 
-    sequencer.createPart = function(){
+    sequencer.createPart = function () {
         return new Part();
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
 
         createMidiNote = sequencer.createMidiNote;
         createMidiEvent = sequencer.createMidiEvent;
@@ -811,4 +811,4 @@
         getStats = sequencer.getStats;
     });
 
-}());
+}

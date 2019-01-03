@@ -1,4 +1,4 @@
-(function(){
+function position() {
 
     'use strict';
 
@@ -61,14 +61,14 @@
         fromBars;
 
 
-    function getTimeEvent(song, unit, target){
+    function getTimeEvent(song, unit, target) {
         // finds the time event that comes the closest before the target position
         var timeEvents = song.timeEvents,
             i, event;
 
-        for(i = timeEvents.length - 1; i >= 0; i--){
+        for (i = timeEvents.length - 1; i >= 0; i--) {
             event = timeEvents[i];
-            if(event[unit] <= target){
+            if (event[unit] <= target) {
                 index = i;
                 return event;
             }
@@ -76,7 +76,7 @@
     }
 
 
-    millisToTicks = function(song, targetMillis, beos){
+    millisToTicks = function (song, targetMillis, beos) {
         beyondEndOfSong = beos === undefined ? true : false;
         fromMillis(song, targetMillis);
         //return round(ticks);
@@ -84,21 +84,21 @@
     };
 
 
-    ticksToMillis = function(song, targetTicks, beos){
+    ticksToMillis = function (song, targetTicks, beos) {
         beyondEndOfSong = beos === undefined ? true : false;
         fromTicks(song, targetTicks);
         return millis;
     };
 
 
-    barsToMillis = function(song, position, beos){ // beos = beyondEndOfSong
+    barsToMillis = function (song, position, beos) { // beos = beyondEndOfSong
         position = ['barsbeats'].concat(position);
         getPosition(song, position, 'millis', beos);
         return millis;
     };
 
 
-    barsToTicks = function(song, position, beos){ // beos = beyondEndOfSong
+    barsToTicks = function (song, position, beos) { // beos = beyondEndOfSong
         position = ['barsbeats'].concat(position);
         getPosition(song, position, 'ticks', beos);
         //return round(ticks);
@@ -106,7 +106,7 @@
     };
 
 
-    ticksToBars = function(song, ticks, beos){
+    ticksToBars = function (song, ticks, beos) {
         beyondEndOfSong = beos === undefined ? true : false;
         fromTicks(song, ticks);
         calculateBarsAndBeats();
@@ -115,7 +115,7 @@
     };
 
 
-    millisToBars = function(song, millis, beos){
+    millisToBars = function (song, millis, beos) {
         beyondEndOfSong = beos === undefined ? true : false;
         fromMillis(song, millis);
         calculateBarsAndBeats();
@@ -124,27 +124,27 @@
     };
 
 
-    fromMillis = function(song, targetMillis, event){
+    fromMillis = function (song, targetMillis, event) {
         var lastEvent = song.lastEvent;
 
-        if(beyondEndOfSong === false){
-            if(targetMillis > lastEvent.millis){
+        if (beyondEndOfSong === false) {
+            if (targetMillis > lastEvent.millis) {
                 targetMillis = lastEvent.millis;
             }
         }
 
-        if(event === undefined){
+        if (event === undefined) {
             event = getTimeEvent(song, 'millis', targetMillis);
         }
         getDataFromEvent(event);
 
         // if the event is not exactly at target millis, calculate the diff
-        if(event.millis === targetMillis){
+        if (event.millis === targetMillis) {
             diffMillis = 0;
             diffTicks = 0;
-        }else{
+        } else {
             diffMillis = targetMillis - event.millis;
-            diffTicks = diffMillis/millisPerTick;
+            diffTicks = diffMillis / millisPerTick;
         }
 
         millis += diffMillis;
@@ -154,25 +154,25 @@
     };
 
 
-    fromTicks = function(song, targetTicks, event){
+    fromTicks = function (song, targetTicks, event) {
         var lastEvent = song.lastEvent;
 
-        if(beyondEndOfSong === false){
-            if(targetTicks > lastEvent.ticks){
+        if (beyondEndOfSong === false) {
+            if (targetTicks > lastEvent.ticks) {
                 targetTicks = lastEvent.ticks;
             }
         }
 
-        if(event === undefined){
+        if (event === undefined) {
             event = getTimeEvent(song, 'ticks', targetTicks);
         }
         getDataFromEvent(event);
 
         // if the event is not exactly at target ticks, calculate the diff
-        if(event.ticks === targetTicks){
+        if (event.ticks === targetTicks) {
             diffTicks = 0;
             diffMillis = 0;
-        }else{
+        } else {
             diffTicks = targetTicks - ticks;
             diffMillis = diffTicks * millisPerTick;
         }
@@ -184,7 +184,7 @@
     };
 
 
-    fromBars = function(song, targetBar, targetBeat, targetSixteenth, targetTick, event){
+    fromBars = function (song, targetBar, targetBeat, targetSixteenth, targetTick, event) {
         //console.time('fromBars');
         var i = 0,
             diffBars,
@@ -193,8 +193,8 @@
             diffTick,
             lastEvent = song.lastEvent;
 
-        if(beyondEndOfSong === false){
-            if(targetBar > lastEvent.bar){
+        if (beyondEndOfSong === false) {
+            if (targetBar > lastEvent.bar) {
                 targetBar = lastEvent.bar;
             }
         }
@@ -202,33 +202,33 @@
         targetBar = checkBarsAndBeats(targetBar);
         targetBeat = checkBarsAndBeats(targetBeat);
         targetSixteenth = checkBarsAndBeats(targetSixteenth);
-        targetTick = checkBarsAndBeats(targetTick,true);
+        targetTick = checkBarsAndBeats(targetTick, true);
 
-        if(event === undefined){
+        if (event === undefined) {
             event = getTimeEvent(song, 'bar', targetBar);
         }
         getDataFromEvent(event);
 
         //correct wrong position data, for instance: '3,3,2,788' becomes '3,4,4,068' in a 4/4 measure at PPQ 480
-        while(targetTick >= ticksPerSixteenth){
+        while (targetTick >= ticksPerSixteenth) {
             targetSixteenth++;
             targetTick -= ticksPerSixteenth;
         }
 
-        while(targetSixteenth > numSixteenth){
+        while (targetSixteenth > numSixteenth) {
             targetBeat++;
             targetSixteenth -= numSixteenth;
         }
 
-        while(targetBeat > nominator){
+        while (targetBeat > nominator) {
             targetBar++;
             targetBeat -= nominator;
         }
 
         event = getTimeEvent(song, 'bar', targetBar, index);
-        for(i = index; i >= 0; i--){
+        for (i = index; i >= 0; i--) {
             event = song.timeEvents[i];
-            if(event.bar <= targetBar){
+            if (event.bar <= targetBar) {
                 getDataFromEvent(event);
                 break;
             }
@@ -248,7 +248,7 @@
         diffMillis += (diffBeats * ticksPerBeat) * millisPerTick;
         diffMillis += (diffSixteenth * ticksPerSixteenth) * millisPerTick;
         diffMillis += diffTick * millisPerTick;
-        diffTicks = diffMillis/millisPerTick;
+        diffTicks = diffMillis / millisPerTick;
         //console.log(diffBars, ticksPerBar, millisPerTick, diffMillis, diffTicks);
 
         // set all current position data
@@ -266,16 +266,16 @@
     };
 
 
-    calculateBarsAndBeats = function(){
+    calculateBarsAndBeats = function () {
         // spread the difference in tick over bars, beats and sixteenth
         var tmp = round(diffTicks);
-        while(tmp >= ticksPerSixteenth){
+        while (tmp >= ticksPerSixteenth) {
             sixteenth++;
             tmp -= ticksPerSixteenth;
-            while(sixteenth > numSixteenth){
+            while (sixteenth > numSixteenth) {
                 sixteenth -= numSixteenth;
                 beat++;
-                while(beat > nominator){
+                while (beat > nominator) {
                     beat -= nominator;
                     bar++;
                 }
@@ -285,7 +285,7 @@
     };
 
 
-    getDataFromEvent = function(event){
+    getDataFromEvent = function (event) {
 
         bpm = event.bpm;
         nominator = event.nominator;
@@ -311,16 +311,16 @@
     };
 
 
-    getPositionData = function(song){
+    getPositionData = function (song) {
         var timeData,
             tickAsString,
             positionData = {};
 
-        switch(returnType){
+        switch (returnType) {
 
             case 'millis':
                 //positionData.millis = millis;
-                positionData.millis = round(millis * 1000)/1000;
+                positionData.millis = round(millis * 1000) / 1000;
                 positionData.millisRounded = round(millis);
                 break;
 
@@ -353,7 +353,7 @@
             case 'all':
                 // millis
                 //positionData.millis = millis;
-                positionData.millis = round(millis * 1000)/1000;
+                positionData.millis = round(millis * 1000) / 1000;
                 positionData.millisRounded = round(millis);
 
                 // ticks
@@ -401,13 +401,13 @@
     };
 
 
-    checkBarsAndBeats = function(value, isTick){
+    checkBarsAndBeats = function (value, isTick) {
         value = isNaN(value) ? isTick ? 0 : 1 : value;
         value = round(value);
         //value = value > maxValue ? maxValue : value;
-        if(isTick){
+        if (isTick) {
             value = value < 0 ? 0 : value;
-        }else{
+        } else {
             value = value < 1 ? 1 : value;
         }
         return value;
@@ -420,12 +420,12 @@
     //@param: 'barsandbeats', 60, 4, 3, 120, ['all', true]
     //@param: 'barsandbeats', 60, 4, 3, 120, [true, 'all']
 
-    checkPosition = function(args){
+    checkPosition = function (args) {
         returnType = 'all';
         beyondEndOfSong = true;
         //console.log('----> checkPosition:', args);
 
-        if(typeString(args) === 'array'){
+        if (typeString(args) === 'array') {
             var
                 numArgs = args.length,
                 position,
@@ -434,7 +434,7 @@
             type = args[0];
 
             // support for [['millis', 3000]]
-            if(typeString(args[0]) === 'array'){
+            if (typeString(args[0]) === 'array') {
                 //console.warn('this shouldn\'t happen!');
                 args = args[0];
                 type = args[0];
@@ -447,26 +447,26 @@
 
             //console.log('arg', 0, '->', type);
 
-            if(supportedTypes.indexOf(type) !== -1){
-                for(i = 1; i < numArgs; i++){
+            if (supportedTypes.indexOf(type) !== -1) {
+                for (i = 1; i < numArgs; i++) {
                     a = args[i];
                     //console.log('arg', i, '->', a);
-                    if(a === true || a === false){
+                    if (a === true || a === false) {
                         beyondEndOfSong = a;
-                    }else if(isNaN(a)){
-                        if(supportedReturnTypes.indexOf(a) !== -1){
+                    } else if (isNaN(a)) {
+                        if (supportedReturnTypes.indexOf(a) !== -1) {
                             returnType = a;
-                        }else{
+                        } else {
                             return false;
                         }
-                    }else {
+                    } else {
                         position.push(a);
                     }
                 }
                 //check number of arguments -> either 1 number or 4 numbers in position, e.g. ['barsbeats', 1] or ['barsbeats', 1, 1, 1, 0],
                 // or ['perc', 0.56, numberOfTicksToSnapTo]
                 positionLength = position.length;
-                if(positionLength !== 2 && positionLength !== 3 && positionLength !== 5){
+                if (positionLength !== 2 && positionLength !== 3 && positionLength !== 5) {
                     return false;
                 }
                 //console.log(position, returnType, beyondEndOfSong);
@@ -477,30 +477,30 @@
         return false;
     };
 
-    function getPosition2(song, unit, target, type, event){
-        if(unit === 'millis'){
+    function getPosition2(song, unit, target, type, event) {
+        if (unit === 'millis') {
             fromMillis(song, target, event);
-        }else if(unit === 'ticks'){
+        } else if (unit === 'ticks') {
             fromTicks(song, target, event);
         }
-        if(type === 'all'){
+        if (type === 'all') {
             calculateBarsAndBeats();
         }
         return getPositionData(song);
     }
 
-    getPosition = function(song, args){
+    getPosition = function (song, args) {
         //console.log('getPosition', args);
 
         var position = checkPosition(args),
             millis, tmp, snap;
 
-        if(position === false){
+        if (position === false) {
             console.error('wrong position data');
             return false;
         }
 
-        switch(type){
+        switch (type) {
 
             case 'barsbeats':
             case 'barsandbeats':
@@ -542,8 +542,8 @@
                 //console.log(millis);
 
                 ticks = position[1] * song.durationTicks;
-                if(snap !== undefined){
-                    ticks = floor(ticks/snap) * snap;
+                if (snap !== undefined) {
+                    ticks = floor(ticks / snap) * snap;
                     //fromTicks(song, ticks);
                     //console.log(ticks);
                 }
@@ -568,9 +568,9 @@
     sequencer.protectedScope.barsToTicks = barsToTicks;
     sequencer.protectedScope.barsToMillis = barsToMillis;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         round = sequencer.protectedScope.round;
         floor = sequencer.protectedScope.floor;
         typeString = sequencer.protectedScope.typeString;
     });
-}());
+}

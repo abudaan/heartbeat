@@ -1,4 +1,4 @@
-(function(){
+function audioRecorder() {
 
     'use strict';
 
@@ -27,7 +27,7 @@
         };
 
 
-    function AudioRecorder(track){
+    function AudioRecorder(track) {
         this.track = track;
         this.song = track.song;
         this.audioEvents = {};
@@ -36,14 +36,14 @@
         this.waveformConfig = track.waveformConfig || waveformConfig;
 
         var scope = this;
-        this.worker.onmessage = function(e){
+        this.worker.onmessage = function (e) {
             //createAudioBuffer(scope, e.data.wavArrayBuffer, e.data.interleavedSamples, e.data.planarSamples, e.data.id);
             encodeAudioBuffer(scope, e.data.wavArrayBuffer, e.data.interleavedSamples, e.data.id);
         };
     }
 
 
-    function createAudioBuffer(scope, wavArrayBuffer, interleavedSamples, planarSamples, type){
+    function createAudioBuffer(scope, wavArrayBuffer, interleavedSamples, planarSamples, type) {
         var
             i,
             frameCount = planarSamples.length,
@@ -55,23 +55,23 @@
                 audioBuffer: null,
                 wavArrayBuffer: wavArrayBuffer,
                 wav: {
-                    blob: new Blob([new Uint8Array(wavArrayBuffer)], {type: 'audio/wav'}),
+                    blob: new Blob([new Uint8Array(wavArrayBuffer)], { type: 'audio/wav' }),
                     base64: base64,
                     dataUrl: 'data:audio/wav;base64,' + base64
                 },
                 waveform: {}
             };
 
-        for(i = 0; i < frameCount; i++) {
-             samples[i] = planarSamples[i];
+        for (i = 0; i < frameCount; i++) {
+            samples[i] = planarSamples[i];
         }
         recording.audioBuffer = audioBuffer;
 
         // keep a copy of the original samples for non-destructive editing
-        if(type === 'new'){
+        if (type === 'new') {
             recording.planarSamples = planarSamples;
             recording.interleavedSamples = interleavedSamples;
-        }else{
+        } else {
             recording.planarSamples = sequencer.storage.audio.recordings[scope.recordId].planarSamples;
             recording.interleavedSamples = sequencer.storage.audio.recordings[scope.recordId].interleavedSamples;
         }
@@ -79,16 +79,16 @@
         sequencer.storage.audio.recordings[scope.recordId] = recording;
         //console.log('create took', window.performance.now() - scope.timestamp);
 
-        if(scope.callback !== null){
+        if (scope.callback !== null) {
             scope.callback(recording);
             scope.callback = null;
         }
     }
 
 
-    function encodeAudioBuffer(scope, wavArrayBuffer, interleavedSamples, type){
+    function encodeAudioBuffer(scope, wavArrayBuffer, interleavedSamples, type) {
         //console.log(wavArrayBuffer, interleavedSamples, type);
-        context.decodeAudioData(wavArrayBuffer, function(audioBuffer){
+        context.decodeAudioData(wavArrayBuffer, function (audioBuffer) {
             var
                 base64 = encode64(wavArrayBuffer),
                 recording = {
@@ -96,7 +96,7 @@
                     audioBuffer: audioBuffer,
                     wavArrayBuffer: wavArrayBuffer,
                     wav: {
-                        blob: new Blob([new Uint8Array(wavArrayBuffer)], {type: 'audio/wav'}),
+                        blob: new Blob([new Uint8Array(wavArrayBuffer)], { type: 'audio/wav' }),
                         base64: base64,
                         dataUrl: 'data:audio/wav;base64,' + base64
                     },
@@ -104,9 +104,9 @@
                 };
 
             // keep a copy of the original samples for non-destructive editing
-            if(type === 'new'){
+            if (type === 'new') {
                 recording.interleavedSamples = interleavedSamples;
-            }else{
+            } else {
                 recording.interleavedSamples = sequencer.storage.audio.recordings[scope.recordId].interleavedSamples;
             }
 
@@ -115,31 +115,31 @@
                 audioBuffer,
                 scope.waveformConfig,
                 //callback
-                function(data){
-                    recording.waveform = {dataUrls: data};
+                function (data) {
+                    recording.waveform = { dataUrls: data };
                     sequencer.storage.audio.recordings[scope.recordId] = recording;
                     //console.log('encode took', window.performance.now() - scope.timestamp);
-                    if(scope.callback !== null){
+                    if (scope.callback !== null) {
                         scope.callback(recording);
                         scope.callback = null;
                     }
                 }
             );
 
-        }, function(){
-            if(sequencer.debug >= sequencer.WARN){
+        }, function () {
+            if (sequencer.debug >= sequencer.WARN) {
                 console.warn('no valid audiodata');
             }
         });
     }
 
 
-    function record(callback){
+    function record(callback) {
 
-        navigator.getUserMedia({audio: true},
+        navigator.getUserMedia({ audio: true },
 
             // successCallback
-            function(stream) {
+            function (stream) {
                 microphoneAccessGranted = true;
                 // localMediaStream is type of MediaStream that comes from microphone
                 localMediaStream = stream;
@@ -149,8 +149,8 @@
             },
 
             // errorCallback
-            function(error) {
-                if(sequencer.debug >= sequencer.WARN){
+            function (error) {
+                if (sequencer.debug >= sequencer.WARN) {
                     console.log(error);
                 }
                 microphoneAccessGranted = false;
@@ -161,22 +161,22 @@
 
 
     // this triggers the little popup in the browser where the user has to grant access to her microphone
-    AudioRecorder.prototype.prepare = function(recordId, callback){
+    AudioRecorder.prototype.prepare = function (recordId, callback) {
         var scope = this;
 
         this.recordId = recordId;
 
-        if(microphoneAccessGranted === null){
-            record(function(){
+        if (microphoneAccessGranted === null) {
+            record(function () {
                 callback(microphoneAccessGranted);
-                if(localMediaStream !== undefined){
+                if (localMediaStream !== undefined) {
                     //scope.localMediaStream = localMediaStream.clone(); -> not implemented yet
                     scope.start();
                 }
             });
-        }else{
+        } else {
             callback(microphoneAccessGranted);
-            if(localMediaStream !== undefined){
+            if (localMediaStream !== undefined) {
                 //this.localMediaStream = localMediaStream.clone(); -> not implemented yet
                 this.start();
             }
@@ -184,7 +184,7 @@
     };
 
 
-    AudioRecorder.prototype.start = function(){
+    AudioRecorder.prototype.start = function () {
         var scope = this,
             song = this.track.song;
 
@@ -195,9 +195,9 @@
 
         this.scriptProcessor = context.createScriptProcessor(bufferSize, 1, 1);
 
-        this.scriptProcessor.onaudioprocess = function(e){
+        this.scriptProcessor.onaudioprocess = function (e) {
 
-            if(e.inputBuffer.numberOfChannels === 1){
+            if (e.inputBuffer.numberOfChannels === 1) {
 
                 scope.worker.postMessage({
                     command: 'record_mono',
@@ -205,18 +205,18 @@
                 });
 
 
-            }else{
+            } else {
 
                 scope.worker.postMessage({
                     command: 'record_stereo',
-                    buffer:[
+                    buffer: [
                         e.inputBuffer.getChannelData(0),
                         e.inputBuffer.getChannelData(1)
                     ]
                 });
             }
 
-            if(song.recording === false && song.precounting === false){
+            if (song.recording === false && song.precounting === false) {
                 scope.createAudio();
             }
         };
@@ -227,10 +227,10 @@
     };
 
 
-    AudioRecorder.prototype.stop = function(callback){
+    AudioRecorder.prototype.stop = function (callback) {
         this.stopRecordingTimestamp = context.currentTime * 1000;
         this.timestamp = window.performance.now();
-        if(this.sourceNode === undefined){
+        if (this.sourceNode === undefined) {
             callback();
             return;
         }
@@ -239,7 +239,7 @@
 
 
     // create wav audio file after recording has stopped
-    AudioRecorder.prototype.createAudio = function(){
+    AudioRecorder.prototype.createAudio = function () {
         this.sourceNode.disconnect(this.scriptProcessor);
         this.scriptProcessor.disconnect(context.destination);
         this.scriptProcessor.onaudioprocess = null;
@@ -247,7 +247,7 @@
         this.scriptProcessors = null;
 
         // remove precount bars and latency
-        var bufferIndexStart = parseInt((this.song.metronome.precountDurationInMillis + this.song.audioRecordingLatency)/millisPerSample),
+        var bufferIndexStart = parseInt((this.song.metronome.precountDurationInMillis + this.song.audioRecordingLatency) / millisPerSample),
             bufferIndexEnd = -1;
 
         this.worker.postMessage({
@@ -261,8 +261,8 @@
 
     // adjust latency for specific recording -> all audio events that use this audio data will be updated!
     // if you don't want that, please use AudioEvent.sampleOffset to adjust the starting point of the audio data
-    AudioRecorder.prototype.setAudioRecordingLatency = function(recordId, value, callback){
-        var bufferIndexStart = parseInt(value/millisPerSample),
+    AudioRecorder.prototype.setAudioRecordingLatency = function (recordId, value, callback) {
+        var bufferIndexStart = parseInt(value / millisPerSample),
             bufferIndexEnd = -1;
 
         this.callback = callback;
@@ -275,8 +275,8 @@
     };
 
 
-    AudioRecorder.prototype.cleanup = function(){
-        if(localMediaStream === undefined){
+    AudioRecorder.prototype.cleanup = function () {
+        if (localMediaStream === undefined) {
             this.worker.terminate();
             return;
         }
@@ -290,25 +290,25 @@
     };
 
 
-    sequencer.protectedScope.createAudioRecorder = function(track){
-        if(sequencer.record_audio === false){
+    sequencer.protectedScope.createAudioRecorder = function (track) {
+        if (sequencer.record_audio === false) {
             return false;
         }
         return new AudioRecorder(track);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         encode64 = sequencer.util.encode64;
         context = sequencer.protectedScope.context;
         getWaveformData = sequencer.getWaveformData;
         createWorker = sequencer.protectedScope.createAudioRecorderWorker;
-        millisPerSample = (1/context.sampleRate) * 1000;
+        millisPerSample = (1 / context.sampleRate) * 1000;
         dispatchEvent = sequencer.protectedScope.songDispatchEvent;
         bufferMillis = bufferSize * millisPerSample;
     });
 
-}());
+}
 
 
 /*

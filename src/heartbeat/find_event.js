@@ -1,4 +1,4 @@
-(function(){
+function findEvent() {
 
 	'use strict';
 
@@ -14,12 +14,12 @@
 		operators,
 
 		properties = {
-			'barsbeats': ['bar','beat','sixteenth','tick'],
-			'time': ['hour','minute','second','millisecond']
+			'barsbeats': ['bar', 'beat', 'sixteenth', 'tick'],
+			'time': ['hour', 'minute', 'second', 'millisecond']
 		},
 
 		logicalOperators = 'OR AND NOT XOR',
-		logicalOperatorsRegex = new RegExp(' ' + logicalOperators.replace(/\s+/g,' | ') + ' '),// → replaces logical operator by a white space
+		logicalOperatorsRegex = new RegExp(' ' + logicalOperators.replace(/\s+/g, ' | ') + ' '),// → replaces logical operator by a white space
 
 		supportedProperties = {
 			bar: 1,
@@ -79,7 +79,7 @@
 	*/
 
 
-	findEvent = function(){
+	findEvent = function () {
 		//console.time('find events');
 		var args = Array.prototype.slice.call(arguments),
 			i, maxi,
@@ -99,12 +99,12 @@
 		events = getEvents(args[0]);
 		results = [];
 
-		if(events.length === 0){
+		if (events.length === 0) {
 			console.warn('findEvent: no events');
 			return results;
 		}
 
-		if(typeString(args[1]) !== 'string'){
+		if (typeString(args[1]) !== 'string') {
 			console.error('please provide a search string like for instance findEvent(\'beat = 2 AND velocity > 60 < 100\');');
 			return results;
 		}
@@ -116,9 +116,9 @@
 		maxi = tmp.length;
 		operators = [];
 
-		for(i = 0; i < maxi; i++){
+		for (i = 0; i < maxi; i++) {
 			operator = tmp[i];
-			if(logicalOperatorsRegex.test(' ' + operator + ' ')){
+			if (logicalOperatorsRegex.test(' ' + operator + ' ')) {
 				operators.push(operator);
 			}
 		}
@@ -128,7 +128,7 @@
 		maxi = tmp.length;
 		patterns = [];
 
-		for(i = 0; i < maxi; i++){
+		for (i = 0; i < maxi; i++) {
 			createPattern(tmp[i].split(' '));
 		}
 
@@ -137,50 +137,50 @@
 		patternIndex = 0;
 		operatorIndex = -1;
 
-		for(i = 0; i < maxi; i++){
+		for (i = 0; i < maxi; i++) {
 
 			pattern = patterns[patternIndex++];
 			operator = operators[operatorIndex++];
 			//console.log(operator,pattern,patternIndex,results.length);
 
 
-			if(operator === 'AND'){
+			if (operator === 'AND') {
 				// perform search on the results of the former search
-				results = performSearch(results,pattern);
+				results = performSearch(results, pattern);
 
-			}else if(operator === 'NOT'){
+			} else if (operator === 'NOT') {
 				// perform search on the results of the former search
-				results = performSearch(results,pattern,true);
+				results = performSearch(results, pattern, true);
 
-			}else if(operator === 'XOR'){
-/*
-				//filter events from the previous results
-				if(prevOperator === 'OR' || prevOperator === 'XOR'){
-
-					subResult1 = performSearch(results,pattern,true);
-					subResult1 = performSearch(subResult1,prevPattern,true);
-
-				}else{
-					//filter results of the left part of the XOR expression by inversing the right part of the expression
-					subResult1 = performSearch(results,pattern,true);
-				}
-
-				//filter events from all events (OR and XOR always operate on all events)
-				subResult2 = performSearch(events,pattern);
-				subResult2 = performSearch(subResult2,prevPattern,true);
-
-				//combine the 2 result sets
-				results = subResult1.concat(subResult2);//subResult1.concat(subResult1,subResult2);
-*/
+			} else if (operator === 'XOR') {
+				/*
+								//filter events from the previous results
+								if(prevOperator === 'OR' || prevOperator === 'XOR'){
+				
+									subResult1 = performSearch(results,pattern,true);
+									subResult1 = performSearch(subResult1,prevPattern,true);
+				
+								}else{
+									//filter results of the left part of the XOR expression by inversing the right part of the expression
+									subResult1 = performSearch(results,pattern,true);
+								}
+				
+								//filter events from all events (OR and XOR always operate on all events)
+								subResult2 = performSearch(events,pattern);
+								subResult2 = performSearch(subResult2,prevPattern,true);
+				
+								//combine the 2 result sets
+								results = subResult1.concat(subResult2);//subResult1.concat(subResult1,subResult2);
+				*/
 				//NEW APPROACH
 				//get from all events the events that match the pattern
-				subResult1 = performSearch(events,pattern);
+				subResult1 = performSearch(events, pattern);
 				//and then remove all events that match both all previous patterns and the current pattern
-				results = removeMutualEvents(results,subResult1);
+				results = removeMutualEvents(results, subResult1);
 
-			}else{
+			} else {
 
-				lastResult = performSearch(events,pattern);
+				lastResult = performSearch(events, pattern);
 				results = results.concat(lastResult);
 
 			}
@@ -196,48 +196,48 @@
 	};
 
 
-	removeMutualEvents = function(resultSet1,resultSet2){
-		var i,maxi = resultSet1.length,
-			j,maxj = resultSet2.length,
-			event,eventId,addEvent,
+	removeMutualEvents = function (resultSet1, resultSet2) {
+		var i, maxi = resultSet1.length,
+			j, maxj = resultSet2.length,
+			event, eventId, addEvent,
 			result = [];
 
-		for(i = 0; i < maxi; i++){
+		for (i = 0; i < maxi; i++) {
 
 			addEvent = true;
 
 			event = resultSet1[i];
 			eventId = event.id;
 
-			for(j = 0; j < maxj; j++){
+			for (j = 0; j < maxj; j++) {
 
-				if(resultSet2[j].id === eventId){
+				if (resultSet2[j].id === eventId) {
 					addEvent = false;
 					break;
 				}
 			}
 
-			if(addEvent){
+			if (addEvent) {
 				result.push(event);
 			}
 		}
 
-		for(j = 0; j < maxj; j++){
+		for (j = 0; j < maxj; j++) {
 
 			addEvent = true;
 
 			event = resultSet2[j];
 			eventId = event.id;
 
-			for(i = 0; i < maxi; i++){
+			for (i = 0; i < maxi; i++) {
 
-				if(resultSet1[i].id === eventId){
+				if (resultSet1[i].id === eventId) {
 					addEvent = false;
 					break;
 				}
 			}
 
-			if(addEvent){
+			if (addEvent) {
 				result.push(event);
 			}
 		}
@@ -246,19 +246,19 @@
 	};
 
 
-	removeDoubleEvents = function(events){
-		var i,maxi = events.length,
-			event,eventId,lastId,
+	removeDoubleEvents = function (events) {
+		var i, maxi = events.length,
+			event, eventId, lastId,
 			result = [];
 
-		events.sort(function(a,b){
+		events.sort(function (a, b) {
 			return a.eventNumber - b.eventNumber;
 		});
 
-		for(i = 0; i < maxi; i++){
+		for (i = 0; i < maxi; i++) {
 			event = events[i];
 			eventId = event.id;
-			if(eventId !== lastId){
+			if (eventId !== lastId) {
 				result.push(event);
 			}
 			lastId = eventId;
@@ -267,7 +267,7 @@
 	};
 
 
-	performSearch = function(events,pattern,inverse){
+	performSearch = function (events, pattern, inverse) {
 		var
 			searchResult = [],
 			property = pattern.property,
@@ -280,18 +280,18 @@
 
 		inverse = inverse || false;
 
-		if(inverse){
+		if (inverse) {
 			operator1 = inverseOperator(operator1);
 			operator2 = inverseOperator(operator2);
 		}
 
 
-		for(i = 0; i < numEvents; i++){
+		for (i = 0; i < numEvents; i++) {
 
 			event = events[i];
 			condition = checkCondition(property, event[property], operator1, value1, operator2, value2);
 
-			if(condition){
+			if (condition) {
 				searchResult.push(event);
 			}
 		}
@@ -300,24 +300,24 @@
 	};
 
 
-	checkCondition = function(property,propValue,operator1,value1,operator2,value2){
+	checkCondition = function (property, propValue, operator1, value1, operator2, value2) {
 		var result = false,
 			isString = false;
 
 
-		if(propValue === undefined){
+		if (propValue === undefined) {
 			return result;
 		}
 
 
-		switch(property){
+		switch (property) {
 
 			case 'noteName':
-				if(operator1 === '='){
+				if (operator1 === '=') {
 					//this situation occurs if you search for the first letter(s) of an note name, e.g C matches C#, C##, Cb and Cbb
-					if(value1.length === 3 && propValue.length === 4){
+					if (value1.length === 3 && propValue.length === 4) {
 						result = propValue.indexOf(value1) === 0;
-					}else if(value1.length === 4 && propValue.length === 5){
+					} else if (value1.length === 4 && propValue.length === 5) {
 						result = propValue.indexOf(value1) === 0;
 					}
 					return result;
@@ -325,7 +325,7 @@
 				break;
 
 			case 'type':
-				if(typeString(value1) !== 'number' && isNaN(value1)){
+				if (typeString(value1) !== 'number' && isNaN(value1)) {
 					value1 = midiEventNumberByName(value1);
 				}
 				break;
@@ -338,28 +338,28 @@
 		}
 
 
-		if(typeString(propValue) === 'string'){
+		if (typeString(propValue) === 'string') {
 
-			if(typeString(value1) !== 'string'){
+			if (typeString(value1) !== 'string') {
 				value1 = '\'' + value1 + '\'';
 			}
-			if(value2 && typeString(value2) !== 'string'){
+			if (value2 && typeString(value2) !== 'string') {
 				value2 = '\'' + value2 + '\'';
 			}
 			isString = true;
 
-		}else if(typeString(propValue) === 'number'){
+		} else if (typeString(propValue) === 'number') {
 
-			if(typeString(value1) !== 'number'){
+			if (typeString(value1) !== 'number') {
 				value1 = parseInt(value1);//don't use a radix because values can be both decimal and hexadecimal!
 			}
-			if(value2 && typeString(value2) !== 'number'){
+			if (value2 && typeString(value2) !== 'number') {
 				value2 = parseInt(value2);
 			}
 		}
 
 
-		switch(operator1){
+		switch (operator1) {
 
 			case '=':
 			case '==':
@@ -381,9 +381,9 @@
 				break;
 
 			case '%=':
-				if(isString){
+				if (isString) {
 					result = false;
-				}else{
+				} else {
 					result = propValue % value1 === 0;
 				}
 				break;
@@ -402,9 +402,9 @@
 				break;
 
 			case '!%=':
-				if(isString){
+				if (isString) {
 					result = true;
-				}else{
+				} else {
 					result = !(propValue % value1 === 0);
 				}
 				break;
@@ -412,48 +412,48 @@
 
 			case '!=':
 			case '!==':
-				if(isString){
+				if (isString) {
 					result = propValue.indexOf(value1) === -1;
-				}else{
+				} else {
 					result = propValue !== value1;
 				}
 				break;
 
 			case '>':
-				if(operator2){
-					result = checkCondition2(propValue,operator1,value1,operator2,value2);
-				}else{
+				if (operator2) {
+					result = checkCondition2(propValue, operator1, value1, operator2, value2);
+				} else {
 					result = propValue > value1;
 				}
 				break;
 
 			case '>=':
-				if(operator2){
-					result = checkCondition2(propValue,operator1,value1,operator2,value2);
-				}else{
+				if (operator2) {
+					result = checkCondition2(propValue, operator1, value1, operator2, value2);
+				} else {
 					result = propValue >= value1;
 				}
 				break;
 
 			case '<':
-				if(operator2){
-					result = checkCondition2(propValue,operator1,value1,operator2,value2);
-				}else{
+				if (operator2) {
+					result = checkCondition2(propValue, operator1, value1, operator2, value2);
+				} else {
 					result = propValue < value1;
 				}
 				break;
 
 			case '<=':
-				if(operator2){
-					result = checkCondition2(propValue,operator1,value1,operator2,value2);
-				}else{
+				if (operator2) {
+					result = checkCondition2(propValue, operator1, value1, operator2, value2);
+				} else {
 					result = propValue <= value1;
 				}
 				break;
 
 			default:
 				console.warn('eval is evil!');
-				//result = eval(propValue + operator + value1);
+			//result = eval(propValue + operator + value1);
 
 		}
 
@@ -463,15 +463,15 @@
 	};
 
 
-	checkCondition2 = function(propValue,operator1,value1,operator2,value2){
+	checkCondition2 = function (propValue, operator1, value1, operator2, value2) {
 
 		var result = false;
 
-		switch(operator1){
+		switch (operator1) {
 
 			case '>':
 
-				switch(operator2){
+				switch (operator2) {
 					case '<':
 						result = propValue > value1 && propValue < value2;
 						break;
@@ -484,7 +484,7 @@
 
 			case '>=':
 
-				switch(operator2){
+				switch (operator2) {
 					case '<':
 						result = propValue >= value1 && propValue < value2;
 						break;
@@ -497,7 +497,7 @@
 
 			case '<':
 
-				switch(operator2){
+				switch (operator2) {
 					case '>':
 						result = propValue < value1 || propValue > value2;
 						break;
@@ -510,7 +510,7 @@
 
 			case '<=':
 
-				switch(operator2){
+				switch (operator2) {
 					case '>':
 						result = propValue <= value1 || propValue > value2;
 						break;
@@ -526,25 +526,25 @@
 	};
 
 
-	getEvents = function(obj){
+	getEvents = function (obj) {
 		var i, numTracks, tracks, events = [];
 
-		if(typeString(obj) === 'array'){
+		if (typeString(obj) === 'array') {
 			events = obj;
-		}else if(obj.className === undefined){
+		} else if (obj.className === undefined) {
 			console.warn(obj);
-		}else if(obj.className === 'Track' || obj.className === 'Part'){
+		} else if (obj.className === 'Track' || obj.className === 'Part') {
 			events = obj.events;
 
-		}else if(obj.className === 'Song'){
-/*
-			tracks = obj.tracks;
-			numTracks = obj.numTracks;
-			for(i = 0; i < numTracks; i++){
-				events = events.concat(tracks[i].events);
-			}
-			events = events.concat(obj.timeEvents);
-*/
+		} else if (obj.className === 'Song') {
+			/*
+						tracks = obj.tracks;
+						numTracks = obj.numTracks;
+						for(i = 0; i < numTracks; i++){
+							events = events.concat(tracks[i].events);
+						}
+						events = events.concat(obj.timeEvents);
+			*/
 			events = obj.eventsMidiTime;
 		}
 		//console.log(obj.className,events.length);
@@ -552,7 +552,7 @@
 	};
 
 
-	createPattern = function(args){
+	createPattern = function (args) {
 		var pattern = {
 			property: args[0],
 			operator1: args[1],
@@ -560,14 +560,14 @@
 			operator2: args[3],
 			value2: args[4]
 		},
-		property = args[0],
-		operator1 = args[1],
-		value1 = args[2],
-		operator2 = args[3],
-		value2 = args[4],
-		i;
+			property = args[0],
+			operator1 = args[1],
+			value1 = args[2],
+			operator2 = args[3],
+			value2 = args[4],
+			i;
 
-		if(supportedProperties[property] !== 1){
+		if (supportedProperties[property] !== 1) {
 			console.error(property, 'is not a supported property');
 			return false;
 		}
@@ -576,10 +576,10 @@
 		pattern = checkOperators(pattern);
 
 
-		if(property === 'barsbeats' || property === 'time'){
-			value1 = checkValue(value1,property);
+		if (property === 'barsbeats' || property === 'time') {
+			value1 = checkValue(value1, property);
 			//console.log(value1);
-			for(i = 0; i < 4; i++){
+			for (i = 0; i < 4; i++) {
 				pattern = {};
 				pattern.property = properties[property][i];
 				pattern.operator1 = operator1;
@@ -589,9 +589,9 @@
 			}
 			operators.pop();
 
-			if(value2){
-				value2 = checkValue(value2,property);
-				for(i = 0; i < 4; i++){
+			if (value2) {
+				value2 = checkValue(value2, property);
+				for (i = 0; i < 4; i++) {
 					pattern = {};
 					pattern.property = properties[property][i];
 					pattern.operator2 = operator2;
@@ -601,46 +601,46 @@
 				}
 				operators.pop();
 			}
-		}else{
+		} else {
 			patterns.push(pattern);
 		}
 	};
 
 
-	checkValue = function(value,type){
+	checkValue = function (value, type) {
 		//if the value is provided in array notation strip the brackets
-		value = value.replace(/(\[|\])/g,'');
+		value = value.replace(/(\[|\])/g, '');
 
-		if(typeString(value) !== 'array'){
-			if(type === 'barsbeats'){
-				if(value.indexOf(',') === -1){
-					value = [value,1,1,0];
-				}else{
+		if (typeString(value) !== 'array') {
+			if (type === 'barsbeats') {
+				if (value.indexOf(',') === -1) {
+					value = [value, 1, 1, 0];
+				} else {
 					value = value.split(',');
 				}
-			}else if(type === 'time'){
-				if(value.indexOf(',') === -1){
-					value = [0,value,0,0];
-				}else{
+			} else if (type === 'time') {
+				if (value.indexOf(',') === -1) {
+					value = [0, value, 0, 0];
+				} else {
 					value = value.split(',');
 				}
 			}
 		}
 
-		switch(value.length){
+		switch (value.length) {
 			case 1:
-				if(type === 'barsbeats'){
-					value.push(1,1,0);
-				}else if(type === 'time'){
-					value.push(0,0,0);
+				if (type === 'barsbeats') {
+					value.push(1, 1, 0);
+				} else if (type === 'time') {
+					value.push(0, 0, 0);
 				}
 				break;
 
 			case 2:
-				if(type === 'barsbeats'){
-					value.push(1,0);
-				}else if(type === 'time'){
-					value.push(0,0);
+				if (type === 'barsbeats') {
+					value.push(1, 0);
+				} else if (type === 'time') {
+					value.push(0, 0);
 				}
 				break;
 
@@ -653,36 +653,36 @@
 	};
 
 
-	checkOperators = function(pattern){
+	checkOperators = function (pattern) {
 
 		var operator1 = pattern.operator1,
 			operator2 = pattern.operator2,
-			check = function(operator){
-				if(operator === '<' || operator === '>' || operator === '<=' || operator === '>='){
+			check = function (operator) {
+				if (operator === '<' || operator === '>' || operator === '<=' || operator === '>=') {
 					return true;
 				}
 				return false;
 			},
-			check2 = function(operator){
-				if(operator === '=' || operator === '==' || operator === '==='){
+			check2 = function (operator) {
+				if (operator === '=' || operator === '==' || operator === '===') {
 					return true;
 				}
 				return false;
 			};
 
 
-		if(pattern.property === 'noteName' && (check(operator1) || check2(operator1))){
+		if (pattern.property === 'noteName' && (check(operator1) || check2(operator1))) {
 			pattern.property = 'noteNumber';
 			pattern.value1 = createNote(pattern.value1).number;
 		}
 
-		if(pattern.property === 'noteName' && (check(operator2) || check2(operator2))){
+		if (pattern.property === 'noteName' && (check(operator2) || check2(operator2))) {
 			pattern.property = 'noteNumber';
 			pattern.value2 = createNote(pattern.value2).number;
 		}
 
 		// second operator is wrong, remove it
-		if(check(operator1) && !check(operator2)){
+		if (check(operator1) && !check(operator2)) {
 			delete pattern.operator2;
 			delete pattern.value2;
 		}
@@ -691,10 +691,10 @@
 	};
 
 
-	inverseOperator = function(operator){
+	inverseOperator = function (operator) {
 		var inversedOperator;
 
-		switch(operator){
+		switch (operator) {
 			case '=':
 			case '==':
 			case '===':
@@ -738,41 +738,41 @@
 	};
 
 
-	findNote = function(){
-		var results = findEvent.apply(this,arguments),
+	findNote = function () {
+		var results = findEvent.apply(this, arguments),
 			numEvents = results.length,
 			i, event,
 			noteOnEvent, noteOnEvents = {},
 			tmp, resultsFiltered = [];
 
 		// loop over all events and filter the note on events that have a matching note off event
-		for(i = 0; i < numEvents; i++){
+		for (i = 0; i < numEvents; i++) {
 			event = results[i];
 
-			if(event.type === sequencer.NOTE_ON){
+			if (event.type === sequencer.NOTE_ON) {
 
-				if(noteOnEvents[event.noteNumber] === undefined){
+				if (noteOnEvents[event.noteNumber] === undefined) {
 					noteOnEvents[event.noteNumber] = [];
 				}
 				noteOnEvents[event.noteNumber].push(event);
 
-			}else if(event.type === sequencer.NOTE_OFF){
+			} else if (event.type === sequencer.NOTE_OFF) {
 
 				tmp = noteOnEvents[event.noteNumber];
-				if(tmp){
+				if (tmp) {
 					noteOnEvent = tmp.shift();
-					resultsFiltered.push(createMidiNote(noteOnEvent,event));
+					resultsFiltered.push(createMidiNote(noteOnEvent, event));
 					//resultsFiltered.push(noteOnEvent);
 					//resultsFiltered.push(event);
 				}
-				if(tmp.length === 0){
+				if (tmp.length === 0) {
 					delete noteOnEvents[event.noteNumber];
 				}
 			}
 		}
 
 		// put the events back into the right order
-		resultsFiltered.sort(function(a,b){
+		resultsFiltered.sort(function (a, b) {
 			return a.sortIndex - b.sortIndex;
 		});
 
@@ -784,11 +784,11 @@
 	//sequencer.removeMutualEvents = removeMutualEvents;
 	sequencer.protectedScope.getEvents = getEvents;
 
-	sequencer.protectedScope.addInitMethod(function(){
+	sequencer.protectedScope.addInitMethod(function () {
 		createNote = sequencer.createNote;
 		typeString = sequencer.protectedScope.typeString;
 		createMidiNote = sequencer.createMidiNote;
 		midiEventNumberByName = sequencer.midiEventNumberByName;
 	});
 
-}());
+}

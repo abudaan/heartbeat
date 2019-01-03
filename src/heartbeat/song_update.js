@@ -1,4 +1,4 @@
-(function(){
+function songUpdate() {
 
     'use strict';
 
@@ -14,10 +14,10 @@
         update2;
 
 
-    update = function(song, updateTimeEvents){
+    update = function (song, updateTimeEvents) {
 
-        if(sequencer.playing === true){
-            scheduledTasks.updateSong = function(){
+        if (sequencer.playing === true) {
+            scheduledTasks.updateSong = function () {
                 update2(song, updateTimeEvents);
             };
             return;
@@ -27,7 +27,7 @@
     };
 
 
-    update2 = function(song, updateTimeEvents){
+    update2 = function (song, updateTimeEvents) {
         //console.log('update song');
         //console.time('update song');
         var
@@ -71,32 +71,32 @@
             partsById = {};
 
 
-        if(updateTimeEvents === true){
+        if (updateTimeEvents === true) {
             //console.log('update time events');
             parseTimeEvents(song);
         }
 
 
-        for(id1 in song.tracksById){
+        for (id1 in song.tracksById) {
 
-            if(song.tracksById.hasOwnProperty(id1)){
+            if (song.tracksById.hasOwnProperty(id1)) {
 
                 track = song.tracksById[id1];
 
                 //console.log('song update', track.needsUpdate);
 
-                if(track.needsUpdate === true){
+                if (track.needsUpdate === true) {
                     track.update();
                 }
 
 
-                for(id2 in track.partsById){
-                    if(track.partsById.hasOwnProperty(id2)){
+                for (id2 in track.partsById) {
+                    if (track.partsById.hasOwnProperty(id2)) {
 
                         part = track.partsById[id2];
                         //console.log(part.id, part.needsUpdate, part.dirtyEvents);
 
-                        if(part.needsUpdate === true){
+                        if (part.needsUpdate === true) {
                             //console.log('song update calls part.update()');
                             part.update();
                         }
@@ -105,10 +105,10 @@
 
                         dirtyEvents = part.dirtyEvents;
 
-                        for(id3 in dirtyEvents){
-                            if(dirtyEvents.hasOwnProperty(id3)){
+                        for (id3 in dirtyEvents) {
+                            if (dirtyEvents.hasOwnProperty(id3)) {
                                 event = dirtyEvents[id3];
-                                switch(event.state){
+                                switch (event.state) {
                                     case 'new':
                                         newEvents.push(event);
                                         break;
@@ -129,11 +129,11 @@
 
                         dirtyNotes = part.dirtyNotes;
 
-                        for(id3 in dirtyNotes){
-                            if(dirtyNotes.hasOwnProperty(id3)){
+                        for (id3 in dirtyNotes) {
+                            if (dirtyNotes.hasOwnProperty(id3)) {
                                 note = dirtyNotes[id3];
                                 //console.log(note.state);
-                                switch(note.state){
+                                switch (note.state) {
                                     case 'new':
                                         newNotes.push(note);
                                         break;
@@ -156,7 +156,7 @@
                         }
                         console.log(part.state, part.track);
                         */
-                        if(part.state !== 'removed'){
+                        if (part.state !== 'removed') {
                             notes = notes.concat(part.notes);
                             events = events.concat(part.events);
                         } else {
@@ -165,7 +165,7 @@
                         }
 
 
-                        switch(part.state){
+                        switch (part.state) {
                             case 'new':
                                 newParts.push(part);
                                 partsById[part.id] = part;
@@ -188,7 +188,7 @@
                 parts = parts.concat(track.parts);
 
 
-                switch(track.state){
+                switch (track.state) {
                     case 'clean':
                         track.index = tracks.length;
                         tracks.push(track);
@@ -214,56 +214,56 @@
         }
 
 
-        for(i = removedEvents.length - 1; i >=0; i--){
+        for (i = removedEvents.length - 1; i >= 0; i--) {
             event = removedEvents[i];
             event.state = 'clean';
         }
 
-        for(i = removedNotes.length - 1; i >=0; i--){
+        for (i = removedNotes.length - 1; i >= 0; i--) {
             note = removedNotes[i];
             note.state = 'clean';
         }
 
-        for(i = removedParts.length - 1; i >=0; i--){
+        for (i = removedParts.length - 1; i >= 0; i--) {
             part = removedParts[i];
             part.state = 'clean';
         }
 
 
         // calculate the ticks position of the recorded events
-        if(recordedEvents.length > 0){
+        if (recordedEvents.length > 0) {
             parseRecordedEvents(song, recordedEvents);
         }
 
-        events.sort(function(a, b){
+        events.sort(function (a, b) {
             return a.sortIndex - b.sortIndex;
         });
 
-        notes.sort(function(a, b){
+        notes.sort(function (a, b) {
             return a.ticks - b.ticks;
         });
 
-        parts.sort(function(a, b){
+        parts.sort(function (a, b) {
             return a.ticks - b.ticks;
         });
 
-        for(i = events.length - 1; i >= 0; i--){
+        for (i = events.length - 1; i >= 0; i--) {
             event = events[i];
             eventsById[event.id] = event;
-            if(event.type === 'audio'){
+            if (event.type === 'audio') {
                 audioEvents.push(event);
-            }else{
+            } else {
                 midiEvents.push(event);
             }
         }
 
-        for(i = notes.length - 1; i >= 0; i--){
+        for (i = notes.length - 1; i >= 0; i--) {
             note = notes[i];
             notesById[note.id] = note;
         }
 
 
-        if(updateTimeEvents === false){
+        if (updateTimeEvents === false) {
 
             //console.log(newEvents);
             //console.log(tmp.length, events.length, newEvents.length, changedEvents.length, song.timeEvents.length, song.metronome.events.length);
@@ -284,50 +284,50 @@
             parseParts(song, parts);
         }
 
-/*
-        console.log('  Song.update()');
-        console.log('new tracks', newTracks.length);
-        console.log('new parts', newParts.length);
-        console.log('new events', newEvents.length);
-        console.log('changed tracks', changedTracks.length);
-        console.log('changed parts', changedParts.length);
-        console.log('changed events', changedEvents.length);
-        console.log('removed tracks', removedTracks.length);
-        console.log('removed parts', removedParts.length);
-        console.log('removed events', removedEvents.length);
-        console.log('all events', events.length);
-        console.log('all parts', parts.length);
-        console.log('all tracks', tracks.length);
-        console.log('time events', song.timeEvents.length);
-        console.log('--------');
-*/
-/*
-        if(changedEvents.length > 0){
-            console.log('changed events', changedEvents.length);
-            console.log('changed notes', changedNotes.length);
-        }
-*/
+        /*
+                console.log('  Song.update()');
+                console.log('new tracks', newTracks.length);
+                console.log('new parts', newParts.length);
+                console.log('new events', newEvents.length);
+                console.log('changed tracks', changedTracks.length);
+                console.log('changed parts', changedParts.length);
+                console.log('changed events', changedEvents.length);
+                console.log('removed tracks', removedTracks.length);
+                console.log('removed parts', removedParts.length);
+                console.log('removed events', removedEvents.length);
+                console.log('all events', events.length);
+                console.log('all parts', parts.length);
+                console.log('all tracks', tracks.length);
+                console.log('time events', song.timeEvents.length);
+                console.log('--------');
+        */
+        /*
+                if(changedEvents.length > 0){
+                    console.log('changed events', changedEvents.length);
+                    console.log('changed notes', changedNotes.length);
+                }
+        */
 
 
         checkDuration(song);
 
 
         // check if we need to generate new metronome events, metronome.update() calls parseMetronomeEvents()
-        if(song.metronome.bars !== song.bars){
+        if (song.metronome.bars !== song.bars) {
             //song.metronome.update(song.metronome.bars, song.bars);
             song.metronome.update();
-        }else if(updateTimeEvents === true){
+        } else if (updateTimeEvents === true) {
             song.metronome.update();
         }
         eventsMidiAudioMetronome = [].concat(midiEvents, audioEvents, song.metronome.events);
-        eventsMidiAudioMetronome.sort(function(a, b){
+        eventsMidiAudioMetronome.sort(function (a, b) {
             //return a.sortIndex - b.sortIndex;
             return a.ticks - b.ticks;
         });
 
 
         eventsMidiTime = [].concat(events, song.timeEvents);
-        eventsMidiTime.sort(function(a, b){
+        eventsMidiTime.sort(function (a, b) {
             return a.ticks - b.ticks;
             //return a.sortIndex - b.sortIndex;
         });
@@ -371,11 +371,11 @@
         song.scheduler.reschedule();
         song.followEvent.updateSong();
 
-        if(song.grid !== undefined){
+        if (song.grid !== undefined) {
             song.grid.update();
         }
 
-        if(song.keyEditor !== undefined){
+        if (song.keyEditor !== undefined) {
             song.keyEditor.updateSong({
                 numBars: song.bars,
                 newEvents: newEvents,
@@ -393,7 +393,7 @@
     };
 
 
-    function checkDuration(song, trim){
+    function checkDuration(song, trim) {
         var lastEvent = song.lastEventTmp,
             position, key;
 
@@ -401,13 +401,13 @@
         //console.log(lastEvent);
         //console.log(song.autoSize);
 
-        if(song.autoSize === false){
+        if (song.autoSize === false) {
             // don't allow the song to grow
             song.lastBar = song.bars;
-        }else if(trim){
+        } else if (trim) {
             // remove bars that don't contain any events(called via song.trim())
             song.lastBar = lastEvent.bar;
-        }else{
+        } else {
             // grow if needed
             song.lastBar = Math.max(song.lastBar, lastEvent.bar);
         }
@@ -428,8 +428,8 @@
         //console.log(song.bars, '->', position.barsAsString, song.durationMillis, song.durationTicks);
 
         // update song.lastEvent
-        for(key in position){
-            if(position.hasOwnProperty(key)){
+        for (key in position) {
+            if (position.hasOwnProperty(key)) {
                 //console.log(key, position[key])
                 song.lastEvent[key] = position[key];
             }
@@ -438,13 +438,13 @@
     }
 
 
-    function parseMetronomeEvents(song, events){
+    function parseMetronomeEvents(song, events) {
         //console.log('parseMetronomeEvents', events.length);
         var tmp = events.concat(song.timeEvents);
         parseEvents(song, tmp);
 
         events = events.concat(song.events);
-        events.sort(function(a, b){
+        events.sort(function (a, b) {
             return a.sortIndex - b.sortIndex;
         });
         //console.log(1,song.allEvents.length);
@@ -459,12 +459,12 @@
     }
 
 
-    function parseParts(song, parts){
+    function parseParts(song, parts) {
         var i, part;
 
         //console.log(' → parse parts', parts.length);
 
-        for(i = parts.length - 1; i >= 0; i--){
+        for (i = parts.length - 1; i >= 0; i--) {
             part = parts[i];
             //part.update();
             //part.track.update();
@@ -480,15 +480,15 @@
     }
 
 
-    function parseMidiNotes(song, notes){
+    function parseMidiNotes(song, notes) {
         var i, note;
 
         //console.log(' → parseMidiNotes', notes.length);
 
-        for(i = notes.length - 1; i >= 0; i--){
+        for (i = notes.length - 1; i >= 0; i--) {
             note = notes[i];
             //console.log(note);
-            if(note.endless === true){
+            if (note.endless === true) {
                 note.durationTicks = sequencer.ticks - note.noteOn.ticks;
                 note.durationMillis = sequencer.millis - note.noteOn.millis;
             } else {
@@ -503,7 +503,7 @@
     }
 
 
-    function parseRecordedEvents(song, events){
+    function parseRecordedEvents(song, events) {
         var i, timeData,
             position, event,
             time,
@@ -521,7 +521,7 @@
         //console.log(song, events, timestamp);
         //console.log('parseRecordedEvents', timestamp, startMillis);
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             event = events[i];
 
             time = (event.recordMillis - timestamp) + startMillis;
@@ -575,54 +575,54 @@
 
 
     // not in use!
-    function sortEvents(events){
+    function sortEvents(events) {
         var maxi = events.length,
             i, event, lastTick = -100000,
             buffer,
             newOrder = [];
 
-        for(i = 0; i < maxi; i++){
+        for (i = 0; i < maxi; i++) {
             event = events[i];
-            if(buffer === undefined){
+            if (buffer === undefined) {
                 buffer = [];
             }
             buffer.push(event);
-            if(event.ticks !== lastTick){
-                if(buffer.length > 1){
+            if (event.ticks !== lastTick) {
+                if (buffer.length > 1) {
                     // console.log('unsorted', buffer.length);
                     // buffer.forEach(function(e){
                     //     console.log(e.ticks, e.type, e.data1, e.data2);
                     // });
 
-                    buffer.sort(function(a, b){
+                    buffer.sort(function (a, b) {
 
                         // question is: comes a after b
 
-                        if(b.type === 144 && a.type === 128){
+                        if (b.type === 144 && a.type === 128) {
                             // note off before note on
                             return false;
 
 
-                        } else if(b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 127){
+                        } else if (b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 127) {
                             // sustain pedal down before note on
                             return false;
 
 
-                        } else if(b.type === 176 && b.data1 === 64 && b.data2 === 127 && a.type === 128){
+                        } else if (b.type === 176 && b.data1 === 64 && b.data2 === 127 && a.type === 128) {
                             // note off before sustain pedal down
                             return false;
 
 
-                        } else if(b.type === 128 && a.type === 176 && a.data1 === 64 && a.data2 === 0){
+                        } else if (b.type === 128 && a.type === 176 && a.data1 === 64 && a.data2 === 0) {
                             // sustain pedal up before note off -> for better performance, the note off event doesn't get added to the sustainPedalSamples array
                             return false;
 
-                        } else if(b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 0){
+                        } else if (b.type === 144 && a.type === 176 && a.data1 === 64 && a.data2 === 0) {
                             // sustain pedal up before note on
                             return false;
 
 
-                        } else if(a.type === 176 && a.data1 === 64 && a.data2 === 0 && b.type === 176 && b.data1 === 64 && b.data2 === 127){
+                        } else if (a.type === 176 && a.data1 === 64 && a.data2 === 0 && b.type === 176 && b.data1 === 64 && b.data2 === 127) {
                             // sustain pedal up should come before sustain pedal up
                             return false;
 
@@ -650,12 +650,11 @@
     sequencer.protectedScope.checkDuration = checkDuration;
     sequencer.protectedScope.parseMetronomeEvents = parseMetronomeEvents;
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         getPosition = sequencer.protectedScope.getPosition;
         parseEvents = sequencer.protectedScope.parseEvents;
         parseTimeEvents = sequencer.protectedScope.parseTimeEvents;
         getInstrument = sequencer.protectedScope.getInstrument;
         scheduledTasks = sequencer.protectedScope.scheduledTasks;
     });
-
-}());
+}

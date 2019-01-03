@@ -1,38 +1,38 @@
-(function(){
+function keyEditorIteratorFactory() {
 
     'use strict';
 
     var
         minWidthSixteenth = 0.042,
         minWidthBeat = 0.02,
-/*
-        events,
-        numEvents,
-        notes,
-        numNotes,
-        parts,
-        numParts,
-
-        song,
-        editor,
-        position,
-*/
+        /*
+                events,
+                numEvents,
+                notes,
+                numNotes,
+                parts,
+                numParts,
+        
+                song,
+                editor,
+                position,
+        */
         // import
         createPlayhead, // defined in playhead.js
         createNote; // defined in note.js
 
-        //public
-/*
-        create,
-        updateSong,
-        createVerticalLineIterator,
-        createHorizontalLineIterator,
-        createEventIterator,
-        createNoteIterator,
-        createPartIterator;
-*/
+    //public
+    /*
+            create,
+            updateSong,
+            createVerticalLineIterator,
+            createHorizontalLineIterator,
+            createEventIterator,
+            createNoteIterator,
+            createPartIterator;
+    */
 
-    function Factory(song, editor){
+    function Factory(song, editor) {
         this.song = song;
         this.editor = editor;
         //console.log(this.editor);
@@ -41,24 +41,24 @@
         this.updateSong();
     }
 
-/*
-    create = function(s, e){
-        song = s;
-        editor = e;
-        updateSong();
-        position = createPlayhead(song, 'barsbeats ticks millis', 'iterators');
-        return {
-            updateSong: updateSong,
-            createVerticalLineIterator: createVerticalLineIterator,
-            createHorizontalLineIterator: createHorizontalLineIterator,
-            createEventIterator: createEventIterator,
-            createNoteIterator: createNoteIterator,
-            createPartIterator: createPartIterator
+    /*
+        create = function(s, e){
+            song = s;
+            editor = e;
+            updateSong();
+            position = createPlayhead(song, 'barsbeats ticks millis', 'iterators');
+            return {
+                updateSong: updateSong,
+                createVerticalLineIterator: createVerticalLineIterator,
+                createHorizontalLineIterator: createHorizontalLineIterator,
+                createEventIterator: createEventIterator,
+                createNoteIterator: createNoteIterator,
+                createPartIterator: createPartIterator
+            };
         };
-    };
-*/
+    */
 
-    Factory.prototype.updateSong = function(){
+    Factory.prototype.updateSong = function () {
         this.events = this.song.events;
         this.numEvents = this.events.length;
         this.notes = this.song.notes;
@@ -69,7 +69,7 @@
     };
 
 
-    Factory.prototype.createVerticalLineIterator = function(){
+    Factory.prototype.createVerticalLineIterator = function () {
         var supportedTypes = 'bar beat sixteenth',
             lineType,
             numTicks = {},
@@ -91,10 +91,10 @@
             // widthBeat,
             // widthSixteenth,
             data, next, hasNext, reset, getData, setType;
-            //setStartPosition, setEndPosition;
+        //setStartPosition, setEndPosition;
 
 
-        getData = function(){
+        getData = function () {
             //console.log('ticks',ticks);
             data = position.update('ticks', ticks);
             numTicks.bar = data.ticksPerBar;
@@ -106,25 +106,25 @@
             //console.log(ticks, data);
         };
 
-        next = function(t){
-            if(t){
+        next = function (t) {
+            if (t) {
                 type = t;
-                if(tickWidth < minWidthBeat){
+                if (tickWidth < minWidthBeat) {
                     type = 'bar';
-                }else if(tickWidth < minWidthSixteenth){
+                } else if (tickWidth < minWidthSixteenth) {
                     type = 'beat';
                 }
             }
 
-            switch(type){
+            switch (type) {
                 case 'sixteenth':
                     lineType = 'sixteenth';
                     sixteenth++;
-                    if(sixteenth > numSixteenth){
+                    if (sixteenth > numSixteenth) {
                         lineType = 'beat';
                         sixteenth = 1;
                         beat++;
-                        if(beat > nominator){
+                        if (beat > nominator) {
                             lineType = 'bar';
                             beat = 1;
                             bar++;
@@ -135,7 +135,7 @@
                     lineType = 'beat';
                     sixteenth = 1;
                     beat++;
-                    if(beat > nominator){
+                    if (beat > nominator) {
                         lineType = 'bar';
                         beat = 1;
                         bar++;
@@ -150,7 +150,7 @@
             }
             ticks += numTicks[type];
             getData();
-            if(ticks > endTicks){
+            if (ticks > endTicks) {
                 return false;
             }
             //console.log(bar,beat,sixteenth);
@@ -167,20 +167,20 @@
             };
         };
 
-        hasNext = function(t){
+        hasNext = function (t) {
             var diffTicks = endTicks - ticks,
                 result = false;
 
-            if(t){
+            if (t) {
                 type = t;
-                if(tickWidth < minWidthBeat){
+                if (tickWidth < minWidthBeat) {
                     type = 'bar';
-                }else if(tickWidth < minWidthSixteenth){
+                } else if (tickWidth < minWidthSixteenth) {
                     type = 'beat';
                 }
             }
 
-            switch(type){
+            switch (type) {
                 case 'bar':
                     result = diffTicks >= numTicks[type];
                     break;
@@ -195,7 +195,7 @@
             return result;
         };
 
-        reset = function(start, end){
+        reset = function (start, end) {
             startPosition = start || editor.startPosition;
             endPosition = end || editor.endPosition;
             ticks = startPosition.ticks;
@@ -210,9 +210,9 @@
             offset = 0;//ticks * this.editor.tickWidth;
             position.set('ticks', ticks);
             //console.log(tickWidth,offset);
-            if(tickWidth < minWidthBeat){
+            if (tickWidth < minWidthBeat) {
                 type = 'bar';
-            }else if(tickWidth < minWidthSixteenth){
+            } else if (tickWidth < minWidthSixteenth) {
                 type = 'beat';
             }
             getData();
@@ -220,26 +220,26 @@
             // widthBeat = numTicks.beat * this.editor.tickWidth;
             // widthSixteenth = numTicks.sixteenth * this.editor.tickWidth;
         };
-/*
-        setStartPosition = function(position){
-            startPosition = position;
-        };
-
-        setEndPosition = function(position){
-            endPosition = position;
-        };
-*/
-        setType = function(t){
+        /*
+                setStartPosition = function(position){
+                    startPosition = position;
+                };
+        
+                setEndPosition = function(position){
+                    endPosition = position;
+                };
+        */
+        setType = function (t) {
             type = t;
-            if(tickWidth < minWidthBeat){
+            if (tickWidth < minWidthBeat) {
                 type = 'bar';
-            }else if(tickWidth < minWidthSixteenth){
+            } else if (tickWidth < minWidthSixteenth) {
                 type = 'beat';
             }
         };
 
         //console.log('ver');
-        return{
+        return {
             next: next,
             reset: reset,
             hasNext: hasNext,
@@ -250,7 +250,7 @@
     };
 
 
-    Factory.prototype.createHorizontalLineIterator = function(){
+    Factory.prototype.createHorizontalLineIterator = function () {
         var index,
             pitch,
             range,
@@ -259,7 +259,7 @@
             editor = this.editor,
             next, hasNext, reset;
 
-        next = function(type){
+        next = function (type) {
             data = {
                 note: createNote(pitch),
                 y: (index * pitchHeight)
@@ -269,9 +269,9 @@
             return data;
         };
 
-        hasNext = function(type){
+        hasNext = function (type) {
             var result = false;
-            switch(type){
+            switch (type) {
                 case 'chromatic':
                     result = index < range;
                     break;
@@ -279,7 +279,7 @@
             return result;
         };
 
-        reset = function(){
+        reset = function () {
             index = 0;
             pitch = editor.highestNote;
             range = editor.pitchRange;
@@ -288,7 +288,7 @@
         };
 
         //console.log('hor');
-        return{
+        return {
             next: next,
             reset: reset,
             hasNext: hasNext
@@ -296,7 +296,7 @@
     };
 
 
-    Factory.prototype.createEventIterator = function(){
+    Factory.prototype.createEventIterator = function () {
         var startTicks,
             endTicks,
             hasNextCalled,
@@ -309,36 +309,36 @@
             types = '',
             next, hasNext, reset, setTypes;
 
-        hasNext = function(t){
+        hasNext = function (t) {
             types = t || types;
             hasNextCalled = true;
             index++;
-            if(index === numEvents){
+            if (index === numEvents) {
                 return false;
             }
 
             nextEvent = events[index];
-            if(types === ''){
+            if (types === '') {
                 return nextEvent.ticks <= endTicks;
             }
             return false;
         };
 
-        next = function(t){
+        next = function (t) {
             types = t || types;
-            if(!hasNextCalled){
+            if (!hasNextCalled) {
                 hasNext(types);
             }
             hasNextCalled = false;
             return nextEvent;
         };
 
-        reset = function(){
+        reset = function () {
             var event;
             startTicks = editor.startTicks;
             endTicks = editor.endTicks;
             hasNextCalled = false;
-            if(editor.paginate === true && sequencer.isPlaying() === true){
+            if (editor.paginate === true && sequencer.isPlaying() === true) {
                 return;
             }
             /*
@@ -355,14 +355,14 @@
             //console.log('ke',sequencer.isPlaying(),index,sequencer.eventIndex);
         };
 
-        setTypes = function(){
+        setTypes = function () {
             var args = Array.prototype.slice.call(arguments);
-            args.forEach(function(type){
+            args.forEach(function (type) {
                 types += type + ' ';
             });
         };
 
-        return{
+        return {
             next: next,
             reset: reset,
             hasNext: hasNext,
@@ -371,7 +371,7 @@
     };
 
 
-    Factory.prototype.createNoteIterator = function(){
+    Factory.prototype.createNoteIterator = function () {
         var startTicks,
             endTicks,
             hasNextCalled,
@@ -385,39 +385,39 @@
             types = '',
             next, hasNext, reset, setTypes;
 
-        hasNext = function(t){
+        hasNext = function (t) {
             types = t || types;
             hasNextCalled = true;
             index++;
-            if(index === this.numNotes){
+            if (index === this.numNotes) {
                 return false;
             }
 
             newNote = false;
 
-            for(;index < numNotes; index++){
+            for (; index < numNotes; index++) {
                 nextNote = notes[index];
                 //console.log(nextNote);
 
-                if(nextNote.ticks >= endTicks){
+                if (nextNote.ticks >= endTicks) {
                     //console.log('skip',nextNote.ticks);
                     break;
                 }
 
-                if(editor.paginate){
+                if (editor.paginate) {
                     // show note that has started on previous page
-                    if(nextNote.ticks < startTicks && nextNote.noteOff.ticks > startTicks){
+                    if (nextNote.ticks < startTicks && nextNote.noteOff.ticks > startTicks) {
                         newNote = true;
-                    }else if(nextNote.ticks < endTicks){
+                    } else if (nextNote.ticks < endTicks) {
                         newNote = true;
                     }
-                    if(newNote){
+                    if (newNote) {
                         break;
                     }
-                }else{
+                } else {
                     newNote = nextNote.ticks <= endTicks;
                     //console.log(newNote, nextNote.ticks, nextNote.noteOff.ticks, startTicks, endTicks);
-                    if(newNote){
+                    if (newNote) {
                         break;
                     }
                 }
@@ -428,9 +428,9 @@
             return newNote;
         };
 
-        next = function(t){
+        next = function (t) {
             types = t || types;
-            if(!hasNextCalled){
+            if (!hasNextCalled) {
                 hasNext(types);
             }
             hasNextCalled = false;
@@ -439,7 +439,7 @@
             return nextNote;
         };
 
-        reset = function(){
+        reset = function () {
             var note;
             startTicks = editor.startTicks;
             endTicks = editor.endTicks;
@@ -447,21 +447,21 @@
             numNotes = song.numNotes;
             //console.log(startTicks, endTicks);
             hasNextCalled = false;
-            if(editor.paginate === true && sequencer.isPlaying() === true){
+            if (editor.paginate === true && sequencer.isPlaying() === true) {
                 return;
             }
 
-            for(index = 0; index < numNotes; index++){
+            for (index = 0; index < numNotes; index++) {
                 note = notes[index];
                 //console.log(note, note.ticks, startTicks);
-                if(note.ticks >= startTicks){
+                if (note.ticks >= startTicks) {
                     break;
                 }
             }
             index--;
         };
 
-        return{
+        return {
             next: next,
             reset: reset,
             hasNext: hasNext
@@ -469,7 +469,7 @@
     };
 
 
-    Factory.prototype.createPartIterator = function(){
+    Factory.prototype.createPartIterator = function () {
         var index,
             max,
             part,
@@ -479,23 +479,23 @@
             parts = this.parts,
             next, hasNext, reset;
 
-        next = function(type){
+        next = function (type) {
             part = parts[index++];
             part.bbox = editor.getPartRect(part);
             return part;
         };
 
-        hasNext = function(type){
+        hasNext = function (type) {
             return index < max;
         };
 
-        reset = function(){
+        reset = function () {
             parts = song.parts;
             max = song.numParts;
             index = 0;
         };
 
-        return{
+        return {
             next: next,
             reset: reset,
             hasNext: hasNext
@@ -503,14 +503,14 @@
     };
 
 
-    sequencer.protectedScope.createKeyEditorIteratorFactory = function(song, editor){
+    sequencer.protectedScope.createKeyEditorIteratorFactory = function (song, editor) {
         return new Factory(song, editor);
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
         createNote = sequencer.createNote;
         createPlayhead = sequencer.protectedScope.createPlayhead;
     });
 
-}());
+}

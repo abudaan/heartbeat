@@ -1,6 +1,8 @@
-(function(){
+function assetPack() {
 
     'use strict';
+
+    // console.log('AssetPack');
 
     var
         index = 0,
@@ -20,7 +22,7 @@
 
         AssetPack;
 
-    AssetPack = function(config){
+    AssetPack = function (config) {
         this.id = 'AP' + index++ + new Date().getTime();
         this.name = this.id;
         this.className = 'AssetPack';
@@ -30,63 +32,63 @@
         this.instruments = config.instruments || [];
         this.url = config.url;
         var pack = this;
-        objectForEach(config, function(val, key){
+        objectForEach(config, function (val, key) {
             pack[key] = val;
         });
     };
 
 
-    function cleanup(assetpack, callback){
+    function cleanup(assetpack, callback) {
         assetpack = null;
         //console.log(callback.name);
         callback(false);
     }
 
 
-    function store(assetpack){
+    function store(assetpack) {
         var occupied = findItem(assetpack.localPath, sequencer.storage.assetpacks, true),
             action = assetpack.action;
 
         //console.log('occ', occupied);
-        if(occupied && occupied.className === 'AssetPack' && action !== 'overwrite'){
-            if(sequencer.debug >= 2){
+        if (occupied && occupied.className === 'AssetPack' && action !== 'overwrite') {
+            if (sequencer.debug >= 2) {
                 console.warn('there is already an AssetPack at', assetpack.localPath);
             }
             return true;
-        }else{
+        } else {
             storeItem(assetpack, assetpack.localPath, sequencer.storage.assetpacks);
             return false;
         }
     }
 
 
-    function load(pack, callback){
-        if(pack.url !== undefined){
+    function load(pack, callback) {
+        if (pack.url !== undefined) {
             ajax({
                 url: pack.url,
                 responseType: 'json',
-                onError: function(e){
+                onError: function (e) {
                     //console.log('onError', e);
                     cleanup(pack, callback);
                 },
-                onSuccess: function(data, fileSize){
+                onSuccess: function (data, fileSize) {
                     // if the json data is corrupt (for instance because of a trailing comma) data will be null
-                    if(data === null){
+                    if (data === null) {
                         callback(false);
                         return;
                     }
 
                     pack.loaded = true;
 
-                    if(data.name !== undefined && pack.name === undefined){
+                    if (data.name !== undefined && pack.name === undefined) {
                         pack.name = data.name;
                     }
 
-                    if(data.folder !== undefined && pack.folder === undefined){
+                    if (data.folder !== undefined && pack.folder === undefined) {
                         pack.folder = data.folder;
                     }
 
-                    if(pack.name === undefined){
+                    if (pack.name === undefined) {
                         pack.name = parseUrl(pack.url).name;
                     }
 
@@ -95,54 +97,54 @@
                     //pack.fileSize = round(data.length/1024/1024, 2);
                     //console.log(pack.filesize);
 
-                    if(data.instruments){
+                    if (data.instruments) {
                         pack.instruments = pack.instruments.concat(data.instruments);
                     }
-                    if(data.samplepacks){
+                    if (data.samplepacks) {
                         pack.samplepacks = pack.samplepacks.concat(data.samplepacks);
                     }
-                    if(data.midifiles){
+                    if (data.midifiles) {
                         pack.midifiles = pack.midifiles.concat(data.midifiles);
                     }
 
                     loadLoop(pack, callback);
                 }
             });
-        }else{
+        } else {
             pack.localPath = pack.folder !== undefined ? pack.folder + '/' + pack.name : pack.name;
             loadLoop(pack, callback);
         }
     }
 
 
-    function loadLoop(assetpack, callback){
+    function loadLoop(assetpack, callback) {
         var i, assets, asset,
             loaded = store(assetpack),
             localPath = assetpack.localPath;
 
 
-        if(loaded === true){
+        if (loaded === true) {
             assetpack = findItem(localPath, sequencer.storage.assetpacks, true);
             callback(assetpack);
             return;
         }
 
-        if(assetpack.url !== undefined){
+        if (assetpack.url !== undefined) {
             var packs = sequencer.storage.assetpacks,
                 tmp, p, double = null;
 
-            for(p in packs){
+            for (p in packs) {
                 tmp = packs[p];
-                if(tmp.className !== 'AssetPack'){
+                if (tmp.className !== 'AssetPack') {
                     continue;
                 }
                 //console.log('loop', p, assetpack.id);
-                if(tmp.id !== assetpack.id && tmp.url === assetpack.url){
+                if (tmp.id !== assetpack.id && tmp.url === assetpack.url) {
                     double = tmp;
                     break;
                 }
             }
-            if(double !== null){
+            if (double !== null) {
                 //console.log(double.id, assetpack.id);
                 localPath = assetpack.localPath;
                 removeAssetPack(localPath);
@@ -157,7 +159,7 @@
 
 
         assets = assetpack.midifiles;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             //console.log('midifile', assets[i]);
             asset = assets[i];
             asset.pack = assetpack;
@@ -165,7 +167,7 @@
         }
 
         assets = assetpack.instruments;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             //console.log('instrument', assets[i]);
             asset = assets[i];
             asset.pack = assetpack;
@@ -173,7 +175,7 @@
         }
 
         assets = assetpack.samplepacks;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             //console.log('samplepack', assets[i], pack);
             asset = assets[i];
             asset.pack = assetpack;
@@ -185,23 +187,23 @@
     }
 
 
-    AssetPack.prototype.unload = function(){
+    AssetPack.prototype.unload = function () {
         var i, assets, asset;
 
         assets = this.midifiles;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             asset = assets[i];
             removeMidiFile(asset.folder + '/' + asset.name);
         }
 
         assets = this.instruments;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             asset = assets[i];
             removeInstrument(asset.folder + '/' + asset.name);
         }
 
         assets = this.samplepacks;
-        for(i = assets.length - 1; i >= 0; i--){
+        for (i = assets.length - 1; i >= 0; i--) {
             asset = assets[i];
             removeSamplePack(asset.folder + '/' + asset.name);
         }
@@ -210,37 +212,37 @@
     };
 
 
-    sequencer.addAssetPack = function(config, callback){
+    sequencer.addAssetPack = function (config, callback) {
         var type = typeString(config),
             assetpack, json, name, folder;
 
-        if(type !== 'object'){
-            if(sequencer.debug >= 2){
+        if (type !== 'object') {
+            if (sequencer.debug >= 2) {
                 console.warn('can\'t create an AssetPack with this data', config);
             }
             return false;
         }
 
-        if(callback === undefined){
-            callback = function(){};
+        if (callback === undefined) {
+            callback = function () { };
         }
 
-        if(config.json){
+        if (config.json) {
             json = config.json;
             name = config.name;
             folder = config.folder;
-            if(typeString(json) === 'string'){
-                try{
+            if (typeString(json) === 'string') {
+                try {
                     json = JSON.parse(json);
-                }catch(e){
-                    if(sequencer.debug >= 2){
+                } catch (e) {
+                    if (sequencer.debug >= 2) {
                         console.warn('can\'t create an AssetPack with this data', config);
                     }
                     return false;
                 }
             }
-            if(json.instruments === undefined && json.midifiles === undefined && json.samplepacks === undefined){
-                if(sequencer.debug >= 2){
+            if (json.instruments === undefined && json.midifiles === undefined && json.samplepacks === undefined) {
+                if (sequencer.debug >= 2) {
                     console.warn('can\'t create an AssetPack with this data', config);
                 }
                 return false;
@@ -263,7 +265,7 @@
             type: 'load asset pack',
             method: load,
             params: new AssetPack(config)
-        }, function(assetpack){
+        }, function (assetpack) {
             config = null;
             //console.log(assetpack.id);
             callback(assetpack);
@@ -286,7 +288,7 @@
     };
 
 
-    sequencer.protectedScope.addInitMethod(function(){
+    sequencer.protectedScope.addInitMethod(function () {
 
         ajax = sequencer.protectedScope.ajax;
         round = sequencer.protectedScope.round;
@@ -303,6 +305,4 @@
         removeSamplePack = sequencer.removeSamplePack;
         removeAssetPack = sequencer.removeAssetPack;
     });
-
-
-}());
+}

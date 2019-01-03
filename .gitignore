@@ -23,6 +23,8 @@ tools/build_site_page.js
 tools/get_sustainloop.js
 tools/quick_build.sh
 
+npm-debug.log
+
 # parcel
 .cache
 dist
