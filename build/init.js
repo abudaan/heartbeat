@@ -21682,7 +21682,7 @@ function transpose() {
     // sequencer.startTaskQueue();
 }
 
-var version = '0.0.5'
+var version = '0.0.6'
 var label = 'heartbeat ' + version + ', initializing took';
 var sequencer = {
     version: version,
