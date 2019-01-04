@@ -1,6 +1,6 @@
 {
   "name": "heartbeat-sequencer",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "javascript sequencer",
   "main": "./build/init.js",
   "directories": {
@@ -9,7 +9,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd ./tools && ./build.sh",
+    "tmp": "npm run build && cp ./build/init.js ../drumpad/node_modules/heartbeat-sequencer/build && cp ./package.json ../drumpad/node_modules/heartbeat-sequencer"
   },
   "repository": {
     "type": "git",

@@ -299,7 +299,7 @@ if (typeof module !== "undefined" && module !== null) {
 }
 
 */var sequencer;
-var version = '0.0.8';
+import { version } from '../package.json';
 
 function openModule() {
 
@@ -422,7 +422,7 @@ function openModule() {
         ready: function (cb) {
             console.info('this method has been deprecated; you can directly access the sequencer object');
             cb();
-        },    
+        },
         protectedScope: protectedScope,
         ui: {},
         ua: ua,
@@ -16091,7 +16091,9 @@ function songEventListener() {
 
         for (i = tmp.length - 1; i >= 0; i--) {
             listener = tmp[i];
-            listener.callback.apply(null, params);
+            if(listener.callback) {
+                listener.callback.apply(null, params);
+            }
         }
     };
 

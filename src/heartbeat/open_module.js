@@ -1,5 +1,5 @@
 var sequencer;
-var version = '0.0.8';
+import { version } from '../package.json';
 
 function openModule() {
 
@@ -122,7 +122,7 @@ function openModule() {
         ready: function (cb) {
             console.info('this method has been deprecated; you can directly access the sequencer object');
             cb();
-        },    
+        },
         protectedScope: protectedScope,
         ui: {},
         ua: ua,

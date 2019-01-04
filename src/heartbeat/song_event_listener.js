@@ -41,7 +41,9 @@ function songEventListener() {
 
         for (i = tmp.length - 1; i >= 0; i--) {
             listener = tmp[i];
-            listener.callback.apply(null, params);
+            if(listener.callback) {
+                listener.callback.apply(null, params);
+            }
         }
     };
 

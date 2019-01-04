@@ -333,14 +333,14 @@ function song() {
             track.instrument.song = song;
             track.quantizeValue = song.quantizeValue;
             track.connect(song.gainNode);
-            /*
-                        // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
-                        //console.log(song.midiInputs);
-                        objectForEach(song.midiInputs, function(port){
-                            //console.log(port.id);
-                            track.setMidiInput(port.id, true);
-                        });
-            */
+/*
+            // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
+            //console.log(song.midiInputs);
+            objectForEach(song.midiInputs, function(port){
+                //console.log(port.id);
+                track.setMidiInput(port.id, true);
+            });
+*/
 
             track.state = 'new';
             track.needsUpdate = true;
