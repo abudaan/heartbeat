@@ -3,6 +3,8 @@ function closeModule(cb) {
     'use strict';
 
     var
+        ready = false,
+        readyCallbacks = [],
         context,
         initMidi,
         base64ToBinary;
@@ -12,6 +14,16 @@ function closeModule(cb) {
     initMidi = sequencer.protectedScope.initMidi; // defined in midi_system.js
     base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
     delete sequencer.protectedScope; //seal
+
+    sequencer.ready = function () {
+        return new Promise(resolve => {
+            if (ready === true) {
+                resolve();
+            } else {
+                readyCallbacks.push(resolve);
+            }
+        })
+    };
 
     sequencer.addInstrument({
         name: 'sinewave',
@@ -55,8 +67,13 @@ function closeModule(cb) {
         method: initMidi,
         params: []
     }, function () {
-        sequencer.initialized = true;  
-        console.timeEnd(label);
+        // setTimeout(function() {
+            readyCallbacks.forEach(function (cb) {
+                cb();
+            });
+            ready = true;
+            console.timeEnd(label);
+        // }, 4000)
     }, false); // @TODO: check this true | false
 
     // sequencer.startTaskQueue();
@@ -64,7 +81,7 @@ function closeModule(cb) {
 
 var label = 'heartbeat ' + version + ', initializing took';
 
-function initSequencer () {
+function initSequencer() {
     console.time(label);
     openModule();
     assetManager();

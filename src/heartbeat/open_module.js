@@ -118,11 +118,6 @@ function openModule() {
     sequencer = {
         name: 'qambi',
         version: version,
-        initialized: false,
-        ready: function (cb) {
-            console.info('this method has been deprecated; you can directly access the sequencer object');
-            cb();
-        },
         protectedScope: protectedScope,
         ui: {},
         ua: ua,

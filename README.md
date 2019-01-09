@@ -21,6 +21,8 @@ or:
 ```javascript
 import sequencer from './build/heartbeat';
 
+await sequencer.ready();
+
 const events = sequencer.util.getRandomNotes({
     minNoteNumber: 60,
     maxNoteNumber: 100,
@@ -44,6 +46,44 @@ document.addEventListener('click', () => {
         song.play();
     }
 });
+
+```
+
+or:
+
+```javascript
+import sequencer from './build/heartbeat';
+
+sequencer
+.ready()
+.then(init);
+
+const init = () => {
+    const events = sequencer.util.getRandomNotes({
+        minNoteNumber: 60,
+        maxNoteNumber: 100,
+        minVelocity: 30,
+        maxVelocity: 80,
+        numNotes: 60
+    });
+        
+    const part = sequencer.createPart();
+    part.addEvents(events);
+
+    const song = sequencer.createSong({
+        parts: part,
+        useMetronome: true
+    });
+
+    document.addEventListener('click', () => {   
+        if (song.isPlaying) {
+            song.pause();
+        } else {
+            song.play();
+        }
+    });
+}
+
 
 ```
 

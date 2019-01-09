@@ -428,13 +428,13 @@ function keyEditor() {
     KeyEditor.prototype.gotoPage = function (n) {
         console.warn('ooops, not implemented yet!');
         return;
-        n = n - 1;
-        if (n < 0 || n > this.lastPage) {
-            return;
-        }
-        this.pageNo = n;
-        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
-        setPageData(this, this.pageNo);
+        // n = n - 1;
+        // if (n < 0 || n > this.lastPage) {
+        //     return;
+        // }
+        // this.pageNo = n;
+        // dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
+        // setPageData(this, this.pageNo);
     };
 
 

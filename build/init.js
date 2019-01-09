@@ -418,11 +418,6 @@ function openModule() {
     sequencer = {
         name: 'qambi',
         version: version,
-        initialized: false,
-        ready: function (cb) {
-            console.info('this method has been deprecated; you can directly access the sequencer object');
-            cb();
-        },
         protectedScope: protectedScope,
         ui: {},
         ua: ua,
@@ -4982,13 +4977,13 @@ function keyEditor() {
     KeyEditor.prototype.gotoPage = function (n) {
         console.warn('ooops, not implemented yet!');
         return;
-        n = n - 1;
-        if (n < 0 || n > this.lastPage) {
-            return;
-        }
-        this.pageNo = n;
-        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
-        setPageData(this, this.pageNo);
+        // n = n - 1;
+        // if (n < 0 || n > this.lastPage) {
+        //     return;
+        // }
+        // this.pageNo = n;
+        // dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
+        // setPageData(this, this.pageNo);
     };
 
 
@@ -8469,10 +8464,14 @@ function midiSystem() {
                     }
                     midiAccess = midi;
                     midiAccess.onstatechange = getDevices;
-                    getDevices();
-                    //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
-
-                    cb();
+                    if (!midiAccess.inputs || !midiAccess.outputs) {
+                        // Firefox WebMIDI API support is still in progress
+                        cb();
+                    } else {
+                        getDevices();
+                        //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);    
+                        cb();
+                    }
                 },
                 // on error
                 function midiAccessOnError(e) {
@@ -14426,14 +14425,14 @@ function song() {
             track.instrument.song = song;
             track.quantizeValue = song.quantizeValue;
             track.connect(song.gainNode);
-            /*
-                        // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
-                        //console.log(song.midiInputs);
-                        objectForEach(song.midiInputs, function(port){
-                            //console.log(port.id);
-                            track.setMidiInput(port.id, true);
-                        });
-            */
+/*
+            // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
+            //console.log(song.midiInputs);
+            objectForEach(song.midiInputs, function(port){
+                //console.log(port.id);
+                track.setMidiInput(port.id, true);
+            });
+*/
 
             track.state = 'new';
             track.needsUpdate = true;
@@ -21634,6 +21633,8 @@ function transpose() {
     'use strict';
 
     var
+        ready = false,
+        readyCallbacks = [],
         context,
         initMidi,
         base64ToBinary;
@@ -21643,6 +21644,17 @@ function transpose() {
     initMidi = sequencer.protectedScope.initMidi; // defined in midi_system.js
     base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
     delete sequencer.protectedScope; //seal
+
+    sequencer.ready = function () {
+        return new Promise(resolve => {
+            if (ready === true) {
+                resolve();
+            } else {
+                console.log('here I am');
+                readyCallbacks.push(resolve);
+            }
+        })
+    };
 
     sequencer.addInstrument({
         name: 'sinewave',
@@ -21686,8 +21698,13 @@ function transpose() {
         method: initMidi,
         params: []
     }, function () {
-        sequencer.initialized = true;  
-        console.timeEnd(label);
+        // setTimeout(function() {
+            readyCallbacks.forEach(function (cb) {
+                cb();
+            });
+            ready = true;
+            console.timeEnd(label);
+        // }, 4000)
     }, false); // @TODO: check this true | false
 
     // sequencer.startTaskQueue();
@@ -21695,7 +21712,7 @@ function transpose() {
 
 var label = 'heartbeat ' + version + ', initializing took';
 
-function initSequencer () {
+function initSequencer() {
     console.time(label);
     openModule();
     assetManager();

@@ -44,10 +44,14 @@ function midiSystem() {
                     }
                     midiAccess = midi;
                     midiAccess.onstatechange = getDevices;
-                    getDevices();
-                    //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);
-
-                    cb();
+                    if (!midiAccess.inputs || !midiAccess.outputs) {
+                        // Firefox WebMIDI API support is still in progress
+                        cb();
+                    } else {
+                        getDevices();
+                        //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);    
+                        cb();
+                    }
                 },
                 // on error
                 function midiAccessOnError(e) {
