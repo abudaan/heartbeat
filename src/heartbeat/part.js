@@ -292,8 +292,8 @@ function part() {
             if (event === false) {
                 continue;
             }
-            //console.log('removing event', e);
-            if (event.part !== part) {
+            // console.log('removing event', e);
+            if (event.part !== part && event.part !== null) {
                 console.warn('can\'t remove: this event belongs to part', event.part.id);
                 continue;
             }

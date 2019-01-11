@@ -367,6 +367,9 @@ function openModule() {
         }
     } else if (window.webkitAudioContext) {
         context = new window.webkitAudioContext();
+        if (context.createGainNode === undefined) {
+            context.createGainNode = context.createGain;
+        }
     } else {
         //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
         throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
@@ -10502,8 +10505,8 @@ function part() {
             if (event === false) {
                 continue;
             }
-            //console.log('removing event', e);
-            if (event.part !== part) {
+            // console.log('removing event', e);
+            if (event.part !== part && event.part !== null) {
                 console.warn('can\'t remove: this event belongs to part', event.part.id);
                 continue;
             }
@@ -17617,6 +17620,7 @@ function songUpdate() {
             return;
         }
         //console.log('not here while playing');
+        // console.log('update song');
         update2(song, updateTimeEvents);
     };
 
@@ -17677,7 +17681,7 @@ function songUpdate() {
 
                 track = song.tracksById[id1];
 
-                //console.log('song update', track.needsUpdate);
+                // console.log('song update track', track.needsUpdate);
 
                 if (track.needsUpdate === true) {
                     track.update();
@@ -17688,10 +17692,10 @@ function songUpdate() {
                     if (track.partsById.hasOwnProperty(id2)) {
 
                         part = track.partsById[id2];
-                        //console.log(part.id, part.needsUpdate, part.dirtyEvents);
+                        // console.log(part.id, part.needsUpdate, part.dirtyEvents);
 
                         if (part.needsUpdate === true) {
-                            //console.log('song update calls part.update()');
+                            // console.log('song update calls part.update()');
                             part.update();
                         }
 
@@ -18624,6 +18628,7 @@ function track() {
             //}
 
             partsById[part.id] = part;
+            // console.log('partsById', partsById);
         }
 
         track.needsUpdate = true;
@@ -18740,7 +18745,7 @@ function track() {
 
         for (i = tobeRemoved.length - 1; i >= 0; i--) {
             event = tobeRemoved[i];
-            if (event.track !== undefined && event.track !== track) {
+            if (event.track !== undefined && event.track !== null && event.track !== track) {
                 console.warn('can\'t remove: this event belongs to track', event.track.id);
                 continue;
             }
@@ -21650,7 +21655,6 @@ function transpose() {
             if (ready === true) {
                 resolve();
             } else {
-                console.log('here I am');
                 readyCallbacks.push(resolve);
             }
         })

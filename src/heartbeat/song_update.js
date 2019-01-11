@@ -23,6 +23,7 @@ function songUpdate() {
             return;
         }
         //console.log('not here while playing');
+        // console.log('update song');
         update2(song, updateTimeEvents);
     };
 
@@ -83,7 +84,7 @@ function songUpdate() {
 
                 track = song.tracksById[id1];
 
-                //console.log('song update', track.needsUpdate);
+                // console.log('song update track', track.needsUpdate);
 
                 if (track.needsUpdate === true) {
                     track.update();
@@ -94,10 +95,10 @@ function songUpdate() {
                     if (track.partsById.hasOwnProperty(id2)) {
 
                         part = track.partsById[id2];
-                        //console.log(part.id, part.needsUpdate, part.dirtyEvents);
+                        // console.log(part.id, part.needsUpdate, part.dirtyEvents);
 
                         if (part.needsUpdate === true) {
-                            //console.log('song update calls part.update()');
+                            // console.log('song update calls part.update()');
                             part.update();
                         }
 

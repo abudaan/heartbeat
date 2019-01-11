@@ -370,6 +370,7 @@ function track() {
             //}
 
             partsById[part.id] = part;
+            // console.log('partsById', partsById);
         }
 
         track.needsUpdate = true;
@@ -486,7 +487,7 @@ function track() {
 
         for (i = tobeRemoved.length - 1; i >= 0; i--) {
             event = tobeRemoved[i];
-            if (event.track !== undefined && event.track !== track) {
+            if (event.track !== undefined && event.track !== null && event.track !== track) {
                 console.warn('can\'t remove: this event belongs to track', event.track.id);
                 continue;
             }
