@@ -586,7 +586,7 @@ function instrument() {
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
     Instrument.prototype.processEvent = function (midiEvent) {
-        //console.log(midiEvent.type + ' : ' + midiEvent.velocity);
+        // console.log(midiEvent.type + ' : ' + midiEvent.velocity, midiEvent.time);
         var type = midiEvent.type,
             data1, data2, track, output;
 
@@ -691,10 +691,10 @@ function instrument() {
 
         sourceId = midiEvent.midiNote.id;
         sample = this.scheduledSamples[sourceId];
-        //console.log('start', sourceId);
+        // console.log('start', sourceId);
 
         if (sample !== undefined) {
-            //console.log('already scheduled', sourceId);
+            // console.log('already scheduled', sourceId);
             sample.unschedule(0);
         }
 

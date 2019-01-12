@@ -3896,7 +3896,7 @@ function eventStatistics() {
 
     // called when midi events arrive from a midi input, from processEvent or from the scheduler
     Instrument.prototype.processEvent = function (midiEvent) {
-        //console.log(midiEvent.type + ' : ' + midiEvent.velocity);
+        // console.log(midiEvent.type + ' : ' + midiEvent.velocity, midiEvent.time);
         var type = midiEvent.type,
             data1, data2, track, output;
 
@@ -4001,10 +4001,10 @@ function eventStatistics() {
 
         sourceId = midiEvent.midiNote.id;
         sample = this.scheduledSamples[sourceId];
-        //console.log('start', sourceId);
+        // console.log('start', sourceId);
 
         if (sample !== undefined) {
-            //console.log('already scheduled', sourceId);
+            // console.log('already scheduled', sourceId);
             sample.unschedule(0);
         }
 
@@ -7577,6 +7577,7 @@ function midiFile() {
             }
 
             //console.log('NOTE ON', numNoteOn, 'NOTE OFF', numNoteOff, 'OTHER', numOther);
+            // console.log('PARSED', parsed);
             if (parsed.length > 0) {
                 track.addPart(part);
                 part.addEvents(parsed);
@@ -12236,7 +12237,7 @@ function sample() {
 
     // called on a NOTE ON event
     Sample.prototype.start = function (event) {
-        //console.log('NOTE ON', event.velocity, legacy);
+        // console.log('NOTE ON', event.velocity, legacy);
         if (this.source !== undefined) {
             console.error('this should never happen');
             return;
@@ -12323,25 +12324,35 @@ function sample() {
             this.output.gain.cancelScheduledValues(0);
             this.output.gain.linearRampToValueAtTime(0, now + fadeOut / 1000); // fade out in seconds
 
-            timedTasks['unschedule_' + this.id] = {
-                time: now + fadeOut / 1000,
-                execute: function () {
-                    if (!sample) {
-                        console.log('sample is gone');
-                        return;
-                    }
-                    if (sample.panner) {
-                        sample.panner.node.disconnect(0);
-                    }
-                    if (sample.source !== undefined) {
-                        sample.source.disconnect(0);
-                        sample.source = undefined;
-                    }
-                    if (cb) {
+            if (fadeOut === 0) {
+                if (sample.source !== undefined) {
+                    sample.source.disconnect(0);
+                    sample.source = undefined;
+                    if (typeof cb === 'function') {
                         cb(sample);
                     }
                 }
-            };
+            } else {
+                timedTasks['unschedule_' + this.id] = {
+                    time: now + fadeOut / 1000,
+                    execute: function () {
+                        if (!sample) {
+                            console.log('sample is gone');
+                            return;
+                        }
+                        if (sample.panner) {
+                            sample.panner.node.disconnect(0);
+                        }
+                        if (sample.source !== undefined) {
+                            sample.source.disconnect(0);
+                            sample.source = undefined;
+                        }
+                        if (cb) {
+                            cb(sample);
+                        }
+                    }
+                };
+            }
         } catch (e) {
             // firefox gives sometimes an error "SyntaxError: An invalid or illegal string was specified"
             console.log(e);
@@ -13030,6 +13041,7 @@ function samplePack() {
     var
         typeString, // defined in util.js
         objectForEach, // defined in util.js
+        context,
 
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
         //bufferTime = sequencer.bufferTime * 1000,
@@ -13237,7 +13249,12 @@ function samplePack() {
                 break;
             }
         }
-
+        // const f = events.filter(e => e.type === 144).map(e => e.time);
+        // if (f.length > 0) {
+        //     console.log(Math.round(context.currentTime * 1000000) / 1000);
+        //     console.log(f);
+        //     console.log('---');
+        // }
         return events;
     };
 
@@ -13282,10 +13299,13 @@ function samplePack() {
             event = events[i];
             track = event.track;
             //console.log(track);
-            //console.log(event.ticks, event.track.type)
+            // console.log(event.ticks, event.track.type, event.muted)
+            // if(event.muted !== true && event.track.type !== 'metronome') {
+            //     console.log(event.type, event.ticks, event.noteNumber, event.track.type, this.song.useMetronome);
+            // }
             if (
                 track === undefined ||
-                event.mute === true ||
+                event.muted === true ||
                 event.part.mute === true ||
                 event.track.mute === true ||
                 (event.track.type === 'metronome' && this.song.useMetronome === false)
@@ -13376,6 +13396,7 @@ function samplePack() {
     };
 
     sequencer.protectedScope.addInitMethod(function () {
+        context = sequencer.protectedScope.context;
         typeString = sequencer.protectedScope.typeString;
         objectForEach = sequencer.protectedScope.objectForEach;
     });
@@ -15589,7 +15610,7 @@ function song() {
             ticks = this.ticks,
             i, event, position;
 
-        //console.log(events);
+        // console.log(events);
 
         for (i = events.length - 1; i >= 0; i--) {
             event = events[i];

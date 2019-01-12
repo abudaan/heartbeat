@@ -107,7 +107,7 @@ function sample() {
 
     // called on a NOTE ON event
     Sample.prototype.start = function (event) {
-        //console.log('NOTE ON', event.velocity, legacy);
+        // console.log('NOTE ON', event.velocity, legacy);
         if (this.source !== undefined) {
             console.error('this should never happen');
             return;
@@ -194,25 +194,35 @@ function sample() {
             this.output.gain.cancelScheduledValues(0);
             this.output.gain.linearRampToValueAtTime(0, now + fadeOut / 1000); // fade out in seconds
 
-            timedTasks['unschedule_' + this.id] = {
-                time: now + fadeOut / 1000,
-                execute: function () {
-                    if (!sample) {
-                        console.log('sample is gone');
-                        return;
-                    }
-                    if (sample.panner) {
-                        sample.panner.node.disconnect(0);
-                    }
-                    if (sample.source !== undefined) {
-                        sample.source.disconnect(0);
-                        sample.source = undefined;
-                    }
-                    if (cb) {
+            if (fadeOut === 0) {
+                if (sample.source !== undefined) {
+                    sample.source.disconnect(0);
+                    sample.source = undefined;
+                    if (typeof cb === 'function') {
                         cb(sample);
                     }
                 }
-            };
+            } else {
+                timedTasks['unschedule_' + this.id] = {
+                    time: now + fadeOut / 1000,
+                    execute: function () {
+                        if (!sample) {
+                            console.log('sample is gone');
+                            return;
+                        }
+                        if (sample.panner) {
+                            sample.panner.node.disconnect(0);
+                        }
+                        if (sample.source !== undefined) {
+                            sample.source.disconnect(0);
+                            sample.source = undefined;
+                        }
+                        if (cb) {
+                            cb(sample);
+                        }
+                    }
+                };
+            }
         } catch (e) {
             // firefox gives sometimes an error "SyntaxError: An invalid or illegal string was specified"
             console.log(e);

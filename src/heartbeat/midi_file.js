@@ -254,6 +254,7 @@ function midiFile() {
             }
 
             //console.log('NOTE ON', numNoteOn, 'NOTE OFF', numNoteOff, 'OTHER', numOther);
+            // console.log('PARSED', parsed);
             if (parsed.length > 0) {
                 track.addPart(part);
                 part.addEvents(parsed);

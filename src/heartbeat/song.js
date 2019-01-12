@@ -1494,7 +1494,7 @@ function song() {
             ticks = this.ticks,
             i, event, position;
 
-        //console.log(events);
+        // console.log(events);
 
         for (i = events.length - 1; i >= 0; i--) {
             event = events[i];

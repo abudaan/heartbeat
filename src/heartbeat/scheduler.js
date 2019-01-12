@@ -5,6 +5,7 @@ function scheduler() {
     var
         typeString, // defined in util.js
         objectForEach, // defined in util.js
+        context,
 
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
         //bufferTime = sequencer.bufferTime * 1000,
@@ -212,7 +213,12 @@ function scheduler() {
                 break;
             }
         }
-
+        // const f = events.filter(e => e.type === 144).map(e => e.time);
+        // if (f.length > 0) {
+        //     console.log(Math.round(context.currentTime * 1000000) / 1000);
+        //     console.log(f);
+        //     console.log('---');
+        // }
         return events;
     };
 
@@ -256,11 +262,9 @@ function scheduler() {
         for (i = 0; i < numEvents; i++) {
             event = events[i];
             track = event.track;
-            //console.log(track);
-            //console.log(event.ticks, event.track.type)
             if (
                 track === undefined ||
-                event.mute === true ||
+                event.muted === true ||
                 event.part.mute === true ||
                 event.track.mute === true ||
                 (event.track.type === 'metronome' && this.song.useMetronome === false)
@@ -351,6 +355,7 @@ function scheduler() {
     };
 
     sequencer.protectedScope.addInitMethod(function () {
+        context = sequencer.protectedScope.context;
         typeString = sequencer.protectedScope.typeString;
         objectForEach = sequencer.protectedScope.objectForEach;
     });
