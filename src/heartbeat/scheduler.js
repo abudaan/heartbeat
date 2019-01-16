@@ -262,6 +262,9 @@ function scheduler() {
         for (i = 0; i < numEvents; i++) {
             event = events[i];
             track = event.track;
+            // if(event.muted) {
+            //     console.log(event.ticks, event.noteNumber);
+            // }
             if (
                 track === undefined ||
                 event.muted === true ||

@@ -62,19 +62,18 @@ function openModule() {
 
     if (window.AudioContext) {
         context = new window.AudioContext();
-        if (context.createGainNode === undefined) {
+        if (typeof context.createGainNode !== 'function') {
             context.createGainNode = context.createGain;
         }
     } else if (window.webkitAudioContext) {
         context = new window.webkitAudioContext();
-        if (context.createGainNode === undefined) {
+        if (typeof context.createGainNode !== 'function') {
             context.createGainNode = context.createGain;
         }
     } else {
         //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
         throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
     }
-
 
     compressor = context.createDynamicsCompressor();
     compressor.connect(context.destination);
