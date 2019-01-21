@@ -1211,7 +1211,7 @@ function assetPack() {
             params: new AssetPack(config)
         }, function (assetpack) {
             config = null;
-            //console.log(assetpack.id);
+            // console.log(assetpack.id);
             callback(assetpack);
             //console.log('assetpack', assetpack);
         }, true);
@@ -8662,7 +8662,7 @@ function midiSystem() {
             // set track.monitor to false if you don't want to receive midi events on a certain track
             // note that track.monitor is by default set to false and that track.monitor is automatically set to true
             // if you are recording on that track
-            //console.log(track.monitor, track.id, input.id);
+            // console.log(track.monitor, track.id, input.id);
             if (track.monitor === true && track.midiInputs[input.id] !== undefined) {
                 handleMidiMessageTrack(midiEvent, track, input);
             }
@@ -13310,7 +13310,6 @@ function samplePack() {
                 continue;
             }
 
-            event.time += track.audioLatency
 
             if (event.type === 'audio') {
                 event.time /= 1000;
@@ -13332,10 +13331,10 @@ function samplePack() {
                     }
                     objectForEach(track.midiOutputs, function (midiOutput) {
                         if (event.type === 128 || event.type === 144 || event.type === 176) {
-                            //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
+                            // midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency);
                         } else if (event.type === 192 || event.type === 224) {
-                            midiOutput.send([event.type + channel, event.data1], event.time);
+                            midiOutput.send([event.type + channel, event.data1], event.time + track.audioLatency);
                         }
                     });
                     // needed for Song.resetExternalMidiDevices()

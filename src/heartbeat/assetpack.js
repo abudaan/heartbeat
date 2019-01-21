@@ -267,7 +267,7 @@ function assetPack() {
             params: new AssetPack(config)
         }, function (assetpack) {
             config = null;
-            //console.log(assetpack.id);
+            // console.log(assetpack.id);
             callback(assetpack);
             //console.log('assetpack', assetpack);
         }, true);

@@ -239,7 +239,7 @@ function midiSystem() {
             // set track.monitor to false if you don't want to receive midi events on a certain track
             // note that track.monitor is by default set to false and that track.monitor is automatically set to true
             // if you are recording on that track
-            //console.log(track.monitor, track.id, input.id);
+            // console.log(track.monitor, track.id, input.id);
             if (track.monitor === true && track.midiInputs[input.id] !== undefined) {
                 handleMidiMessageTrack(midiEvent, track, input);
             }

@@ -275,7 +275,6 @@ function scheduler() {
                 continue;
             }
 
-            event.time += track.audioLatency
 
             if (event.type === 'audio') {
                 event.time /= 1000;
@@ -297,10 +296,10 @@ function scheduler() {
                     }
                     objectForEach(track.midiOutputs, function (midiOutput) {
                         if (event.type === 128 || event.type === 144 || event.type === 176) {
-                            //midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time);
+                            // midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency);
                         } else if (event.type === 192 || event.type === 224) {
-                            midiOutput.send([event.type + channel, event.data1], event.time);
+                            midiOutput.send([event.type + channel, event.data1], event.time + track.audioLatency);
                         }
                     });
                     // needed for Song.resetExternalMidiDevices()
