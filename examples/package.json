@@ -1,0 +1,6 @@
+{
+  "name": "heartbeat-sequencer-examples",
+  "dependencies": {
+    "heartbeat-sequencer": "file:../build"
+  }
+}

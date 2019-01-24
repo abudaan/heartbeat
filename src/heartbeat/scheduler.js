@@ -6,6 +6,7 @@ function scheduler() {
         typeString, // defined in util.js
         objectForEach, // defined in util.js
         context,
+        getTimeDiff,
 
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
         //bufferTime = sequencer.bufferTime * 1000,
@@ -18,6 +19,7 @@ function scheduler() {
         this.looped = false;
         this.notes = {};
         this.audioEvents = {};
+        this.timeDiff = getTimeDiff();
     };
 
 
@@ -229,7 +231,9 @@ function scheduler() {
             numEvents,
             events,
             track,
-            channel;
+            channel,
+            // timeDiff = this.timeDiff;
+            timeDiff = getTimeDiff();
 
         this.prevMaxtime = this.maxtime;
 
@@ -243,7 +247,6 @@ function scheduler() {
                 this.songMillis = 0;//this.song.millis;
                 this.maxtime = this.song.millis + (sequencer.bufferTime * 1000);
                 this.startTime = this.song.startTime;
-                this.startTime2 = this.song.startTime2;
                 this.songStartMillis = this.song.startMillis;
                 events = this.getEvents();
             }
@@ -251,7 +254,6 @@ function scheduler() {
             this.songMillis = this.song.millis;
             this.maxtime = this.songMillis + (sequencer.bufferTime * 1000);
             this.startTime = this.song.startTime;
-            this.startTime2 = this.song.startTime2;
             this.songStartMillis = this.song.startMillis;
             events = this.getEvents();
         }
@@ -297,7 +299,8 @@ function scheduler() {
                     objectForEach(track.midiOutputs, function (midiOutput) {
                         if (event.type === 128 || event.type === 144 || event.type === 176) {
                             // midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency);
+                            // console.log(context.currentTime, performance.now(), timeDiff, event.time + track.audioLatency);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency + timeDiff);
                         } else if (event.type === 192 || event.type === 224) {
                             midiOutput.send([event.type + channel, event.data1], event.time + track.audioLatency);
                         }
@@ -357,6 +360,7 @@ function scheduler() {
     };
 
     sequencer.protectedScope.addInitMethod(function () {
+        getTimeDiff = sequencer.getTimeDiff;
         context = sequencer.protectedScope.context;
         typeString = sequencer.protectedScope.typeString;
         objectForEach = sequencer.protectedScope.objectForEach;

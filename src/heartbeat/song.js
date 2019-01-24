@@ -1017,14 +1017,6 @@ function song() {
         this.scheduler.firstRun = true;
         this.timeStamp = sequencer.getTime() * 1000;
         this.startTime = this.timeStamp;
-        try {
-            this.startTime2 = window.performance.now();
-            //this.startTime2 = undefined;
-        } catch (e) {
-            if (sequencer.debug) {
-                console.log('window.performance.now() not supported');
-            }
-        }
 
         if (this.playing) {
             this.allNotesOff();

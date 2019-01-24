@@ -176,6 +176,12 @@ function openModule() {
 
         getTime: function () {
             return context.currentTime;
+            return performance.now() / 1000;
+        },
+
+        getTimeDiff: function () {
+            var contextTime = context.currentTime * 1000;
+            return performance.now() - contextTime;
         },
 
         setMasterVolume: function (value) {
