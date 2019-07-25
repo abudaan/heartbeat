@@ -1,0 +1,11 @@
+{
+  "name": "heartbeat-sequencer",
+  "version": "13.0.2",
+  "description": "groovy 3 version",
+  "main": "./index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
