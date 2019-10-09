@@ -1,153 +1,234 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>heartbeat | examples</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-    <link rel="stylesheet" type="text/css" href="../fonts/fonts.css">
-    <link rel="stylesheet" type="text/css" href="css/reset.css">
-    <link rel="stylesheet" type="text/css" href="css/index_page.css">
-    <script src="js/index_page.js"></script>
-    <script>
-      if(window.location.hostname === 'abudaan.github.io'){
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-        ga('create', 'UA-5081547-9', 'heartbeatjs.org');
-        ga('require', 'displayfeatures');
-        ga('require', 'linkid', 'linkid.js');
-        ga('send', 'pageview');
-      }
-    </script>
+<head>
+  <meta charset="utf-8">
+  <title>heartbeat | examples</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <link rel="stylesheet" type="text/css" href="../fonts/fonts.css">
+  <link rel="stylesheet" type="text/css" href="css/reset.css">
+  <link rel="stylesheet" type="text/css" href="css/index_page.css">
+  <script src="js/index_page.js"></script>
 </head>
+
 <body>
-    <div id="side">
-      <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
-      <nav>
-<ul>
-	<li><h3>audio</h3><ul>
-		<li class="active" id="audio:add_audio_events" class="label"><span>add audio events</span></li>
-		<li class="active" id="audio:add_audio_events_simple" class="label"><span>add audio events simple</span></li>
-		<li class="active" id="audio:decode_audio_test" class="label"><span>decode audio test</span></li>
-		<li class="active" id="audio:record_audio" class="label"><span>record audio</span></li>
-	</ul></li>
-	<li><h3>instrument</h3><ul>
-		<li class="active" id="instrument:panning_change" class="label"><span>panning change</span></li>
-		<li class="active" id="instrument:set_release" class="label"><span>set release</span></li>
-		<li class="active" id="instrument:transpose" class="label"><span>transpose</span></li>
-		<li class="active" id="instrument:volume_change" class="label"><span>volume change</span></li>
-	</ul></li>
-	<li><h3>key editor</h3><ul>
-		<li class="active" id="key_editor:editor" class="label"><span>editor</span></li>
-		<li class="active" id="key_editor:snap_notes" class="label"><span>snap notes</span></li>
-		<li class="active" id="key_editor:snap_parts" class="label"><span>snap parts</span></li>
-	</ul></li>
-	<li><h3>managing assets</h3><ul>
-		<li><h4>1. midi files</h4><ul>
-			<li class="active" id="managing_assets:1._midi_files:blob_arraybuffer_base64" class="label"><span>blob arraybuffer base64</span></li>
-			<li class="active" id="managing_assets:1._midi_files:from_binary" class="label"><span>from binary</span></li>
-			<li class="active" id="managing_assets:1._midi_files:from_binary_2" class="label"><span>from binary 2</span></li>
-			<li class="active" id="managing_assets:1._midi_files:from_local_file" class="label"><span>from local file</span></li>
-			<li class="active" id="managing_assets:1._midi_files:from_local_json" class="label"><span>from local json</span></li>
-			<li class="active" id="managing_assets:1._midi_files:from_remote_json" class="label"><span>from remote json</span></li>
-		</ul></li>
-		<li><h4>2. instruments</h4><ul>
-			<li class="active" id="managing_assets:2._instruments:from_local_json" class="label"><span>from local json</span></li>
-			<li class="active" id="managing_assets:2._instruments:from_remote_json" class="label"><span>from remote json</span></li>
-			<li class="active" id="managing_assets:2._instruments:new_version" class="label"><span>new version</span></li>
-			<li class="active" id="managing_assets:2._instruments:new_version_urls" class="label"><span>new version urls</span></li>
-			<li class="active" id="managing_assets:2._instruments:unload" class="label"><span>unload</span></li>
-			<li class="active" id="managing_assets:2._instruments:unload_2" class="label"><span>unload 2</span></li>
-		</ul></li>
-		<li><h4>3. sample packs</h4><ul>
-			<li class="active" id="managing_assets:3._sample_packs:append_to_sample_pack" class="label"><span>append to sample pack</span></li>
-			<li class="active" id="managing_assets:3._sample_packs:append_to_sample_pack_2" class="label"><span>append to sample pack 2</span></li>
-			<li class="active" id="managing_assets:3._sample_packs:from_local_json" class="label"><span>from local json</span></li>
-			<li class="active" id="managing_assets:3._sample_packs:from_remote_json" class="label"><span>from remote json</span></li>
-		</ul></li>
-		<li><h4>4. asset packs</h4><ul>
-			<li class="active" id="managing_assets:4._asset_packs:from_remote_json" class="label"><span>from remote json</span></li>
-			<li class="active" id="managing_assets:4._asset_packs:unload" class="label"><span>unload</span></li>
-		</ul></li>
-		<li class="active" id="managing_assets:find_item" class="label"><span>find item</span></li>
-		<li class="active" id="managing_assets:find_item_2" class="label"><span>find item 2</span></li>
-		<li class="active" id="managing_assets:load_+_unload_test" class="label"><span>load + unload test</span></li>
-		<li class="active" id="managing_assets:load_+_unload_test_2" class="label"><span>load + unload test 2</span></li>
-	</ul></li>
-	<li><h3>midi in & out</h3><ul>
-		<li class="active" id="midi_in_&_out:midi_in" class="label"><span>midi in</span></li>
-		<li class="active" id="midi_in_&_out:midi_out_file" class="label"><span>midi out file</span></li>
-		<li class="active" id="midi_in_&_out:midi_out_file_sync" class="label"><span>midi out file sync</span></li>
-		<li class="active" id="midi_in_&_out:midi_out_live" class="label"><span>midi out live</span></li>
-		<li class="active" id="midi_in_&_out:midi_record" class="label"><span>midi record</span></li>
-		<li class="active" id="midi_in_&_out:quantize" class="label"><span>quantize</span></li>
-		<li class="active" id="midi_in_&_out:show_midi_devices" class="label"><span>show midi devices</span></li>
-		<li class="active" id="midi_in_&_out:song_midieventlistener" class="label"><span>song midieventlistener</span></li>
-		<li class="active" id="midi_in_&_out:song_set_midiports" class="label"><span>song set midiports</span></li>
-		<li class="active" id="midi_in_&_out:sustain_pedal" class="label"><span>sustain pedal</span></li>
-		<li class="active" id="midi_in_&_out:track_midieventlistener" class="label"><span>track midieventlistener</span></li>
-		<li class="active" id="midi_in_&_out:track_set_midiports" class="label"><span>track set midiports</span></li>
-		<li class="active" id="midi_in_&_out:webmidi_create_midi_events" class="label"><span>webmidi create midi events</span></li>
-		<li class="active" id="midi_in_&_out:webmidi_test" class="label"><span>webmidi test</span></li>
-	</ul></li>
-	<li><h3>miscellaneous</h3><ul>
-		<li class="active" id="miscellaneous:create_reverb" class="label"><span>create reverb</span></li>
-		<li class="active" id="miscellaneous:create_song_from_midifile" class="label"><span>create song from midifile</span></li>
-		<li class="active" id="miscellaneous:create_song_from_midifile_2" class="label"><span>create song from midifile 2</span></li>
-		<li class="active" id="miscellaneous:create_song_from_midifile_3" class="label"><span>create song from midifile 3</span></li>
-		<li class="active" id="miscellaneous:instrument_tester" class="label"><span>instrument tester</span></li>
-		<li class="active" id="miscellaneous:instrument_tester_2" class="label"><span>instrument tester 2</span></li>
-		<li class="active" id="miscellaneous:ios_bitrate_test" class="label"><span>ios bitrate test</span></li>
-		<li class="active" id="miscellaneous:locators" class="label"><span>locators</span></li>
-		<li class="active" id="miscellaneous:locators_basic" class="label"><span>locators basic</span></li>
-		<li class="active" id="miscellaneous:musicxml" class="label"><span>musicxml</span></li>
-		<li class="active" id="miscellaneous:onscreen_keyboard" class="label"><span>onscreen keyboard</span></li>
-		<li class="active" id="miscellaneous:playhead" class="label"><span>playhead</span></li>
-		<li class="active" id="miscellaneous:song.addEventListener" class="label"><span>song.addEventListener</span></li>
-		<li class="active" id="miscellaneous:song.addEventListener2" class="label"><span>song.addEventListener2</span></li>
-		<li class="active" id="miscellaneous:store_parsed_audio_locally" class="label"><span>store parsed audio locally</span></li>
-		<li class="active" id="miscellaneous:store_parsed_audio_locally_2" class="label"><span>store parsed audio locally 2</span></li>
-		<li class="active" id="miscellaneous:volume_and_panning" class="label"><span>volume and panning</span></li>
-	</ul></li>
-	<li><h3>process event</h3><ul>
-		<li class="active" id="process_event:process_event_array" class="label"><span>process event array</span></li>
-		<li class="active" id="process_event:process_event_per_event" class="label"><span>process event per event</span></li>
-		<li class="active" id="process_event:process_event_per_event_piano" class="label"><span>process event per event piano</span></li>
-	</ul></li>
-	<li><h3>song operations</h3><ul>
-		<li class="active" id="song_operations:add_events_to_part" class="label"><span>add events to part</span></li>
-		<li class="active" id="song_operations:add_pitchbend_events" class="label"><span>add pitchbend events</span></li>
-		<li class="active" id="song_operations:move_events_in_part" class="label"><span>move events in part</span></li>
-		<li class="active" id="song_operations:move_events_in_part_2" class="label"><span>move events in part 2</span></li>
-		<li class="active" id="song_operations:move_part_in_track" class="label"><span>move part in track</span></li>
-		<li class="active" id="song_operations:move_part_to" class="label"><span>move part to</span></li>
-		<li class="active" id="song_operations:move_part_to_another_track" class="label"><span>move part to another track</span></li>
-		<li class="active" id="song_operations:move_part_to_another_track_2" class="label"><span>move part to another track 2</span></li>
-		<li class="active" id="song_operations:remove_all_tracks_and_parts" class="label"><span>remove all tracks and parts</span></li>
-		<li class="active" id="song_operations:remove_events_from_part" class="label"><span>remove events from part</span></li>
-		<li class="active" id="song_operations:remove_part" class="label"><span>remove part</span></li>
-		<li class="active" id="song_operations:remove_parts" class="label"><span>remove parts</span></li>
-		<li class="active" id="song_operations:remove_tracks" class="label"><span>remove tracks</span></li>
-		<li class="active" id="song_operations:solo_test" class="label"><span>solo test</span></li>
-		<li class="active" id="song_operations:transpose_notes_in_part" class="label"><span>transpose notes in part</span></li>
-	</ul></li>
-	<li><h3>tempo & time signature</h3><ul>
-		<li class="active" id="tempo_&_time_signature:add_&_remove_time_events_at_runtime" class="label"><span>add & remove time events at runtime</span></li>
-		<li class="active" id="tempo_&_time_signature:add_tempo_events" class="label"><span>add tempo events</span></li>
-		<li class="active" id="tempo_&_time_signature:add_time_signature_events" class="label"><span>add time signature events</span></li>
-		<li class="active" id="tempo_&_time_signature:configure_metronome" class="label"><span>configure metronome</span></li>
-		<li class="active" id="tempo_&_time_signature:midifile_and_PPQ" class="label"><span>midifile and PPQ</span></li>
-		<li class="active" id="tempo_&_time_signature:set_playback_speed" class="label"><span>set playback speed</span></li>
-		<li class="active" id="tempo_&_time_signature:set_tempo" class="label"><span>set tempo</span></li>
-		<li class="active" id="tempo_&_time_signature:set_time_signature" class="label"><span>set time signature</span></li>
-		<li class="active" id="tempo_&_time_signature:update_tempo_events" class="label"><span>update tempo events</span></li>
-		<li class="active" id="tempo_&_time_signature:update_time_signature_events" class="label"><span>update time signature events</span></li>
-	</ul></li>
-</ul>
-      </nav>
-    </div><!-- end of div #side -->
-    <iframe id="viewer"></iframe>
+  <div id="side">
+    <div id="logo">HEART<span id="logo_beat">BEAT</span><span id="logo_js">JS</span></div>
+    <nav>
+      <ul>
+        <li>
+          <h3>audio</h3>
+          <ul>
+            <li class="active" id="audio:add_audio_events" class="label"><span>add audio events</span></li>
+            <li class="active" id="audio:add_audio_events_simple" class="label"><span>add audio events simple</span>
+            </li>
+            <li class="active" id="audio:decode_audio_test" class="label"><span>decode audio test</span></li>
+            <li class="active" id="audio:record_audio" class="label"><span>record audio</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>instrument</h3>
+          <ul>
+            <li class="active" id="instrument:panning_change" class="label"><span>panning change</span></li>
+            <li class="active" id="instrument:set_release" class="label"><span>set release</span></li>
+            <li class="active" id="instrument:transpose" class="label"><span>transpose</span></li>
+            <li class="active" id="instrument:volume_change" class="label"><span>volume change</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>key editor</h3>
+          <ul>
+            <li class="active" id="key_editor:editor" class="label"><span>editor</span></li>
+            <li class="active" id="key_editor:snap_notes" class="label"><span>snap notes</span></li>
+            <li class="active" id="key_editor:snap_parts" class="label"><span>snap parts</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>managing assets</h3>
+          <ul>
+            <li>
+              <h4>1. midi files</h4>
+              <ul>
+                <li class="active" id="managing_assets:1._midi_files:blob_arraybuffer_base64" class="label"><span>blob
+                    arraybuffer base64</span></li>
+                <li class="active" id="managing_assets:1._midi_files:from_binary" class="label"><span>from binary</span>
+                </li>
+                <li class="active" id="managing_assets:1._midi_files:from_binary_2" class="label"><span>from binary
+                    2</span></li>
+                <li class="active" id="managing_assets:1._midi_files:from_local_file" class="label"><span>from local
+                    file</span></li>
+                <li class="active" id="managing_assets:1._midi_files:from_local_json" class="label"><span>from local
+                    json</span></li>
+                <li class="active" id="managing_assets:1._midi_files:from_remote_json" class="label"><span>from remote
+                    json</span></li>
+              </ul>
+            </li>
+            <li>
+              <h4>2. instruments</h4>
+              <ul>
+                <li class="active" id="managing_assets:2._instruments:from_local_json" class="label"><span>from local
+                    json</span></li>
+                <li class="active" id="managing_assets:2._instruments:from_remote_json" class="label"><span>from remote
+                    json</span></li>
+                <li class="active" id="managing_assets:2._instruments:new_version" class="label"><span>new
+                    version</span></li>
+                <li class="active" id="managing_assets:2._instruments:new_version_urls" class="label"><span>new version
+                    urls</span></li>
+                <li class="active" id="managing_assets:2._instruments:unload" class="label"><span>unload</span></li>
+                <li class="active" id="managing_assets:2._instruments:unload_2" class="label"><span>unload 2</span></li>
+              </ul>
+            </li>
+            <li>
+              <h4>3. sample packs</h4>
+              <ul>
+                <li class="active" id="managing_assets:3._sample_packs:append_to_sample_pack" class="label"><span>append
+                    to sample pack</span></li>
+                <li class="active" id="managing_assets:3._sample_packs:append_to_sample_pack_2" class="label">
+                  <span>append to sample pack 2</span></li>
+                <li class="active" id="managing_assets:3._sample_packs:from_local_json" class="label"><span>from local
+                    json</span></li>
+                <li class="active" id="managing_assets:3._sample_packs:from_remote_json" class="label"><span>from remote
+                    json</span></li>
+              </ul>
+            </li>
+            <li>
+              <h4>4. asset packs</h4>
+              <ul>
+                <li class="active" id="managing_assets:4._asset_packs:from_remote_json" class="label"><span>from remote
+                    json</span></li>
+                <li class="active" id="managing_assets:4._asset_packs:unload" class="label"><span>unload</span></li>
+              </ul>
+            </li>
+            <li class="active" id="managing_assets:find_item" class="label"><span>find item</span></li>
+            <li class="active" id="managing_assets:find_item_2" class="label"><span>find item 2</span></li>
+            <li class="active" id="managing_assets:load_+_unload_test" class="label"><span>load + unload test</span>
+            </li>
+            <li class="active" id="managing_assets:load_+_unload_test_2" class="label"><span>load + unload test 2</span>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <h3>midi in & out</h3>
+          <ul>
+            <li class="active" id="midi_in_&_out:midi_in" class="label"><span>midi in</span></li>
+            <li class="active" id="midi_in_&_out:midi_out_file" class="label"><span>midi out file</span></li>
+            <li class="active" id="midi_in_&_out:midi_out_file_sync" class="label"><span>midi out file sync</span></li>
+            <li class="active" id="midi_in_&_out:midi_out_live" class="label"><span>midi out live</span></li>
+            <li class="active" id="midi_in_&_out:midi_record" class="label"><span>midi record</span></li>
+            <li class="active" id="midi_in_&_out:quantize" class="label"><span>quantize</span></li>
+            <li class="active" id="midi_in_&_out:show_midi_devices" class="label"><span>show midi devices</span></li>
+            <li class="active" id="midi_in_&_out:song_midieventlistener" class="label"><span>song
+                midieventlistener</span></li>
+            <li class="active" id="midi_in_&_out:song_set_midiports" class="label"><span>song set midiports</span></li>
+            <li class="active" id="midi_in_&_out:sustain_pedal" class="label"><span>sustain pedal</span></li>
+            <li class="active" id="midi_in_&_out:track_midieventlistener" class="label"><span>track
+                midieventlistener</span></li>
+            <li class="active" id="midi_in_&_out:track_set_midiports" class="label"><span>track set midiports</span>
+            </li>
+            <li class="active" id="midi_in_&_out:webmidi_create_midi_events" class="label"><span>webmidi create midi
+                events</span></li>
+            <li class="active" id="midi_in_&_out:webmidi_test" class="label"><span>webmidi test</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>miscellaneous</h3>
+          <ul>
+            <li class="active" id="miscellaneous:create_reverb" class="label"><span>create reverb</span></li>
+            <li class="active" id="miscellaneous:create_song_from_midifile" class="label"><span>create song from
+                midifile</span></li>
+            <li class="active" id="miscellaneous:create_song_from_midifile_2" class="label"><span>create song from
+                midifile 2</span></li>
+            <li class="active" id="miscellaneous:create_song_from_midifile_3" class="label"><span>create song from
+                midifile 3</span></li>
+            <li class="active" id="miscellaneous:instrument_tester" class="label"><span>instrument tester</span></li>
+            <li class="active" id="miscellaneous:instrument_tester_2" class="label"><span>instrument tester 2</span>
+            </li>
+            <li class="active" id="miscellaneous:ios_bitrate_test" class="label"><span>ios bitrate test</span></li>
+            <li class="active" id="miscellaneous:locators" class="label"><span>locators</span></li>
+            <li class="active" id="miscellaneous:locators_basic" class="label"><span>locators basic</span></li>
+            <li class="active" id="miscellaneous:musicxml" class="label"><span>musicxml</span></li>
+            <li class="active" id="miscellaneous:onscreen_keyboard" class="label"><span>onscreen keyboard</span></li>
+            <li class="active" id="miscellaneous:playhead" class="label"><span>playhead</span></li>
+            <li class="active" id="miscellaneous:song.addEventListener" class="label"><span>song.addEventListener</span>
+            </li>
+            <li class="active" id="miscellaneous:song.addEventListener2" class="label">
+              <span>song.addEventListener2</span></li>
+            <li class="active" id="miscellaneous:store_parsed_audio_locally" class="label"><span>store parsed audio
+                locally</span></li>
+            <li class="active" id="miscellaneous:store_parsed_audio_locally_2" class="label"><span>store parsed audio
+                locally 2</span></li>
+            <li class="active" id="miscellaneous:volume_and_panning" class="label"><span>volume and panning</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>process event</h3>
+          <ul>
+            <li class="active" id="process_event:process_event_array" class="label"><span>process event array</span>
+            </li>
+            <li class="active" id="process_event:process_event_per_event" class="label"><span>process event per
+                event</span></li>
+            <li class="active" id="process_event:process_event_per_event_piano" class="label"><span>process event per
+                event piano</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>song operations</h3>
+          <ul>
+            <li class="active" id="song_operations:add_events_to_part" class="label"><span>add events to part</span>
+            </li>
+            <li class="active" id="song_operations:add_pitchbend_events" class="label"><span>add pitchbend events</span>
+            </li>
+            <li class="active" id="song_operations:move_events_in_part" class="label"><span>move events in part</span>
+            </li>
+            <li class="active" id="song_operations:move_events_in_part_2" class="label"><span>move events in part
+                2</span></li>
+            <li class="active" id="song_operations:move_part_in_track" class="label"><span>move part in track</span>
+            </li>
+            <li class="active" id="song_operations:move_part_to" class="label"><span>move part to</span></li>
+            <li class="active" id="song_operations:move_part_to_another_track" class="label"><span>move part to another
+                track</span></li>
+            <li class="active" id="song_operations:move_part_to_another_track_2" class="label"><span>move part to
+                another track 2</span></li>
+            <li class="active" id="song_operations:remove_all_tracks_and_parts" class="label"><span>remove all tracks
+                and parts</span></li>
+            <li class="active" id="song_operations:remove_events_from_part" class="label"><span>remove events from
+                part</span></li>
+            <li class="active" id="song_operations:remove_part" class="label"><span>remove part</span></li>
+            <li class="active" id="song_operations:remove_parts" class="label"><span>remove parts</span></li>
+            <li class="active" id="song_operations:remove_tracks" class="label"><span>remove tracks</span></li>
+            <li class="active" id="song_operations:solo_test" class="label"><span>solo test</span></li>
+            <li class="active" id="song_operations:transpose_notes_in_part" class="label"><span>transpose notes in
+                part</span></li>
+          </ul>
+        </li>
+        <li>
+          <h3>tempo & time signature</h3>
+          <ul>
+            <li class="active" id="tempo_&_time_signature:add_&_remove_time_events_at_runtime" class="label"><span>add &
+                remove time events at runtime</span></li>
+            <li class="active" id="tempo_&_time_signature:add_tempo_events" class="label"><span>add tempo events</span>
+            </li>
+            <li class="active" id="tempo_&_time_signature:add_time_signature_events" class="label"><span>add time
+                signature events</span></li>
+            <li class="active" id="tempo_&_time_signature:configure_metronome" class="label"><span>configure
+                metronome</span></li>
+            <li class="active" id="tempo_&_time_signature:midifile_and_PPQ" class="label"><span>midifile and PPQ</span>
+            </li>
+            <li class="active" id="tempo_&_time_signature:set_playback_speed" class="label"><span>set playback
+                speed</span></li>
+            <li class="active" id="tempo_&_time_signature:set_tempo" class="label"><span>set tempo</span></li>
+            <li class="active" id="tempo_&_time_signature:set_time_signature" class="label"><span>set time
+                signature</span></li>
+            <li class="active" id="tempo_&_time_signature:update_tempo_events" class="label"><span>update tempo
+                events</span></li>
+            <li class="active" id="tempo_&_time_signature:update_time_signature_events" class="label"><span>update time
+                signature events</span></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </div><!-- end of div #side -->
+  <iframe id="viewer"></iframe>
 </body>
+
 </html>
