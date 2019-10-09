@@ -120,7 +120,7 @@ const init = () => {
 - sustained instruments (like organ, stings, pads)
 - keyscaling for release and panning
 - configurable release duration and envelope type
-- support for .sfz format (upto a certain level)
+- support for .sfz format (up to a certain level)
 - instrument samples can be transposed at runtime (experimental)
 - 12 sample based instruments included for the sample player (570MB of samples)
 - 1 simple sinewave synthesizer included as fallback instrument

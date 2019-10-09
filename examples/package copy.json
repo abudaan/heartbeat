@@ -1,11 +1,17 @@
 {
   "name": "heartbeat-sequencer",
-  "version": "0.0.14",
+  "version": "0.0.13",
   "description": "javascript sequencer",
-  "main": "./build/index.js",
+  "main": "./build/init.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "test"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd ./tools && ./build.sh"
+    "build": "cd ./tools && ./build.sh",
+    "w1": "webpack"
   },
   "repository": {
     "type": "git",
@@ -23,5 +29,8 @@
   },
   "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9"
+  }
 }

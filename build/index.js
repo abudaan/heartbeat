@@ -1,7 +1,7 @@
 /*
 
 heartbeat
-(c) 2013 - 2018 abudaan
+(c) 2013 - 2019 abudaan
 https://github.com/abudaan/heartbeat/wiki/license
 
 
@@ -303,644 +303,649 @@ import { version } from '../package.json';
 
 function openModule() {
 
-    'use strict';
+  'use strict';
 
-    var
-        protectedScope,
-        initMethods = [],
+  var
+    protectedScope,
+    initMethods = [],
 
-        webaudioUnlocked = false,
-        src,
-        context,
-        gainNode,
-        compressor,
-        sampleIndex = 0,
-        compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
+    webaudioUnlocked = false,
+    src,
+    context,
+    gainNode,
+    compressor,
+    sampleIndex = 0,
+    compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
 
-        ua = navigator.userAgent,
-        os,
-        browser,
-        legacy = false;
+    ua = navigator.userAgent,
+    os,
+    browser,
+    legacy = false;
 
-    if (ua.match(/(iPad|iPhone|iPod)/g)) {
-        os = 'ios';
-        // webaudioUnlocked = false;
-    } else if (ua.indexOf('Android') !== -1) {
-        os = 'android';
-    } else if (ua.indexOf('Linux') !== -1) {
-        os = 'linux';
-    } else if (ua.indexOf('Macintosh') !== -1) {
-        os = 'osx';
-    } else if (ua.indexOf('Windows') !== -1) {
-        os = 'windows';
+  if (ua.match(/(iPad|iPhone|iPod)/g)) {
+    os = 'ios';
+    // webaudioUnlocked = false;
+  } else if (ua.indexOf('Android') !== -1) {
+    os = 'android';
+  } else if (ua.indexOf('Linux') !== -1) {
+    os = 'linux';
+  } else if (ua.indexOf('Macintosh') !== -1) {
+    os = 'osx';
+  } else if (ua.indexOf('Windows') !== -1) {
+    os = 'windows';
+  }
+
+  if (ua.indexOf('Chrome') !== -1) {
+    // chrome, chromium and canary
+    browser = 'chrome';
+
+    if (ua.indexOf('OPR') !== -1) {
+      browser = 'opera';
+    } else if (ua.indexOf('Chromium') !== -1) {
+      browser = 'chromium';
+    }
+  } else if (ua.indexOf('Safari') !== -1) {
+    browser = 'safari';
+  } else if (ua.indexOf('Firefox') !== -1) {
+    browser = 'firefox';
+  } else if (ua.indexOf('Trident') !== -1) {
+    browser = 'Internet Explorer';
+  }
+
+  if (os === 'ios') {
+    if (ua.indexOf('CriOS') !== -1) {
+      browser = 'chrome';
+    }
+  }
+
+  // console.log(os, browser, '---', ua);
+
+  if (window.AudioContext) {
+    context = new window.AudioContext();
+    if (typeof context.createGainNode !== 'function') {
+      context.createGainNode = context.createGain;
+    }
+  } else if (window.webkitAudioContext) {
+    context = new window.webkitAudioContext();
+    if (typeof context.createGainNode !== 'function') {
+      context.createGainNode = context.createGain;
+    }
+  } else {
+    //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
+    throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
+  }
+
+  compressor = context.createDynamicsCompressor();
+  compressor.connect(context.destination);
+  //console.log(compressor);
+  gainNode = context.createGainNode();
+  //gainNode.connect(compressor);
+  gainNode.connect(context.destination);
+  gainNode.gain.value = 1;
+
+
+  protectedScope = {
+
+    context: context,
+    //destination: context.destination,
+    masterGainNode: gainNode,
+    masterCompressor: compressor,
+
+    useDelta: false,
+
+    timedTasks: {},
+    scheduledTasks: {},
+    repetitiveTasks: {},
+
+    getSampleId: function () {
+      return 'S' + sampleIndex++ + new Date().getTime();
+    },
+
+    addInitMethod: function (method) {
+      initMethods.push(method);
+    },
+
+    callInitMethods: function () {
+      var i, maxi = initMethods.length;
+      for (i = 0; i < maxi; i++) {
+        initMethods[i]();
+      }
+    }
+  };
+
+
+  /**
+      @namespace sequencer
+  */
+  sequencer = {
+    name: 'qambi',
+    version: version,
+    protectedScope: protectedScope,
+    ui: {},
+    ua: ua,
+    os: os,
+    browser: browser,
+    legacy: false,
+    midi: false,
+    webmidi: false,
+    webaudio: true,
+    jazz: false,
+    ogg: false,
+    mp3: false,
+    record_audio: navigator.getUserMedia !== undefined,
+    bitrate_mp3_encoding: 128,
+    util: {},
+    debug: 0, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
+    defaultInstrument: 'sinewave',
+    pitch: 440,
+    bufferTime: 350 / 1000, //seconds
+    autoAdjustBufferTime: false,
+    noteNameMode: 'sharp',
+    minimalSongLength: 60000, //millis
+    pauseOnBlur: false,
+    restartOnFocus: true,
+    defaultPPQ: 960,
+    overrulePPQ: true,
+    precision: 3, // means float with precision 3, e.g. 10.437
+
+    midiInputs: {},
+    midiOutputs: {},
+
+    storage: {
+      midi: {
+        id: 'midi'
+      },
+      audio: {
+        id: 'audio',
+        recordings: {}
+      },
+      instruments: {
+        id: 'instruments'
+      },
+      samplepacks: {
+        id: 'samplepacks'
+      },
+      assetpacks: {
+        id: 'assetpacks'
+      }
+    },
+
+    getAudioContext: function () {
+      return context;
+    },
+
+    getTime: function () {
+      return context.currentTime;
+      // return performance.now() / 1000;
+    },
+
+    getTimeDiff: function () {
+      var contextTime = context.currentTime * 1000;
+      return performance.now() - contextTime;
+    },
+
+    setMasterVolume: function (value) {
+      value = value < 0 ? 0 : value > 1 ? 1 : value;
+      gainNode.gain.value = value;
+    },
+
+    getMasterVolume: function () {
+      return gainNode.gain.value;
+    },
+
+    getCompressionReduction: function () {
+      //console.log(compressor);
+      return compressor.reduction.value;
+    },
+
+    enableMasterCompressor: function (flag) {
+      if (flag) {
+        gainNode.disconnect(0);
+        gainNode.connect(compressor);
+        compressor.disconnect(0);
+        compressor.connect(context.destination);
+      } else {
+        compressor.disconnect(0);
+        gainNode.disconnect(0);
+        gainNode.connect(context.destination);
+      }
+    },
+
+    configureMasterCompressor: function (cfg) {
+      /*
+          readonly attribute AudioParam threshold; // in Decibels
+          readonly attribute AudioParam knee; // in Decibels
+          readonly attribute AudioParam ratio; // unit-less
+          readonly attribute AudioParam reduction; // in Decibels
+          readonly attribute AudioParam attack; // in Seconds
+          readonly attribute AudioParam release; // in Seconds
+      */
+      var i, param;
+      for (i = compressorParams.length; i >= 0; i--) {
+        param = compressorParams[i];
+        if (cfg[param] !== undefined) {
+          compressor[param].value = cfg[param];
+        }
+      }
+    },
+
+    unlockWebAudio: function () {
+      // console.log('unlock webaudio');
+      if (webaudioUnlocked === true) {
+        // console.log('already unlocked');
+        return;
+      }
+      if (typeof context.resume === 'function') {
+        context.resume();
+      }
+      var src = context.createOscillator(),
+        gainNode = context.createGainNode();
+      gainNode.gain.value = 0;
+      src.connect(gainNode);
+      gainNode.connect(context.destination);
+      if (src.noteOn !== undefined) {
+        src.start = src.noteOn;
+        src.stop = src.noteOff;
+      }
+      src.start(0);
+      src.stop(0.001);
+      webaudioUnlocked = true;
     }
 
-    if (ua.indexOf('Chrome') !== -1) {
-        // chrome, chromium and canary
-        browser = 'chrome';
 
-        if (ua.indexOf('OPR') !== -1) {
-            browser = 'opera';
-        } else if (ua.indexOf('Chromium') !== -1) {
-            browser = 'chromium';
-        }
-    } else if (ua.indexOf('Safari') !== -1) {
-        browser = 'safari';
-    } else if (ua.indexOf('Firefox') !== -1) {
-        browser = 'firefox';
-    } else if (ua.indexOf('Trident') !== -1) {
-        browser = 'Internet Explorer';
-    }
+  };
 
-    if (os === 'ios') {
-        if (ua.indexOf('CriOS') !== -1) {
-            browser = 'chrome';
-        }
-    }
-
-    // console.log(os, browser, '---', ua);
-
-    if (window.AudioContext) {
-        context = new window.AudioContext();
-        if (typeof context.createGainNode !== 'function') {
-            context.createGainNode = context.createGain;
-        }
-    } else if (window.webkitAudioContext) {
-        context = new window.webkitAudioContext();
-        if (typeof context.createGainNode !== 'function') {
-            context.createGainNode = context.createGain;
-        }
-    } else {
-        //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-        throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
-    }
-
-    compressor = context.createDynamicsCompressor();
-    compressor.connect(context.destination);
-    //console.log(compressor);
-    gainNode = context.createGainNode();
-    //gainNode.connect(compressor);
-    gainNode.connect(context.destination);
-    gainNode.gain.value = 1;
-
-
-    protectedScope = {
-
-        context: context,
-        //destination: context.destination,
-        masterGainNode: gainNode,
-        masterCompressor: compressor,
-
-        useDelta: false,
-
-        timedTasks: {},
-        scheduledTasks: {},
-        repetitiveTasks: {},
-
-        getSampleId: function () {
-            return 'S' + sampleIndex++ + new Date().getTime();
-        },
-
-        addInitMethod: function (method) {
-            initMethods.push(method);
-        },
-
-        callInitMethods: function () {
-            var i, maxi = initMethods.length;
-            for (i = 0; i < maxi; i++) {
-                initMethods[i]();
-            }
-        }
-    };
-
-
-    /**
-        @namespace sequencer
-    */
-    sequencer = {
-        name: 'qambi',
-        version: version,
-        protectedScope: protectedScope,
-        ui: {},
-        ua: ua,
-        os: os,
-        browser: browser,
-        legacy: false,
-        midi: false,
-        webmidi: false,
-        webaudio: true,
-        jazz: false,
-        ogg: false,
-        mp3: false,
-        record_audio: navigator.getUserMedia !== undefined,
-        bitrate_mp3_encoding: 128,
-        util: {},
-        debug: 0, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
-        defaultInstrument: 'sinewave',
-        pitch: 440,
-        bufferTime: 350 / 1000, //seconds
-        autoAdjustBufferTime: false,
-        noteNameMode: 'sharp',
-        minimalSongLength: 60000, //millis
-        pauseOnBlur: false,
-        restartOnFocus: true,
-        defaultPPQ: 960,
-        overrulePPQ: true,
-        precision: 3, // means float with precision 3, e.g. 10.437
-
-        midiInputs: {},
-        midiOutputs: {},
-
-        storage: {
-            midi: {
-                id: 'midi'
-            },
-            audio: {
-                id: 'audio',
-                recordings: {}
-            },
-            instruments: {
-                id: 'instruments'
-            },
-            samplepacks: {
-                id: 'samplepacks'
-            },
-            assetpacks: {
-                id: 'assetpacks'
-            }
-        },
-
-        getAudioContext: function () {
-            return context;
-        },
-
-        getTime: function () {
-            // return context.currentTime;
-            return performance.now() / 1000;
-        },
-
-        setMasterVolume: function (value) {
-            value = value < 0 ? 0 : value > 1 ? 1 : value;
-            gainNode.gain.value = value;
-        },
-
-        getMasterVolume: function () {
-            return gainNode.gain.value;
-        },
-
-        getCompressionReduction: function () {
-            //console.log(compressor);
-            return compressor.reduction.value;
-        },
-
-        enableMasterCompressor: function (flag) {
-            if (flag) {
-                gainNode.disconnect(0);
-                gainNode.connect(compressor);
-                compressor.disconnect(0);
-                compressor.connect(context.destination);
-            } else {
-                compressor.disconnect(0);
-                gainNode.disconnect(0);
-                gainNode.connect(context.destination);
-            }
-        },
-
-        configureMasterCompressor: function (cfg) {
-            /*
-                readonly attribute AudioParam threshold; // in Decibels
-                readonly attribute AudioParam knee; // in Decibels
-                readonly attribute AudioParam ratio; // unit-less
-                readonly attribute AudioParam reduction; // in Decibels
-                readonly attribute AudioParam attack; // in Seconds
-                readonly attribute AudioParam release; // in Seconds
-            */
-            var i, param;
-            for (i = compressorParams.length; i >= 0; i--) {
-                param = compressorParams[i];
-                if (cfg[param] !== undefined) {
-                    compressor[param].value = cfg[param];
-                }
-            }
-        },
-
-        unlockWebAudio: function () {
-            // console.log('unlock webaudio');
-            if (webaudioUnlocked === true) {
-                // console.log('already unlocked');
-                return;
-            }
-            if (typeof context.resume === 'function') {
-                context.resume();
-            }
-            var src = context.createOscillator(),
-                gainNode = context.createGainNode();
-            gainNode.gain.value = 0;
-            src.connect(gainNode);
-            gainNode.connect(context.destination);
-            if (src.noteOn !== undefined) {
-                src.start = src.noteOn;
-                src.stop = src.noteOff;
-            }
-            src.start(0);
-            src.stop(0.001);
-            webaudioUnlocked = true;
-        }
-
-
-    };
-
-    // debug levels
-    Object.defineProperty(sequencer, 'ERROR', { value: 1 });
-    Object.defineProperty(sequencer, 'WARN', { value: 2 });
-    Object.defineProperty(sequencer, 'INFO', { value: 3 });
-    Object.defineProperty(sequencer, 'LOG', { value: 4 });
+  // debug levels
+  Object.defineProperty(sequencer, 'ERROR', { value: 1 });
+  Object.defineProperty(sequencer, 'WARN', { value: 2 });
+  Object.defineProperty(sequencer, 'INFO', { value: 3 });
+  Object.defineProperty(sequencer, 'LOG', { value: 4 });
 
 }
 function assetManager() {
 
-    'use strict';
+  'use strict';
 
-    // console.log('AssetManager');
+  // console.log('AssetManager');
 
-    var
-        // import
-        loadLoop, //defined in util.js
-        findItem, //defined in util.js
-        storeItem, //defined in util.js
-        deleteItem, //defined in util.js
-        typeString, //defined in util.js
-        getArguments, //defined in util.js
-        isEmptyObject, // defined in util.js
-        objectForEach, //defined in util.js
-        storage, //defined in open_module.js
-        updateInstruments, //defined in sequencer.js
-        findItemsInFolder, //defined in util.js
+  var
+    // import
+    loadLoop, //defined in util.js
+    findItem, //defined in util.js
+    storeItem, //defined in util.js
+    deleteItem, //defined in util.js
+    typeString, //defined in util.js
+    getArguments, //defined in util.js
+    isEmptyObject, // defined in util.js
+    objectForEach, //defined in util.js
+    storage, //defined in open_module.js
+    updateInstruments, //defined in sequencer.js
+    findItemsInFolder, //defined in util.js
 
-        busy = false,
-        taskIndex = 0,
-        finishedTasks = {},
-        taskQueue = [],
-        callbacks = [];
+    busy = false,
+    taskIndex = 0,
+    finishedTasks = {},
+    taskQueue = [],
+    callbacks = [];
 
 
-    sequencer.removeMidiFile = function (path) {
-        var item,
-            items = [], i, folder;
+  sequencer.removeMidiFile = function (path) {
+    var item,
+      items = [], i, folder;
 
-        if (path.className === 'MidiFile') {
-            item = path;
-            path = item.localPath;
-        } else {
-            item = findItem(path, storage.midi);
-        }
+    if (path.className === 'MidiFile') {
+      item = path;
+      path = item.localPath;
+    } else {
+      item = findItem(path, storage.midi);
+    }
 
+    if (item.className === 'MidiFile') {
+      items.push(item);
+    } else {
+      folder = item;
+      objectForEach(folder, function (item) {
         if (item.className === 'MidiFile') {
-            items.push(item);
-        } else {
-            folder = item;
-            objectForEach(folder, function (item) {
-                if (item.className === 'MidiFile') {
-                    items.push(item);
-                }
-            });
+          items.push(item);
         }
+      });
+    }
 
-        for (i = items.length - 1; i >= 0; i--) {
-            item = items[i];
-            deleteItem(item.localPath, storage.midi);
-        }
-    };
-
-
-    sequencer.removeInstrument = function (path, unloadSamples) {
-        var item, items = [], i, folder, mapping, samplePath;
-
-        if (path.className === 'InstrumentConfig') {
-            item = path;
-            path = item.localPath;
-        } else {
-            item = findItem(path, storage.instruments);
-        }
+    for (i = items.length - 1; i >= 0; i--) {
+      item = items[i];
+      deleteItem(item.localPath, storage.midi);
+    }
+  };
 
 
-        if (item.className === 'InstrumentConfig') {
-            items.push(item);
-        } else {
-            folder = item;
-            for (i in folder) {
-                if (folder.hasOwnProperty(i)) {
-                    item = folder[i];
-                    if (item.className === 'InstrumentConfig') {
-                        items.push(item);
-                    }
-                }
-            }
-        }
+  sequencer.removeInstrument = function (path, unloadSamples) {
+    var item, items = [], i, folder, mapping, samplePath;
 
-        for (i = items.length - 1; i >= 0; i--) {
-            item = items[i];
-            //console.log(item.mapping);
-            mapping = item.mapping;
-            samplePath = item.sample_path;
-
-            if (unloadSamples === true) {
-                // delete samples
-                objectForEach(mapping, function (value) {
-                    deleteItem(samplePath + '/' + value.n, storage.audio);
-                });
-                // delete sample pack
-                deleteItem(samplePath, storage.samplepacks);
-            }
-            // remove instrument from storage
-            deleteItem(item.localPath, storage.instruments);
-            //return deleteItem(path, storage.instruments);
-        }
-
-        // if an instrument has been removed, inform the tracks that used that instrument
-        updateInstruments();
-    };
-
-
-    sequencer.removeSamplePack = function (path) {
-        var item,
-            items = [], i, samples, sample, s, folder;
-
-        if (path.className === 'SamplePack') {
-            item = path;
-            path = item.localPath;
-        } else {
-            item = findItem(path, storage.samplepacks);
-        }
-
-        if (item.className === 'SamplePack') {
-            items.push(item);
-        } else {
-            folder = item;
-            objectForEach(folder, function (item) {
-                if (item.className === 'SamplePack') {
-                    items.push(item);
-                }
-            });
-        }
-
-        for (i = items.length - 1; i >= 0; i--) {
-            item = items[i];
-            //console.log(item.localPath);
-            samples = item.samples;
-            for (s = samples.length - 1; s >= 0; s--) {
-                sample = samples[s];
-                //console.log('->', sample.folder + '/' + sample.id);
-                deleteItem(sample.folder + '/' + sample.id, storage.audio);
-            }
-            item.reset();
-            deleteItem(item.localPath, storage.samplepacks);
-        }
-
-        updateInstruments();
-        /*
-                function loopInstruments(root){
-                    var item;
-        
-                    for(i in root){
-                        if(root.hasOwnProperty(i)){
-                            if(i === 'id' || i === 'path' || i === 'className'){
-                                continue;
-                            }
-                            item = root[i];
-                            if(item.className === 'Folder'){
-                                loopInstruments(item);
-                            }else{
-                                item = findItem(item.folder + '/' + item.name, storage.instruments);
-                                console.log(item);
-                                if(item.parse){
-                                    item.parse();
-                                }
-                            }
-                        }
-                    }
-                }
-        
-                loopInstruments(storage.instruments);
-        */
-    };
-
-
-    sequencer.removeAssetPack = function (path) {
-        var item,
-            folder;
-
-        if (path.className === 'AssetPack') {
-            item = path;
-            path = item.localPath;
-        } else {
-            item = findItem(path, storage.assetpacks);
-        }
-
-        if (item.className === 'AssetPack') {
-            item.unload();
-        } else {
-            folder = item;
-            objectForEach(folder, function (item) {
-                if (item.className === 'AssetPack') {
-                    item.unload();
-                }
-            });
-        }
-    };
-
-
-    sequencer.startTaskQueue = function (cb) {
-        //console.log('startTaskQueue', taskQueue.length, busy);
-        if (busy === true) {
-            return;
-        }
-        busy = true;
-        loadQueueLoop(0, cb);
-    };
-
-
-    sequencer.addTask = function (task, callback, callbackAfterAllTasksAreDone) {
-        task.id = 'task' + taskIndex++;
-        taskQueue.push(task);
-        //console.log('task', task.type, taskQueue.length);
-        if (callback !== undefined) {
-            if (callbackAfterAllTasksAreDone === true) {
-                // call the callback only after all tasks are done
-                sequencer.addCallbackAfterTask(callback);
-            } else {
-                // call the callback right after this task is done
-                sequencer.addCallbackAfterTask(callback, [task.id]);
-            }
-        }
-        return task.id;
-    };
-
-
-    sequencer.addCallbackAfterTask = function (callback, taskIds) {
-        callbacks.push({
-            method: callback,
-            taskIds: taskIds
-        });
-        //console.log('taskIds', taskIds);
-    };
-
-
-    // this method loops over the load cue and performs the individual load method per asset
-    function loadQueueLoop(index, onTaskQueueDone) {
-        var task, params, scope,
-            i, j, callback, taskIds,
-            performCallback;
-
-        if (index === taskQueue.length) {
-            // call all callbacks that have to be called at the end of the loop queue
-            for (i = callbacks.length - 1; i >= 0; i--) {
-                callback = callbacks[i];
-                if (callback === false) {
-                    // this callback has already been called
-                    continue;
-                }
-                //console.log(i, callback.method);
-                var m = callback.method;
-                //callback = false;
-                //console.log(1,callback);
-                setTimeout(function () {
-                    //console.log(2, m);
-                    //callback.method();
-                    m();
-                }, 0);
-            }
-            finishedTasks = {};
-            taskQueue = [];
-            callbacks = [];
-            taskIndex = 0;
-            busy = false;
-            if (onTaskQueueDone) {
-                // for internal use only, never used so far
-                console.log('onTaskQueueDone');
-                onTaskQueueDone();
-            }
-            //console.log('task queue done', sequencer.storage);
-            return;
-        }
-
-        task = taskQueue[index];
-        scope = task.scope || null;
-        params = task.params || [];
-
-        //console.log(index, task.type, taskQueue.length);
-
-        if (typeString(params) !== 'array') {
-            params = [params];
-        }
-
-        function cbActionLoop(success) {
-            //console.log('cbActionLoop', success);
-            // set a flag that this task has been done
-            finishedTasks[task.id] = true;
-
-            // check which callbacks we can call now
-            for (i = callbacks.length - 1; i >= 0; i--) {
-                callback = callbacks[i];
-                if (callback === false) {
-                    // this callback has already been called
-                    continue;
-                }
-                taskIds = callback.taskIds;
-                // console.log(i, callback.method, taskIds);
-                // some callbacks may only be called after a task, or a number of tasks have been done
-                if (taskIds !== undefined) {
-                    performCallback = true;
-                    for (j = taskIds.length - 1; j >= 0; j--) {
-                        // if one of the required tasks has not been done yet, do not perform the callback
-                        if (finishedTasks[taskIds[j]] !== true) {
-                            performCallback = false;
-                        }
-                    }
-                    //console.log('performCallback', performCallback);
-                    if (performCallback) {
-                        //callback.method.call(null);
-                        //console.log(callback);
-                        var m = callback.method;
-                        callbacks[i] = false;
-                        setTimeout(function () {
-                            m(success);
-                            //console.log(callbacks);
-                        }, 0);
-                    }
-                }
-            }
-
-            //console.log('task done', task.name, index, taskQueue.length);
-            index++;
-
-            // if(index === taskQueue.length && taskIds === undefined){
-
-            // }
-            loadQueueLoop(index, onTaskQueueDone);
-        }
-
-        params.push(cbActionLoop);
-
-        //console.log(index, taskQueue.length, task.method.name, params);
-        task.method.apply(scope, params);
+    if (path.className === 'InstrumentConfig') {
+      item = path;
+      path = item.localPath;
+    } else {
+      item = findItem(path, storage.instruments);
     }
 
 
-    sequencer.getInstrument = function (path, exact_match) {
-        return findItem(path, storage.instruments, exact_match);
-    };
+    if (item.className === 'InstrumentConfig') {
+      items.push(item);
+    } else {
+      folder = item;
+      for (i in folder) {
+        if (folder.hasOwnProperty(i)) {
+          item = folder[i];
+          if (item.className === 'InstrumentConfig') {
+            items.push(item);
+          }
+        }
+      }
+    }
 
-    sequencer.getMidiFile = function (path, exact_match) {
-        return findItem(path, storage.midi, exact_match);
-    };
+    for (i = items.length - 1; i >= 0; i--) {
+      item = items[i];
+      //console.log(item.mapping);
+      mapping = item.mapping;
+      samplePath = item.sample_path;
 
-    sequencer.getSamplePack = function (path, exact_match) {
-        return findItem(path, storage.samplepacks, exact_match);
-    };
+      if (unloadSamples === true) {
+        // delete samples
+        objectForEach(mapping, function (value) {
+          deleteItem(samplePath + '/' + value.n, storage.audio);
+        });
+        // delete sample pack
+        deleteItem(samplePath, storage.samplepacks);
+      }
+      // remove instrument from storage
+      deleteItem(item.localPath, storage.instruments);
+      //return deleteItem(path, storage.instruments);
+    }
 
-    sequencer.getSample = function (path, exact_match) {
-        return findItem(path, storage.audio, exact_match);
-    };
-
-    sequencer.getAssetPack = function (path, exact_match) {
-        return findItem(path, storage.assetpacks, exact_match);
-    };
-
-    sequencer.getSamplePacks = function (path, include_subfolders) {
-        return findItemsInFolder(path, storage.samplepacks, include_subfolders);
-    };
-
-    sequencer.getAssetPacks = function (path, include_subfolders) {
-        return findItemsInFolder(path, storage.assetpacks, include_subfolders);
-    };
-
-    sequencer.getSamples = function (path, include_subfolders) {
-        return findItemsInFolder(path, storage.audio, include_subfolders);
-    };
-
-    sequencer.getInstruments = function (path, include_subfolders) {
-        return findItemsInFolder(path, storage.instruments, include_subfolders);
-    };
-
-    sequencer.getMidiFiles = function (path, include_subfolders) {
-        return findItemsInFolder(path, storage.midi, include_subfolders);
-    };
+    // if an instrument has been removed, inform the tracks that used that instrument
+    updateInstruments();
+  };
 
 
-    sequencer.protectedScope.addInitMethod(function () {
-        storage = sequencer.storage;
-        loadLoop = sequencer.protectedScope.loadLoop;
-        findItem = sequencer.protectedScope.findItem;
-        storeItem = sequencer.protectedScope.storeItem;
-        deleteItem = sequencer.protectedScope.deleteItem;
-        typeString = sequencer.protectedScope.typeString;
-        getArguments = sequencer.protectedScope.getArguments;
-        isEmptyObject = sequencer.protectedScope.isEmptyObject;
-        objectForEach = sequencer.protectedScope.objectForEach;
-        updateInstruments = sequencer.protectedScope.updateInstruments;
-        findItemsInFolder = sequencer.protectedScope.findItemsInFolder;
+  sequencer.removeSamplePack = function (path) {
+    var item,
+      items = [], i, samples, sample, s, folder;
+
+    if (path.className === 'SamplePack') {
+      item = path;
+      path = item.localPath;
+    } else {
+      item = findItem(path, storage.samplepacks);
+    }
+
+    if (item.className === 'SamplePack') {
+      items.push(item);
+    } else {
+      folder = item;
+      objectForEach(folder, function (item) {
+        if (item.className === 'SamplePack') {
+          items.push(item);
+        }
+      });
+    }
+
+    for (i = items.length - 1; i >= 0; i--) {
+      item = items[i];
+      //console.log(item.localPath);
+      samples = item.samples;
+      for (s = samples.length - 1; s >= 0; s--) {
+        sample = samples[s];
+        //console.log('->', sample.folder + '/' + sample.id);
+        deleteItem(sample.folder + '/' + sample.id, storage.audio);
+      }
+      item.reset();
+      deleteItem(item.localPath, storage.samplepacks);
+    }
+
+    updateInstruments();
+    /*
+            function loopInstruments(root){
+                var item;
+    
+                for(i in root){
+                    if(root.hasOwnProperty(i)){
+                        if(i === 'id' || i === 'path' || i === 'className'){
+                            continue;
+                        }
+                        item = root[i];
+                        if(item.className === 'Folder'){
+                            loopInstruments(item);
+                        }else{
+                            item = findItem(item.folder + '/' + item.name, storage.instruments);
+                            console.log(item);
+                            if(item.parse){
+                                item.parse();
+                            }
+                        }
+                    }
+                }
+            }
+    
+            loopInstruments(storage.instruments);
+    */
+  };
+
+
+  sequencer.removeAssetPack = function (path) {
+    var item,
+      folder;
+
+    if (path.className === 'AssetPack') {
+      item = path;
+      path = item.localPath;
+    } else {
+      item = findItem(path, storage.assetpacks);
+    }
+
+    if (item.className === 'AssetPack') {
+      item.unload();
+    } else {
+      folder = item;
+      objectForEach(folder, function (item) {
+        if (item.className === 'AssetPack') {
+          item.unload();
+        }
+      });
+    }
+  };
+
+
+  sequencer.startTaskQueue = function (cb) {
+    //console.log('startTaskQueue', taskQueue.length, busy);
+    if (busy === true) {
+      return;
+    }
+    busy = true;
+    loadQueueLoop(0, cb);
+  };
+
+
+  sequencer.addTask = function (task, callback, callbackAfterAllTasksAreDone) {
+    task.id = 'task' + taskIndex++;
+    taskQueue.push(task);
+    //console.log('task', task.type, taskQueue.length);
+    if (callback !== undefined) {
+      if (callbackAfterAllTasksAreDone === true) {
+        // call the callback only after all tasks are done
+        sequencer.addCallbackAfterTask(callback);
+      } else {
+        // call the callback right after this task is done
+        sequencer.addCallbackAfterTask(callback, [task.id]);
+      }
+    }
+    return task.id;
+  };
+
+
+  sequencer.addCallbackAfterTask = function (callback, taskIds) {
+    callbacks.push({
+      method: callback,
+      taskIds: taskIds
     });
+    //console.log('taskIds', taskIds);
+  };
+
+
+  // this method loops over the load cue and performs the individual load method per asset
+  function loadQueueLoop(index, onTaskQueueDone) {
+    var task, params, scope,
+      i, j, callback, taskIds,
+      performCallback;
+
+    if (index === taskQueue.length) {
+      // call all callbacks that have to be called at the end of the loop queue
+      for (i = callbacks.length - 1; i >= 0; i--) {
+        callback = callbacks[i];
+        if (callback === false) {
+          // this callback has already been called
+          continue;
+        }
+        //console.log(i, callback.method);
+        var m = callback.method;
+        //callback = false;
+        //console.log(1,callback);
+        setTimeout(function () {
+          //console.log(2, m);
+          //callback.method();
+          m();
+        }, 0);
+      }
+      finishedTasks = {};
+      taskQueue = [];
+      callbacks = [];
+      taskIndex = 0;
+      busy = false;
+      if (onTaskQueueDone) {
+        // for internal use only, never used so far
+        console.log('onTaskQueueDone');
+        onTaskQueueDone();
+      }
+      //console.log('task queue done', sequencer.storage);
+      return;
+    }
+
+    task = taskQueue[index];
+    scope = task.scope || null;
+    params = task.params || [];
+
+    //console.log(index, task.type, taskQueue.length);
+
+    if (typeString(params) !== 'array') {
+      params = [params];
+    }
+
+    function cbActionLoop(success) {
+      //console.log('cbActionLoop', success);
+      // set a flag that this task has been done
+      finishedTasks[task.id] = true;
+
+      // check which callbacks we can call now
+      for (i = callbacks.length - 1; i >= 0; i--) {
+        callback = callbacks[i];
+        if (callback === false) {
+          // this callback has already been called
+          continue;
+        }
+        taskIds = callback.taskIds;
+        // console.log(i, callback.method, taskIds);
+        // some callbacks may only be called after a task, or a number of tasks have been done
+        if (taskIds !== undefined) {
+          performCallback = true;
+          for (j = taskIds.length - 1; j >= 0; j--) {
+            // if one of the required tasks has not been done yet, do not perform the callback
+            if (finishedTasks[taskIds[j]] !== true) {
+              performCallback = false;
+            }
+          }
+          //console.log('performCallback', performCallback);
+          if (performCallback) {
+            //callback.method.call(null);
+            //console.log(callback);
+            var m = callback.method;
+            callbacks[i] = false;
+            setTimeout(function () {
+              m(success);
+              //console.log(callbacks);
+            }, 0);
+          }
+        }
+      }
+
+      //console.log('task done', task.name, index, taskQueue.length);
+      index++;
+
+      // if(index === taskQueue.length && taskIds === undefined){
+
+      // }
+      loadQueueLoop(index, onTaskQueueDone);
+    }
+
+    params.push(cbActionLoop);
+
+    //console.log(index, taskQueue.length, task.method.name, params);
+    task.method.apply(scope, params);
+  }
+
+
+  sequencer.getInstrument = function (path, exact_match) {
+    return findItem(path, storage.instruments, exact_match);
+  };
+
+  sequencer.getMidiFile = function (path, exact_match) {
+    return findItem(path, storage.midi, exact_match);
+  };
+
+  sequencer.getSamplePack = function (path, exact_match) {
+    return findItem(path, storage.samplepacks, exact_match);
+  };
+
+  sequencer.getSample = function (path, exact_match) {
+    return findItem(path, storage.audio, exact_match);
+  };
+
+  sequencer.getAssetPack = function (path, exact_match) {
+    return findItem(path, storage.assetpacks, exact_match);
+  };
+
+  sequencer.getSamplePacks = function (path, include_subfolders) {
+    return findItemsInFolder(path, storage.samplepacks, include_subfolders);
+  };
+
+  sequencer.getAssetPacks = function (path, include_subfolders) {
+    return findItemsInFolder(path, storage.assetpacks, include_subfolders);
+  };
+
+  sequencer.getSamples = function (path, include_subfolders) {
+    return findItemsInFolder(path, storage.audio, include_subfolders);
+  };
+
+  sequencer.getInstruments = function (path, include_subfolders) {
+    return findItemsInFolder(path, storage.instruments, include_subfolders);
+  };
+
+  sequencer.getMidiFiles = function (path, include_subfolders) {
+    return findItemsInFolder(path, storage.midi, include_subfolders);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    storage = sequencer.storage;
+    loadLoop = sequencer.protectedScope.loadLoop;
+    findItem = sequencer.protectedScope.findItem;
+    storeItem = sequencer.protectedScope.storeItem;
+    deleteItem = sequencer.protectedScope.deleteItem;
+    typeString = sequencer.protectedScope.typeString;
+    getArguments = sequencer.protectedScope.getArguments;
+    isEmptyObject = sequencer.protectedScope.isEmptyObject;
+    objectForEach = sequencer.protectedScope.objectForEach;
+    updateInstruments = sequencer.protectedScope.updateInstruments;
+    findItemsInFolder = sequencer.protectedScope.findItemsInFolder;
+  });
 
 }
 function assetPack() {
@@ -3310,1064 +3315,1064 @@ function eventStatistics() {
 
 }function instrument() {
 
-    'use strict';
+  'use strict';
 
+  var
+    debug = sequencer.debug,
+
+    //import
+    context, // → defined in open_module.js
+    storage, // → defined in open_module.js
+    timedTasks, // → defined in open_module.js
+    repetitiveTasks, // → defined in open_module.js
+    findItem, // → defined in utils.js
+    storeItem, // → defined in utils.js
+    typeString, // → defined in utils.js
+    pathToArray, // → defined in utils.js
+    //createClass, // → defined in utils.js
+    isEmptyObject, // → defined in utils.js
+    objectForEach, // → defined in utils.js
+    createSample, // → defined in sample.js
+    createReverb, // → defined in effects.js
+    dispatchEvent, // → defined in song.js
+    remap, // defined in util.js
+    round, // defined in util.js
+    getEqualPowerCurve, // defined in util.js
+    transpose, // defined in transpose.js
+
+    Instrument,
+    SimpleSynth;
+
+
+  function unscheduleCallback(sample) {
+    //console.log(sample.id, 'has been unscheduled');
+    sample = null;
+  }
+
+
+  Instrument = function (config) {
+    //console.log(config);
+    this.className = 'Instrument';
+    this.config = config;
+    this.scheduledEvents = {};
+    this.scheduledSamples = {};
+    this.sustainPedalDown = false;
+    this.sustainPedalSamples = {};
+    this.sampleDataByNoteNumber = {};
+    this.sampleData = [];
+
+    this.info = config.info || config.instrument_info;
+    this.author = config.author || config.instrument_author;
+    this.license = config.license || config.instrument_license;
+    this.pack = config.pack;
+
+    this.parse();
+  };
+
+
+  // called by asset manager when a sample pack or an instrument has been unloaded, see asset_manager.js
+  Instrument.prototype.reset = function () {
+    var instrument = sequencer.getInstrument(this.config.localPath),
+      samplepack = sequencer.getSamplePack(this.config.sample_path);
+
+    if (samplepack === false || instrument === false) {
+      this.scheduledEvents = {};
+      this.scheduledSamples = {};
+      this.sustainPedalSamples = {};
+      this.sampleDataByNoteNumber = {};
+      this.sampleData = [];
+      if (this.update) {
+        delete repetitiveTasks[this.updateTaskId];
+      }
+      // if the instrument has been unloaded, set the track to the default instrument
+      if (instrument === false) {
+        this.track.setInstrument();
+      }
+    }
+  };
+
+
+  Instrument.prototype.parse = function () {
+    var i, maxi, v, v1, v2, length, octave, note, noteName, noteNumber,
+      pathArray,
+      buffer, names,
+      id, data, subdata,
+      update,
+      sample,
+      sampleConfig,
+      samplePack,
+      audioFolder,
+      config = this.config,
+      noteNameMode = config.notename_mode === undefined ? sequencer.noteNameMode : config.notename_mode,
+      mapping = config.mapping,
+      me = this;
+
+    if (config.name === undefined) {
+      console.error('instruments must have a name', config);
+      return false;
+    }
+
+    if (mapping === undefined) {
+      console.error('instruments must have a mapping to samples', config);
+      return false;
+    }
+
+    this.name = config.name;
+    this.folder = config.folder || '';
+    this.autopan = config.autopan || false; // for simple synth
+    this.singlePitch = config.single_pitch || false;
+    this.samplePath = config.sample_path || this.name;
+    this.keyScalingRelease = config.keyscaling_release;
+    this.keyScalingPanning = config.keyscaling_panning;
+    this.keyRange = config.keyrange || config.key_range;
+    //console.log(this.keyRange, config);
+    pathArray = this.samplePath.split('/');
+
+    //console.log(this.keyScalingRelease, config);
+
+    samplePack = storage.samplepacks;
+    for (i = 0, maxi = pathArray.length; i < maxi; i++) {
+      if (samplePack === undefined) {
+        if (sequencer.debug) {
+          console.log('sample pack not found', pathArray.join('/'));
+        }
+        return;
+      }
+      samplePack = samplePack[pathArray[i]];
+    }
+    //console.log(samplePack.name);
+
+    audioFolder = storage.audio;
+    try {
+      for (i = 0, maxi = pathArray.length; i < maxi; i++) {
+        audioFolder = audioFolder[pathArray[i]];
+      }
+    } catch (e) {
+      if (sequencer.debug) {
+        console.log('sample pack "' + pathArray[i] + '" is not loaded');
+      }
+      //sampleConfig = false;
+      return;
+    }
+
+    if (audioFolder === undefined) {
+      if (sequencer.debug) {
+        console.log('sample pack not found', pathArray.join('/'));
+      }
+      //sampleConfig = false;
+      return;
+    }
+
+
+    if (typeString(mapping) === 'array') {
+      this.keyRange = mapping;
+      mapping = {};
+      for (i = this.keyRange[0]; i <= this.keyRange[1]; i++) {
+        mapping[i] = '';
+      }
+    }
+
+    if (this.keyRange === undefined) {
+      this.lowestNote = 128;
+      this.highestNote = -1;
+    } else {
+      this.lowestNote = this.keyRange[0];
+      this.highestNote = this.keyRange[1];
+      this.numNotes = this.highestNote - this.lowestNote;
+    }
+
+
+    if (config.release_duration !== undefined) {
+      this.releaseDuration = config.release_duration;
+    } else {
+      this.releaseDuration = 0;
+    }
+
+    this.releaseEnvelope = config.release_envelope || 'equal power';
+
+
+    if (this.autopan) {
+      this.autoPanner = createAutoPanner();
+    }
+
+    this.samplepack = samplePack;
+    //console.log(samplePack);
+
+    for (id in mapping) {
+      if (mapping.hasOwnProperty(id)) {
+        data = mapping[id];
+
+        if (isNaN(id)) {
+          // C3, D#5, Bb0, etc.
+          length = id.length;
+          octave = id.substring(length - 1);
+          note = id.substring(0, length - 1);
+          noteName = id;
+          noteNumber = sequencer.getNoteNumber(note, octave);
+        } else {
+          noteName = sequencer.getNoteNameFromNoteNumber(id, noteNameMode);
+          noteName = noteName.join('');
+          noteNumber = id;
+        }
+        //console.log(id, noteNameMode);
+
+        noteNumber = parseInt(noteNumber, 10);
+
+        if (this.keyRange === undefined) {
+          this.lowestNote = noteNumber < this.lowestNote ? noteNumber : this.lowestNote;
+          this.highestNote = noteNumber > this.highestNote ? noteNumber : this.highestNote;
+        }
+
+        //console.log(data,typeString(data));
+
+        if (typeString(data) === 'array') {
+          // multi-layered
+          this.multiLayered = true;
+          for (i = 0, maxi = data.length; i < maxi; i++) {
+            subdata = data[i];
+            parseSampleData(subdata);
+            if (this.sampleDataByNoteNumber[noteNumber] === undefined) {
+              this.sampleDataByNoteNumber[noteNumber] = [];
+            }
+            // store the same sample config for every step in this velocity range
+            v1 = subdata.v[0];
+            v2 = subdata.v[1];
+            for (v = v1; v <= v2; v++) {
+              this.sampleDataByNoteNumber[noteNumber][v] = sampleConfig;
+            }
+            this.sampleData.push(sampleConfig);
+          }
+        } else {
+          // single-layered
+          parseSampleData(data);
+          //console.log('--->', sampleConfig);
+          this.sampleDataByNoteNumber[noteNumber] = sampleConfig;
+          this.sampleData.push(sampleConfig);
+        }
+      }
+    }
+
+    if (this.keyRange === undefined) {
+      //console.log(this.highestNote, this.lowestNote);
+      this.numNotes = this.highestNote - this.lowestNote;
+      this.keyRange = [this.lowestNote, this.highestNote];
+    }
+
+
+    // if a key range is set for the instrument, the mapping object is generated by parseSampleData() so we need to add
+    // the mapping object to the config to make it available for unloading
+    this.config.mapping = mapping;
+
+    if (this.singlePitch) {
+      // TODO: fix this for multi-layered instruments (low prio)
+      for (i = 127; i >= 0; i--) {
+        this.sampleData[i] = sampleConfig;
+        this.sampleDataByNoteNumber[i] = sampleConfig;
+      }
+    }
+
+    if (update) {
+      this.updateTaskId = 'update_' + this.name + '_' + new Date().getTime();
+      //console.log('start update', this.name);
+      repetitiveTasks[this.updateTaskId] = function () {
+        //console.log('update');
+        if (me.autopan) {
+          me.update(this.autoPanner.getValue());
+        } else {
+          me.update();
+        }
+      };
+    }
+
+    // inner function of Instrument.parse();
+    function parseSampleData(data) {
+      var tmp, n;
+      //console.log('find', this.samplePath + '/' + data.n);
+      //buffer = findItem(this.samplePath + '/' + data.n, storage.audio);
+      //console.log(data);
+
+      if (data.n) {
+        // get the buffer by an id
+        buffer = audioFolder[data.n];
+        //console.log(data.n, buffer);
+      } else {
+        // get the buffer by a note number or note name if a keyrange is specified
+        names = [noteNumber, noteName, noteName.toLowerCase()];
+        for (n = 2; n >= 0; n--) {
+          buffer = audioFolder[names[n]];
+          if (buffer !== undefined) {
+            mapping[id] = { n: names[n] };
+            break;
+          }
+        }
+      }
+
+      if (buffer === undefined) {
+        if (sequencer.debug) {
+          console.log('no buffer found for ' + id + ' (' + me.name + ')');
+        }
+        sampleConfig = false;
+        return;
+      }
+
+      sampleConfig = {
+        noteNumber: noteNumber,
+        buffer: buffer,
+        bufferId: data.n,
+        autopan: me.autopan
+      };
+
+      // sample pack sustain
+      if (config.sustain === true) {
+        sampleConfig.sustain = true;
+        update = true;
+      }
+
+      // sustain
+      if (data.s !== undefined) {
+        sampleConfig.sustain_start = data.s[0];
+        sampleConfig.sustain_end = data.s[1];
+        sampleConfig.sustain = true;
+        update = true;
+      } else if (config.sustain === true) {
+        tmp = samplePack.samplesById[data.n].sustain;
+        if (tmp !== undefined) {
+          sampleConfig.sustain_start = tmp[0];
+          sampleConfig.sustain_end = tmp[1];
+          //sampleConfig.sustain = true;
+          //console.log(tmp, update, sampleConfig.sustain);
+        } else {
+          sampleConfig.sustain = false;
+        }
+        //console.log(data.n, samplePack.samplesById[data.n]);
+      }
+
+      // global release
+      if (config.release_duration !== undefined) {
+        sampleConfig.release_duration = config.release_duration;
+        sampleConfig.release_envelope = config.release_envelope || me.releaseEnvelope;
+        sampleConfig.release = true;
+        update = true;
+      }
+
+      // release duration and envelope per sample overrules global release duration and envelope
+      if (data.r !== undefined) {
+        if (typeString(data.r) === 'array') {
+          sampleConfig.release_duration = data.r[0];
+          sampleConfig.release_envelope = data.r[1] || me.releaseEnvelope;
+        } else if (!isNaN(data.r)) {
+          sampleConfig.release_duration = data.r;
+          sampleConfig.release_envelope = me.releaseEnvelope;
+        }
+        sampleConfig.release = true;
+        update = true;
+        //console.log(data.r, sampleConfig.release_duration, sampleConfig.release_envelope)
+      }
+
+      // panning
+      if (data.p !== undefined) {
+        sampleConfig.panPosition = data.p;
+        sampleConfig.panning = true;
+      }
+      //console.log(data.p, sampleConfig.panning);
+      //console.log('ready', sampleConfig);
+    }
+  };
+
+
+  Instrument.prototype.getInfoAsHTML = function () {
+    var html = '',
+      instrumentInfo = '',
+      samplepackInfo = '',
+      sp = this.samplepack;
+
+    if (this.info !== undefined) {
+      instrumentInfo += '<tr><td>info</td><td>' + this.info + '</td></tr>';
+    }
+    if (this.author !== undefined) {
+      instrumentInfo += '<tr><td>author</td><td>' + this.author + '</td></tr>';
+    }
+    if (this.license !== undefined) {
+      instrumentInfo += '<tr><td>license</td><td>' + this.license + '</td></tr>';
+    }
+    instrumentInfo += '<tr><td>keyrange</td><td>' + this.lowestNote + '(' + sequencer.getFullNoteName(this.lowestNote) + ')';
+    instrumentInfo += ' - ' + this.highestNote + '(' + sequencer.getFullNoteName(this.highestNote) + ')</td></tr>';
+
+    if (instrumentInfo !== '') {
+      instrumentInfo = '<table><th colspan="2">instrument</th>' + instrumentInfo + '</table>';
+      html += instrumentInfo;
+    }
+
+    if (sp === undefined) {
+      return html;
+    }
+
+    if (sp.info !== undefined) {
+      samplepackInfo += '<tr><td>info</td><td>' + sp.info + '</td></tr>';
+    }
+    if (sp.author !== undefined) {
+      samplepackInfo += '<tr><td>author</td><td>' + sp.author + '</td></tr>';
+    }
+    if (sp.license !== undefined) {
+      samplepackInfo += '<tr><td>license</td><td>' + sp.license + '</td></tr>';
+    }
+    if (sp.compression !== undefined) {
+      samplepackInfo += '<tr><td>compression</td><td>' + sp.compression + '</td></tr>';
+    }
+    if (sp.filesize !== undefined) {
+      samplepackInfo += '<tr><td>filesize</td><td>' + round(sp.filesize / 1024 / 1024, 2) + ' MiB</td></tr>';
+    }
+
+    if (samplepackInfo !== '') {
+      samplepackInfo = '<table><th colspan="2">samplepack</th>' + samplepackInfo + '</table>';
+      html += samplepackInfo;
+    }
+
+    return html;
+  };
+
+
+  Instrument.prototype.getInfo = function () {
+    var info = {
+      instrument: {},
+      samplepack: {}
+    };
+
+    if (this.info !== undefined) {
+      info.instrument.info = this.info;
+    }
+    if (this.author !== undefined) {
+      info.instrument.author = this.author;
+    }
+    if (this.license !== undefined) {
+      info.instrument.license = this.license;
+    }
+    if (this.keyrange !== undefined) {
+      info.instrument.keyrange = this.keyrange;
+    }
+
+
+    if (this.info !== undefined) {
+      info.samplepack.info = this.info;
+    }
+    if (this.author !== undefined) {
+      info.samplepack.author = this.author;
+    }
+    if (this.license !== undefined) {
+      info.samplepack.license = this.license;
+    }
+    if (this.compression !== undefined) {
+      info.samplepack.compression = this.compression;
+    }
+    if (this.filesize !== undefined) {
+      info.samplepack.filesize = round(this.samplepack.filesize / 1024 / 1024, 2);
+    }
+
+    return info;
+  };
+
+
+  Instrument.prototype.createSample = function (event) {
     var
-        debug = sequencer.debug,
+      noteNumber = event.noteNumber,
+      velocity = event.velocity,
+      data = this.sampleDataByNoteNumber[noteNumber],
+      type = typeString(data);
 
-        //import
-        context, // → defined in open_module.js
-        storage, // → defined in open_module.js
-        timedTasks, // → defined in open_module.js
-        repetitiveTasks, // → defined in open_module.js
-        findItem, // → defined in utils.js
-        storeItem, // → defined in utils.js
-        typeString, // → defined in utils.js
-        pathToArray, // → defined in utils.js
-        //createClass, // → defined in utils.js
-        isEmptyObject, // → defined in utils.js
-        objectForEach, // → defined in utils.js
-        createSample, // → defined in sample.js
-        createReverb, // → defined in effects.js
-        dispatchEvent, // → defined in song.js
-        remap, // defined in util.js
-        round, // defined in util.js
-        getEqualPowerCurve, // defined in util.js
-        transpose, // defined in transpose.js
-
-        Instrument,
-        SimpleSynth;
-
-
-    function unscheduleCallback(sample) {
-        //console.log(sample.id, 'has been unscheduled');
-        sample = null;
+    if (type === 'array') {
+      data = data[velocity];
+      //console.log(velocity, data.bufferId);
     }
 
-
-    Instrument = function (config) {
-        //console.log(config);
-        this.className = 'Instrument';
-        this.config = config;
-        this.scheduledEvents = {};
-        this.scheduledSamples = {};
-        this.sustainPedalDown = false;
-        this.sustainPedalSamples = {};
-        this.sampleDataByNoteNumber = {};
-        this.sampleData = [];
-
-        this.info = config.info || config.instrument_info;
-        this.author = config.author || config.instrument_author;
-        this.license = config.license || config.instrument_license;
-        this.pack = config.pack;
-
-        this.parse();
-    };
+    if (data === undefined || data === false) {
+      // no buffer data, return a dummy sample
+      return {
+        start: function () {
+          console.warn('no audio data loaded for', noteNumber);
+        },
+        stop: function () { },
+        update: function () { },
+        addData: function () { },
+        unschedule: function () { }
+      };
+    }
+    //console.log(data);
+    data.track = event.track;
+    return createSample(data);
+  };
 
 
-    // called by asset manager when a sample pack or an instrument has been unloaded, see asset_manager.js
-    Instrument.prototype.reset = function () {
-        var instrument = sequencer.getInstrument(this.config.localPath),
-            samplepack = sequencer.getSamplePack(this.config.sample_path);
+  Instrument.prototype.setKeyScalingPanning = function (start, end) {
+    //console.log('keyScalingPanning', start, end);
+    var i, data, numSamples = this.sampleData.length,
+      panStep, currentPan;
 
-        if (samplepack === false || instrument === false) {
-            this.scheduledEvents = {};
-            this.scheduledSamples = {};
-            this.sustainPedalSamples = {};
-            this.sampleDataByNoteNumber = {};
-            this.sampleData = [];
-            if (this.update) {
-                delete repetitiveTasks[this.updateTaskId];
-            }
-            // if the instrument has been unloaded, set the track to the default instrument
-            if (instrument === false) {
-                this.track.setInstrument();
-            }
+    if (start === false) {
+      for (i = 0; i < numSamples; i++) {
+        data = this.sampleData[i];
+        data.panning = false;
+      }
+    }
+
+    if (isNaN(start) === false && isNaN(end) === false) {
+      panStep = (end - start) / this.numNotes;
+      currentPan = start;
+      for (i = 0; i < numSamples; i++) {
+        data = this.sampleData[i];
+        data.panning = true;
+        data.panPosition = currentPan;
+        //console.log(currentPan, panStep, highestNote, lowestNote, data.noteNumber);
+        currentPan += panStep;
+      }
+    }
+  };
+
+
+  Instrument.prototype.setRelease = function (millis, envelope) {
+    if (millis === undefined) {
+      return;
+    }
+    this.releaseEnvelope = envelope || this.releaseEnvelope;
+    this.keyScalingRelease = undefined;
+
+    var i, data, numSamples = this.sampleData.length;
+    for (i = 0; i < numSamples; i++) {
+      data = this.sampleData[i];
+      data.release = true;
+      data.release_duration = millis;
+      data.release_envelope = this.releaseEnvelope;
+    }
+    this.releaseDuration = millis;
+  };
+
+
+  Instrument.prototype.setKeyScalingRelease = function (start, end, envelope) {
+    var i, data, numSamples = this.sampleData.length,
+      releaseStep, currentRelease;
+
+    this.releaseEnvelope = envelope || this.releaseEnvelope;
+
+    if (isNaN(start) === false && isNaN(end) === false) {
+      this.keyScalingRelease = [start, end];
+      this.releaseDuration = 0;
+      releaseStep = (end - start) / this.numNotes;
+      currentRelease = start;
+      for (i = 0; i < numSamples; i++) {
+        data = this.sampleData[i];
+        data.release_duration = currentRelease;
+        data.release_envelope = currentRelease;
+        //console.log(currentRelease, releaseStep, data.noteNumber);
+        currentRelease += releaseStep;
+      }
+    }
+  };
+
+
+  Instrument.prototype.transpose = function (semitones, cb1, cb2) {
+    if (transpose === undefined) {
+      console.log('transpose is still experimental');
+      return;
+    }
+    var numSamples = this.sampleData.length;
+    function loop(num, samples) {
+      var data;
+      if (cb2) {
+        cb2('transposing sample ' + (num + 1) + ' of ' + numSamples);
+      }
+      //console.log(num, numSamples);
+      if (num < numSamples) {
+        data = samples[num];
+        setTimeout(function () {
+          transpose(data.buffer, semitones, function (transposedBuffer) {
+            data.buffer = transposedBuffer;
+            loop(++num, samples);
+          });
+        }, 10);
+      } else {
+        if (cb1) {
+          console.log('ready');
+          cb1();
         }
-    };
+      }
+    }
+    loop(0, this.sampleData);
+  };
 
 
-    Instrument.prototype.parse = function () {
-        var i, maxi, v, v1, v2, length, octave, note, noteName, noteNumber,
-            pathArray,
-            buffer, names,
-            id, data, subdata,
-            update,
-            sample,
-            sampleConfig,
-            samplePack,
-            audioFolder,
-            config = this.config,
-            noteNameMode = config.notename_mode === undefined ? sequencer.noteNameMode : config.notename_mode,
-            mapping = config.mapping,
-            me = this;
+  // called when midi events arrive from a midi input, from processEvent or from the scheduler
+  Instrument.prototype.processEvent = function (midiEvent) {
+    // console.log(midiEvent.type + ' : ' + midiEvent.velocity, midiEvent.time);
+    var type = midiEvent.type,
+      data1, data2, track, output;
 
-        if (config.name === undefined) {
-            console.error('instruments must have a name', config);
-            return false;
+    //seconds = seconds === undefined ? 0 : seconds;
+    if (midiEvent.time === undefined) {
+      midiEvent.time = 0;
+    }
+
+    if (type === 128 || type === 144) {
+      if (type === 128) {
+        if (this.sustainPedalDown === true) {
+          midiEvent.sustainPedalDown = true;
         }
-
-        if (mapping === undefined) {
-            console.error('instruments must have a mapping to samples', config);
-            return false;
+        //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.id);
+        this.stopNote(midiEvent);
+      } else {
+        //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.noteOff.ticks, midiEvent.midiNote.id);
+        this.playNote(midiEvent);
+      }
+    } else if (midiEvent.type === 176) {
+      //return;
+      data1 = midiEvent.data1;
+      data2 = midiEvent.data2;
+      if (data1 === 64) { // sustain pedal
+        //console.log(this.sustainPedalDown, data1, data2)
+        if (data2 === 127) {
+          this.sustainPedalDown = true;
+          //console.log('sustain pedal down', this.track.song.id);
+          dispatchEvent(this.track.song, 'sustain_pedal', 'down');
+        } else if (data2 === 0) {
+          this.sustainPedalDown = false;
+          //console.log('sustain pedal up');
+          dispatchEvent(this.track.song, 'sustain_pedal', 'up');
+          this.stopSustain(midiEvent.time);
         }
-
-        this.name = config.name;
-        this.folder = config.folder || '';
-        this.autopan = config.autopan || false; // for simple synth
-        this.singlePitch = config.single_pitch || false;
-        this.samplePath = config.sample_path || this.name;
-        this.keyScalingRelease = config.keyscaling_release;
-        this.keyScalingPanning = config.keyscaling_panning;
-        this.keyRange = config.keyrange || config.key_range;
-        //console.log(this.keyRange, config);
-        pathArray = this.samplePath.split('/');
-
-        //console.log(this.keyScalingRelease, config);
-
-        samplePack = storage.samplepacks;
-        for (i = 0, maxi = pathArray.length; i < maxi; i++) {
-            if (samplePack === undefined) {
-                if (sequencer.debug) {
-                    console.log('sample pack not found', pathArray.join('/'));
-                }
-                return;
-            }
-            samplePack = samplePack[pathArray[i]];
-        }
-        //console.log(samplePack.name);
-
-        audioFolder = storage.audio;
-        try {
-            for (i = 0, maxi = pathArray.length; i < maxi; i++) {
-                audioFolder = audioFolder[pathArray[i]];
-            }
-        } catch (e) {
-            if (sequencer.debug) {
-                console.log('sample pack "' + pathArray[i] + '" is not loaded');
-            }
-            //sampleConfig = false;
-            return;
-        }
-
-        if (audioFolder === undefined) {
-            if (sequencer.debug) {
-                console.log('sample pack not found', pathArray.join('/'));
-            }
-            //sampleConfig = false;
-            return;
-        }
-
-
-        if (typeString(mapping) === 'array') {
-            this.keyRange = mapping;
-            mapping = {};
-            for (i = this.keyRange[0]; i <= this.keyRange[1]; i++) {
-                mapping[i] = '';
-            }
-        }
-
-        if (this.keyRange === undefined) {
-            this.lowestNote = 128;
-            this.highestNote = -1;
-        } else {
-            this.lowestNote = this.keyRange[0];
-            this.highestNote = this.keyRange[1];
-            this.numNotes = this.highestNote - this.lowestNote;
-        }
-
-
-        if (config.release_duration !== undefined) {
-            this.releaseDuration = config.release_duration;
-        } else {
-            this.releaseDuration = 0;
-        }
-
-        this.releaseEnvelope = config.release_envelope || 'equal power';
-
-
-        if (this.autopan) {
-            this.autoPanner = createAutoPanner();
-        }
-
-        this.samplepack = samplePack;
-        //console.log(samplePack);
-
-        for (id in mapping) {
-            if (mapping.hasOwnProperty(id)) {
-                data = mapping[id];
-
-                if (isNaN(id)) {
-                    // C3, D#5, Bb0, etc.
-                    length = id.length;
-                    octave = id.substring(length - 1);
-                    note = id.substring(0, length - 1);
-                    noteName = id;
-                    noteNumber = sequencer.getNoteNumber(note, octave);
-                } else {
-                    noteName = sequencer.getNoteNameFromNoteNumber(id, noteNameMode);
-                    noteName = noteName.join('');
-                    noteNumber = id;
-                }
-                //console.log(id, noteNameMode);
-
-                noteNumber = parseInt(noteNumber, 10);
-
-                if (this.keyRange === undefined) {
-                    this.lowestNote = noteNumber < this.lowestNote ? noteNumber : this.lowestNote;
-                    this.highestNote = noteNumber > this.highestNote ? noteNumber : this.highestNote;
-                }
-
-                //console.log(data,typeString(data));
-
-                if (typeString(data) === 'array') {
-                    // multi-layered
-                    this.multiLayered = true;
-                    for (i = 0, maxi = data.length; i < maxi; i++) {
-                        subdata = data[i];
-                        parseSampleData(subdata);
-                        if (this.sampleDataByNoteNumber[noteNumber] === undefined) {
-                            this.sampleDataByNoteNumber[noteNumber] = [];
-                        }
-                        // store the same sample config for every step in this velocity range
-                        v1 = subdata.v[0];
-                        v2 = subdata.v[1];
-                        for (v = v1; v <= v2; v++) {
-                            this.sampleDataByNoteNumber[noteNumber][v] = sampleConfig;
-                        }
-                        this.sampleData.push(sampleConfig);
-                    }
-                } else {
-                    // single-layered
-                    parseSampleData(data);
-                    //console.log('--->', sampleConfig);
-                    this.sampleDataByNoteNumber[noteNumber] = sampleConfig;
-                    this.sampleData.push(sampleConfig);
-                }
-            }
-        }
-
-        if (this.keyRange === undefined) {
-            //console.log(this.highestNote, this.lowestNote);
-            this.numNotes = this.highestNote - this.lowestNote;
-            this.keyRange = [this.lowestNote, this.highestNote];
-        }
-
-
-        // if a key range is set for the instrument, the mapping object is generated by parseSampleData() so we need to add
-        // the mapping object to the config to make it available for unloading
-        this.config.mapping = mapping;
-
-        if (this.singlePitch) {
-            // TODO: fix this for multi-layered instruments (low prio)
-            for (i = 127; i >= 0; i--) {
-                this.sampleData[i] = sampleConfig;
-                this.sampleDataByNoteNumber[i] = sampleConfig;
-            }
-        }
-
-        if (update) {
-            this.updateTaskId = 'update_' + this.name + '_' + new Date().getTime();
-            //console.log('start update', this.name);
-            repetitiveTasks[this.updateTaskId] = function () {
-                //console.log('update');
-                if (me.autopan) {
-                    me.update(this.autoPanner.getValue());
-                } else {
-                    me.update();
-                }
-            };
-        }
-
-        // inner function of Instrument.parse();
-        function parseSampleData(data) {
-            var tmp, n;
-            //console.log('find', this.samplePath + '/' + data.n);
-            //buffer = findItem(this.samplePath + '/' + data.n, storage.audio);
-            //console.log(data);
-
-            if (data.n) {
-                // get the buffer by an id
-                buffer = audioFolder[data.n];
-                //console.log(data.n, buffer);
-            } else {
-                // get the buffer by a note number or note name if a keyrange is specified
-                names = [noteNumber, noteName, noteName.toLowerCase()];
-                for (n = 2; n >= 0; n--) {
-                    buffer = audioFolder[names[n]];
-                    if (buffer !== undefined) {
-                        mapping[id] = { n: names[n] };
-                        break;
-                    }
-                }
-            }
-
-            if (buffer === undefined) {
-                if (sequencer.debug) {
-                    console.log('no buffer found for ' + id + ' (' + me.name + ')');
-                }
-                sampleConfig = false;
-                return;
-            }
-
-            sampleConfig = {
-                noteNumber: noteNumber,
-                buffer: buffer,
-                bufferId: data.n,
-                autopan: me.autopan
-            };
-
-            // sample pack sustain
-            if (config.sustain === true) {
-                sampleConfig.sustain = true;
-                update = true;
-            }
-
-            // sustain
-            if (data.s !== undefined) {
-                sampleConfig.sustain_start = data.s[0];
-                sampleConfig.sustain_end = data.s[1];
-                sampleConfig.sustain = true;
-                update = true;
-            } else if (config.sustain === true) {
-                tmp = samplePack.samplesById[data.n].sustain;
-                if (tmp !== undefined) {
-                    sampleConfig.sustain_start = tmp[0];
-                    sampleConfig.sustain_end = tmp[1];
-                    //sampleConfig.sustain = true;
-                    //console.log(tmp, update, sampleConfig.sustain);
-                } else {
-                    sampleConfig.sustain = false;
-                }
-                //console.log(data.n, samplePack.samplesById[data.n]);
-            }
-
-            // global release
-            if (config.release_duration !== undefined) {
-                sampleConfig.release_duration = config.release_duration;
-                sampleConfig.release_envelope = config.release_envelope || me.releaseEnvelope;
-                sampleConfig.release = true;
-                update = true;
-            }
-
-            // release duration and envelope per sample overrules global release duration and envelope
-            if (data.r !== undefined) {
-                if (typeString(data.r) === 'array') {
-                    sampleConfig.release_duration = data.r[0];
-                    sampleConfig.release_envelope = data.r[1] || me.releaseEnvelope;
-                } else if (!isNaN(data.r)) {
-                    sampleConfig.release_duration = data.r;
-                    sampleConfig.release_envelope = me.releaseEnvelope;
-                }
-                sampleConfig.release = true;
-                update = true;
-                //console.log(data.r, sampleConfig.release_duration, sampleConfig.release_envelope)
-            }
-
-            // panning
-            if (data.p !== undefined) {
-                sampleConfig.panPosition = data.p;
-                sampleConfig.panning = true;
-            }
-            //console.log(data.p, sampleConfig.panning);
-            //console.log('ready', sampleConfig);
-        }
-    };
-
-
-    Instrument.prototype.getInfoAsHTML = function () {
-        var html = '',
-            instrumentInfo = '',
-            samplepackInfo = '',
-            sp = this.samplepack;
-
-        if (this.info !== undefined) {
-            instrumentInfo += '<tr><td>info</td><td>' + this.info + '</td></tr>';
-        }
-        if (this.author !== undefined) {
-            instrumentInfo += '<tr><td>author</td><td>' + this.author + '</td></tr>';
-        }
-        if (this.license !== undefined) {
-            instrumentInfo += '<tr><td>license</td><td>' + this.license + '</td></tr>';
-        }
-        instrumentInfo += '<tr><td>keyrange</td><td>' + this.lowestNote + '(' + sequencer.getFullNoteName(this.lowestNote) + ')';
-        instrumentInfo += ' - ' + this.highestNote + '(' + sequencer.getFullNoteName(this.highestNote) + ')</td></tr>';
-
-        if (instrumentInfo !== '') {
-            instrumentInfo = '<table><th colspan="2">instrument</th>' + instrumentInfo + '</table>';
-            html += instrumentInfo;
-        }
-
-        if (sp === undefined) {
-            return html;
-        }
-
-        if (sp.info !== undefined) {
-            samplepackInfo += '<tr><td>info</td><td>' + sp.info + '</td></tr>';
-        }
-        if (sp.author !== undefined) {
-            samplepackInfo += '<tr><td>author</td><td>' + sp.author + '</td></tr>';
-        }
-        if (sp.license !== undefined) {
-            samplepackInfo += '<tr><td>license</td><td>' + sp.license + '</td></tr>';
-        }
-        if (sp.compression !== undefined) {
-            samplepackInfo += '<tr><td>compression</td><td>' + sp.compression + '</td></tr>';
-        }
-        if (sp.filesize !== undefined) {
-            samplepackInfo += '<tr><td>filesize</td><td>' + round(sp.filesize / 1024 / 1024, 2) + ' MiB</td></tr>';
-        }
-
-        if (samplepackInfo !== '') {
-            samplepackInfo = '<table><th colspan="2">samplepack</th>' + samplepackInfo + '</table>';
-            html += samplepackInfo;
-        }
-
-        return html;
-    };
-
-
-    Instrument.prototype.getInfo = function () {
-        var info = {
-            instrument: {},
-            samplepack: {}
-        };
-
-        if (this.info !== undefined) {
-            info.instrument.info = this.info;
-        }
-        if (this.author !== undefined) {
-            info.instrument.author = this.author;
-        }
-        if (this.license !== undefined) {
-            info.instrument.license = this.license;
-        }
-        if (this.keyrange !== undefined) {
-            info.instrument.keyrange = this.keyrange;
-        }
-
-
-        if (this.info !== undefined) {
-            info.samplepack.info = this.info;
-        }
-        if (this.author !== undefined) {
-            info.samplepack.author = this.author;
-        }
-        if (this.license !== undefined) {
-            info.samplepack.license = this.license;
-        }
-        if (this.compression !== undefined) {
-            info.samplepack.compression = this.compression;
-        }
-        if (this.filesize !== undefined) {
-            info.samplepack.filesize = round(this.samplepack.filesize / 1024 / 1024, 2);
-        }
-
-        return info;
-    };
-
-
-    Instrument.prototype.createSample = function (event) {
-        var
-            noteNumber = event.noteNumber,
-            velocity = event.velocity,
-            data = this.sampleDataByNoteNumber[noteNumber],
-            type = typeString(data);
-
-        if (type === 'array') {
-            data = data[velocity];
-            //console.log(velocity, data.bufferId);
-        }
-
-        if (data === undefined || data === false) {
-            // no buffer data, return a dummy sample
-            return {
-                start: function () {
-                    console.warn('no audio data loaded for', noteNumber);
-                },
-                stop: function () { },
-                update: function () { },
-                addData: function () { },
-                unschedule: function () { }
-            };
-        }
-        //console.log(data);
-        data.track = event.track;
-        return createSample(data);
-    };
-
-
-    Instrument.prototype.setKeyScalingPanning = function (start, end) {
-        //console.log('keyScalingPanning', start, end);
-        var i, data, numSamples = this.sampleData.length,
-            panStep, currentPan;
-
-        if (start === false) {
-            for (i = 0; i < numSamples; i++) {
-                data = this.sampleData[i];
-                data.panning = false;
-            }
-        }
-
-        if (isNaN(start) === false && isNaN(end) === false) {
-            panStep = (end - start) / this.numNotes;
-            currentPan = start;
-            for (i = 0; i < numSamples; i++) {
-                data = this.sampleData[i];
-                data.panning = true;
-                data.panPosition = currentPan;
-                //console.log(currentPan, panStep, highestNote, lowestNote, data.noteNumber);
-                currentPan += panStep;
-            }
-        }
-    };
-
-
-    Instrument.prototype.setRelease = function (millis, envelope) {
-        if (millis === undefined) {
-            return;
-        }
-        this.releaseEnvelope = envelope || this.releaseEnvelope;
-        this.keyScalingRelease = undefined;
-
-        var i, data, numSamples = this.sampleData.length;
-        for (i = 0; i < numSamples; i++) {
-            data = this.sampleData[i];
-            data.release = true;
-            data.release_duration = millis;
-            data.release_envelope = this.releaseEnvelope;
-        }
-        this.releaseDuration = millis;
-    };
-
-
-    Instrument.prototype.setKeyScalingRelease = function (start, end, envelope) {
-        var i, data, numSamples = this.sampleData.length,
-            releaseStep, currentRelease;
-
-        this.releaseEnvelope = envelope || this.releaseEnvelope;
-
-        if (isNaN(start) === false && isNaN(end) === false) {
-            this.keyScalingRelease = [start, end];
-            this.releaseDuration = 0;
-            releaseStep = (end - start) / this.numNotes;
-            currentRelease = start;
-            for (i = 0; i < numSamples; i++) {
-                data = this.sampleData[i];
-                data.release_duration = currentRelease;
-                data.release_envelope = currentRelease;
-                //console.log(currentRelease, releaseStep, data.noteNumber);
-                currentRelease += releaseStep;
-            }
-        }
-    };
-
-
-    Instrument.prototype.transpose = function (semitones, cb1, cb2) {
-        if (transpose === undefined) {
-            console.log('transpose is still experimental');
-            return;
-        }
-        var numSamples = this.sampleData.length;
-        function loop(num, samples) {
-            var data;
-            if (cb2) {
-                cb2('transposing sample ' + (num + 1) + ' of ' + numSamples);
-            }
-            //console.log(num, numSamples);
-            if (num < numSamples) {
-                data = samples[num];
-                setTimeout(function () {
-                    transpose(data.buffer, semitones, function (transposedBuffer) {
-                        data.buffer = transposedBuffer;
-                        loop(++num, samples);
-                    });
-                }, 10);
-            } else {
-                if (cb1) {
-                    console.log('ready');
-                    cb1();
-                }
-            }
-        }
-        loop(0, this.sampleData);
-    };
-
-
-    // called when midi events arrive from a midi input, from processEvent or from the scheduler
-    Instrument.prototype.processEvent = function (midiEvent) {
-        // console.log(midiEvent.type + ' : ' + midiEvent.velocity, midiEvent.time);
-        var type = midiEvent.type,
-            data1, data2, track, output;
-
-        //seconds = seconds === undefined ? 0 : seconds;
-        if (midiEvent.time === undefined) {
-            midiEvent.time = 0;
-        }
-
-        if (type === 128 || type === 144) {
-            if (type === 128) {
-                if (this.sustainPedalDown === true) {
-                    midiEvent.sustainPedalDown = true;
-                }
-                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.id);
-                this.stopNote(midiEvent);
-            } else {
-                //console.log(type, midiEvent.noteNumber, midiEvent.ticks, midiEvent.midiNote.noteOff.ticks, midiEvent.midiNote.id);
-                this.playNote(midiEvent);
-            }
-        } else if (midiEvent.type === 176) {
-            //return;
-            data1 = midiEvent.data1;
-            data2 = midiEvent.data2;
-            if (data1 === 64) { // sustain pedal
-                //console.log(this.sustainPedalDown, data1, data2)
-                if (data2 === 127) {
-                    this.sustainPedalDown = true;
-                    //console.log('sustain pedal down', this.track.song.id);
-                    dispatchEvent(this.track.song, 'sustain_pedal', 'down');
-                } else if (data2 === 0) {
-                    this.sustainPedalDown = false;
-                    //console.log('sustain pedal up');
-                    dispatchEvent(this.track.song, 'sustain_pedal', 'up');
-                    this.stopSustain(midiEvent.time);
-                }
-            } else if (data1 === 10) { // panning
-                // panning is *not* exactly timed -> not possible (yet) with WebAudio
-                track = this.track;
-                //console.log(data2, remap(data2, 0, 127, -1, 1));
-                track.setPanning(remap(data2, 0, 127, -1, 1));
-            } else if (data1 === 7) { // volume
-                track = this.track;
-                output = track.output;
-                output.gain.setValueAtTime(data2 / 127, midiEvent.time);
-                /*
-                //@TODO: this should be done by a plugin
-                if(track.volumeChangeMethod === 'linear'){
-                    output.gain.linearRampToValueAtTime(data2/127, seconds);
-                }else if(track.volumeChangeMethod === 'equal_power'){
-                    volume1 = track.getVolume();
-                    volume2 = data2/127;
-                    if(volume1 > volume2){
-                        values = getEqualPowerCurve(100, 'fadeOut', volume2);
-                    }else{
-                        values = getEqualPowerCurve(100, 'fadeIn', volume2);
-                    }
-                    now = sequencer.getTime();
-                    output.gain.setValueCurveAtTime(values, seconds, seconds + 0.05);
-                }else{
-                    output.gain.setValueAtTime(data2/127, seconds);
-                }
-                */
-            }
-        }
-    };
-
-
-    Instrument.prototype.stopSustain = function (seconds) {
-        var midiNote,
-            scheduledSamples = this.scheduledSamples,
-            sustainPedalSamples = this.sustainPedalSamples;
-
-        objectForEach(sustainPedalSamples, function (sample) {
-            if (sample !== undefined) {
-                midiNote = sample.midiNote;
-                midiNote.noteOn.sustainPedalDown = undefined;
-                midiNote.noteOff.sustainPedalDown = undefined;
-                sample.stop(seconds, function (sample) {
-                    //console.log('stopped sustain pedal up:', sample.id, sample.sourceId);
-                    scheduledSamples[sample.sourceId] = null;
-                    delete scheduledSamples[sample.sourceId];
-                    //delete sustainPedalSamples[sample.sourceId];
-                });
-            }
-        });
-
-        this.sustainPedalSamples = {};
-    };
-
-
-    Instrument.prototype.playNote = function (midiEvent) {
-        var
-            sample,
-            sourceId;
-
-        if (!midiEvent.midiNote) {
-            if (sequencer.debug) {
-                console.warn('playNote() no midi note');
-            }
-            return;
-        }
-
-        sourceId = midiEvent.midiNote.id;
-        sample = this.scheduledSamples[sourceId];
-        // console.log('start', sourceId);
-
-        if (sample !== undefined) {
-            // console.log('already scheduled', sourceId);
-            sample.unschedule(0);
-        }
-
-        sample = this.createSample(midiEvent);
-        // add some extra attributes to the sample
-        sample.addData({
-            midiNote: midiEvent.midiNote,
-            noteName: midiEvent.midiNote.note.fullName,
-            sourceId: sourceId
-        });
-        this.scheduledSamples[sourceId] = sample;
-        sample.start(midiEvent);
-    };
-
-
-    Instrument.prototype.stopNote = function (midiEvent) {
-        if (midiEvent.midiNote === undefined) {
-            if (sequencer.debug) {
-                console.warn('stopNote() no midi note', midiEvent.ticks, midiEvent.noteNumber);
-            }
-            return;
-        }
-
-        var sourceId = midiEvent.midiNote.id,
-            sample = this.scheduledSamples[sourceId],
-            scheduledSamples = this.scheduledSamples,
-            sustainPedalSamples = this.sustainPedalSamples;
-
-        // if(this.song && this.song.bar >= 6 && this.track.name === 'Sonata # 3'){
-        //     console.log('stopNote', midiEvent, seconds, sequencer.getTime());
-        // }
-
-        //console.log(midiEvent.sustainPedalDown);
-        if (midiEvent.sustainPedalDown === true) {
-            // while sustain pedal is pressed, bypass note off events
-            //console.log('sustain');
-            sustainPedalSamples[sourceId] = sample;
-            return;
-        }
-
-        if (sample === undefined) {
-            // if(sequencer.debug){
-            //     console.log('no sample scheduled (anymore) for this midiEvent', sourceId, seconds);
-            // }
-            return;
-        }
-
-        sample.stop(midiEvent.time, function () {
-            scheduledSamples[sourceId] = null;
-            delete scheduledSamples[sourceId];
-        });
-    };
-
-
-    Instrument.prototype.hasScheduledSamples = function () {
-        return isEmptyObject(this.scheduledSamples);
-    };
-
-
-    Instrument.prototype.reschedule = function (song) {
-        var
-            min = song.millis,
-            max = min + (sequencer.bufferTime * 1000),
-            max2 = min + 20,
-            scheduledSamples = this.scheduledSamples,
-            id, note, sample;
-
-        for (id in scheduledSamples) {
-            if (scheduledSamples.hasOwnProperty(id)) {
-                sample = scheduledSamples[id]; // the sample
-                note = sample.midiNote; // the midi note
-
-                if (note === undefined || note.state === 'removed') {
-                    sample.unschedule(0, unscheduleCallback);
-                    delete scheduledSamples[id];
-                } else if (
-                    note.noteOn.millis >= min &&
-                    note.noteOff.millis < max &&
-                    sample.noteName === note.fullName
-                ) {
-                    // nothing has changed, skip
-                    continue;
-                } else {
-                    //console.log('unscheduled', id);
-                    delete scheduledSamples[id];
-                    sample.unschedule(null, unscheduleCallback);
-                }
-            }
-        }
+      } else if (data1 === 10) { // panning
+        // panning is *not* exactly timed -> not possible (yet) with WebAudio
+        track = this.track;
+        //console.log(data2, remap(data2, 0, 127, -1, 1));
+        track.setPanning(remap(data2, 0, 127, -1, 1));
+      } else if (data1 === 7) { // volume
+        track = this.track;
+        output = track.output;
+        output.gain.setValueAtTime(data2 / 127, midiEvent.time);
         /*
-                objectForEach(this.scheduledEvents, function(event, eventId){
-                    if(event === undefined || event.state === 'removed'){
-                        delete sequencer.timedTasks['event_' + eventId];
-                        delete this.scheduledEvents[eventId];
-                    }else if((event.millis >= min && event.millis < max2) === false){
-                        delete sequencer.timedTasks['event_' + eventId];
-                        delete this.scheduledEvents[eventId];
-                    }
-                });
+        //@TODO: this should be done by a plugin
+        if(track.volumeChangeMethod === 'linear'){
+            output.gain.linearRampToValueAtTime(data2/127, seconds);
+        }else if(track.volumeChangeMethod === 'equal_power'){
+            volume1 = track.getVolume();
+            volume2 = data2/127;
+            if(volume1 > volume2){
+                values = getEqualPowerCurve(100, 'fadeOut', volume2);
+            }else{
+                values = getEqualPowerCurve(100, 'fadeIn', volume2);
+            }
+            now = sequencer.getTime();
+            output.gain.setValueCurveAtTime(values, seconds, seconds + 0.05);
+        }else{
+            output.gain.setValueAtTime(data2/127, seconds);
+        }
         */
-    };
-
-
-    function loop(data, i, maxi, events) {
-        var arg;
-        for (i = 0; i < maxi; i++) {
-            arg = data[i];
-            if (arg === undefined) {
-                continue;
-            } else if (arg.className === 'MidiNote') {
-                events.push(arg.noteOn);
-            } else if (typeString(arg) === 'array') {
-                loop(arg, 0, arg.length);
-            }
-        }
+      }
     }
+  };
 
 
-    // stop specified events or notes, used by stopProcessEvent()
-    Instrument.prototype.unschedule = function () {
-        var args = Array.prototype.slice.call(arguments),
-            events = [],
-            i, e, id, sample;
+  Instrument.prototype.stopSustain = function (seconds) {
+    var midiNote,
+      scheduledSamples = this.scheduledSamples,
+      sustainPedalSamples = this.sustainPedalSamples;
 
-        loop(args, 0, args.length, events);
-
-        for (i = events.length - 1; i >= 0; i--) {
-            e = events[i];
-            if (e.midiNote !== undefined) {
-                // note on and note off events
-                id = e.midiNote.id;
-                sample = this.scheduledSamples[id];
-                if (sample !== undefined) {
-                    sample.unschedule(0, unscheduleCallback);
-                    delete this.scheduledSamples[id];
-                }
-            } else if (e.className === 'MidiEvent') {
-                // other channel events
-                id = e.id;
-                delete timedTasks['event_' + id];
-                delete this.scheduledEvents[id];
-            }
-            //console.log(id);
-        }
-    };
-
-
-    // stop all events and notes
-    Instrument.prototype.allNotesOff = function () {
-        var sample, sampleId,
-            scheduledSamples = this.scheduledSamples;
-
-        this.stopSustain(0);
-        this.sustainPedalDown = false;
-
-        //console.log(scheduledSamples);
-
-        if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
-            return;
-        }
-
-        for (sampleId in scheduledSamples) {
-            if (scheduledSamples.hasOwnProperty(sampleId)) {
-                //console.log('allNotesOff', sampleId);
-                sample = scheduledSamples[sampleId];
-                if (sample) {
-                    sample.unschedule(0, unscheduleCallback);
-                }
-            }
-        }
-        this.scheduledSamples = {};
-
-        objectForEach(this.scheduledEvents, function (event, eventId) {
-            delete timedTasks['event_' + eventId];
+    objectForEach(sustainPedalSamples, function (sample) {
+      if (sample !== undefined) {
+        midiNote = sample.midiNote;
+        midiNote.noteOn.sustainPedalDown = undefined;
+        midiNote.noteOff.sustainPedalDown = undefined;
+        sample.stop(seconds, function (sample) {
+          //console.log('stopped sustain pedal up:', sample.id, sample.sourceId);
+          scheduledSamples[sample.sourceId] = null;
+          delete scheduledSamples[sample.sourceId];
+          //delete sustainPedalSamples[sample.sourceId];
         });
-        this.scheduledEvents = {};
-    };
-
-
-    Instrument.prototype.allNotesOffPart = function (partId) {
-        var sample, sampleId,
-            scheduledSamples = this.scheduledSamples;
-
-        // make this more subtle
-        this.stopSustain(0);
-        this.sustainPedalDown = false;
-
-        //console.log(scheduledSamples);
-
-        if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
-            return;
-        }
-
-        for (sampleId in scheduledSamples) {
-            if (scheduledSamples.hasOwnProperty(sampleId)) {
-                //console.log('allNotesOff', sampleId);
-                sample = scheduledSamples[sampleId];
-                if (sample) {
-                    sample.unschedule(0, unscheduleCallback);
-                }
-            }
-        }
-        this.scheduledSamples = {};
-
-        objectForEach(this.scheduledEvents, function (event, eventId) {
-            delete timedTasks['event_' + eventId];
-        });
-        this.scheduledEvents = {};
-    };
-
-    Instrument.prototype.update = function (value) {
-        var sampleId, sample;
-        //console.log(this.scheduledSamples);
-        for (sampleId in this.scheduledSamples) {
-            if (this.scheduledSamples.hasOwnProperty(sampleId)) {
-                sample = this.scheduledSamples[sampleId];
-                if (sample) {
-                    sample.update(value);
-                }
-            }
-        }
-    };
-
-    function createAutoPanner(time) {
-        /*
-                var osc = context.createOscillator();
-                osc.frequency.value = 50;
-                osc.type = 0;
-                var gain = context.createGain();
-                gain.gain.value = 1;
-                osc.connect(gain);
-                gain.connect(context.destination);
-                osc.start();
-                console.log(osc);
-                return {
-                    getValue: function(){
-                        return osc.frequency.getValueAtTime(time);
-                    }
-                };
-        */
-        return {
-            getValue: function (time) {
-                return Math.sin(time * 2 * Math.PI);
-            }
-        };
-
-    }
-
-
-    sequencer.createInstrument = function (arg) {
-        var type = typeString(arg),
-            config,
-            instrument;
-
-        //console.log(arg, type, arg.className);
-
-        if (type === 'object') {
-            if (arg.className === 'Instrument') {
-                instrument = arg;
-            } else if (arg.className === 'InstrumentConfig') {
-                if (arg.name === 'sinewave') {
-                    instrument = new SimpleSynth(arg);
-                } else {
-                    instrument = new Instrument(arg);
-                }
-            }
-            return instrument;
-        }
-
-
-        if (type === 'string') {
-            //@TODO what happens if we have 2 instruments with the same name?
-            config = findItem(arg, storage.instruments);
-            //console.log('string', arg, config, storage.instruments);
-        }
-
-        if (config === false || config.className !== 'InstrumentConfig') {
-            if (debug >= 2) {
-                console.info('can not create instrument from', arg);
-            }
-            return false;
-        }
-
-
-        if (config.name === 'sinewave') {
-            instrument = new SimpleSynth(config);
-        } else {
-            instrument = new Instrument(config);
-        }
-
-        return instrument;
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function () {
-        var protectedScope = sequencer.protectedScope;
-
-        storage = sequencer.storage;
-        createSample = sequencer.createSample;
-        createReverb = sequencer.createReverb;
-        dispatchEvent = sequencer.protectedScope.songDispatchEvent;
-
-        context = protectedScope.context;
-        timedTasks = protectedScope.timedTasks;
-        repetitiveTasks = protectedScope.repetitiveTasks;
-        objectForEach = protectedScope.objectForEach;
-        isEmptyObject = protectedScope.isEmptyObject;
-        findItem = protectedScope.findItem;
-        storeItem = protectedScope.storeItem;
-        typeString = protectedScope.typeString;
-        pathToArray = protectedScope.pathToArray;
-        transpose = protectedScope.transpose;
-        SimpleSynth = protectedScope.createClass(Instrument);
-
-        remap = sequencer.util.remap;
-        round = sequencer.util.round;
-        getEqualPowerCurve = sequencer.util.getEqualPowerCurve;
-
-        SimpleSynth.prototype.parse = function () {
-            var me = this,
-                config = this.config;
-
-            //console.log(this.config);
-            this.name = 'SineWave';
-            this.waveForm = config.wave_form || 'sine';
-            this.autopan = config.autopan || false;
-            this.folder = config.folder || 'heartbeat';
-            this.releaseDuration = config.release_duration || 1500;
-            if (this.autopan) {
-                this.autoPanner = createAutoPanner();
-            }
-
-            repetitiveTasks['update_' + this.name + '_' + new Date().getTime()] = function () {
-                if (me.autopan) {
-                    //console.log('update',me.autoPanner.getValue(context.currentTime), me.autopan);
-                    //me.update(me.autoPanner.getValue(context.currentTime));
-                    me.update(Math.sin(context.currentTime * 2 * Math.PI));
-                } else {
-                    me.update();
-                }
-            };
-        };
-
-        SimpleSynth.prototype.createSample = function (event) {
-            var data = {
-                oscillator: true,
-                track: event.track,
-                event: event,
-                autopan: this.autopan,
-                wave_form: this.waveForm,
-                release_envelope: 'equal power',
-                release_duration: this.releaseDuration
-            };
-            //console.log(data);
-            return createSample(data);
-        };
-
-        sequencer.createSimpleSynth = function (config) {
-            config = config || {};
-            //console.log('creating sinewave');
-            return new SimpleSynth(config);
-        };
+      }
     });
+
+    this.sustainPedalSamples = {};
+  };
+
+
+  Instrument.prototype.playNote = function (midiEvent) {
+    var
+      sample,
+      sourceId;
+
+    if (!midiEvent.midiNote) {
+      if (sequencer.debug) {
+        console.warn('playNote() no midi note');
+      }
+      return;
+    }
+
+    sourceId = midiEvent.midiNote.id;
+    sample = this.scheduledSamples[sourceId];
+    // console.log('start', sourceId);
+
+    if (sample !== undefined) {
+      // console.log('already scheduled', sourceId);
+      sample.unschedule(0);
+    }
+
+    sample = this.createSample(midiEvent);
+    // add some extra attributes to the sample
+    sample.addData({
+      midiNote: midiEvent.midiNote,
+      noteName: midiEvent.midiNote.note.fullName,
+      sourceId: sourceId
+    });
+    this.scheduledSamples[sourceId] = sample;
+    sample.start(midiEvent);
+  };
+
+
+  Instrument.prototype.stopNote = function (midiEvent) {
+    if (midiEvent.midiNote === undefined) {
+      if (sequencer.debug) {
+        console.warn('stopNote() no midi note', midiEvent.ticks, midiEvent.noteNumber);
+      }
+      return;
+    }
+
+    var sourceId = midiEvent.midiNote.id,
+      sample = this.scheduledSamples[sourceId],
+      scheduledSamples = this.scheduledSamples,
+      sustainPedalSamples = this.sustainPedalSamples;
+
+    // if(this.song && this.song.bar >= 6 && this.track.name === 'Sonata # 3'){
+    //     console.log('stopNote', midiEvent, seconds, sequencer.getTime());
+    // }
+
+    //console.log(midiEvent.sustainPedalDown);
+    if (midiEvent.sustainPedalDown === true) {
+      // while sustain pedal is pressed, bypass note off events
+      //console.log('sustain');
+      sustainPedalSamples[sourceId] = sample;
+      return;
+    }
+
+    if (sample === undefined) {
+      // if(sequencer.debug){
+      //     console.log('no sample scheduled (anymore) for this midiEvent', sourceId, seconds);
+      // }
+      return;
+    }
+
+    sample.stop(midiEvent.time, function () {
+      scheduledSamples[sourceId] = null;
+      delete scheduledSamples[sourceId];
+    });
+  };
+
+
+  Instrument.prototype.hasScheduledSamples = function () {
+    return isEmptyObject(this.scheduledSamples);
+  };
+
+
+  Instrument.prototype.reschedule = function (song) {
+    var
+      min = song.millis,
+      max = min + (sequencer.bufferTime * 1000),
+      max2 = min + 20,
+      scheduledSamples = this.scheduledSamples,
+      id, note, sample;
+
+    for (id in scheduledSamples) {
+      if (scheduledSamples.hasOwnProperty(id)) {
+        sample = scheduledSamples[id]; // the sample
+        note = sample.midiNote; // the midi note
+
+        if (note === undefined || note.state === 'removed') {
+          sample.unschedule(0, unscheduleCallback);
+          delete scheduledSamples[id];
+        } else if (
+          note.noteOn.millis >= min &&
+          note.noteOff.millis < max &&
+          sample.noteName === note.fullName
+        ) {
+          // nothing has changed, skip
+          continue;
+        } else {
+          //console.log('unscheduled', id);
+          delete scheduledSamples[id];
+          sample.unschedule(null, unscheduleCallback);
+        }
+      }
+    }
+    /*
+            objectForEach(this.scheduledEvents, function(event, eventId){
+                if(event === undefined || event.state === 'removed'){
+                    delete sequencer.timedTasks['event_' + eventId];
+                    delete this.scheduledEvents[eventId];
+                }else if((event.millis >= min && event.millis < max2) === false){
+                    delete sequencer.timedTasks['event_' + eventId];
+                    delete this.scheduledEvents[eventId];
+                }
+            });
+    */
+  };
+
+
+  function loop(data, i, maxi, events) {
+    var arg;
+    for (i = 0; i < maxi; i++) {
+      arg = data[i];
+      if (arg === undefined) {
+        continue;
+      } else if (arg.className === 'MidiNote') {
+        events.push(arg.noteOn);
+      } else if (typeString(arg) === 'array') {
+        loop(arg, 0, arg.length);
+      }
+    }
+  }
+
+
+  // stop specified events or notes, used by stopProcessEvent()
+  Instrument.prototype.unschedule = function () {
+    var args = Array.prototype.slice.call(arguments),
+      events = [],
+      i, e, id, sample;
+
+    loop(args, 0, args.length, events);
+
+    for (i = events.length - 1; i >= 0; i--) {
+      e = events[i];
+      if (e.midiNote !== undefined) {
+        // note on and note off events
+        id = e.midiNote.id;
+        sample = this.scheduledSamples[id];
+        if (sample !== undefined) {
+          sample.unschedule(0, unscheduleCallback);
+          delete this.scheduledSamples[id];
+        }
+      } else if (e.className === 'MidiEvent') {
+        // other channel events
+        id = e.id;
+        delete timedTasks['event_' + id];
+        delete this.scheduledEvents[id];
+      }
+      //console.log(id);
+    }
+  };
+
+
+  // stop all events and notes
+  Instrument.prototype.allNotesOff = function () {
+    var sample, sampleId,
+      scheduledSamples = this.scheduledSamples;
+
+    this.stopSustain(0);
+    this.sustainPedalDown = false;
+
+    //console.log(scheduledSamples);
+
+    if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
+      return;
+    }
+
+    for (sampleId in scheduledSamples) {
+      if (scheduledSamples.hasOwnProperty(sampleId)) {
+        //console.log('allNotesOff', sampleId);
+        sample = scheduledSamples[sampleId];
+        if (sample) {
+          sample.unschedule(0, unscheduleCallback);
+        }
+      }
+    }
+    this.scheduledSamples = {};
+
+    objectForEach(this.scheduledEvents, function (event, eventId) {
+      delete timedTasks['event_' + eventId];
+    });
+    this.scheduledEvents = {};
+  };
+
+
+  Instrument.prototype.allNotesOffPart = function (partId) {
+    var sample, sampleId,
+      scheduledSamples = this.scheduledSamples;
+
+    // make this more subtle
+    this.stopSustain(0);
+    this.sustainPedalDown = false;
+
+    //console.log(scheduledSamples);
+
+    if (scheduledSamples === undefined || isEmptyObject(scheduledSamples) === true) {
+      return;
+    }
+
+    for (sampleId in scheduledSamples) {
+      if (scheduledSamples.hasOwnProperty(sampleId)) {
+        //console.log('allNotesOff', sampleId);
+        sample = scheduledSamples[sampleId];
+        if (sample) {
+          sample.unschedule(0, unscheduleCallback);
+        }
+      }
+    }
+    this.scheduledSamples = {};
+
+    objectForEach(this.scheduledEvents, function (event, eventId) {
+      delete timedTasks['event_' + eventId];
+    });
+    this.scheduledEvents = {};
+  };
+
+  Instrument.prototype.update = function (value) {
+    var sampleId, sample;
+    //console.log(this.scheduledSamples);
+    for (sampleId in this.scheduledSamples) {
+      if (this.scheduledSamples.hasOwnProperty(sampleId)) {
+        sample = this.scheduledSamples[sampleId];
+        if (sample) {
+          sample.update(value);
+        }
+      }
+    }
+  };
+
+  function createAutoPanner(time) {
+    /*
+            var osc = context.createOscillator();
+            osc.frequency.value = 50;
+            osc.type = 0;
+            var gain = context.createGain();
+            gain.gain.value = 1;
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.start();
+            console.log(osc);
+            return {
+                getValue: function(){
+                    return osc.frequency.getValueAtTime(time);
+                }
+            };
+    */
+    return {
+      getValue: function (time) {
+        return Math.sin(time * 2 * Math.PI);
+      }
+    };
+
+  }
+
+
+  sequencer.createInstrument = function (arg) {
+    var type = typeString(arg),
+      config,
+      instrument;
+
+    //console.log(arg, type, arg.className);
+
+    if (type === 'object') {
+      if (arg.className === 'Instrument') {
+        instrument = arg;
+      } else if (arg.className === 'InstrumentConfig') {
+        if (arg.name === 'sinewave') {
+          instrument = new SimpleSynth(arg);
+        } else {
+          instrument = new Instrument(arg);
+        }
+      }
+      return instrument;
+    }
+
+
+    if (type === 'string') {
+      //@TODO what happens if we have 2 instruments with the same name?
+      config = findItem(arg, storage.instruments);
+      //console.log('string', arg, config, storage.instruments);
+    }
+
+    if (config == false || config.className !== 'InstrumentConfig') {
+      if (debug >= 2) {
+        console.info('can not create instrument from', arg);
+      }
+      return false;
+    }
+
+
+    if (config.name === 'sinewave') {
+      instrument = new SimpleSynth(config);
+    } else {
+      instrument = new Instrument(config);
+    }
+
+    return instrument;
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    var protectedScope = sequencer.protectedScope;
+
+    storage = sequencer.storage;
+    createSample = sequencer.createSample;
+    createReverb = sequencer.createReverb;
+    dispatchEvent = sequencer.protectedScope.songDispatchEvent;
+
+    context = protectedScope.context;
+    timedTasks = protectedScope.timedTasks;
+    repetitiveTasks = protectedScope.repetitiveTasks;
+    objectForEach = protectedScope.objectForEach;
+    isEmptyObject = protectedScope.isEmptyObject;
+    findItem = protectedScope.findItem;
+    storeItem = protectedScope.storeItem;
+    typeString = protectedScope.typeString;
+    pathToArray = protectedScope.pathToArray;
+    transpose = protectedScope.transpose;
+    SimpleSynth = protectedScope.createClass(Instrument);
+
+    remap = sequencer.util.remap;
+    round = sequencer.util.round;
+    getEqualPowerCurve = sequencer.util.getEqualPowerCurve;
+
+    SimpleSynth.prototype.parse = function () {
+      var me = this,
+        config = this.config;
+
+      //console.log(this.config);
+      this.name = 'SineWave';
+      this.waveForm = config.wave_form || 'sine';
+      this.autopan = config.autopan || false;
+      this.folder = config.folder || 'heartbeat';
+      this.releaseDuration = config.release_duration || 1500;
+      if (this.autopan) {
+        this.autoPanner = createAutoPanner();
+      }
+
+      repetitiveTasks['update_' + this.name + '_' + new Date().getTime()] = function () {
+        if (me.autopan) {
+          //console.log('update',me.autoPanner.getValue(context.currentTime), me.autopan);
+          //me.update(me.autoPanner.getValue(context.currentTime));
+          me.update(Math.sin(context.currentTime * 2 * Math.PI));
+        } else {
+          me.update();
+        }
+      };
+    };
+
+    SimpleSynth.prototype.createSample = function (event) {
+      var data = {
+        oscillator: true,
+        track: event.track,
+        event: event,
+        autopan: this.autopan,
+        wave_form: this.waveForm,
+        release_envelope: 'equal power',
+        release_duration: this.releaseDuration
+      };
+      //console.log(data);
+      return createSample(data);
+    };
+
+    sequencer.createSimpleSynth = function (config) {
+      config = config || {};
+      //console.log('creating sinewave');
+      return new SimpleSynth(config);
+    };
+  });
 }
 function instrumentConfig() {
 
@@ -4552,2228 +4557,2239 @@ function instrumentConfig() {
 }
 function keyEditor() {
 
-    'use strict';
+  'use strict';
+
+  var
+    //private
+    KeyEditor,
+
+    updateDataKeys = 'newEvents newNotes newParts changedEvents changedNotes changedParts removedEvents removedNotes removedParts'.split(' '),
+
+    // default values
+    tickWidth = 0.1,
+    pitchHeight = 10,
+    barsPerPage = 4,
+    snapValueX = 0, // means snaps is off -> ticks value do not get rounded
+    //snapValueX = 1, // means snaps to all ticks
+    snapValueY = 'chromatic',
+    eventWidth = 2,
+
+    ceil = Math.ceil,
+
+    //import
+    createIteratorFactory,
+    getPosition,
+    createPlayhead,
+    getScaffoldingBars,
+    typeString,
+    objectToArray,
+    arrayToObject,
+    debug,
+    round,
+    floor,
+    createNote,
+
+    //public
+    //getLines,
+    //xToTicks,
+    //yToPitch,
+
+    //private
+    setPageData,
+    checkNextPage,
+    checkScrollPosition,
+    dispatchEvent,
+    handleKeys;
+
+
+
+  KeyEditor = function (song, config) {
+    this.song = song;
+    this.song.keyEditor = this;
+    this.playhead = createPlayhead(this.song, 'barsbeats ticks millis', 'keyeditor');
+
+    this.numBars = song.bars;
+    this.newNumBars = this.numBars;
+    this.eventListeners = {};
+    this.interrupt = false;
+
+    this.iteratorFactory = createIteratorFactory(this.song, this);
+    this.verticalLine = this.iteratorFactory.createVerticalLineIterator(this);
+    this.horizontalLine = this.iteratorFactory.createHorizontalLineIterator(this);
+    this.eventIterator = this.iteratorFactory.createEventIterator(this);
+    this.noteIterator = this.iteratorFactory.createNoteIterator(this);
+    this.partIterator = this.iteratorFactory.createPartIterator(this);
+
+
+    this.exactFitVertical = config.exactFitVertical || false;
+    this.exactFitHorizontal = config.exactFitHorizontal || false;
+
+    this.activeEvents = [];
+    this.activeNotes = [];
+    this.activeParts = [];
+
+    this.newEvents = [];
+    this.newNotes = [];
+    this.newParts = [];
+
+    this.changedEvents = [];
+    this.changedNotes = [];
+    this.changedParts = [];
+
+    this.removedEvents = [];
+    this.removedNotes = [];
+    this.removedParts = [];
+
+    this.recordedNotesObj = {};
+    this.recordedEventsObj = {};
+
+    this.snapshot = {
+      activeEvents: this.activeEvents,
+      activeNotes: this.activeNotes,
+      activeParts: this.activeParts,
+
+      newEvents: this.newEvents,
+      newNotes: this.newNotes,
+      newParts: this.newParts,
+
+      changedEvents: this.changedEvents,
+      changedNotes: this.changedNotes,
+      changedParts: this.changedParts,
+
+      removedEvents: this.removedEvents,
+      removedNotes: this.removedNotes,
+      removedParts: this.removedParts
+    };
+
+
+    if (config.paginate) {
+      this.paginate = true;
+      this.pageNo = 0;
+      this.barsPerPage = config.barsPerPage;
+      this.pageWidth = config.pageWidth;
+      this.pageHeight = config.pageHeight;
+      this.width = this.pageWidth;
+      this.lowestNote = config.lowestNote || song.lowestNote;
+      this.highestNote = config.highestNote || song.highestNote;
+      this.pitchRange = this.highestNote - this.lowestNote;
+      if (this.exactFitVertical) {
+        this.pitchHeight = this.height / this.pitchRange;
+        this.height = this.pageHeight;
+      } else {
+        this.pitchHeight = config.pitchHeight || pitchHeight;
+        this.height = this.pitchHeight * this.pitchRange;
+      }
+      //this.startBar = 0;//make this configurable
+      setPageData(this, 0);
+      checkNextPage(this);
+
+    } else {
+
+      this.setStartPosition(config.startPosition || 1);
+      this.setEndPosition(config.endPosition || song.bars + 1);
+      this.numTicks = this.endTicks - this.startTicks;
+
+      if (config.width) {
+        this.width = config.width;
+        this.tickWidth = this.width / this.numTicks;
+      } else if (config.tickWidth) {
+        this.tickWidth = config.tickWidth;
+        this.width = this.numTicks * this.tickWidth;
+        this.exactFitHorizontal = false;
+      } else if (config.barsPerPage && config.viewportWidth) {
+        //@TODO: add support for time measurement changes
+        this.barsPerPage = config.barsPerPage;
+        this.viewportWidth = config.viewportWidth;
+        this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
+        this.width = this.numTicks * this.tickWidth;
+        this.scrollX = 0;
+        this.scrollPosition = 0;
+        this.viewportTicks = this.viewportWidth / this.tickWidth;
+        this.maxScrollPosition = ceil(this.width / this.viewportWidth);
+        this.scrollLimit = this.viewportWidth / this.tickWidth;
+        checkScrollPosition(this);
+        this.exactFitHorizontal = false;
+      } else if (config.viewportWidth) {
+        this.viewportWidth = this.width = config.viewportWidth;
+        this.tickWidth = this.viewportWidth / this.numTicks;
+        this.exactFitHorizontal = true;
+      } else {
+        this.tickWidth = tickWidth;
+        this.width = this.numTicks * this.tickWidth;
+        this.exactFitHorizontal = false;
+      }
+
+
+      this.lowestNote = config.lowestNote || song.lowestNote;
+      this.highestNote = config.highestNote || song.highestNote;
+      this.pitchRange = config.pitchRange || this.highestNote - this.lowestNote + 1;
+      //console.log(this.pitchRange);
+
+      if (config.height) {
+        this.height = config.height;
+        this.pitchHeight = this.height / this.pitchRange;
+      } else if (config.pitchHeight) {
+        this.pitchHeight = config.pitchHeight;
+        this.height = this.pitchRange * this.pitchHeight;
+        this.exactFitVertical = false;
+      } else if (config.viewportHeight) {
+        this.viewportHeight = this.height = config.viewportHeight;
+        this.pitchHeight = this.viewportHeight / this.pitchRange;
+        this.exactFitVertical = true;
+      } else {
+        this.pitchHeight = pitchHeight;
+        this.height = this.pitchRange * this.pitchHeight;
+        this.exactFitVertical = false;
+      }
+
+      // this.verticalLine.setStartPosition(this.startPosition);
+      // this.verticalLine.setEndPosition(this.endPosition);
+      //this.verticalLine.reset(this.startPosition, this.endPosition);
+      //this.horizontalLine.reset();
+      //this.eventIterator.reset();
+      //this.noteIterator.reset();
+      //this.partIterator.reset();
+      //console.log(this.tickWidth,this.pitchHeight);
+    }
+
+    this.scrollX = 0;
+    this.scrollY = 0;
+    this.currentPage = 1;
+    this.numPages = ceil(this.width / this.viewportWidth);
+
+    this.snapValueX = config.snapX === undefined ? snapValueX : config.snapX;
+    this.snapValueY = config.snapY === undefined ? snapValueY : config.snapY;
+    this.setSnapX(this.snapValueX);
+    this.setSnapY(this.snapValueY);
+
+    //console.log(this.maxScrollPosition);
+  };
+
+
+  KeyEditor.prototype.setBarsPerPage = function (bbp) {
+    this.interrupt = true;
+
+    var tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
+    this.barsPerPage = bbp;
+    this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
+    this.viewportTicks = this.viewportWidth / this.tickWidth;
+    this.width = this.numTicks * this.tickWidth;
+    this.verticalLine.reset();
+    this.horizontalLine.reset();
+    this.eventIterator.reset();
+    this.partIterator.reset();
+    this.scrollLimit = this.viewportWidth / this.tickWidth;
+    this.maxScrollPosition = ceil(this.width / this.viewportWidth);
+    this.snapWidth = this.tickWidth * this.snapTicks;
+
+    this.numPages = ceil(this.numBars / this.barsPerPage);
+    this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
+
+    dispatchEvent(this, 'scale', {});
+
+    if (this.song.playing) {
+      this.scrollPosition = floor(this.song.ticks / this.viewportTicks);
+    } else {
+      //console.log(tmp,this.scrollPosition);
+      this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
+      dispatchEvent(this, 'scroll', { x: (this.scrollPosition * this.viewportWidth) });
+    }
+    this.interrupt = false;
+  };
+
+
+  KeyEditor.prototype.setViewport = function (w, h) {
+    var draw = false;
+
+    if (this.barsPerPage && w !== this.viewportWidth) {
+      //@TODO: add support for time measurement changes
+      this.viewportWidth = w;
+      this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
+      this.viewportTicks = this.viewportWidth / this.tickWidth;
+      this.width = this.numTicks * this.tickWidth;
+      draw = true;
+    } else if (this.exactFitHorizontal === true && w !== this.width) {
+      this.viewportWidth = this.width = w;
+      this.tickWidth = this.width / this.numTicks;
+      draw = true;
+    }
+
+    if (this.exactFitVertical === true && h !== this.height) {
+      this.viewportHeight = this.height = h;
+      this.pitchHeight = this.height / this.pitchRange;
+      draw = true;
+    }
+
+    if (draw) {
+      this.verticalLine.reset();
+      this.horizontalLine.reset();
+      this.eventIterator.reset();
+      this.noteIterator.reset();
+      this.partIterator.reset();
+
+      dispatchEvent(this, 'draw', {});
+    }
+  };
+
+
+  KeyEditor.prototype.updateSong = function (data) {
+    this.iteratorFactory.updateSong();
+
+    var key, i = 0, j, k, arr, tmp;
+
+    for (i = updateDataKeys.length - 1; i >= 0; i--) {
+      key = updateDataKeys[i];
+      switch (key) {
+        case 'newNotes':
+        case 'changedNotes':
+          arr = data[key];
+          for (j = arr.length - 1; j >= 0; j--) {
+            tmp = arr[j];
+            tmp.bbox = this.getNoteRect(tmp);
+          }
+          break;
+
+        case 'newParts':
+        case 'changedParts':
+          arr = data[key];
+          for (j = arr.length - 1; j >= 0; j--) {
+            tmp = arr[j];
+            tmp.bbox = this.getPartRect(tmp);
+          }
+          break;
+      }
+    }
+
+    /*
+            this.newNumBars = data.numBars;
+            // delete numBars otherwise the for loop below doesn't work anymore
+            delete data.numBars;
+    
+            for(key in data){
+                if(data.hasOwnProperty(key)){
+                    arr = data[key];
+                    for(j = arr.length - 1; j >= 0; j--){
+                        tmp = arr[j];
+                        k = floor(i/3);
+                        //console.log(i,k);
+                        switch(k){
+                            case 0: // event arrays
+                                //console.log(k,i);
+                                //tmp.bbox = getEventRect(tmp);
+                                // arr[j] = {
+                                //     event: tmp
+                                // }
+                                break;
+                            case 1: // note arrays
+                                //console.log(k,i);
+                                if(tmp.bbox)
+                                console.log(1,tmp.bbox.x)
+                                tmp.bbox = this.getNoteRect(tmp);
+                                console.log(2,tmp.bbox.x)
+                                // arr[j] = {
+                                //     note: tmp,
+                                //     bbox: this.getNoteRect(tmp)
+                                // }
+                                break;
+                            case 2: // part arrays
+                                //console.log(k,i);
+                                //console.log(tmp);
+                                tmp.bbox = this.getPartRect(tmp);
+                                // arr[j] = {
+                                //     part: tmp,
+                                //     bbox: this.getPartRect(tmp)
+                                // }
+                                break;
+                        }
+                    }
+                    i++;
+                }
+            }
+    */
+    this.newNumBars = data.numBars;
+
+    this.newEvents = this.newEvents.concat(data.newEvents);
+    this.changedEvents = this.changedEvents.concat(data.changedEvents);
+    this.removedEvents = this.removedEvents.concat(data.removedEvents);
+    this.removedEventsObj = arrayToObject(this.removedEvents, 'id');
+
+    this.newNotes = this.newNotes.concat(data.newNotes);
+    this.changedNotes = this.changedNotes.concat(data.changedNotes);
+    this.removedNotes = this.removedNotes.concat(data.removedNotes);
+    this.removedNotesObj = arrayToObject(this.removedNotes, 'id');
+
+    this.newParts = this.newParts.concat(data.newParts);
+    this.changedParts = this.changedParts.concat(data.changedParts);
+    this.removedParts = this.removedParts.concat(data.removedParts);
+    this.removedPartsObj = arrayToObject(this.removedParts, 'id');
+  };
+
+
+  KeyEditor.prototype.setStartPosition = function (pos) {
+    if (typeString(pos) !== 'array') {
+      pos = ['barsandbeats', pos, 1, 1, 0];
+    }
+
+    this.startPosition = getPosition(this.song, pos);
+    this.startTicks = this.startPosition.ticks;
+    this.startMillis = this.startPosition.millis;
+    //console.log('start',pos,this.startTicks);
+  };
+
+
+  KeyEditor.prototype.setEndPosition = function (pos) {
+    if (typeString(pos) !== 'array') {
+      pos = ['barsandbeats', pos, 1, 1, 0];
+    }
+
+    this.endPosition = getPosition(this.song, pos);
+    this.endTicks = this.endPosition.ticks;
+    this.endMillis = this.endPosition.millis;
+    //console.log('end',pos,this.endTicks,this.endPosition);
+  };
+
+
+  KeyEditor.prototype.addEventListener = function (id, cb) {
+    var ids = id.split(' '),
+      tmp,
+      editor = this,
+      eventId;
+
+    ids.forEach(function (id) {
+
+      tmp = editor.eventListeners[id];
+
+      if (tmp === undefined) {
+        editor.eventListeners[id] = [];
+        tmp = editor.eventListeners[id];
+      }
+
+      eventId = id + '-' + tmp.length;
+      tmp.push(cb);
+    });
+  };
+
+
+  KeyEditor.prototype.nextPage = function () {
+    setPageData(this, this.startBar + this.barsPerPage);
+    dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
+  };
+
+
+  KeyEditor.prototype.prevPage = function () {
+    setPageData(this, this.startBar - this.barsPerPage);
+    dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
+  };
+
+
+  KeyEditor.prototype.gotoPage = function (n) {
+    console.warn('ooops, not implemented yet!');
+    return;
+    // n = n - 1;
+    // if (n < 0 || n > this.lastPage) {
+    //     return;
+    // }
+    // this.pageNo = n;
+    // dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
+    // setPageData(this, this.pageNo);
+  };
+
+
+  KeyEditor.prototype.scroll = function (action) {
+
+    //this.scrollPosition = floor(this.scrollX/this.viewportWidth);
+    var x,
+      tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
+
+    this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
+
+    switch (action) {
+      case '>':
+        this.scrollPosition += 1;
+        this.scrollPosition = this.scrollPosition > this.maxScrollPosition ? this.maxScrollPosition : this.scrollPosition;
+        break;
+      case '>>':
+        this.scrollPosition = this.maxScrollPosition;
+        break;
+      case '<':
+        this.scrollPosition -= 1;
+        this.scrollPosition = this.scrollPosition < 0 ? 0 : this.scrollPosition;
+        break;
+      case '<<':
+        this.scrollPosition = 0;
+        break;
+      default:
+        if (isNaN(action)) {
+          return;
+        }
+        this.scrollPosition = parseInt(action);
+    }
+
+    x = this.scrollPosition * this.viewportWidth;
+    this.scrollLimit = (x + this.viewportWidth) / this.tickWidth;
+    this.currentPage = ceil(x / this.viewportWidth) + 1;
+    if (this.currentPage === 0) {
+      this.currentPage = 1;
+    } else if (this.currentPage > this.maxScrollPosition) {
+      this.currentPage = this.maxScrollPosition;
+    }
+    //console.log('bar',(this.scrollPosition * this.barsPerPage),'scroll',this.scrollPosition);
+    dispatchEvent(this, 'scroll', { x: x });
+  };
+
+
+  KeyEditor.prototype.updateScroll = function (scrollX, scrollY) {
+    this.scrollX = scrollX;
+    this.scrollY = scrollY;
+    this.scrollLimit = (scrollX + this.viewportWidth) / this.tickWidth;
+  };
+
+
+  KeyEditor.prototype.getEventRect = function (event) {
+    //console.log(note.number);
+    var
+      x = this.ticksToX(event.ticks - this.startTicks, false),
+      y = this.pitchToY(event.number),
+      w = eventWidth * this.tickWidth,
+      h = this.pitchHeight;
+
+    return {
+      x: x,
+      y: y,
+      width: w,
+      height: h,
+      top: y,
+      left: x,
+      bottom: y + h,
+      right: x + w
+    };
+  };
+
+
+  KeyEditor.prototype.getNoteRect = function (note) {
+    //console.log(note.number);
+    var
+      x = this.ticksToX(note.ticks - this.startTicks, false),//(note.ticks - this.startTicks) * this.tickWidth,
+      y = this.pitchToY(note.number),
+      w = note.durationTicks * this.tickWidth,
+      h = this.pitchHeight,
+      start, end, diff;
+
+    if (note.endless) {
+      w = (this.song.ticks - note.noteOn.ticks) * this.tickWidth;
+    }
+
+    ///*
+    if (this.paginate) {
+
+      start = note.ticks;
+      end = note.noteOff.ticks;
+
+      if (start < this.startTicks) {
+        diff = this.startTicks - start;
+        start = start + diff - this.startTicks;
+        x = start * this.tickWidth;
+
+        end = end > this.endTicks ? this.endTicks : end;
+        w = (end - this.startTicks) * this.tickWidth;
+      } else {
+        return false;
+      }
+    }
+
+    //*/
+
+    return {
+      x: x,
+      y: y,
+      width: w,
+      height: h,
+      top: y,
+      left: x,
+      bottom: y + h,
+      right: x + w
+    };
+  };
+
+
+  KeyEditor.prototype.getPartRect = function (part) {
+    var stats = part.getStats('noteNumber all'),
+      //firstEvent = part.events[0],
+      //lastEvent = part.events[part.events.length - 1],
+      bbox = {
+        // left: (firstEvent.ticks - this.startTicks) * this.tickWidth,
+        // right: (lastEvent.ticks - this.startTicks) * this.tickWidth,
+        // top: this.height - ((stats.max - this.lowestNote + 1) * this.pitchHeight),
+        // bottom: this.height - ((stats.min - this.lowestNote + 1) * this.pitchHeight) + this.pitchHeight,
+        top: this.pitchToY(stats.max),// - this.pitchHeight,
+        bottom: this.pitchToY(stats.min) + this.pitchHeight,
+        left: this.ticksToX(part.start.ticks - this.startTicks, false),
+        right: this.ticksToX(part.end.ticks - this.startTicks, false),
+        //left: this.ticksToX(part.events[0].ticks, false),
+        //right: this.ticksToX(part.events[part.events.length - 1].ticks, false)
+      };
+
+    //console.log(stats.min, stats.max);
+
+    bbox.x = bbox.left;
+    bbox.y = bbox.top;
+    bbox.width = bbox.right - bbox.left;
+    bbox.height = bbox.bottom - bbox.top;
+
+    part.bbox = bbox;
+    part.stats = stats;
+    //console.log(part.id,stats,bbox);
+    return bbox;
+  };
+
+
+  KeyEditor.prototype.getBBox = function (arg) {
+    var type, data;
+    if (typeString(arg) === 'string') {
+      switch (arg.substring(0, 1)) {
+        case 'E':
+          type = 'event';
+          if (event.type === 144 && event.endEvent !== undefined) {
+            data = this.song.findEvent('id = ' + arg);
+          } else {
+            console.error('argument not supported, please check documentation');
+            return;
+          }
+          break;
+        case 'P':
+          type = 'part';
+          data = this.song.getPart(arg);
+          break;
+        case 'T':
+          type = 'track';
+          break;
+        default:
+          console.error('argument not supported, please check documentation');
+          return;
+      }
+    } else {
+      switch (arg.className) {
+        case 'AudioEvent':
+          type = 'audio';
+          break;
+        case 'MidiEvent':
+          type = 'event';
+          break;
+        case 'Part':
+          type = 'part';
+          break;
+        case 'Track':
+          type = 'track';
+          break;
+        default:
+          console.error('argument not supported, please check documentation');
+          return;
+      }
+    }
+
+    if (data === undefined) {
+      console.error(arg, 'could not be found');
+      return;
+    }
+
+    switch (type) {
+      case 'event':
+        return this.getNoteRect(data);
+      //break;
+      case 'part':
+        return this.getPartRect(data);
+      //break;
+    }
+  };
+
+
+  KeyEditor.prototype.startMoveNote = function (note, x, y) {
+    if (note.className !== 'MidiNote') {
+      if (sequencer.debug >= sequencer.WARN) {
+        console.warn(note, 'is not a MidiNote');
+      }
+      return;
+    }
+    //sequencer.unscheduleEvent(note);
+    this.selectedNote = note;
+    this.gripX = x - this.selectedNote.bbox.x;
+  };
+
+
+  KeyEditor.prototype.stopMoveNote = function () {
+    this.selectedNote = undefined;
+  };
+
+
+  KeyEditor.prototype.moveNote = function (x, y) {
+    if (this.selectedNote === undefined) {
+      return;
+    }
 
     var
-        //private
-        KeyEditor,
+      newPitch = this.yToPitch(y).number,
+      oldPitch = this.selectedNote.pitch,
+      newTicks = this.xToTicks(x - this.gripX),
+      oldTicks = this.selectedNote.ticks,
+      part = this.selectedNote.part,
+      update = false;
 
-        updateDataKeys = 'newEvents newNotes newParts changedEvents changedNotes changedParts removedEvents removedNotes removedParts'.split(' '),
+    //console.log(newTicks, oldTicks, this.gripX, x);
 
-        // default values
-        tickWidth = 0.1,
-        pitchHeight = 10,
-        barsPerPage = 4,
-        snapValueX = 0, // means snaps is off -> ticks value do not get rounded
-        //snapValueX = 1, // means snaps to all ticks
-        snapValueY = 'chromatic',
-        eventWidth = 2,
+    if (newPitch !== oldPitch) {
+      part.transposeNote(this.selectedNote, newPitch - oldPitch);
+      update = true;
+    }
 
-        ceil = Math.ceil,
+    if (newTicks !== oldTicks) {
+      part.moveNote(this.selectedNote, newTicks - oldTicks);
+      update = true;
+    }
 
-        //import
-        createIteratorFactory,
-        getPosition,
-        createPlayhead,
-        getScaffoldingBars,
-        typeString,
-        objectToArray,
-        arrayToObject,
-        debug,
-        round,
-        floor,
-        createNote,
-
-        //public
-        //getLines,
-        //xToTicks,
-        //yToPitch,
-
-        //private
-        setPageData,
-        checkNextPage,
-        checkScrollPosition,
-        dispatchEvent,
-        handleKeys;
+    if (update === true) {
+      this.song.update();
+    }
+  };
 
 
-
-    KeyEditor = function (song, config) {
-        this.song = song;
-        this.song.keyEditor = this;
-        this.playhead = createPlayhead(this.song, 'barsbeats ticks millis', 'keyeditor');
-
-        this.numBars = song.bars;
-        this.newNumBars = this.numBars;
-        this.eventListeners = {};
-        this.interrupt = false;
-
-        this.iteratorFactory = createIteratorFactory(this.song, this);
-        this.verticalLine = this.iteratorFactory.createVerticalLineIterator(this);
-        this.horizontalLine = this.iteratorFactory.createHorizontalLineIterator(this);
-        this.eventIterator = this.iteratorFactory.createEventIterator(this);
-        this.noteIterator = this.iteratorFactory.createNoteIterator(this);
-        this.partIterator = this.iteratorFactory.createPartIterator(this);
+  KeyEditor.prototype.startMovePart = function (part, x, y) {
+    if (part.className !== 'Part') {
+      if (sequencer.debug >= sequencer.WARN) {
+        console.warn(part, 'is not a Part');
+      }
+      return;
+    }
+    this.selectedPart = part;
+    this.selectedPart.pitch = this.yToPitch(y).number;
+    this.gripX = x - this.selectedPart.bbox.x;
+  };
 
 
-        this.exactFitVertical = config.exactFitVertical || false;
-        this.exactFitHorizontal = config.exactFitHorizontal || false;
-
-        this.activeEvents = [];
-        this.activeNotes = [];
-        this.activeParts = [];
-
-        this.newEvents = [];
-        this.newNotes = [];
-        this.newParts = [];
-
-        this.changedEvents = [];
-        this.changedNotes = [];
-        this.changedParts = [];
-
-        this.removedEvents = [];
-        this.removedNotes = [];
-        this.removedParts = [];
-
-        this.recordedNotesObj = {};
-        this.recordedEventsObj = {};
-
-        this.snapshot = {
-            activeEvents: this.activeEvents,
-            activeNotes: this.activeNotes,
-            activeParts: this.activeParts,
-
-            newEvents: this.newEvents,
-            newNotes: this.newNotes,
-            newParts: this.newParts,
-
-            changedEvents: this.changedEvents,
-            changedNotes: this.changedNotes,
-            changedParts: this.changedParts,
-
-            removedEvents: this.removedEvents,
-            removedNotes: this.removedNotes,
-            removedParts: this.removedParts
-        };
+  KeyEditor.prototype.stopMovePart = function () {
+    this.selectedPart = undefined;
+  };
 
 
-        if (config.paginate) {
-            this.paginate = true;
-            this.pageNo = 0;
-            this.barsPerPage = config.barsPerPage;
-            this.pageWidth = config.pageWidth;
-            this.pageHeight = config.pageHeight;
-            this.width = this.pageWidth;
-            this.lowestNote = config.lowestNote || song.lowestNote;
-            this.highestNote = config.highestNote || song.highestNote;
-            this.pitchRange = this.highestNote - this.lowestNote;
-            if (this.exactFitVertical) {
-                this.pitchHeight = this.height / this.pitchRange;
-                this.height = this.pageHeight;
-            } else {
-                this.pitchHeight = config.pitchHeight || pitchHeight;
-                this.height = this.pitchHeight * this.pitchRange;
-            }
-            //this.startBar = 0;//make this configurable
-            setPageData(this, 0);
-            checkNextPage(this);
+  KeyEditor.prototype.movePart = function (x, y, autoUpdate) {
+    // console.log(this.selectedPart);
+    if (this.selectedPart === undefined) {
+      return;
+    }
+    if (typeof autoUpdate === 'undefined') {
+      autoUpdate = true;
+    }
+    // console.log(autoUpdate);
 
-        } else {
+    var
+      newPitch = this.yToPitch(y).number,
+      oldPitch = this.selectedPart.pitch,
+      newTicks = this.xToTicks(x - this.gripX),
+      oldTicks = this.selectedPart.ticks,
+      update = false;
 
-            this.setStartPosition(config.startPosition || 1);
-            this.setEndPosition(config.endPosition || song.bars + 1);
-            this.numTicks = this.endTicks - this.startTicks;
-
-            if (config.width) {
-                this.width = config.width;
-                this.tickWidth = this.width / this.numTicks;
-            } else if (config.tickWidth) {
-                this.tickWidth = config.tickWidth;
-                this.width = this.numTicks * this.tickWidth;
-                this.exactFitHorizontal = false;
-            } else if (config.barsPerPage && config.viewportWidth) {
-                //@TODO: add support for time measurement changes
-                this.barsPerPage = config.barsPerPage;
-                this.viewportWidth = config.viewportWidth;
-                this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
-                this.width = this.numTicks * this.tickWidth;
-                this.scrollX = 0;
-                this.scrollPosition = 0;
-                this.viewportTicks = this.viewportWidth / this.tickWidth;
-                this.maxScrollPosition = ceil(this.width / this.viewportWidth);
-                this.scrollLimit = this.viewportWidth / this.tickWidth;
-                checkScrollPosition(this);
-                this.exactFitHorizontal = false;
-            } else if (config.viewportWidth) {
-                this.viewportWidth = this.width = config.viewportWidth;
-                this.tickWidth = this.viewportWidth / this.numTicks;
-                this.exactFitHorizontal = true;
-            } else {
-                this.tickWidth = tickWidth;
-                this.width = this.numTicks * this.tickWidth;
-                this.exactFitHorizontal = false;
-            }
+    if (newPitch !== oldPitch) {
+      this.selectedPart.track.transposePart(this.selectedPart, newPitch - oldPitch);
+      this.selectedPart.pitch = newPitch;
+      update = true;
+    }
 
 
-            this.lowestNote = config.lowestNote || song.lowestNote;
-            this.highestNote = config.highestNote || song.highestNote;
-            this.pitchRange = config.pitchRange || this.highestNote - this.lowestNote + 1;
-            //console.log(this.pitchRange);
+    if (newTicks !== oldTicks) {
+      this.selectedPart.track.movePart(this.selectedPart, newTicks - oldTicks);
+      update = true;
+    }
 
-            if (config.height) {
-                this.height = config.height;
-                this.pitchHeight = this.height / this.pitchRange;
-            } else if (config.pitchHeight) {
-                this.pitchHeight = config.pitchHeight;
-                this.height = this.pitchRange * this.pitchHeight;
-                this.exactFitVertical = false;
-            } else if (config.viewportHeight) {
-                this.viewportHeight = this.height = config.viewportHeight;
-                this.pitchHeight = this.viewportHeight / this.pitchRange;
-                this.exactFitVertical = true;
-            } else {
-                this.pitchHeight = pitchHeight;
-                this.height = this.pitchRange * this.pitchHeight;
-                this.exactFitVertical = false;
-            }
+    if (update === true && autoUpdate === true) {
+      this.song.update();
+    }
+  };
 
-            // this.verticalLine.setStartPosition(this.startPosition);
-            // this.verticalLine.setEndPosition(this.endPosition);
-            //this.verticalLine.reset(this.startPosition, this.endPosition);
-            //this.horizontalLine.reset();
-            //this.eventIterator.reset();
-            //this.noteIterator.reset();
-            //this.partIterator.reset();
-            //console.log(this.tickWidth,this.pitchHeight);
+
+  KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function (x, snap) {
+    var ticks = ((x + this.scrollX) / this.width) * this.numTicks;
+    //console.log(this.scrollX,this.width,this.numTicks,ticks);
+    if (snap !== false && this.snapTicks !== 0) {
+      //ticks = floor(ticks/this.snapTicks) * this.snapTicks;
+      ticks = round(ticks / this.snapTicks) * this.snapTicks;
+    }
+    //console.log(ticks, this.snapTicks);
+    return ticks;
+  };
+
+
+  KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function (y) {
+    //var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
+    var note = this.highestNote - round(((y + this.scrollY) / this.height) * this.pitchRange);
+    note = createNote(note);
+    return note;
+  };
+
+
+  KeyEditor.prototype.getXAt = KeyEditor.prototype.ticksToX = function (ticks, snap) {
+    // var p = ticks/this.numTicks,
+    //     x = (p * this.width) - this.scrollX;
+    var x = (ticks - this.startTicks) * this.tickWidth;
+    if (snap !== false && this.snapWidth !== 0) {
+      //x = (floor(x/this.snapWidth) * this.snapWidth);
+      x = (round(x / this.snapWidth) * this.snapWidth);
+    }
+    return x;
+  };
+
+
+  KeyEditor.prototype.getYAt = KeyEditor.prototype.pitchToY = function (noteNumber) {
+    var y = this.height - ((noteNumber - this.lowestNote + 1) * this.pitchHeight);
+    return y;
+  };
+
+
+  KeyEditor.prototype.getPositionAt = function (x) {
+    var ticks = this.getTicksAt(x);
+    // console.time('get position')
+    // var position = getPosition(this.song,['ticks',ticks]);
+    // console.timeEnd('get position')
+    // return position;
+    //console.time('get position')
+    this.playhead.set('ticks', ticks, false);
+    //console.timeEnd('get position')
+    return this.playhead.get();
+  };
+
+
+  KeyEditor.prototype.getPlayheadX = function (compensateForScroll) {
+    var x = ((this.song.ticks / this.song.durationTicks) * this.width);
+    //var x = ((this.song.millis/this.song.durationMillis) * this.width);
+    //var x = (this.song.percentage * this.width);
+    x = compensateForScroll === true ? x - this.scrollX : x;
+    return x;
+  };
+
+
+  KeyEditor.prototype.setPlayheadToX = function (x) {
+    var ticks = this.xToTicks(x, false);
+    this.song.setPlayhead('ticks', ticks);
+  };
+
+  KeyEditor.prototype.getPlayheadPosition = function (compensateForScroll) {
+    //return (sequencer.percentage * this.width);// - this.scrollX;
+    //return ((sequencer.millis/song.durationMillis) * this.width);// - this.scrollX;
+    //var x = ((this.song.millis/this.song.durationMillis) * this.width);
+    // change to ticks to make tempo changes visible by a faster moving playhead
+    var x = ((this.song.ticks / this.song.durationTicks) * this.width);
+    x = compensateForScroll === true ? x - this.scrollX : x;
+    return x;
+  };
+
+
+  KeyEditor.prototype.setPlayheadPosition = function (type, value) {
+    //console.log(this.scrollX,value, this.scrollX + value);
+    var ticks;
+    switch (type) {
+      case 'x':
+        ticks = this.xToTicks(value, false);
+        break;
+      case 'ticks':
+        ticks = value;
+        break;
+      case 'millis':
+        ticks = this.playhead.set('millis', value).ticks;
+        break;
+      case 'barsbeats':
+      case 'barsandbeats':
+        ticks = getPosition(this.song, ['barsbeats', value]).ticks;
+        break;
+    }
+    this.song.setPlayhead('ticks', ticks);
+  };
+
+
+  KeyEditor.prototype.getEventAt = function (x, y) {
+    var position = this.getSongPosition(x),
+      pitch = this.getPitchAt(y);
+  };
+
+
+  KeyEditor.prototype.getEventsInRect = function (x, y, w, h) {
+    var startPos = this.getSongPosition(x),
+      endPos = this.getSongPosition(x + w),
+      startPitch = this.getPitchAt(y + h),
+      endPitch = this.getPitchAt(y);
+
+  };
+
+
+  KeyEditor.prototype.getNoteAt = function (x, y) {
+    var position = this.getSongPosition(x),
+      pitch = this.getPitchAt(y);
+  };
+
+
+  KeyEditor.prototype.getNotesInRect = function (x, y, w, h) {
+    var startPos = this.getSongPosition(x),
+      endPos = this.getSongPosition(x + w),
+      startPitch = this.getPitchAt(y + h),
+      endPitch = this.getPitchAt(y);
+  };
+
+
+  // takes x,y and returns snapped x,y
+  KeyEditor.prototype.snap = function (x, y) {
+    return {
+      x: this.snapX(x),
+      y: this.snapY(y)
+    };
+  };
+
+
+  // takes x returns snapped x
+  KeyEditor.prototype.snapX = function (x) {
+    //return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
+    return round((x + this.scrollX) / this.snapWidth) * this.snapWidth;
+
+  };
+
+
+  // takes y returns snapped y
+  KeyEditor.prototype.snapY = function (y) {
+    //return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
+    return round((y + this.scrollY) / this.snapHeight) * this.snapHeight;
+  };
+
+
+  KeyEditor.prototype.setSnapX = function (snapX) {
+    if (snapX === undefined) {
+      return;
+    }
+    //console.log('in', snapX);
+    // 4 -> 1, 8 -> 0.5 16 -> 0.25
+    var beatLength = 4 / this.song.denominator;
+
+    if (snapX === 'off') {
+      this.snapTicks = 0;
+    } else if (snapX === 'tick') {
+      this.snapTicks = 1;
+    } else if (snapX === 'beat') {
+      // TODO: dependent on current time signature!
+      this.snapTicks = this.song.ppq * beatLength;
+    } else if (snapX === 'bar') {
+      // TODO: dependent on current time signature!
+      this.snapTicks = (this.song.ppq * this.song.nominator) * beatLength;
+    } else if (isNaN(snapX) && snapX.indexOf('ticks') !== -1) {
+      this.snapTicks = snapX.replace(/ticks/, '');
+      if (isNaN(this.snapTicks)) {
+        this.snapTicks = this.song.ppq / 4;// sixteenth note
+      } else {
+        this.snapTicks = parseInt(this.snapTicks);
+      }
+    } else {
+      if (isNaN(snapX) || snapX === 0) {
+        // by default snap is off
+        snapX = 0;
+        this.snapTicks = 0;
+      } else {
+        snapX = parseInt(snapX);
+        this.snapTicks = (4 / snapX) * this.song.ppq;
+      }
+    }
+
+    //console.log(snapX,this.snapTicks, beatLength);
+    this.snapValueX = snapX;
+    this.snapWidth = this.tickWidth * this.snapTicks;
+  };
+
+
+  KeyEditor.prototype.setSnapY = function (snapY) {
+    if (snapY === undefined) {
+      return;
+    }
+    this.snapValueY = snapY;
+    //todo: add other scales then chromatic
+    this.snapHeight = this.pitchHeight;
+  };
+
+
+  KeyEditor.prototype.removeNote = function (note) {
+    //note.part.removeNote(note);
+    //console.log(note.id);
+    note.part.removeEvents(note.noteOn, note.noteOff);
+    this.song.update();
+  };
+
+
+  KeyEditor.prototype.removePart = function (part) {
+    part.track.removePart(part);
+    this.song.update();
+  };
+
+
+  KeyEditor.prototype.prepareForRecording = function () {
+    this.recordedEventsObj = {};
+    this.recordedNotesObj = {};
+  };
+
+
+  KeyEditor.prototype.getSnapshot = function () {
+
+    var activeEventsObj,
+      activeNotesObj,
+      activePartsObj,
+
+      recordedNotesSong,
+      //recordingNotesSong,
+      recordedEventsSong,
+
+      nonActiveEvents = [],
+      nonActiveNotes = [],
+      nonActiveParts = [],
+
+      prevActiveEvents = [].concat(this.activeEvents),
+      prevActiveNotes = [].concat(this.activeNotes),
+      prevActiveParts = [].concat(this.activeParts),
+
+      recordedEvents = [],
+      recordedNotes = [],
+      recordingNotes = [],
+
+      //prevRemovedNotes = [].concat(this.removedNotes),
+
+      s, e, n, p, i, j, tmp, length,
+      startBar, endBar;
+
+    this.activeEvents = [];
+    this.activeNotes = [];
+    this.activeParts = [];
+
+    this.activeStateChangedEvents = [];
+    this.activeStateChangedNotes = [];
+    this.activeStateChangedParts = [];
+
+    //if(this.song.bars > this.numBars){
+    if (this.newNumBars !== this.numBars) {
+      startBar = this.numBars;
+      endBar = this.song.lastBar + 1;
+      //console.log(startBar,endBar)
+      //this.verticalLine.setStartPosition(getPosition(song, ['barsbeats', startBar, 1, 1, 0]));
+      //this.verticalLine.setEndPosition(getPosition(song, ['barsbeats', endBar, 1, 1, 0]));
+      this.endPosition = getPosition(this.song, ['barsbeats', endBar, 1, 1, 0, true]);
+      this.verticalLine.reset(getPosition(this.song, ['barsbeats', startBar, 1, 1, 0, true]), this.endPosition);
+      this.numBars = this.song.bars;
+
+      //console.log(this.song.lastBar, this.endPosition.barsAsString);
+
+      this.endTicks = this.endPosition.ticks;
+      this.numTicks = this.song.durationTicks;
+      this.width = this.numTicks * this.tickWidth;
+      //console.log('new width', this.width, this.numTicks, this.tickWidth);
+      //console.log('song has gotten longer boy!', this.song.bars, this.newNumBars, this.numBars, this.width);
+      this.maxScrollPosition = ceil(this.width / this.viewportWidth);
+      //this.numPages = ceil(this.width/this.viewportWidth);
+      this.numPages = ceil(this.numBars / this.barsPerPage);
+    }
+
+
+
+    activeEventsObj = this.song.activeEvents;
+    for (i in activeEventsObj) {
+      if (activeEventsObj.hasOwnProperty(i)) {
+        tmp = activeEventsObj[i];
+        this.activeEvents.push(tmp);
+        if (tmp.active !== true) {
+          tmp.active = true;
+          this.activeStateChangedEvents.push(tmp);
         }
+      }
+    }
 
-        this.scrollX = 0;
-        this.scrollY = 0;
-        this.currentPage = 1;
-        this.numPages = ceil(this.width / this.viewportWidth);
-
-        this.snapValueX = config.snapX === undefined ? snapValueX : config.snapX;
-        this.snapValueY = config.snapY === undefined ? snapValueY : config.snapY;
-        this.setSnapX(this.snapValueX);
-        this.setSnapY(this.snapValueY);
-
-        //console.log(this.maxScrollPosition);
-    };
-
-
-    KeyEditor.prototype.setBarsPerPage = function (bbp) {
-        this.interrupt = true;
-
-        var tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
-        this.barsPerPage = bbp;
-        this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
-        this.viewportTicks = this.viewportWidth / this.tickWidth;
-        this.width = this.numTicks * this.tickWidth;
-        this.verticalLine.reset();
-        this.horizontalLine.reset();
-        this.eventIterator.reset();
-        this.partIterator.reset();
-        this.scrollLimit = this.viewportWidth / this.tickWidth;
-        this.maxScrollPosition = ceil(this.width / this.viewportWidth);
-        this.snapWidth = this.tickWidth * this.snapTicks;
-
-        this.numPages = ceil(this.numBars / this.barsPerPage);
-        this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
-
-        dispatchEvent(this, 'scale', {});
-
-        if (this.song.playing) {
-            this.scrollPosition = floor(this.song.ticks / this.viewportTicks);
-        } else {
-            //console.log(tmp,this.scrollPosition);
-            this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
-            dispatchEvent(this, 'scroll', { x: (this.scrollPosition * this.viewportWidth) });
+    activeNotesObj = this.song.activeNotes;
+    for (i in activeNotesObj) {
+      if (activeNotesObj.hasOwnProperty(i)) {
+        tmp = activeNotesObj[i];
+        this.activeNotes.push(tmp);
+        //console.log(tmp, tmp.active);
+        if (tmp.active !== true) {
+          tmp.active = true;
+          this.activeStateChangedNotes.push(tmp);
         }
-        this.interrupt = false;
-    };
+      }
+    }
 
-
-    KeyEditor.prototype.setViewport = function (w, h) {
-        var draw = false;
-
-        if (this.barsPerPage && w !== this.viewportWidth) {
-            //@TODO: add support for time measurement changes
-            this.viewportWidth = w;
-            this.tickWidth = this.viewportWidth / (this.startPosition.ticksPerBar * this.barsPerPage);
-            this.viewportTicks = this.viewportWidth / this.tickWidth;
-            this.width = this.numTicks * this.tickWidth;
-            draw = true;
-        } else if (this.exactFitHorizontal === true && w !== this.width) {
-            this.viewportWidth = this.width = w;
-            this.tickWidth = this.width / this.numTicks;
-            draw = true;
+    activePartsObj = this.song.activeParts;
+    for (i in activePartsObj) {
+      if (activePartsObj.hasOwnProperty(i)) {
+        tmp = activePartsObj[i];
+        this.activeParts.push(tmp);
+        if (tmp.active !== true) {
+          tmp.active = true;
+          this.activeStateChangedParts.push(tmp);
         }
+      }
+    }
 
-        if (this.exactFitVertical === true && h !== this.height) {
-            this.viewportHeight = this.height = h;
-            this.pitchHeight = this.height / this.pitchRange;
-            draw = true;
+    // fixing issue #4
+    recordedEventsSong = this.song.recordedEvents;
+    if (recordedEventsSong) {
+      length = recordedEventsSong.length;
+      for (i = 0; i < length; i++) {
+        tmp = recordedEventsSong[i];
+        if (this.recordedEventsObj[tmp.id] === undefined) {
+          tmp.bbox = this.getEventRect(tmp);
+          recordedEvents.push(tmp);
+          this.recordedEventsObj[tmp.id] = tmp;
         }
+      }
+    }
 
-        if (draw) {
-            this.verticalLine.reset();
-            this.horizontalLine.reset();
-            this.eventIterator.reset();
-            this.noteIterator.reset();
-            this.partIterator.reset();
-
-            dispatchEvent(this, 'draw', {});
+    // fixing issue #4
+    recordedNotesSong = this.song.recordedNotes;
+    if (recordedNotesSong) {
+      length = recordedNotesSong.length;
+      for (i = 0; i < length; i++) {
+        tmp = recordedNotesSong[i];
+        if (this.recordedNotesObj[tmp.id] === undefined) {
+          this.recordedNotesObj[tmp.id] = tmp;
+          tmp.bbox = this.getNoteRect(tmp);
+          recordedNotes.push(tmp);
+          //console.log('recordedNotes', tmp);
+        } else if (tmp.endless === true) {
+          tmp.bbox = this.getNoteRect(tmp);
+          recordingNotes.push(tmp);
+          //console.log('endless1', tmp);
+        } else if (tmp.endless === false) {
+          tmp.bbox = this.getNoteRect(tmp);
+          recordingNotes.push(tmp);
+          //console.log('endless2', tmp);
+          tmp.endless = undefined;
         }
-    };
-
-
-    KeyEditor.prototype.updateSong = function (data) {
-        this.iteratorFactory.updateSong();
-
-        var key, i = 0, j, k, arr, tmp;
-
-        for (i = updateDataKeys.length - 1; i >= 0; i--) {
-            key = updateDataKeys[i];
-            switch (key) {
-                case 'newNotes':
-                case 'changedNotes':
-                    arr = data[key];
-                    for (j = arr.length - 1; j >= 0; j--) {
-                        tmp = arr[j];
-                        tmp.bbox = this.getNoteRect(tmp);
-                    }
-                    break;
-
-                case 'newParts':
-                case 'changedParts':
-                    arr = data[key];
-                    for (j = arr.length - 1; j >= 0; j--) {
-                        tmp = arr[j];
-                        tmp.bbox = this.getPartRect(tmp);
-                    }
-                    break;
-            }
-        }
-
-        /*
-                this.newNumBars = data.numBars;
-                // delete numBars otherwise the for loop below doesn't work anymore
-                delete data.numBars;
-        
-                for(key in data){
-                    if(data.hasOwnProperty(key)){
-                        arr = data[key];
-                        for(j = arr.length - 1; j >= 0; j--){
-                            tmp = arr[j];
-                            k = floor(i/3);
-                            //console.log(i,k);
-                            switch(k){
-                                case 0: // event arrays
-                                    //console.log(k,i);
-                                    //tmp.bbox = getEventRect(tmp);
-                                    // arr[j] = {
-                                    //     event: tmp
-                                    // }
-                                    break;
-                                case 1: // note arrays
-                                    //console.log(k,i);
-                                    if(tmp.bbox)
-                                    console.log(1,tmp.bbox.x)
-                                    tmp.bbox = this.getNoteRect(tmp);
-                                    console.log(2,tmp.bbox.x)
-                                    // arr[j] = {
-                                    //     note: tmp,
-                                    //     bbox: this.getNoteRect(tmp)
-                                    // }
-                                    break;
-                                case 2: // part arrays
-                                    //console.log(k,i);
-                                    //console.log(tmp);
-                                    tmp.bbox = this.getPartRect(tmp);
-                                    // arr[j] = {
-                                    //     part: tmp,
-                                    //     bbox: this.getPartRect(tmp)
-                                    // }
-                                    break;
-                            }
-                        }
-                        i++;
-                    }
-                }
-        */
-        this.newNumBars = data.numBars;
-
-        this.newEvents = this.newEvents.concat(data.newEvents);
-        this.changedEvents = this.changedEvents.concat(data.changedEvents);
-        this.removedEvents = this.removedEvents.concat(data.removedEvents);
-        this.removedEventsObj = arrayToObject(this.removedEvents, 'id');
-
-        this.newNotes = this.newNotes.concat(data.newNotes);
-        this.changedNotes = this.changedNotes.concat(data.changedNotes);
-        this.removedNotes = this.removedNotes.concat(data.removedNotes);
-        this.removedNotesObj = arrayToObject(this.removedNotes, 'id');
-
-        this.newParts = this.newParts.concat(data.newParts);
-        this.changedParts = this.changedParts.concat(data.changedParts);
-        this.removedParts = this.removedParts.concat(data.removedParts);
-        this.removedPartsObj = arrayToObject(this.removedParts, 'id');
-    };
-
-
-    KeyEditor.prototype.setStartPosition = function (pos) {
-        if (typeString(pos) !== 'array') {
-            pos = ['barsandbeats', pos, 1, 1, 0];
-        }
-
-        this.startPosition = getPosition(this.song, pos);
-        this.startTicks = this.startPosition.ticks;
-        this.startMillis = this.startPosition.millis;
-        //console.log('start',pos,this.startTicks);
-    };
-
-
-    KeyEditor.prototype.setEndPosition = function (pos) {
-        if (typeString(pos) !== 'array') {
-            pos = ['barsandbeats', pos, 1, 1, 0];
-        }
-
-        this.endPosition = getPosition(this.song, pos);
-        this.endTicks = this.endPosition.ticks;
-        this.endMillis = this.endPosition.millis;
-        //console.log('end',pos,this.endTicks,this.endPosition);
-    };
-
-
-    KeyEditor.prototype.addEventListener = function (id, cb) {
-        var ids = id.split(' '),
-            tmp,
-            editor = this,
-            eventId;
-
-        ids.forEach(function (id) {
-
-            tmp = editor.eventListeners[id];
-
-            if (tmp === undefined) {
-                editor.eventListeners[id] = [];
-                tmp = editor.eventListeners[id];
-            }
-
-            eventId = id + '-' + tmp.length;
-            tmp.push(cb);
-        });
-    };
-
-
-    KeyEditor.prototype.nextPage = function () {
-        setPageData(this, this.startBar + this.barsPerPage);
-        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
-    };
-
-
-    KeyEditor.prototype.prevPage = function () {
-        setPageData(this, this.startBar - this.barsPerPage);
-        dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
-    };
-
-
-    KeyEditor.prototype.gotoPage = function (n) {
-        console.warn('ooops, not implemented yet!');
-        return;
-        // n = n - 1;
-        // if (n < 0 || n > this.lastPage) {
-        //     return;
-        // }
-        // this.pageNo = n;
-        // dispatchEvent(this, 'pagechange', { pageNo: this.pageNo, lastPage: this.lastPage });
-        // setPageData(this, this.pageNo);
-    };
-
-
-    KeyEditor.prototype.scroll = function (action) {
-
-        //this.scrollPosition = floor(this.scrollX/this.viewportWidth);
-        var x,
-            tmp = round(this.scrollX / (this.viewportWidth / this.barsPerPage));
-
-        this.scrollPosition = ((this.viewportWidth / this.barsPerPage) * tmp) / this.viewportWidth;
-
-        switch (action) {
-            case '>':
-                this.scrollPosition += 1;
-                this.scrollPosition = this.scrollPosition > this.maxScrollPosition ? this.maxScrollPosition : this.scrollPosition;
-                break;
-            case '>>':
-                this.scrollPosition = this.maxScrollPosition;
-                break;
-            case '<':
-                this.scrollPosition -= 1;
-                this.scrollPosition = this.scrollPosition < 0 ? 0 : this.scrollPosition;
-                break;
-            case '<<':
-                this.scrollPosition = 0;
-                break;
-            default:
-                if (isNaN(action)) {
-                    return;
-                }
-                this.scrollPosition = parseInt(action);
-        }
-
-        x = this.scrollPosition * this.viewportWidth;
-        this.scrollLimit = (x + this.viewportWidth) / this.tickWidth;
-        this.currentPage = ceil(x / this.viewportWidth) + 1;
-        if (this.currentPage === 0) {
-            this.currentPage = 1;
-        } else if (this.currentPage > this.maxScrollPosition) {
-            this.currentPage = this.maxScrollPosition;
-        }
-        //console.log('bar',(this.scrollPosition * this.barsPerPage),'scroll',this.scrollPosition);
-        dispatchEvent(this, 'scroll', { x: x });
-    };
-
-
-    KeyEditor.prototype.updateScroll = function (scrollX, scrollY) {
-        this.scrollX = scrollX;
-        this.scrollY = scrollY;
-        this.scrollLimit = (scrollX + this.viewportWidth) / this.tickWidth;
-    };
-
-
-    KeyEditor.prototype.getEventRect = function (event) {
-        //console.log(note.number);
-        var
-            x = this.ticksToX(event.ticks - this.startTicks, false),
-            y = this.pitchToY(event.number),
-            w = eventWidth * this.tickWidth,
-            h = this.pitchHeight;
-
-        return {
-            x: x,
-            y: y,
-            width: w,
-            height: h,
-            top: y,
-            left: x,
-            bottom: y + h,
-            right: x + w
-        };
-    };
-
-
-    KeyEditor.prototype.getNoteRect = function (note) {
-        //console.log(note.number);
-        var
-            x = this.ticksToX(note.ticks - this.startTicks, false),//(note.ticks - this.startTicks) * this.tickWidth,
-            y = this.pitchToY(note.number),
-            w = note.durationTicks * this.tickWidth,
-            h = this.pitchHeight,
-            start, end, diff;
-
-        if (note.endless) {
-            w = (this.song.ticks - note.noteOn.ticks) * this.tickWidth;
-        }
-
-        ///*
-        if (this.paginate) {
-
-            start = note.ticks;
-            end = note.noteOff.ticks;
-
-            if (start < this.startTicks) {
-                diff = this.startTicks - start;
-                start = start + diff - this.startTicks;
-                x = start * this.tickWidth;
-
-                end = end > this.endTicks ? this.endTicks : end;
-                w = (end - this.startTicks) * this.tickWidth;
-            } else {
-                return false;
-            }
-        }
-
-        //*/
-
-        return {
-            x: x,
-            y: y,
-            width: w,
-            height: h,
-            top: y,
-            left: x,
-            bottom: y + h,
-            right: x + w
-        };
-    };
-
-
-    KeyEditor.prototype.getPartRect = function (part) {
-        var stats = part.getStats('noteNumber all'),
-            //firstEvent = part.events[0],
-            //lastEvent = part.events[part.events.length - 1],
-            bbox = {
-                // left: (firstEvent.ticks - this.startTicks) * this.tickWidth,
-                // right: (lastEvent.ticks - this.startTicks) * this.tickWidth,
-                // top: this.height - ((stats.max - this.lowestNote + 1) * this.pitchHeight),
-                // bottom: this.height - ((stats.min - this.lowestNote + 1) * this.pitchHeight) + this.pitchHeight,
-                top: this.pitchToY(stats.max),// - this.pitchHeight,
-                bottom: this.pitchToY(stats.min) + this.pitchHeight,
-                left: this.ticksToX(part.start.ticks - this.startTicks, false),
-                right: this.ticksToX(part.end.ticks - this.startTicks, false),
-                //left: this.ticksToX(part.events[0].ticks, false),
-                //right: this.ticksToX(part.events[part.events.length - 1].ticks, false)
-            };
-
-        //console.log(stats.min, stats.max);
-
-        bbox.x = bbox.left;
-        bbox.y = bbox.top;
-        bbox.width = bbox.right - bbox.left;
-        bbox.height = bbox.bottom - bbox.top;
-
-        part.bbox = bbox;
-        part.stats = stats;
-        //console.log(part.id,stats,bbox);
-        return bbox;
-    };
-
-
-    KeyEditor.prototype.getBBox = function (arg) {
-        var type, data;
-        if (typeString(arg) === 'string') {
-            switch (arg.substring(0, 1)) {
-                case 'E':
-                    type = 'event';
-                    if (event.type === 144 && event.endEvent !== undefined) {
-                        data = this.song.findEvent('id = ' + arg);
-                    } else {
-                        console.error('argument not supported, please check documentation');
-                        return;
-                    }
-                    break;
-                case 'P':
-                    type = 'part';
-                    data = this.song.getPart(arg);
-                    break;
-                case 'T':
-                    type = 'track';
-                    break;
-                default:
-                    console.error('argument not supported, please check documentation');
-                    return;
-            }
-        } else {
-            switch (arg.className) {
-                case 'AudioEvent':
-                    type = 'audio';
-                    break;
-                case 'MidiEvent':
-                    type = 'event';
-                    break;
-                case 'Part':
-                    type = 'part';
-                    break;
-                case 'Track':
-                    type = 'track';
-                    break;
-                default:
-                    console.error('argument not supported, please check documentation');
-                    return;
-            }
-        }
-
-        if (data === undefined) {
-            console.error(arg, 'could not be found');
-            return;
-        }
-
-        switch (type) {
-            case 'event':
-                return this.getNoteRect(data);
-            //break;
-            case 'part':
-                return this.getPartRect(data);
-            //break;
-        }
-    };
-
-
-    KeyEditor.prototype.startMoveNote = function (note, x, y) {
-        if (note.className !== 'MidiNote') {
-            if (sequencer.debug >= sequencer.WARN) {
-                console.warn(note, 'is not a MidiNote');
-            }
-            return;
-        }
-        //sequencer.unscheduleEvent(note);
-        this.selectedNote = note;
-        this.gripX = x - this.selectedNote.bbox.x;
-    };
-
-
-    KeyEditor.prototype.stopMoveNote = function () {
-        this.selectedNote = undefined;
-    };
-
-
-    KeyEditor.prototype.moveNote = function (x, y) {
-        if (this.selectedNote === undefined) {
-            return;
-        }
-
-        var
-            newPitch = this.yToPitch(y).number,
-            oldPitch = this.selectedNote.pitch,
-            newTicks = this.xToTicks(x - this.gripX),
-            oldTicks = this.selectedNote.ticks,
-            part = this.selectedNote.part,
-            update = false;
-
-        //console.log(newTicks, oldTicks, this.gripX, x);
-
-        if (newPitch !== oldPitch) {
-            part.transposeNote(this.selectedNote, newPitch - oldPitch);
-            update = true;
-        }
-
-        if (newTicks !== oldTicks) {
-            part.moveNote(this.selectedNote, newTicks - oldTicks);
-            update = true;
-        }
-
-        if (update === true) {
-            this.song.update();
-        }
-    };
-
-
-    KeyEditor.prototype.startMovePart = function (part, x, y) {
-        if (part.className !== 'Part') {
-            if (sequencer.debug >= sequencer.WARN) {
-                console.warn(part, 'is not a Part');
-            }
-            return;
-        }
-        this.selectedPart = part;
-        this.selectedPart.pitch = this.yToPitch(y).number;
-        this.gripX = x - this.selectedPart.bbox.x;
-    };
-
-
-    KeyEditor.prototype.stopMovePart = function () {
-        this.selectedPart = undefined;
-    };
-
-
-    KeyEditor.prototype.movePart = function (x, y) {
-        if (this.selectedPart === undefined) {
-            return;
-        }
-
-        var
-            newPitch = this.yToPitch(y).number,
-            oldPitch = this.selectedPart.pitch,
-            newTicks = this.xToTicks(x - this.gripX),
-            oldTicks = this.selectedPart.ticks,
-            update = false;
-
-        if (newPitch !== oldPitch) {
-            this.selectedPart.track.transposePart(this.selectedPart, newPitch - oldPitch);
-            this.selectedPart.pitch = newPitch;
-            update = true;
-        }
-
-
-        if (newTicks !== oldTicks) {
-            this.selectedPart.track.movePart(this.selectedPart, newTicks - oldTicks);
-            update = true;
-        }
-
-        if (update === true) {
-            this.song.update();
-        }
-    };
-
-
-    KeyEditor.prototype.getTicksAt = KeyEditor.prototype.xToTicks = function (x, snap) {
-        var ticks = ((x + this.scrollX) / this.width) * this.numTicks;
-        //console.log(this.scrollX,this.width,this.numTicks,ticks);
-        if (snap !== false && this.snapTicks !== 0) {
-            //ticks = floor(ticks/this.snapTicks) * this.snapTicks;
-            ticks = round(ticks / this.snapTicks) * this.snapTicks;
-        }
-        //console.log(ticks, this.snapTicks);
-        return ticks;
-    };
-
-
-    KeyEditor.prototype.getPitchAt = KeyEditor.prototype.yToPitch = function (y) {
-        //var note = this.highestNote - floor(((y + this.scrollY)/this.height) * this.pitchRange);
-        var note = this.highestNote - round(((y + this.scrollY) / this.height) * this.pitchRange);
-        note = createNote(note);
-        return note;
-    };
-
-
-    KeyEditor.prototype.getXAt = KeyEditor.prototype.ticksToX = function (ticks, snap) {
-        // var p = ticks/this.numTicks,
-        //     x = (p * this.width) - this.scrollX;
-        var x = (ticks - this.startTicks) * this.tickWidth;
-        if (snap !== false && this.snapWidth !== 0) {
-            //x = (floor(x/this.snapWidth) * this.snapWidth);
-            x = (round(x / this.snapWidth) * this.snapWidth);
-        }
-        return x;
-    };
-
-
-    KeyEditor.prototype.getYAt = KeyEditor.prototype.pitchToY = function (noteNumber) {
-        var y = this.height - ((noteNumber - this.lowestNote + 1) * this.pitchHeight);
-        return y;
-    };
-
-
-    KeyEditor.prototype.getPositionAt = function (x) {
-        var ticks = this.getTicksAt(x);
-        // console.time('get position')
-        // var position = getPosition(this.song,['ticks',ticks]);
-        // console.timeEnd('get position')
-        // return position;
-        //console.time('get position')
-        this.playhead.set('ticks', ticks, false);
-        //console.timeEnd('get position')
-        return this.playhead.get();
-    };
-
-
-    KeyEditor.prototype.getPlayheadX = function (compensateForScroll) {
-        var x = ((this.song.ticks / this.song.durationTicks) * this.width);
-        //var x = ((this.song.millis/this.song.durationMillis) * this.width);
-        //var x = (this.song.percentage * this.width);
-        x = compensateForScroll === true ? x - this.scrollX : x;
-        return x;
-    };
-
-
-    KeyEditor.prototype.setPlayheadToX = function (x) {
-        var ticks = this.xToTicks(x, false);
-        this.song.setPlayhead('ticks', ticks);
-    };
-
-    KeyEditor.prototype.getPlayheadPosition = function (compensateForScroll) {
-        //return (sequencer.percentage * this.width);// - this.scrollX;
-        //return ((sequencer.millis/song.durationMillis) * this.width);// - this.scrollX;
-        //var x = ((this.song.millis/this.song.durationMillis) * this.width);
-        // change to ticks to make tempo changes visible by a faster moving playhead
-        var x = ((this.song.ticks / this.song.durationTicks) * this.width);
-        x = compensateForScroll === true ? x - this.scrollX : x;
-        return x;
-    };
-
-
-    KeyEditor.prototype.setPlayheadPosition = function (type, value) {
-        //console.log(this.scrollX,value, this.scrollX + value);
-        var ticks;
-        switch (type) {
-            case 'x':
-                ticks = this.xToTicks(value, false);
-                break;
-            case 'ticks':
-                ticks = value;
-                break;
-            case 'millis':
-                ticks = this.playhead.set('millis', value).ticks;
-                break;
-            case 'barsbeats':
-            case 'barsandbeats':
-                ticks = getPosition(this.song, ['barsbeats', value]).ticks;
-                break;
-        }
-        this.song.setPlayhead('ticks', ticks);
-    };
-
-
-    KeyEditor.prototype.getEventAt = function (x, y) {
-        var position = this.getSongPosition(x),
-            pitch = this.getPitchAt(y);
-    };
-
-
-    KeyEditor.prototype.getEventsInRect = function (x, y, w, h) {
-        var startPos = this.getSongPosition(x),
-            endPos = this.getSongPosition(x + w),
-            startPitch = this.getPitchAt(y + h),
-            endPitch = this.getPitchAt(y);
-
-    };
-
-
-    KeyEditor.prototype.getNoteAt = function (x, y) {
-        var position = this.getSongPosition(x),
-            pitch = this.getPitchAt(y);
-    };
-
-
-    KeyEditor.prototype.getNotesInRect = function (x, y, w, h) {
-        var startPos = this.getSongPosition(x),
-            endPos = this.getSongPosition(x + w),
-            startPitch = this.getPitchAt(y + h),
-            endPitch = this.getPitchAt(y);
-    };
-
-
-    // takes x,y and returns snapped x,y
-    KeyEditor.prototype.snap = function (x, y) {
-        return {
-            x: this.snapX(x),
-            y: this.snapY(y)
-        };
-    };
-
-
-    // takes x returns snapped x
-    KeyEditor.prototype.snapX = function (x) {
-        //return floor((x + this.scrollX)/this.snapWidth) * this.snapWidth;
-        return round((x + this.scrollX) / this.snapWidth) * this.snapWidth;
-
-    };
-
-
-    // takes y returns snapped y
-    KeyEditor.prototype.snapY = function (y) {
-        //return floor((y + this.scrollY)/this.snapHeight) * this.snapHeight;
-        return round((y + this.scrollY) / this.snapHeight) * this.snapHeight;
-    };
-
-
-    KeyEditor.prototype.setSnapX = function (snapX) {
-        if (snapX === undefined) {
-            return;
-        }
-        //console.log('in', snapX);
-        // 4 -> 1, 8 -> 0.5 16 -> 0.25
-        var beatLength = 4 / this.song.denominator;
-
-        if (snapX === 'off') {
-            this.snapTicks = 0;
-        } else if (snapX === 'tick') {
-            this.snapTicks = 1;
-        } else if (snapX === 'beat') {
-            // TODO: dependent on current time signature!
-            this.snapTicks = this.song.ppq * beatLength;
-        } else if (snapX === 'bar') {
-            // TODO: dependent on current time signature!
-            this.snapTicks = (this.song.ppq * this.song.nominator) * beatLength;
-        } else if (isNaN(snapX) && snapX.indexOf('ticks') !== -1) {
-            this.snapTicks = snapX.replace(/ticks/, '');
-            if (isNaN(this.snapTicks)) {
-                this.snapTicks = this.song.ppq / 4;// sixteenth note
-            } else {
-                this.snapTicks = parseInt(this.snapTicks);
-            }
-        } else {
-            if (isNaN(snapX) || snapX === 0) {
-                // by default snap is off
-                snapX = 0;
-                this.snapTicks = 0;
-            } else {
-                snapX = parseInt(snapX);
-                this.snapTicks = (4 / snapX) * this.song.ppq;
-            }
-        }
-
-        //console.log(snapX,this.snapTicks, beatLength);
-        this.snapValueX = snapX;
-        this.snapWidth = this.tickWidth * this.snapTicks;
-    };
-
-
-    KeyEditor.prototype.setSnapY = function (snapY) {
-        if (snapY === undefined) {
-            return;
-        }
-        this.snapValueY = snapY;
-        //todo: add other scales then chromatic
-        this.snapHeight = this.pitchHeight;
-    };
-
-
-    KeyEditor.prototype.removeNote = function (note) {
-        //note.part.removeNote(note);
-        //console.log(note.id);
-        note.part.removeEvents(note.noteOn, note.noteOff);
-        this.song.update();
-    };
-
-
-    KeyEditor.prototype.removePart = function (part) {
-        part.track.removePart(part);
-        this.song.update();
-    };
-
-
-    KeyEditor.prototype.prepareForRecording = function () {
-        this.recordedEventsObj = {};
-        this.recordedNotesObj = {};
-    };
-
-
-    KeyEditor.prototype.getSnapshot = function () {
-
-        var activeEventsObj,
-            activeNotesObj,
-            activePartsObj,
-
-            recordedNotesSong,
-            //recordingNotesSong,
-            recordedEventsSong,
-
-            nonActiveEvents = [],
-            nonActiveNotes = [],
-            nonActiveParts = [],
-
-            prevActiveEvents = [].concat(this.activeEvents),
-            prevActiveNotes = [].concat(this.activeNotes),
-            prevActiveParts = [].concat(this.activeParts),
-
-            recordedEvents = [],
-            recordedNotes = [],
-            recordingNotes = [],
-
-            //prevRemovedNotes = [].concat(this.removedNotes),
-
-            s, e, n, p, i, j, tmp, length,
-            startBar, endBar;
-
-        this.activeEvents = [];
-        this.activeNotes = [];
-        this.activeParts = [];
-
-        this.activeStateChangedEvents = [];
-        this.activeStateChangedNotes = [];
-        this.activeStateChangedParts = [];
-
-        //if(this.song.bars > this.numBars){
-        if (this.newNumBars !== this.numBars) {
-            startBar = this.numBars;
-            endBar = this.song.lastBar + 1;
-            //console.log(startBar,endBar)
-            //this.verticalLine.setStartPosition(getPosition(song, ['barsbeats', startBar, 1, 1, 0]));
-            //this.verticalLine.setEndPosition(getPosition(song, ['barsbeats', endBar, 1, 1, 0]));
-            this.endPosition = getPosition(this.song, ['barsbeats', endBar, 1, 1, 0, true]);
-            this.verticalLine.reset(getPosition(this.song, ['barsbeats', startBar, 1, 1, 0, true]), this.endPosition);
-            this.numBars = this.song.bars;
-
-            //console.log(this.song.lastBar, this.endPosition.barsAsString);
-
-            this.endTicks = this.endPosition.ticks;
-            this.numTicks = this.song.durationTicks;
-            this.width = this.numTicks * this.tickWidth;
-            //console.log('new width', this.width, this.numTicks, this.tickWidth);
-            //console.log('song has gotten longer boy!', this.song.bars, this.newNumBars, this.numBars, this.width);
-            this.maxScrollPosition = ceil(this.width / this.viewportWidth);
-            //this.numPages = ceil(this.width/this.viewportWidth);
-            this.numPages = ceil(this.numBars / this.barsPerPage);
-        }
-
-
-
-        activeEventsObj = this.song.activeEvents;
-        for (i in activeEventsObj) {
-            if (activeEventsObj.hasOwnProperty(i)) {
-                tmp = activeEventsObj[i];
-                this.activeEvents.push(tmp);
-                if (tmp.active !== true) {
-                    tmp.active = true;
-                    this.activeStateChangedEvents.push(tmp);
-                }
-            }
-        }
-
-        activeNotesObj = this.song.activeNotes;
-        for (i in activeNotesObj) {
-            if (activeNotesObj.hasOwnProperty(i)) {
-                tmp = activeNotesObj[i];
-                this.activeNotes.push(tmp);
-                //console.log(tmp, tmp.active);
-                if (tmp.active !== true) {
-                    tmp.active = true;
-                    this.activeStateChangedNotes.push(tmp);
-                }
-            }
-        }
-
-        activePartsObj = this.song.activeParts;
-        for (i in activePartsObj) {
-            if (activePartsObj.hasOwnProperty(i)) {
-                tmp = activePartsObj[i];
-                this.activeParts.push(tmp);
-                if (tmp.active !== true) {
-                    tmp.active = true;
-                    this.activeStateChangedParts.push(tmp);
-                }
-            }
-        }
-
-        // fixing issue #4
-        recordedEventsSong = this.song.recordedEvents;
-        if (recordedEventsSong) {
-            length = recordedEventsSong.length;
-            for (i = 0; i < length; i++) {
-                tmp = recordedEventsSong[i];
-                if (this.recordedEventsObj[tmp.id] === undefined) {
-                    tmp.bbox = this.getEventRect(tmp);
-                    recordedEvents.push(tmp);
-                    this.recordedEventsObj[tmp.id] = tmp;
-                }
-            }
-        }
-
-        // fixing issue #4
-        recordedNotesSong = this.song.recordedNotes;
-        if (recordedNotesSong) {
-            length = recordedNotesSong.length;
-            for (i = 0; i < length; i++) {
-                tmp = recordedNotesSong[i];
-                if (this.recordedNotesObj[tmp.id] === undefined) {
-                    this.recordedNotesObj[tmp.id] = tmp;
-                    tmp.bbox = this.getNoteRect(tmp);
-                    recordedNotes.push(tmp);
-                    //console.log('recordedNotes', tmp);
-                } else if (tmp.endless === true) {
+        //console.log(tmp.bbox.width);
+      }
+    }
+    /*
+            recordingNotesObj = this.song.recordingNotes;
+            for(i in recordingNotesObj){
+                if(recordingNotesObj.hasOwnProperty(i)){
+                    tmp = recordingNotesObj[i];
                     tmp.bbox = this.getNoteRect(tmp);
                     recordingNotes.push(tmp);
-                    //console.log('endless1', tmp);
-                } else if (tmp.endless === false) {
-                    tmp.bbox = this.getNoteRect(tmp);
-                    recordingNotes.push(tmp);
-                    //console.log('endless2', tmp);
-                    tmp.endless = undefined;
                 }
-                //console.log(tmp.bbox.width);
             }
+    */
+
+    for (i = prevActiveEvents.length - 1; i >= 0; i--) {
+      tmp = prevActiveEvents[i];
+      if (tmp === undefined) {
+        console.warn('event is undefined');
+        continue;
+      }
+      if (activeEventsObj[tmp.id] === undefined) {
+        nonActiveEvents.push(tmp);
+        if (tmp.active !== false) {
+          tmp.active = false;
+          this.activeStateChangedEvents.push(tmp);
         }
-        /*
-                recordingNotesObj = this.song.recordingNotes;
-                for(i in recordingNotesObj){
-                    if(recordingNotesObj.hasOwnProperty(i)){
-                        tmp = recordingNotesObj[i];
-                        tmp.bbox = this.getNoteRect(tmp);
-                        recordingNotes.push(tmp);
-                    }
-                }
-        */
+      }
+    }
 
-        for (i = prevActiveEvents.length - 1; i >= 0; i--) {
-            tmp = prevActiveEvents[i];
-            if (tmp === undefined) {
-                console.warn('event is undefined');
-                continue;
-            }
-            if (activeEventsObj[tmp.id] === undefined) {
-                nonActiveEvents.push(tmp);
-                if (tmp.active !== false) {
-                    tmp.active = false;
-                    this.activeStateChangedEvents.push(tmp);
-                }
-            }
+    for (i = prevActiveNotes.length - 1; i >= 0; i--) {
+      tmp = prevActiveNotes[i];
+      if (tmp === undefined) {
+        console.warn('note is undefined');
+        continue;
+      }
+      if (activeNotesObj[tmp.id] === undefined) {
+        nonActiveNotes.push(tmp);
+        if (tmp.active !== false) {
+          tmp.active = false;
+          this.activeStateChangedNotes.push(tmp);
         }
+      }
+    }
 
-        for (i = prevActiveNotes.length - 1; i >= 0; i--) {
-            tmp = prevActiveNotes[i];
-            if (tmp === undefined) {
-                console.warn('note is undefined');
-                continue;
-            }
-            if (activeNotesObj[tmp.id] === undefined) {
-                nonActiveNotes.push(tmp);
-                if (tmp.active !== false) {
-                    tmp.active = false;
-                    this.activeStateChangedNotes.push(tmp);
-                }
-            }
+    for (i = prevActiveParts.length - 1; i >= 0; i--) {
+      tmp = prevActiveParts[i];
+      if (tmp === undefined) {
+        console.warn('part is undefined');
+        continue;
+      }
+      if (activePartsObj[tmp.id] === undefined) {
+        nonActiveParts.push(tmp);
+        if (tmp.active !== false) {
+          tmp.active = false;
+          this.activeStateChangedParts.push(tmp);
         }
+      }
+    }
 
-        for (i = prevActiveParts.length - 1; i >= 0; i--) {
-            tmp = prevActiveParts[i];
-            if (tmp === undefined) {
-                console.warn('part is undefined');
-                continue;
-            }
-            if (activePartsObj[tmp.id] === undefined) {
-                nonActiveParts.push(tmp);
-                if (tmp.active !== false) {
-                    tmp.active = false;
-                    this.activeStateChangedParts.push(tmp);
+    if (this.song.playing) {
+      //            this.currentPage = floor(sequencer.ticks / this.viewportTicks) + 1;
+      this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
+    }
+
+    /*
+    
+            tmp = this.song.parts;
+            n = false;
+            // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+            for(i = tmp.length - 1; i >= 0; i--){
+                p = tmp[i];
+                console.log(p.keepWhenEmpty);
+                if(p.keepWhenEmpty === true){
+                    continue;
+                }
+                if(p.events.length === 0){
+                    //console.log('empty part!');
+                    p.track.removePart(p);
+                    n = true;
                 }
             }
-        }
+            if(n){
+                this.song.update();
+            }
+    */
 
-        if (this.song.playing) {
-            //            this.currentPage = floor(sequencer.ticks / this.viewportTicks) + 1;
-            this.currentPage = floor(this.song.ticks / (this.barsPerPage * this.song.ticksPerBar)) + 1;
-        }
+    s = {
 
-        /*
-        
-                tmp = this.song.parts;
-                n = false;
-                // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
-                for(i = tmp.length - 1; i >= 0; i--){
-                    p = tmp[i];
-                    console.log(p.keepWhenEmpty);
-                    if(p.keepWhenEmpty === true){
-                        continue;
-                    }
-                    if(p.events.length === 0){
-                        //console.log('empty part!');
-                        p.track.removePart(p);
-                        n = true;
-                    }
-                }
-                if(n){
-                    this.song.update();
-                }
-        */
+      events: {
+        active: this.activeEvents,
+        inActive: this.nonActiveEvents,
+        recorded: recordedEvents,
+        new: this.newEvents,
+        changed: this.changedEvents,
+        removed: this.removedEvents,
+        stateChanged: this.activeStateChangedEvents
+      },
 
-        s = {
+      notes: {
+        active: this.activeNotes,
+        inActive: nonActiveNotes,
+        recorded: recordedNotes,
+        recording: recordingNotes,
+        new: this.newNotes,
+        changed: this.changedNotes,
+        removed: this.removedNotes,
+        stateChanged: this.activeStateChangedNotes
+      },
 
-            events: {
-                active: this.activeEvents,
-                inActive: this.nonActiveEvents,
-                recorded: recordedEvents,
-                new: this.newEvents,
-                changed: this.changedEvents,
-                removed: this.removedEvents,
-                stateChanged: this.activeStateChangedEvents
-            },
+      parts: {
+        active: this.activeParts,
+        inActive: nonActiveParts,
+        new: this.newParts,
+        changed: this.changedParts,
+        removed: this.removedParts,
+        stateChanged: this.activeStateChangedParts
 
-            notes: {
-                active: this.activeNotes,
-                inActive: nonActiveNotes,
-                recorded: recordedNotes,
-                recording: recordingNotes,
-                new: this.newNotes,
-                changed: this.changedNotes,
-                removed: this.removedNotes,
-                stateChanged: this.activeStateChangedNotes
-            },
-
-            parts: {
-                active: this.activeParts,
-                inActive: nonActiveParts,
-                new: this.newParts,
-                changed: this.changedParts,
-                removed: this.removedParts,
-                stateChanged: this.activeStateChangedParts
-
-            },
+      },
 
 
-            hasNewBars: startBar !== endBar,
-            newWidth: this.width,
+      hasNewBars: startBar !== endBar,
+      newWidth: this.width,
 
-            pageNo: this.currentPage,
-            lastPage: this.numPages
-            //newWidth: song.durationTicks * this.tickWidth
+      pageNo: this.currentPage,
+      lastPage: this.numPages
+      //newWidth: song.durationTicks * this.tickWidth
 
-            // hasNewBars: function(){
-            //     if(startBar === endBar){
-            //         return false;
-            //     }
-            // }
-        };
-
-        this.newEvents = [];
-        this.changedEvents = [];
-        this.removedEvents = [];
-
-        this.newNotes = [];
-        this.changedNotes = [];
-        this.removedNotes = [];
-
-        this.newParts = [];
-        this.changedParts = [];
-        this.removedParts = [];
-
-        /*
-                tmp = this.song.parts;
-                n = false;
-        
-                // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
-                for(i = tmp.length - 1; i >= 0; i--){
-                    p = tmp[i];
-                    if(p.keepWhenEmpty === true){
-                        continue;
-                    }
-                    if(p.events.length === 0){
-                        //console.log('empty part!');
-                        p.track.removePart(p);
-                        n = true;
-                    }
-                }
-                if(n){
-                    this.song.update();
-                }
-        */
-
-        return s;
+      // hasNewBars: function(){
+      //     if(startBar === endBar){
+      //         return false;
+      //     }
+      // }
     };
 
+    this.newEvents = [];
+    this.changedEvents = [];
+    this.removedEvents = [];
 
-    // flipping pages
+    this.newNotes = [];
+    this.changedNotes = [];
+    this.removedNotes = [];
 
-    setPageData = function (editor, startBar) {
-        //editor.pageNo = no;
-        editor.numTicks = 0;
+    this.newParts = [];
+    this.changedParts = [];
+    this.removedParts = [];
 
-        editor.startBar = startBar > 0 ? startBar : 0;
-        editor.startBar = editor.startBar > editor.numBars - editor.barsPerPage ? editor.numBars - editor.barsPerPage : editor.startBar;
-        editor.endBar = startBar + editor.barsPerPage;
-        editor.endBar = editor.endBar > editor.numBars ? editor.numBars : editor.endBar;
-        editor.endBar = editor.endBar < editor.barsPerPage ? editor.barsPerPage : editor.endBar;
-
-        console.log(startBar, editor.startBar, editor.endBar, editor.numBars, editor.numBars - editor.barsPerPage);
-        var i;
-
-        for (i = editor.startBar; i < editor.endBar; i++) {
-            editor.numTicks += editor.bars[i].ticksPerBar;
-        }
-        editor.tickWidth = editor.pageWidth / editor.numTicks;
-
-        editor.startPosition = editor.bars[editor.startBar];
-        editor.endPosition = editor.bars[editor.endBar];
-        editor.startTicks = editor.startPosition.ticks;
-        editor.endTicks = editor.endPosition.ticks;
-
-        editor.verticalLine.reset();
-        editor.horizontalLine.reset();
-        editor.eventIterator.reset();
-        //console.log('nextPage',editor.startPosition,editor.endPosition);
-    };
-
-
-    checkNextPage = function (editor) {
-        if (editor.song.playing() && editor.song.ticks >= editor.endTicks) {
-            //console.log('nextpage');
-            editor.nextPage();
-            //dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
-        }
-        requestAnimationFrame(function () {
-            checkNextPage(editor);
-        });
-    };
-
-
-    checkScrollPosition = function (editor) {
-        //console.log(editor.song.ticks,editor.scrollLimit,interrupt);
-        if (editor.song.playing && editor.interrupt === false) {
-            if (editor.song.ticks >= editor.scrollLimit) {
-                dispatchEvent(editor, 'scroll', { x: editor.scrollX + editor.viewportWidth });
-                editor.scrollLimit += (editor.viewportWidth / editor.tickWidth);
-                //editor.currentPage++;
-            } else {
-                var x = (floor(editor.song.ticks / editor.viewportTicks) * editor.viewportTicks) * editor.tickWidth;
-                if (editor.scrollX !== x) {
-                    dispatchEvent(editor, 'scroll', { x: x });
+    /*
+            tmp = this.song.parts;
+            n = false;
+    
+            // check for empty parts and remove them -> @TODO: this should be done in track and/or part!
+            for(i = tmp.length - 1; i >= 0; i--){
+                p = tmp[i];
+                if(p.keepWhenEmpty === true){
+                    continue;
+                }
+                if(p.events.length === 0){
+                    //console.log('empty part!');
+                    p.track.removePart(p);
+                    n = true;
                 }
             }
-        }
-        requestAnimationFrame(function () {
-            checkScrollPosition(editor);
-        });
-    };
+            if(n){
+                this.song.update();
+            }
+    */
+
+    return s;
+  };
 
 
-    dispatchEvent = function (editor, id, data) {
-        //console.log(id,eventListeners);
-        var listeners = editor.eventListeners[id];
-        if (listeners) {
-            listeners.forEach(function (cb) {
-                cb(data);
-            });
-        }
-    };
+  // flipping pages
+
+  setPageData = function (editor, startBar) {
+    //editor.pageNo = no;
+    editor.numTicks = 0;
+
+    editor.startBar = startBar > 0 ? startBar : 0;
+    editor.startBar = editor.startBar > editor.numBars - editor.barsPerPage ? editor.numBars - editor.barsPerPage : editor.startBar;
+    editor.endBar = startBar + editor.barsPerPage;
+    editor.endBar = editor.endBar > editor.numBars ? editor.numBars : editor.endBar;
+    editor.endBar = editor.endBar < editor.barsPerPage ? editor.barsPerPage : editor.endBar;
+
+    console.log(startBar, editor.startBar, editor.endBar, editor.numBars, editor.numBars - editor.barsPerPage);
+    var i;
+
+    for (i = editor.startBar; i < editor.endBar; i++) {
+      editor.numTicks += editor.bars[i].ticksPerBar;
+    }
+    editor.tickWidth = editor.pageWidth / editor.numTicks;
+
+    editor.startPosition = editor.bars[editor.startBar];
+    editor.endPosition = editor.bars[editor.endBar];
+    editor.startTicks = editor.startPosition.ticks;
+    editor.endTicks = editor.endPosition.ticks;
+
+    editor.verticalLine.reset();
+    editor.horizontalLine.reset();
+    editor.eventIterator.reset();
+    //console.log('nextPage',editor.startPosition,editor.endPosition);
+  };
 
 
-    handleKeys = function (editor) {
-        var p = editor.selectedPart,
-            n = editor.selectedNote;
-
-        if (p !== undefined) {
-            p.track.removePart(p);
-            this.song.update();
-        } else if (n !== undefined) {
-            n.part.removeNote(n);
-            this.song.update();
-        }
-    };
-
-
-    sequencer.createKeyEditor = function (song, config) {
-        return new KeyEditor(song, config);
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function () {
-        getPosition = sequencer.protectedScope.getPosition;
-        createPlayhead = sequencer.protectedScope.createPlayhead;
-        createNote = sequencer.createNote;
-        debug = sequencer.debug;
-        floor = sequencer.protectedScope.floor;
-        round = sequencer.protectedScope.round;
-        typeString = sequencer.protectedScope.typeString;
-        objectToArray = sequencer.protectedScope.objectToArray;
-        arrayToObject = sequencer.protectedScope.arrayToObject;
-        getScaffoldingBars = sequencer.protectedScope.getScaffoldingBars;
-        createIteratorFactory = sequencer.protectedScope.createKeyEditorIteratorFactory;
+  checkNextPage = function (editor) {
+    if (editor.song.playing() && editor.song.ticks >= editor.endTicks) {
+      //console.log('nextpage');
+      editor.nextPage();
+      //dispatchEvent(this, 'pagechange', {pageNo: this.pageNo, lastPage: this.lastPage});
+    }
+    requestAnimationFrame(function () {
+      checkNextPage(editor);
     });
+  };
+
+
+  checkScrollPosition = function (editor) {
+    //console.log(editor.song.ticks,editor.scrollLimit,interrupt);
+    if (editor.song.playing && editor.interrupt === false) {
+      if (editor.song.ticks >= editor.scrollLimit) {
+        dispatchEvent(editor, 'scroll', { x: editor.scrollX + editor.viewportWidth });
+        editor.scrollLimit += (editor.viewportWidth / editor.tickWidth);
+        //editor.currentPage++;
+      } else {
+        var x = (floor(editor.song.ticks / editor.viewportTicks) * editor.viewportTicks) * editor.tickWidth;
+        if (editor.scrollX !== x) {
+          dispatchEvent(editor, 'scroll', { x: x });
+        }
+      }
+    }
+    requestAnimationFrame(function () {
+      checkScrollPosition(editor);
+    });
+  };
+
+
+  dispatchEvent = function (editor, id, data) {
+    //console.log(id,eventListeners);
+    var listeners = editor.eventListeners[id];
+    if (listeners) {
+      listeners.forEach(function (cb) {
+        cb(data);
+      });
+    }
+  };
+
+
+  handleKeys = function (editor) {
+    var p = editor.selectedPart,
+      n = editor.selectedNote;
+
+    if (p !== undefined) {
+      p.track.removePart(p);
+      this.song.update();
+    } else if (n !== undefined) {
+      n.part.removeNote(n);
+      this.song.update();
+    }
+  };
+
+
+  sequencer.createKeyEditor = function (song, config) {
+    return new KeyEditor(song, config);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    getPosition = sequencer.protectedScope.getPosition;
+    createPlayhead = sequencer.protectedScope.createPlayhead;
+    createNote = sequencer.createNote;
+    debug = sequencer.debug;
+    floor = sequencer.protectedScope.floor;
+    round = sequencer.protectedScope.round;
+    typeString = sequencer.protectedScope.typeString;
+    objectToArray = sequencer.protectedScope.objectToArray;
+    arrayToObject = sequencer.protectedScope.arrayToObject;
+    getScaffoldingBars = sequencer.protectedScope.getScaffoldingBars;
+    createIteratorFactory = sequencer.protectedScope.createKeyEditorIteratorFactory;
+  });
 
 }
 function keyEditorIteratorFactory() {
 
-    'use strict';
+  'use strict';
 
-    var
-        minWidthSixteenth = 0.042,
-        minWidthBeat = 0.02,
-        /*
-                events,
-                numEvents,
-                notes,
-                numNotes,
-                parts,
-                numParts,
-        
-                song,
-                editor,
-                position,
-        */
-        // import
-        createPlayhead, // defined in playhead.js
-        createNote; // defined in note.js
-
-    //public
+  var
+    minWidthSixteenth = 0.042,
+    minWidthBeat = 0.02,
     /*
-            create,
-            updateSong,
-            createVerticalLineIterator,
-            createHorizontalLineIterator,
-            createEventIterator,
-            createNoteIterator,
-            createPartIterator;
+            events,
+            numEvents,
+            notes,
+            numNotes,
+            parts,
+            numParts,
+    
+            song,
+            editor,
+            position,
     */
+    // import
+    createPlayhead, // defined in playhead.js
+    createNote; // defined in note.js
 
-    function Factory(song, editor) {
-        this.song = song;
-        this.editor = editor;
-        //console.log(this.editor);
-        //this.position = createPlayhead(this.song, 'barsbeats ticks millis', 'iterators');
-        this.position = createPlayhead(this.song, 'all', 'iterators');
-        this.updateSong();
-    }
+  //public
+  /*
+          create,
+          updateSong,
+          createVerticalLineIterator,
+          createHorizontalLineIterator,
+          createEventIterator,
+          createNoteIterator,
+          createPartIterator;
+  */
 
+  function Factory(song, editor) {
+    this.song = song;
+    this.editor = editor;
+    //console.log(this.editor);
+    //this.position = createPlayhead(this.song, 'barsbeats ticks millis', 'iterators');
+    this.position = createPlayhead(this.song, 'all', 'iterators');
+    this.updateSong();
+  }
+
+  /*
+      create = function(s, e){
+          song = s;
+          editor = e;
+          updateSong();
+          position = createPlayhead(song, 'barsbeats ticks millis', 'iterators');
+          return {
+              updateSong: updateSong,
+              createVerticalLineIterator: createVerticalLineIterator,
+              createHorizontalLineIterator: createHorizontalLineIterator,
+              createEventIterator: createEventIterator,
+              createNoteIterator: createNoteIterator,
+              createPartIterator: createPartIterator
+          };
+      };
+  */
+
+  Factory.prototype.updateSong = function () {
+    this.events = this.song.events;
+    this.numEvents = this.events.length;
+    this.notes = this.song.notes;
+    this.numNotes = this.notes.length;
+    this.parts = this.song.parts;
+    this.numParts = this.parts.length;
+    this.position.updateSong();
+  };
+
+
+  Factory.prototype.createVerticalLineIterator = function () {
+    var supportedTypes = 'bar beat sixteenth',
+      lineType,
+      numTicks = {},
+      tickWidth,
+      offset,
+      type,
+      ticks,
+      endTicks,
+      bar,
+      beat,
+      sixteenth,
+      nominator,
+      numSixteenth,
+      startPosition,
+      endPosition,
+      editor = this.editor,
+      position = this.position,
+      // widthBar,
+      // widthBeat,
+      // widthSixteenth,
+      data, next, hasNext, reset, getData, setType;
+    //setStartPosition, setEndPosition;
+
+
+    getData = function () {
+      //console.log('ticks',ticks);
+      data = position.update('ticks', ticks);
+      numTicks.bar = data.ticksPerBar;
+      numTicks.beat = data.ticksPerBeat;
+      numTicks.sixteenth = data.ticksPerSixteenth;
+      nominator = data.nominator;
+      numSixteenth = data.numSixteenth;
+      //console.log(numTicks,nominator,numSixteenth);
+      //console.log(ticks, data);
+    };
+
+    next = function (t) {
+      if (t) {
+        type = t;
+        // if (tickWidth < minWidthBeat) {
+        //     type = 'bar';
+        // } else if (tickWidth < minWidthSixteenth) {
+        //     type = 'beat';
+        // }
+      } else {
+        if (tickWidth < minWidthBeat) {
+          type = 'bar';
+        } else if (tickWidth < minWidthSixteenth) {
+          type = 'beat';
+        }
+      }
+
+      switch (type) {
+        case 'sixteenth':
+          lineType = 'sixteenth';
+          sixteenth++;
+          if (sixteenth > numSixteenth) {
+            lineType = 'beat';
+            sixteenth = 1;
+            beat++;
+            if (beat > nominator) {
+              lineType = 'bar';
+              beat = 1;
+              bar++;
+            }
+          }
+          break;
+        case 'beat':
+          lineType = 'beat';
+          sixteenth = 1;
+          beat++;
+          if (beat > nominator) {
+            lineType = 'bar';
+            beat = 1;
+            bar++;
+          }
+          break;
+        case 'bar':
+          lineType = 'bar';
+          sixteenth = 1;
+          beat = 1;
+          bar++;
+          break;
+      }
+      ticks += numTicks[type];
+      getData();
+      if (ticks > endTicks) {
+        return false;
+      }
+      //console.log(bar,beat,sixteenth);
+      return {
+        x: (ticks * tickWidth) - offset,
+        bar: bar,
+        beat: beat,
+        sixteenth: sixteenth,
+        // widthBar: widthBar,
+        // widthBeat: widthBeat,
+        // widthSixteenth: widthSixteenth,
+        type: lineType,
+        position: data
+      };
+    };
+
+    hasNext = function (t) {
+      var diffTicks = endTicks - ticks,
+        result = false;
+
+      if (t) {
+        type = t;
+        if (tickWidth < minWidthBeat) {
+          type = 'bar';
+        } else if (tickWidth < minWidthSixteenth) {
+          type = 'beat';
+        }
+      }
+
+      switch (type) {
+        case 'bar':
+          result = diffTicks >= numTicks[type];
+          break;
+        case 'beat':
+          result = diffTicks >= numTicks[type];
+          break;
+        case 'sixteenth':
+          result = diffTicks >= numTicks[type];
+          break;
+      }
+      //console.log(ticks,endTicks,diffTicks);
+      return result;
+    };
+
+    reset = function (start, end) {
+      startPosition = start || editor.startPosition;
+      endPosition = end || editor.endPosition;
+      ticks = startPosition.ticks;
+      bar = startPosition.bar;
+      beat = startPosition.beat;
+      sixteenth = startPosition.sixteenth;
+      //console.log(startPosition.barsAsString);
+      //console.log(endPosition.barsAsString);
+      //console.log(ticks,bar,beat,sixteenth);
+      endTicks = endPosition.ticks;
+      tickWidth = editor.tickWidth;
+      offset = 0;//ticks * this.editor.tickWidth;
+      position.set('ticks', ticks);
+      //console.log(tickWidth,offset);
+      if (tickWidth < minWidthBeat) {
+        type = 'bar';
+      } else if (tickWidth < minWidthSixteenth) {
+        type = 'beat';
+      }
+      getData();
+      // widthBar = numTicks.bar * this.editor.tickWidth;
+      // widthBeat = numTicks.beat * this.editor.tickWidth;
+      // widthSixteenth = numTicks.sixteenth * this.editor.tickWidth;
+    };
     /*
-        create = function(s, e){
-            song = s;
-            editor = e;
-            updateSong();
-            position = createPlayhead(song, 'barsbeats ticks millis', 'iterators');
-            return {
-                updateSong: updateSong,
-                createVerticalLineIterator: createVerticalLineIterator,
-                createHorizontalLineIterator: createHorizontalLineIterator,
-                createEventIterator: createEventIterator,
-                createNoteIterator: createNoteIterator,
-                createPartIterator: createPartIterator
+            setStartPosition = function(position){
+                startPosition = position;
             };
-        };
+    
+            setEndPosition = function(position){
+                endPosition = position;
+            };
     */
-
-    Factory.prototype.updateSong = function () {
-        this.events = this.song.events;
-        this.numEvents = this.events.length;
-        this.notes = this.song.notes;
-        this.numNotes = this.notes.length;
-        this.parts = this.song.parts;
-        this.numParts = this.parts.length;
-        this.position.updateSong();
+    setType = function (t) {
+      type = t;
+      if (tickWidth < minWidthBeat) {
+        type = 'bar';
+      } else if (tickWidth < minWidthSixteenth) {
+        type = 'beat';
+      }
     };
 
-
-    Factory.prototype.createVerticalLineIterator = function () {
-        var supportedTypes = 'bar beat sixteenth',
-            lineType,
-            numTicks = {},
-            tickWidth,
-            offset,
-            type,
-            ticks,
-            endTicks,
-            bar,
-            beat,
-            sixteenth,
-            nominator,
-            numSixteenth,
-            startPosition,
-            endPosition,
-            editor = this.editor,
-            position = this.position,
-            // widthBar,
-            // widthBeat,
-            // widthSixteenth,
-            data, next, hasNext, reset, getData, setType;
-        //setStartPosition, setEndPosition;
+    //console.log('ver');
+    return {
+      next: next,
+      reset: reset,
+      hasNext: hasNext,
+      setType: setType
+      //setStartPosition: setStartPosition,
+      //setEndPosition: setEndPosition,
+    };
+  };
 
 
-        getData = function () {
-            //console.log('ticks',ticks);
-            data = position.update('ticks', ticks);
-            numTicks.bar = data.ticksPerBar;
-            numTicks.beat = data.ticksPerBeat;
-            numTicks.sixteenth = data.ticksPerSixteenth;
-            nominator = data.nominator;
-            numSixteenth = data.numSixteenth;
-            //console.log(numTicks,nominator,numSixteenth);
-            //console.log(ticks, data);
-        };
+  Factory.prototype.createHorizontalLineIterator = function () {
+    var index,
+      pitch,
+      range,
+      pitchHeight,
+      data = {},
+      editor = this.editor,
+      next, hasNext, reset;
 
-        next = function (t) {
-            if (t) {
-                type = t;
-                if (tickWidth < minWidthBeat) {
-                    type = 'bar';
-                } else if (tickWidth < minWidthSixteenth) {
-                    type = 'beat';
-                }
-            }
-
-            switch (type) {
-                case 'sixteenth':
-                    lineType = 'sixteenth';
-                    sixteenth++;
-                    if (sixteenth > numSixteenth) {
-                        lineType = 'beat';
-                        sixteenth = 1;
-                        beat++;
-                        if (beat > nominator) {
-                            lineType = 'bar';
-                            beat = 1;
-                            bar++;
-                        }
-                    }
-                    break;
-                case 'beat':
-                    lineType = 'beat';
-                    sixteenth = 1;
-                    beat++;
-                    if (beat > nominator) {
-                        lineType = 'bar';
-                        beat = 1;
-                        bar++;
-                    }
-                    break;
-                case 'bar':
-                    lineType = 'bar';
-                    sixteenth = 1;
-                    beat = 1;
-                    bar++;
-                    break;
-            }
-            ticks += numTicks[type];
-            getData();
-            if (ticks > endTicks) {
-                return false;
-            }
-            //console.log(bar,beat,sixteenth);
-            return {
-                x: (ticks * tickWidth) - offset,
-                bar: bar,
-                beat: beat,
-                sixteenth: sixteenth,
-                // widthBar: widthBar,
-                // widthBeat: widthBeat,
-                // widthSixteenth: widthSixteenth,
-                type: lineType,
-                position: data
-            };
-        };
-
-        hasNext = function (t) {
-            var diffTicks = endTicks - ticks,
-                result = false;
-
-            if (t) {
-                type = t;
-                if (tickWidth < minWidthBeat) {
-                    type = 'bar';
-                } else if (tickWidth < minWidthSixteenth) {
-                    type = 'beat';
-                }
-            }
-
-            switch (type) {
-                case 'bar':
-                    result = diffTicks >= numTicks[type];
-                    break;
-                case 'beat':
-                    result = diffTicks >= numTicks[type];
-                    break;
-                case 'sixteenth':
-                    result = diffTicks >= numTicks[type];
-                    break;
-            }
-            //console.log(ticks,endTicks,diffTicks);
-            return result;
-        };
-
-        reset = function (start, end) {
-            startPosition = start || editor.startPosition;
-            endPosition = end || editor.endPosition;
-            ticks = startPosition.ticks;
-            bar = startPosition.bar;
-            beat = startPosition.beat;
-            sixteenth = startPosition.sixteenth;
-            //console.log(startPosition.barsAsString);
-            //console.log(endPosition.barsAsString);
-            //console.log(ticks,bar,beat,sixteenth);
-            endTicks = endPosition.ticks;
-            tickWidth = editor.tickWidth;
-            offset = 0;//ticks * this.editor.tickWidth;
-            position.set('ticks', ticks);
-            //console.log(tickWidth,offset);
-            if (tickWidth < minWidthBeat) {
-                type = 'bar';
-            } else if (tickWidth < minWidthSixteenth) {
-                type = 'beat';
-            }
-            getData();
-            // widthBar = numTicks.bar * this.editor.tickWidth;
-            // widthBeat = numTicks.beat * this.editor.tickWidth;
-            // widthSixteenth = numTicks.sixteenth * this.editor.tickWidth;
-        };
-        /*
-                setStartPosition = function(position){
-                    startPosition = position;
-                };
-        
-                setEndPosition = function(position){
-                    endPosition = position;
-                };
-        */
-        setType = function (t) {
-            type = t;
-            if (tickWidth < minWidthBeat) {
-                type = 'bar';
-            } else if (tickWidth < minWidthSixteenth) {
-                type = 'beat';
-            }
-        };
-
-        //console.log('ver');
-        return {
-            next: next,
-            reset: reset,
-            hasNext: hasNext,
-            setType: setType
-            //setStartPosition: setStartPosition,
-            //setEndPosition: setEndPosition,
-        };
+    next = function (type) {
+      data = {
+        note: createNote(pitch),
+        y: (index * pitchHeight)
+      };
+      pitch--;
+      index++;
+      return data;
     };
 
-
-    Factory.prototype.createHorizontalLineIterator = function () {
-        var index,
-            pitch,
-            range,
-            pitchHeight,
-            data = {},
-            editor = this.editor,
-            next, hasNext, reset;
-
-        next = function (type) {
-            data = {
-                note: createNote(pitch),
-                y: (index * pitchHeight)
-            };
-            pitch--;
-            index++;
-            return data;
-        };
-
-        hasNext = function (type) {
-            var result = false;
-            switch (type) {
-                case 'chromatic':
-                    result = index < range;
-                    break;
-            }
-            return result;
-        };
-
-        reset = function () {
-            index = 0;
-            pitch = editor.highestNote;
-            range = editor.pitchRange;
-            pitchHeight = editor.pitchHeight;
-            //console.log('reset',pitch,range,pitchHeight);
-        };
-
-        //console.log('hor');
-        return {
-            next: next,
-            reset: reset,
-            hasNext: hasNext
-        };
+    hasNext = function (type) {
+      var result = false;
+      switch (type) {
+        case 'chromatic':
+          result = index < range;
+          break;
+      }
+      return result;
     };
 
-
-    Factory.prototype.createEventIterator = function () {
-        var startTicks,
-            endTicks,
-            hasNextCalled,
-            index,
-            nextEvent,
-            editor = this.editor,
-            position = this.position,
-            events = this.events,
-            numEvents = this.numEvents,
-            types = '',
-            next, hasNext, reset, setTypes;
-
-        hasNext = function (t) {
-            types = t || types;
-            hasNextCalled = true;
-            index++;
-            if (index === numEvents) {
-                return false;
-            }
-
-            nextEvent = events[index];
-            if (types === '') {
-                return nextEvent.ticks <= endTicks;
-            }
-            return false;
-        };
-
-        next = function (t) {
-            types = t || types;
-            if (!hasNextCalled) {
-                hasNext(types);
-            }
-            hasNextCalled = false;
-            return nextEvent;
-        };
-
-        reset = function () {
-            var event;
-            startTicks = editor.startTicks;
-            endTicks = editor.endTicks;
-            hasNextCalled = false;
-            if (editor.paginate === true && sequencer.isPlaying() === true) {
-                return;
-            }
-            /*
-            for(index = 0; index < numEvents; index++){
-                event = events[index];
-                if(event.ticks >= startTicks){
-                    break;
-                }
-            }
-            index--;
-            */
-            index = position.get().eventIndex - 2;
-            //console.log(events);
-            //console.log('ke',sequencer.isPlaying(),index,sequencer.eventIndex);
-        };
-
-        setTypes = function () {
-            var args = Array.prototype.slice.call(arguments);
-            args.forEach(function (type) {
-                types += type + ' ';
-            });
-        };
-
-        return {
-            next: next,
-            reset: reset,
-            hasNext: hasNext,
-            setTypes: setTypes
-        };
+    reset = function () {
+      index = 0;
+      pitch = editor.highestNote;
+      range = editor.pitchRange;
+      pitchHeight = editor.pitchHeight;
+      //console.log('reset',pitch,range,pitchHeight);
     };
 
+    //console.log('hor');
+    return {
+      next: next,
+      reset: reset,
+      hasNext: hasNext
+    };
+  };
 
-    Factory.prototype.createNoteIterator = function () {
-        var startTicks,
-            endTicks,
-            hasNextCalled,
-            index,
-            newNote,
-            nextNote,
-            editor = this.editor,
-            song = this.song,
-            notes = this.notes,
-            numNotes = this.numNotes,
-            types = '',
-            next, hasNext, reset, setTypes;
 
-        hasNext = function (t) {
-            types = t || types;
-            hasNextCalled = true;
-            index++;
-            if (index === this.numNotes) {
-                return false;
-            }
+  Factory.prototype.createEventIterator = function () {
+    var startTicks,
+      endTicks,
+      hasNextCalled,
+      index,
+      nextEvent,
+      editor = this.editor,
+      position = this.position,
+      events = this.events,
+      numEvents = this.numEvents,
+      types = '',
+      next, hasNext, reset, setTypes;
 
-            newNote = false;
+    hasNext = function (t) {
+      types = t || types;
+      hasNextCalled = true;
+      index++;
+      if (index === numEvents) {
+        return false;
+      }
 
-            for (; index < numNotes; index++) {
-                nextNote = notes[index];
-                //console.log(nextNote);
-
-                if (nextNote.ticks >= endTicks) {
-                    //console.log('skip',nextNote.ticks);
-                    break;
-                }
-
-                if (editor.paginate) {
-                    // show note that has started on previous page
-                    if (nextNote.ticks < startTicks && nextNote.noteOff.ticks > startTicks) {
-                        newNote = true;
-                    } else if (nextNote.ticks < endTicks) {
-                        newNote = true;
-                    }
-                    if (newNote) {
-                        break;
-                    }
-                } else {
-                    newNote = nextNote.ticks <= endTicks;
-                    //console.log(newNote, nextNote.ticks, nextNote.noteOff.ticks, startTicks, endTicks);
-                    if (newNote) {
-                        break;
-                    }
-                }
-
-                //console.log(types.indexOf(nextEvent.type) !== -1,types,nextEvent.type,nextEvent.ticks,endTicks);
-            }
-            //console.log(index,nextEvent.ticks,endTicks,newEvent);
-            return newNote;
-        };
-
-        next = function (t) {
-            types = t || types;
-            if (!hasNextCalled) {
-                hasNext(types);
-            }
-            hasNextCalled = false;
-            //return nextEvent;
-            nextNote.bbox = editor.getNoteRect(nextNote);
-            return nextNote;
-        };
-
-        reset = function () {
-            var note;
-            startTicks = editor.startTicks;
-            endTicks = editor.endTicks;
-            notes = song.notes;
-            numNotes = song.numNotes;
-            //console.log(startTicks, endTicks);
-            hasNextCalled = false;
-            if (editor.paginate === true && sequencer.isPlaying() === true) {
-                return;
-            }
-
-            for (index = 0; index < numNotes; index++) {
-                note = notes[index];
-                //console.log(note, note.ticks, startTicks);
-                if (note.ticks >= startTicks) {
-                    break;
-                }
-            }
-            index--;
-        };
-
-        return {
-            next: next,
-            reset: reset,
-            hasNext: hasNext
-        };
+      nextEvent = events[index];
+      if (types === '') {
+        return nextEvent.ticks <= endTicks;
+      }
+      return false;
     };
 
-
-    Factory.prototype.createPartIterator = function () {
-        var index,
-            max,
-            part,
-            data = {},
-            editor = this.editor,
-            song = this.song,
-            parts = this.parts,
-            next, hasNext, reset;
-
-        next = function (type) {
-            part = parts[index++];
-            part.bbox = editor.getPartRect(part);
-            return part;
-        };
-
-        hasNext = function (type) {
-            return index < max;
-        };
-
-        reset = function () {
-            parts = song.parts;
-            max = song.numParts;
-            index = 0;
-        };
-
-        return {
-            next: next,
-            reset: reset,
-            hasNext: hasNext
-        };
+    next = function (t) {
+      types = t || types;
+      if (!hasNextCalled) {
+        hasNext(types);
+      }
+      hasNextCalled = false;
+      return nextEvent;
     };
 
-
-    sequencer.protectedScope.createKeyEditorIteratorFactory = function (song, editor) {
-        return new Factory(song, editor);
+    reset = function () {
+      var event;
+      startTicks = editor.startTicks;
+      endTicks = editor.endTicks;
+      hasNextCalled = false;
+      if (editor.paginate === true && sequencer.isPlaying() === true) {
+        return;
+      }
+      /*
+      for(index = 0; index < numEvents; index++){
+          event = events[index];
+          if(event.ticks >= startTicks){
+              break;
+          }
+      }
+      index--;
+      */
+      index = position.get().eventIndex - 2;
+      //console.log(events);
+      //console.log('ke',sequencer.isPlaying(),index,sequencer.eventIndex);
     };
 
+    setTypes = function () {
+      var args = Array.prototype.slice.call(arguments);
+      args.forEach(function (type) {
+        types += type + ' ';
+      });
+    };
 
-    sequencer.protectedScope.addInitMethod(function () {
-        createNote = sequencer.createNote;
-        createPlayhead = sequencer.protectedScope.createPlayhead;
-    });
+    return {
+      next: next,
+      reset: reset,
+      hasNext: hasNext,
+      setTypes: setTypes
+    };
+  };
+
+
+  Factory.prototype.createNoteIterator = function () {
+    var startTicks,
+      endTicks,
+      hasNextCalled,
+      index,
+      newNote,
+      nextNote,
+      editor = this.editor,
+      song = this.song,
+      notes = this.notes,
+      numNotes = this.numNotes,
+      types = '',
+      next, hasNext, reset, setTypes;
+
+    hasNext = function (t) {
+      types = t || types;
+      hasNextCalled = true;
+      index++;
+      if (index === this.numNotes) {
+        return false;
+      }
+
+      newNote = false;
+
+      for (; index < numNotes; index++) {
+        nextNote = notes[index];
+        //console.log(nextNote);
+
+        if (nextNote.ticks >= endTicks) {
+          //console.log('skip',nextNote.ticks);
+          break;
+        }
+
+        if (editor.paginate) {
+          // show note that has started on previous page
+          if (nextNote.ticks < startTicks && nextNote.noteOff.ticks > startTicks) {
+            newNote = true;
+          } else if (nextNote.ticks < endTicks) {
+            newNote = true;
+          }
+          if (newNote) {
+            break;
+          }
+        } else {
+          newNote = nextNote.ticks <= endTicks;
+          //console.log(newNote, nextNote.ticks, nextNote.noteOff.ticks, startTicks, endTicks);
+          if (newNote) {
+            break;
+          }
+        }
+
+        //console.log(types.indexOf(nextEvent.type) !== -1,types,nextEvent.type,nextEvent.ticks,endTicks);
+      }
+      //console.log(index,nextEvent.ticks,endTicks,newEvent);
+      return newNote;
+    };
+
+    next = function (t) {
+      types = t || types;
+      if (!hasNextCalled) {
+        hasNext(types);
+      }
+      hasNextCalled = false;
+      //return nextEvent;
+      nextNote.bbox = editor.getNoteRect(nextNote);
+      return nextNote;
+    };
+
+    reset = function () {
+      var note;
+      startTicks = editor.startTicks;
+      endTicks = editor.endTicks;
+      notes = song.notes;
+      numNotes = song.numNotes;
+      //console.log(startTicks, endTicks);
+      hasNextCalled = false;
+      if (editor.paginate === true && sequencer.isPlaying() === true) {
+        return;
+      }
+
+      for (index = 0; index < numNotes; index++) {
+        note = notes[index];
+        //console.log(note, note.ticks, startTicks);
+        if (note.ticks >= startTicks) {
+          break;
+        }
+      }
+      index--;
+    };
+
+    return {
+      next: next,
+      reset: reset,
+      hasNext: hasNext
+    };
+  };
+
+
+  Factory.prototype.createPartIterator = function () {
+    var index,
+      max,
+      part,
+      data = {},
+      editor = this.editor,
+      song = this.song,
+      parts = this.parts,
+      next, hasNext, reset;
+
+    next = function (type) {
+      part = parts[index++];
+      part.bbox = editor.getPartRect(part);
+      return part;
+    };
+
+    hasNext = function (type) {
+      return index < max;
+    };
+
+    reset = function () {
+      parts = song.parts;
+      max = song.numParts;
+      index = 0;
+    };
+
+    return {
+      next: next,
+      reset: reset,
+      hasNext: hasNext
+    };
+  };
+
+
+  sequencer.protectedScope.createKeyEditorIteratorFactory = function (song, editor) {
+    return new Factory(song, editor);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    createNote = sequencer.createNote;
+    createPlayhead = sequencer.protectedScope.createPlayhead;
+  });
 
 }function metronome() {
 
-    'use strict';
+  'use strict';
 
-    var
-        //import
-        context, //defined in open_module.js
-        findItem, //defined in asset_manager.js
-        getPosition, //defined in position.js
-        objectForEach, //defined in util.js
-        createMidiNote, //defined in midi_note.js
-        parseEvents, //defined in parse_events.js
-        parseMetronomeEvents, //defined in song_update.js
+  var
+    //import
+    context, //defined in open_module.js
+    findItem, //defined in asset_manager.js
+    getPosition, //defined in position.js
+    objectForEach, //defined in util.js
+    createMidiNote, //defined in midi_note.js
+    parseEvents, //defined in parse_events.js
+    parseMetronomeEvents, //defined in song_update.js
 
-        methodMap = {
-            volume: 'setVolume',
-            instrument: 'setInstrument',
-            noteNumberAccentedTick: 'setNoteNumberAccentedTick',
-            noteNumberNonAccentedTick: 'setNoteNumberNonAccentedTick',
-            velocityAccentedTick: 'setVelocityAccentedTick',
-            velocityNonAccentedTick: 'setVelocityNonAccentedTick',
-            noteLengthAccentedTick: 'setNoteLengthAccentedTick',
-            noteLengthNonAccentedTick: 'setNoteLengthNonAccentedTick'
-        },
+    methodMap = {
+      volume: 'setVolume',
+      instrument: 'setInstrument',
+      noteNumberAccentedTick: 'setNoteNumberAccentedTick',
+      noteNumberNonAccentedTick: 'setNoteNumberNonAccentedTick',
+      velocityAccentedTick: 'setVelocityAccentedTick',
+      velocityNonAccentedTick: 'setVelocityNonAccentedTick',
+      noteLengthAccentedTick: 'setNoteLengthAccentedTick',
+      noteLengthNonAccentedTick: 'setNoteLengthNonAccentedTick'
+    },
 
-        Metronome;
+    Metronome;
 
 
-    function checkNumber(value) {
-        //console.log(value);
-        if (isNaN(value)) {
-            if (sequencer.debug) {
-                console.log('please provide a number');
-            }
-            return false;
+  function checkNumber(value) {
+    //console.log(value);
+    if (isNaN(value)) {
+      if (sequencer.debug) {
+        console.log('please provide a number');
+      }
+      return false;
+    }
+    if (value < 0 || value > 127) {
+      if (sequencer.debug) {
+        console.log('please provide a number between 0 and 127');
+      }
+      return false;
+    }
+    return value;
+  }
+
+
+  Metronome = function (song) {
+    this.song = song;
+    this.track = sequencer.createTrack(this.song.id + '_metronome', 'metronome');
+    this.part = sequencer.createPart();
+    this.track.addPart(this.part);
+    this.track.connect(this.song.gainNode);
+    this.events = [];
+    this.precountEvents = [];
+    this.noteNumberAccented = 61;
+    this.noteNumberNonAccented = 60;
+    this.volume = 1;
+    this.velocityNonAccented = 100;
+    this.velocityAccented = 100;
+    this.noteLengthNonAccented = song.ppq / 4; // sixteenth notes -> don't make this too short if your sample has a long attack!
+    this.noteLengthAccented = song.ppq / 4;
+    this.track.setInstrument('heartbeat/metronome');
+    this.precountDurationInMillis = 0;
+    this.bars = 0;
+    //this.reset();
+  };
+
+
+  function createEvents(metronome, startBar, endBar, id) {
+
+    var i, j,
+      data,
+      velocity,
+      noteLength,
+      noteNumber,
+      beatsPerBar,
+      ticksPerBeat,
+      ticks = 0,
+      events = [],
+      song = metronome.song,
+      noteOn, noteOff, note;
+
+    //console.log(startBar, endBar);
+
+    for (i = startBar; i <= endBar; i++) {
+      data = getPosition(song, ['barsbeats', i]);
+      beatsPerBar = data.nominator;
+      ticksPerBeat = data.ticksPerBeat;
+
+      for (j = 0; j < beatsPerBar; j++) {
+        noteNumber = j === 0 ? metronome.noteNumberAccented : metronome.noteNumberNonAccented;
+        noteLength = j === 0 ? metronome.noteLengthAccented : metronome.noteLengthNonAccented;
+        velocity = j === 0 ? metronome.velocityAccented : metronome.velocityNonAccented;
+
+        noteOn = sequencer.createMidiEvent(ticks, 144, noteNumber, velocity);
+        noteOff = sequencer.createMidiEvent(ticks + noteLength, 128, noteNumber, 0);
+
+        if (id === 'precount') {
+          noteOn.part = { id: 'precount' };
+          noteOn.track = metronome.track;
+          noteOff.part = { id: 'precount' };
+          noteOff.track = metronome.track;
         }
-        if (value < 0 || value > 127) {
-            if (sequencer.debug) {
-                console.log('please provide a number between 0 and 127');
-            }
-            return false;
-        }
-        return value;
+
+        note = createMidiNote(noteOn, noteOff);
+        events.push(noteOn, noteOff);
+
+        ticks += ticksPerBeat;
+      }
     }
 
-
-    Metronome = function (song) {
-        this.song = song;
-        this.track = sequencer.createTrack(this.song.id + '_metronome', 'metronome');
-        this.part = sequencer.createPart();
-        this.track.addPart(this.part);
-        this.track.connect(this.song.gainNode);
-        this.events = [];
-        this.precountEvents = [];
-        this.noteNumberAccented = 61;
-        this.noteNumberNonAccented = 60;
-        this.volume = 1;
-        this.velocityNonAccented = 100;
-        this.velocityAccented = 100;
-        this.noteLengthNonAccented = song.ppq / 4; // sixteenth notes -> don't make this too short if your sample has a long attack!
-        this.noteLengthAccented = song.ppq / 4;
-        this.track.setInstrument('heartbeat/metronome');
-        this.precountDurationInMillis = 0;
-        this.bars = 0;
-        //this.reset();
-    };
+    return events;
+  }
 
 
-    function createEvents(metronome, startBar, endBar, id) {
-
-        var i, j,
-            data,
-            velocity,
-            noteLength,
-            noteNumber,
-            beatsPerBar,
-            ticksPerBeat,
-            ticks = 0,
-            events = [],
-            song = metronome.song,
-            noteOn, noteOff, note;
-
-        //console.log(startBar, endBar);
-
-        for (i = startBar; i <= endBar; i++) {
-            data = getPosition(song, ['barsbeats', i]);
-            beatsPerBar = data.nominator;
-            ticksPerBeat = data.ticksPerBeat;
-
-            for (j = 0; j < beatsPerBar; j++) {
-                noteNumber = j === 0 ? metronome.noteNumberAccented : metronome.noteNumberNonAccented;
-                noteLength = j === 0 ? metronome.noteLengthAccented : metronome.noteLengthNonAccented;
-                velocity = j === 0 ? metronome.velocityAccented : metronome.velocityNonAccented;
-
-                noteOn = sequencer.createMidiEvent(ticks, 144, noteNumber, velocity);
-                noteOff = sequencer.createMidiEvent(ticks + noteLength, 128, noteNumber, 0);
-
-                if (id === 'precount') {
-                    noteOn.part = { id: 'precount' };
-                    noteOn.track = metronome.track;
-                    noteOff.part = { id: 'precount' };
-                    noteOff.track = metronome.track;
-                }
-
-                note = createMidiNote(noteOn, noteOff);
-                events.push(noteOn, noteOff);
-
-                ticks += ticksPerBeat;
-            }
-        }
-
-        return events;
+  Metronome.prototype.init = function (id, startBar, endBar) {
+    id = id === undefined ? 'init' : id;
+    //console.log('metronome', id, this.song.bars, startBar, endBar);
+    if (this.part.numEvents > 0) {
+      this.part.removeEvents(this.part.events);
     }
+    this.events = createEvents(this, startBar, endBar, id);
+    this.numEvents = this.events.length;
+    this.part.addEvents(this.events);
+    this.bars = this.song.bars;
+    parseMetronomeEvents(this.song, this.events);
+  };
 
 
-    Metronome.prototype.init = function (id, startBar, endBar) {
-        id = id === undefined ? 'init' : id;
-        //console.log('metronome', id, this.song.bars, startBar, endBar);
-        if (this.part.numEvents > 0) {
-            this.part.removeEvents(this.part.events);
-        }
-        this.events = createEvents(this, startBar, endBar, id);
-        this.numEvents = this.events.length;
-        this.part.addEvents(this.events);
-        this.bars = this.song.bars;
-        parseMetronomeEvents(this.song, this.events);
-    };
+  Metronome.prototype.update = function (startBar, endBar) {
+    //console.time('metronome update')
+    if (startBar === 0) {
+      startBar = 1;
+    }
+    //console.log('metronome', this.song.bars, startBar, endBar);
+    // for now, just re-init the metronome
+    if (startBar !== undefined && endBar !== undefined) {
+      this.init('update', startBar, endBar);
+    } else {
+      this.init('update', 1, this.song.bars);
+    }
+    //console.timeEnd('metronome update')
+
+    //this.allNotesOff();
+    //this.song.scheduler.updateSong();
+
+    // var events = createEvents(this, startBar, endBar, 'update');
+    // this.events = this.events.concat(events);
+    // parseMetronomeEvents(this.song, this.events);
+  };
 
 
-    Metronome.prototype.update = function (startBar, endBar) {
-        //console.time('metronome update')
-        if (startBar === 0) {
-            startBar = 1;
-        }
-        //console.log('metronome', this.song.bars, startBar, endBar);
-        // for now, just re-init the metronome
-        if (startBar !== undefined && endBar !== undefined) {
-            this.init('update', startBar, endBar);
-        } else {
-            this.init('update', 1, this.song.bars);
-        }
-        //console.timeEnd('metronome update')
-
-        //this.allNotesOff();
-        //this.song.scheduler.updateSong();
-
-        // var events = createEvents(this, startBar, endBar, 'update');
-        // this.events = this.events.concat(events);
-        // parseMetronomeEvents(this.song, this.events);
-    };
+  Metronome.prototype.updateConfig = function () {
+    this.init('configure', 1, this.bars);
+    this.allNotesOff();
+    this.song.scheduler.updateSong();
+  };
 
 
-    Metronome.prototype.updateConfig = function () {
-        this.init('configure', 1, this.bars);
-        this.allNotesOff();
-        this.song.scheduler.updateSong();
-    };
+  Metronome.prototype.configure = function (config) {
+    var me = this;
 
-
-    Metronome.prototype.configure = function (config) {
-        var me = this;
-
-        objectForEach(config, function (value, key) {
-            me[methodMap[key]](value);
-            //console.log(key, me[methodMap[key]]);
-        });
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setInstrument = function (instrument) {
-        if (instrument.className !== 'Instrument') {
-            instrument = sequencer.createInstrument(instrument);
-        }
-        if (instrument !== false) {
-            this.track.setInstrument(instrument);
-        } else {
-            this.track.setInstrument('heartbeat/metronome');
-        }
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setNoteLengthAccentedTick = function (value) {
-        if (isNaN(value)) {
-            if (sequencer.debug >= 2) {
-                console.warn('please provide a number');
-            }
-        }
-        this.noteLengthAccented = value;
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setNoteLengthNonAccentedTick = function (value) {
-        if (isNaN(value)) {
-            if (sequencer.debug >= 2) {
-                console.warn('please provide a number');
-            }
-        }
-        this.noteLengthNonAccented = value;
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setVelocityAccentedTick = function (value) {
-        value = checkNumber(value);
-        if (value !== false) {
-            this.velocityAccented = value;
-        } else if (sequencer.debug >= 2) {
-            console.warn('please provide a number');
-        }
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setVelocityNonAccentedTick = function (value) {
-        value = checkNumber(value);
-        if (value !== false) {
-            this.velocityNonAccented = value;
-        } else if (sequencer.debug >= 2) {
-            console.warn('please provide a number');
-        }
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setNoteNumberAccentedTick = function (value) {
-        value = checkNumber(value);
-        if (value !== false) {
-            this.noteNumberAccented = value;
-        } else if (sequencer.debug >= 2) {
-            console.warn('please provide a number');
-        }
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.setNoteNumberNonAccentedTick = function (value) {
-        value = checkNumber(value);
-        if (value !== false) {
-            this.noteNumberNonAccented = value;
-        } else if (sequencer.debug >= 2) {
-            console.warn('please provide a number');
-        }
-        this.updateConfig();
-    };
-
-
-    Metronome.prototype.reset = function () {
-        this.volume = 1;
-        this.track.setInstrument('heartbeat/metronome');
-
-        this.noteNumberAccented = 61;
-        this.noteNumberNonAccented = 60;
-
-        this.velocityAccented = 100;
-        this.velocityNonAccented = 100;
-
-        this.noteLengthAccented = this.song.ppq / 4;
-        this.noteLengthNonAccented = this.song.ppq / 4;
-    };
-
-
-    Metronome.prototype.allNotesOff = function () {
-        if (this.track.instrument) {
-            this.track.instrument.allNotesOff();
-        }
-    };
-
-
-    Metronome.prototype.createPrecountEvents = function (precount) {
-        if (precount <= 0) {
-            return;
-        }
-        var endPos = this.song.getPosition('barsbeats', this.song.bar + precount);
-
-        this.index = 0;
-        this.millis = 0;
-        this.startMillis = this.song.millis;
-        this.precountDurationInMillis = endPos.millis - this.startMillis;
-        this.precountEvents = createEvents(this, this.song.bar, endPos.bar - 1, 'precount');
-        parseEvents(this.song, this.precountEvents);
-        //console.log(this.song.bar, endPos.bar, precount, this.precountEvents.length);
-        //console.log(this.precountEvents, this.precountDurationInMillis, startTicks, endTicks);
-    };
-
-
-    // called by scheduler.js
-    Metronome.prototype.getPrecountEvents = function (maxtime) {
-        var events = this.precountEvents,
-            maxi = events.length, i, event,
-            result = [];
-
-        //console.log(maxtime, maxi, this.index, this.millis);
-
-        for (i = this.index; i < maxi; i++) {
-            event = events[i];
-            //console.log(event.millis, maxtime, this.millis);
-            if (event.millis < maxtime) {
-                event.time = this.startTime + event.millis;
-                result.push(event);
-                this.index++;
-            } else {
-                break;
-            }
-        }
-        return result;
-    };
-
-
-    Metronome.prototype.setVolume = function (value) {
-        this.track.setVolume(value);
-    };
-
-
-    sequencer.protectedScope.createMetronome = function (song) {
-        return new Metronome(song);
-    };
-
-    sequencer.protectedScope.addInitMethod(function initMetronome() {
-        context = sequencer.protectedScope.context;
-        findItem = sequencer.protectedScope.findItem;
-        getPosition = sequencer.protectedScope.getPosition;
-        createMidiNote = sequencer.createMidiNote;
-        objectForEach = sequencer.util.objectForEach;
-        parseEvents = sequencer.protectedScope.parseEvents;
-        parseMetronomeEvents = sequencer.protectedScope.parseMetronomeEvents;
+    objectForEach(config, function (value, key) {
+      me[methodMap[key]](value);
+      //console.log(key, me[methodMap[key]]);
     });
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setInstrument = function (instrument) {
+    if (instrument.className !== 'Instrument') {
+      instrument = sequencer.createInstrument(instrument);
+    }
+    if (instrument !== false) {
+      this.track.setInstrument(instrument);
+    } else {
+      this.track.setInstrument('heartbeat/metronome');
+    }
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setNoteLengthAccentedTick = function (value) {
+    if (isNaN(value)) {
+      if (sequencer.debug >= 2) {
+        console.warn('please provide a number');
+      }
+    }
+    this.noteLengthAccented = value;
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setNoteLengthNonAccentedTick = function (value) {
+    if (isNaN(value)) {
+      if (sequencer.debug >= 2) {
+        console.warn('please provide a number');
+      }
+    }
+    this.noteLengthNonAccented = value;
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setVelocityAccentedTick = function (value) {
+    value = checkNumber(value);
+    if (value !== false) {
+      this.velocityAccented = value;
+    } else if (sequencer.debug >= 2) {
+      console.warn('please provide a number');
+    }
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setVelocityNonAccentedTick = function (value) {
+    value = checkNumber(value);
+    if (value !== false) {
+      this.velocityNonAccented = value;
+    } else if (sequencer.debug >= 2) {
+      console.warn('please provide a number');
+    }
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setNoteNumberAccentedTick = function (value) {
+    value = checkNumber(value);
+    if (value !== false) {
+      this.noteNumberAccented = value;
+    } else if (sequencer.debug >= 2) {
+      console.warn('please provide a number');
+    }
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.setNoteNumberNonAccentedTick = function (value) {
+    value = checkNumber(value);
+    if (value !== false) {
+      this.noteNumberNonAccented = value;
+    } else if (sequencer.debug >= 2) {
+      console.warn('please provide a number');
+    }
+    this.updateConfig();
+  };
+
+
+  Metronome.prototype.reset = function () {
+    this.volume = 1;
+    this.track.setInstrument('heartbeat/metronome');
+
+    this.noteNumberAccented = 61;
+    this.noteNumberNonAccented = 60;
+
+    this.velocityAccented = 100;
+    this.velocityNonAccented = 100;
+
+    this.noteLengthAccented = this.song.ppq / 4;
+    this.noteLengthNonAccented = this.song.ppq / 4;
+  };
+
+
+  Metronome.prototype.allNotesOff = function () {
+    if (this.track.instrument) {
+      this.track.instrument.allNotesOff();
+    }
+  };
+
+
+  Metronome.prototype.createPrecountEvents = function (precount) {
+    if (precount <= 0) {
+      return;
+    }
+    var endPos = this.song.getPosition('barsbeats', this.song.bar + precount);
+
+    this.index = 0;
+    this.millis = 0;
+    this.startMillis = this.song.millis;
+    this.precountDurationInMillis = endPos.millis - this.startMillis;
+    this.precountEvents = createEvents(this, this.song.bar, endPos.bar - 1, 'precount');
+    parseEvents(this.song, this.precountEvents);
+    //console.log(this.song.bar, endPos.bar, precount, this.precountEvents.length);
+    //console.log(this.precountEvents, this.precountDurationInMillis, startTicks, endTicks);
+  };
+
+
+  // called by scheduler.js
+  Metronome.prototype.getPrecountEvents = function (maxtime) {
+    var events = this.precountEvents,
+      maxi = events.length, i, event,
+      result = [];
+
+    //console.log(maxtime, maxi, this.index, this.millis);
+
+    for (i = this.index; i < maxi; i++) {
+      event = events[i];
+      //console.log(event.millis, maxtime, this.millis);
+      if (event.millis < maxtime) {
+        event.time = this.startTime + event.millis;
+        result.push(event);
+        this.index++;
+      } else {
+        break;
+      }
+    }
+    return result;
+  };
+
+
+  Metronome.prototype.setVolume = function (value) {
+    this.track.setVolume(value);
+  };
+
+
+  sequencer.protectedScope.createMetronome = function (song) {
+    return new Metronome(song);
+  };
+
+  sequencer.protectedScope.addInitMethod(function initMetronome() {
+    context = sequencer.protectedScope.context;
+    findItem = sequencer.protectedScope.findItem;
+    getPosition = sequencer.protectedScope.getPosition;
+    createMidiNote = sequencer.createMidiNote;
+    objectForEach = sequencer.util.objectForEach;
+    parseEvents = sequencer.protectedScope.parseEvents;
+    parseMetronomeEvents = sequencer.protectedScope.parseMetronomeEvents;
+  });
 }function midiEvent() {
 
     /*
@@ -8424,527 +8440,527 @@ function midiStream() {
 
 function midiSystem() {
 
-    'use strict';
+  'use strict';
 
-    var
-        context, // defined in open_module.js
-        typeString, // defined in util.js
-        objectForEach, // defined in util.js
-        createMidiNote, // defined in midi_note.js
-        createMidiEvent, // defined in midi_event.js
+  var
+    context, // defined in open_module.js
+    typeString, // defined in util.js
+    objectForEach, // defined in util.js
+    createMidiNote, // defined in midi_note.js
+    createMidiEvent, // defined in midi_event.js
 
-        slice = Array.prototype.slice,
+    slice = Array.prototype.slice,
 
-        songMidiEventListener,
+    songMidiEventListener,
 
-        midiAccess,
-        midiInputsOrder,
-        midiOutputsOrder,
-        midiInitialized = false,
-        midiEventListenerId = 0;
+    midiAccess,
+    midiInputsOrder,
+    midiOutputsOrder,
+    midiInitialized = false,
+    midiEventListenerId = 0;
 
 
-    function initMidi(cb) {
+  function initMidi(cb) {
 
-        //console.log(midiInitialized, navigator.requestMIDIAccess);
+    // console.log(midiInitialized, navigator.requestMIDIAccess);
 
-        if (midiInitialized === true) {
+    if (midiInitialized === true) {
+      cb();
+      return;
+    }
+
+    midiInitialized = true;
+
+    if (navigator.requestMIDIAccess !== undefined) {
+      navigator.requestMIDIAccess().then(
+        // on success
+        function midiAccessOnSuccess(midi) {
+          if (midi._jazzInstances !== undefined) {
+            sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
+            sequencer.midi = true;
+          } else {
+            sequencer.webmidi = true;
+            sequencer.midi = true;
+          }
+          midiAccess = midi;
+          midiAccess.onstatechange = getDevices;
+          if (!midiAccess.inputs || !midiAccess.outputs) {
+            // Firefox WebMIDI API support is still in progress
             cb();
-            return;
-        }
-
-        midiInitialized = true;
-
-        if (navigator.requestMIDIAccess !== undefined) {
-            navigator.requestMIDIAccess().then(
-                // on success
-                function midiAccessOnSuccess(midi) {
-                    if (midi._jazzInstances !== undefined) {
-                        sequencer.jazz = midi._jazzInstances[0]._Jazz.version;
-                        sequencer.midi = true;
-                    } else {
-                        sequencer.webmidi = true;
-                        sequencer.midi = true;
-                    }
-                    midiAccess = midi;
-                    midiAccess.onstatechange = getDevices;
-                    if (!midiAccess.inputs || !midiAccess.outputs) {
-                        // Firefox WebMIDI API support is still in progress
-                        cb();
-                    } else {
-                        getDevices();
-                        //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);    
-                        cb();
-                    }
-                },
-                // on error
-                function midiAccessOnError(e) {
-                    console.log('MIDI could not be initialized:', e);
-                    cb();
-                }
-            );
-            // browsers without WebMIDI API
-        } else {
-            if (sequencer.browser === 'chrome') {
-                console.log('Web MIDI API not enabled');
-            } else {
-                console.log('Web MIDI API not supported');
-            }
+          } else {
+            getDevices();
+            //console.log(midi, sequencer.midi, sequencer.webmidi, sequencer.jazz);    
             cb();
+          }
+        },
+        // on error
+        function midiAccessOnError(e) {
+          console.log('MIDI could not be initialized:', e);
+          cb();
         }
+      );
+      // browsers without WebMIDI API
+    } else {
+      if (sequencer.browser === 'chrome') {
+        console.log('Web MIDI API not enabled');
+      } else {
+        console.log('Web MIDI API not supported');
+      }
+      cb();
     }
+  }
 
 
-    function getDevices(e) {
-        //console.log('getDevices', e);
-        var inputs, outputs;
-        midiInputsOrder = [];
-        midiOutputsOrder = [];
+  function getDevices(e) {
+    //console.log('getDevices', e);
+    var inputs, outputs;
+    midiInputsOrder = [];
+    midiOutputsOrder = [];
 
-        inputs = midiAccess.inputs;
+    inputs = midiAccess.inputs;
 
-        inputs.forEach(function (input) {
-            midiInputsOrder.push({ name: input.name, id: input.id });
-            sequencer.midiInputs[input.id] = input;
-        });
+    inputs.forEach(function (input) {
+      midiInputsOrder.push({ name: input.name, id: input.id });
+      sequencer.midiInputs[input.id] = input;
+    });
 
-        midiInputsOrder.sort(function (a, b) {
-            var nameA = a.name.toLowerCase(),
-                nameB = b.name.toLowerCase();
-            if (nameA < nameB) { //sort string ascending
-                return -1;
-            } else if (nameA > nameB) {
-                return 1;
-            }
-            return 0; //default return value (no sorting)
-        });
+    midiInputsOrder.sort(function (a, b) {
+      var nameA = a.name.toLowerCase(),
+        nameB = b.name.toLowerCase();
+      if (nameA < nameB) { //sort string ascending
+        return -1;
+      } else if (nameA > nameB) {
+        return 1;
+      }
+      return 0; //default return value (no sorting)
+    });
 
-        sequencer.numMidiInputs = midiInputsOrder.length;
+    sequencer.numMidiInputs = midiInputsOrder.length;
 
 
-        outputs = midiAccess.outputs;
+    outputs = midiAccess.outputs;
 
-        outputs.forEach(function (output) {
-            midiOutputsOrder.push({ name: output.name, id: output.id });
-            sequencer.midiOutputs[output.id] = output;
-        });
-
-
-        midiOutputsOrder.sort(function (a, b) {
-            var nameA = a.name.toLowerCase(),
-                nameB = b.name.toLowerCase();
-            if (nameA < nameB) { //sort string ascending
-                return -1;
-            } else if (nameA > nameB) {
-                return 1;
-            }
-            return 0; //default return value (no sorting)
-        });
-
-        sequencer.numMidiOutputs = midiOutputsOrder.length;
-    }
-
-
-    function initMidiSong(song) {
-        songMidiEventListener = function (e) {
-            //console.log(e);
-            handleMidiMessageSong(e, song, this);
-        };
-
-        // by default a song listens to all available midi-in ports
-        objectForEach(sequencer.midiInputs, function (port) {
-            //port.addEventListener('midimessage', songMidiEventListener, false);
-            port.onmidimessage = songMidiEventListener;
-            song.midiInputs[port.id] = port;
-            //console.log(port);
-        });
-        //console.log(sequencer.midiInputs);
-
-        objectForEach(sequencer.midiOutputs, function (port) {
-            song.midiOutputs[port.id] = port;
-        });
-
-        song.numMidiInputs = sequencer.numMidiInputs;
-        song.numMidiOutputs = sequencer.numMidiOutputs;
-    }
-
-
-    function setMidiInputSong(id, flag, song) {
-        var input = sequencer.midiInputs[id],
-            tracks = song.tracks,
-            maxi = song.numTracks - 1,
-            i, track;
-
-        flag = flag === undefined ? true : flag;
-
-        if (input === undefined) {
-            if (sequencer.debug === true) {
-                console.log('no midi input with id', id, 'found');
-            }
-            return;
-        }
-
-        if (flag === false) {
-            delete song.midiInputs[id];
-            //input.removeEventListener('midimessage', songMidiEventListener, false);
-            input.onmidimessage = null;
-            song.numMidiInputs--;
-        } else if (input !== undefined) {
-            song.midiInputs[id] = input;
-            //input.addEventListener('midimessage', songMidiEventListener, false);
-            input.onmidimessage = songMidiEventListener;
-            song.numMidiInputs++;
-        }
-
-        for (i = maxi; i >= 0; i--) {
-            track = tracks[i];
-            track.setMidiInput(id, flag);
-            // if(flag === false){
-            //     delete track.midiInputs[id];
-            // }
-        }
-    }
-
-    function setMidiOutputSong(id, flag, song) {
-        var output = sequencer.midiOutputs[id],
-            tracks = song.tracks,
-            maxi = song.numTracks - 1,
-            i, track, time;
-
-        flag = flag === undefined ? true : flag;
-
-        if (output === undefined) {
-            if (sequencer.debug === true) {
-                console.log('no midi output with id', id, 'found');
-            }
-            return;
-        }
-
-        if (flag === false) {
-            delete song.midiOutputs[id];
-            song.numMidiOutputs--;
-            time = song.scheduler.lastEventTime + 100;
-            output.send([0xB0, 0x7B, 0x00], time); // stop all notes
-            output.send([0xB0, 0x79, 0x00], time); // reset all controllers
-        } else if (output !== undefined) {
-            song.midiOutputs[id] = output;
-            song.numMidiOutputs++;
-        }
-
-        for (i = maxi; i >= 0; i--) {
-            track = tracks[i];
-            track.setMidiOutput(id, flag);
-            // if(flag === false){
-            //     delete track.midiOutputs[id];
-            // }
-        }
-    }
-
-    function handleMidiMessageSong(midiMessageEvent, song, input) {
-        var data = midiMessageEvent.data,
-            i, track,
-            tracks = song.tracks,
-            numTracks = song.numTracks,
-            midiEvent,
-            listeners;
-
-        //console.log(midiMessageEvent.data);
-        midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
-
-        for (i = 0; i < numTracks; i++) {
-            track = tracks[i];
-            //console.log(track.midiInputs, input);
-            /*
-            if(midiEvent.channel === track.channel || track.channel === 0 || track.channel === 'any'){
-                handleMidiMessageTrack(midiEvent, track);
-            }
-            */
-            // like in Cubase, midi events from all devices, sent on any midi channel are forwarded to all tracks
-            // set track.monitor to false if you don't want to receive midi events on a certain track
-            // note that track.monitor is by default set to false and that track.monitor is automatically set to true
-            // if you are recording on that track
-            // console.log(track.monitor, track.id, input.id);
-            if (track.monitor === true && track.midiInputs[input.id] !== undefined) {
-                handleMidiMessageTrack(midiEvent, track, input);
-            }
-        }
-
-        listeners = song.midiEventListeners[midiEvent.type];
-        if (listeners === undefined) {
-            return;
-        }
-
-        objectForEach(listeners, function (listener) {
-            listener(midiEvent, input);
-        });
-    }
-
-
-    //function handleMidiMessageTrack(midiMessageEvent, track, input){
-    function handleMidiMessageTrack(midiEvent, track, input) {
-        var song = track.song,
-            note, listeners, channel;
-        //data = midiMessageEvent.data,
-        //midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
-
-        //midiEvent.source = midiMessageEvent.srcElement.name;
-        //console.log(midiMessageEvent)
-        //console.log('---->', midiEvent.type);
-
-        // add the exact time of this event so we can calculate its ticks position
-        midiEvent.recordMillis = context.currentTime * 1000; // millis
-        midiEvent.state = 'recorded';
-
-        if (midiEvent.type === 144) {
-            note = createMidiNote(midiEvent);
-            track.recordingNotes[midiEvent.data1] = note;
-            //track.song.recordingNotes[note.id] = note;
-        } else if (midiEvent.type === 128) {
-            note = track.recordingNotes[midiEvent.data1];
-            // check if the note exists: if the user plays notes on her keyboard before the midi system has
-            // been fully initialized, it can happen that the first incoming midi event is a NOTE OFF event
-            if (note === undefined) {
-                return;
-            }
-            note.addNoteOff(midiEvent);
-            delete track.recordingNotes[midiEvent.data1];
-            //delete track.song.recordingNotes[note.id];
-        }
-
-        //console.log(song.preroll, song.recording, track.recordEnabled);
-
-        if ((song.prerolling || song.recording) && track.recordEnabled === 'midi') {
-            if (midiEvent.type === 144) {
-                track.song.recordedNotes.push(note);
-            }
-            track.recordPart.addEvent(midiEvent);
-            // song.recordedEvents is used in the key editor
-            track.song.recordedEvents.push(midiEvent);
-        } else if (track.enableRetrospectiveRecording) {
-            track.retrospectiveRecording.push(midiEvent);
-        }
-
-        // call all midi event listeners
-        listeners = track.midiEventListeners[midiEvent.type];
-        if (listeners !== undefined) {
-            objectForEach(listeners, function (listener) {
-                listener(midiEvent, input);
-            });
-        }
-
-        channel = track.channel;
-        if (channel === 'any' || channel === undefined || isNaN(channel) === true) {
-            channel = 0;
-        }
-
-        objectForEach(track.midiOutputs, function (output) {
-            //console.log('midi out', output, midiEvent.type);
-            if (midiEvent.type === 128 || midiEvent.type === 144 || midiEvent.type === 176) {
-                //console.log(midiEvent.type, midiEvent.data1, midiEvent.data2);
-                output.send([midiEvent.type, midiEvent.data1, midiEvent.data2]);
-                // }else if(midiEvent.type === 192){
-                //     output.send([midiEvent.type + channel, midiEvent.data1]);
-            }
-            //output.send([midiEvent.status + channel, midiEvent.data1, midiEvent.data2]);
-        });
-
-        // @TODO: maybe a track should be able to send its event to both a midi-out port and an internal heartbeat song?
-        //console.log(track.routeToMidiOut);
-        if (track.routeToMidiOut === false) {
-            midiEvent.track = track;
-            track.instrument.processEvent(midiEvent);
-        }
-    }
-
-
-    function addMidiEventListener(args, obj) { // obj can be a track or a song
-        args = slice.call(args);
-
-        var id = midiEventListenerId++,
-            types = {},
-            ids = [],
-            listener,
-            loop;
-
-
-        // should I inline this?
-        loop = function (args, i, maxi) {
-            for (i = 0; i < maxi; i++) {
-                var arg = args[i],
-                    type = typeString(arg);
-                //console.log(type);
-                if (type === 'array') {
-                    loop(arg, 0, arg.length);
-                } else if (type === 'function') {
-                    listener = arg;
-                } else if (isNaN(arg) === false) {
-                    arg = parseInt(arg, 10);
-                    if (sequencer.checkEventType(arg) !== false) {
-                        types[arg] = arg;
-                    }
-                } else if (type === 'string') {
-                    if (sequencer.checkEventType(arg) !== false) {
-                        arg = sequencer.midiEventNumberByName(arg);
-                        types[arg] = arg;
-                    }
-                }
-            }
-        };
-
-        loop(args, 0, args.length);
-        //console.log('types', types, 'listener', listener);
-
-        objectForEach(types, function (type) {
-            //console.log(type);
-            if (obj.midiEventListeners[type] === undefined) {
-                obj.midiEventListeners[type] = {};
-            }
-            obj.midiEventListeners[type][id] = listener;
-            ids.push(type + '_' + id);
-        });
-
-        //console.log(obj.midiEventListeners);
-        return ids.length === 1 ? ids[0] : ids;
-    }
-
-
-    function removeMidiEventListener(id, obj) {
-        var type;
-        id = id.split('_');
-        type = id[0];
-        id = id[1];
-        delete obj.midiEventListeners[type][id];
-    }
-
-
-    function removeMidiEventListeners() {
-
-    }
-
-
-    function getMidiPortsAsDropdown(config, obj) {
-        var select = document.createElement('select'),
-            option, ports,
-            type = config.type,
-            id = config.id || type,
-            div = config.div,
-            firstOption = config.firstOption;
-
-        if (type !== 'input' && type !== 'output') {
-            console.log('please set type to "input" or "output"');
-            return;
-        }
-
-        if (firstOption === undefined) {
-            firstOption = type === 'input' ? 'choose MIDI in' : 'choose MIDI out';
-        }
-
-        select.id = id;
-        ports = type === 'input' ? obj.midiInputs : obj.midiOutputs;
-
-        if (firstOption !== false) {
-            option = document.createElement('option');
-            option.value = -1;
-            option.innerHTML = firstOption;
-            select.appendChild(option);
-        }
-
-        objectForEach(ports, function (port) {
-            option = document.createElement('option');
-            option.value = port.id;
-            option.innerHTML = port.name;
-            select.appendChild(option);
-        });
-
-        if (div) {
-            div.appendChild(select);
-        }
-        return select;
-    }
-
-
-    sequencer.getMidiPortsAsDropdown = function () {
-        getMidiPortsAsDropdown(sequencer);
-    };
-
-
-    sequencer.getMidiInputsAsDropdown = function (config) {
-        config = config || {
-            type: 'input'
-        };
-        return getMidiPortsAsDropdown(config, sequencer);
-    };
-
-
-    sequencer.getMidiOutputsAsDropdown = function (config) {
-        config = config || {
-            type: 'output'
-        };
-        return getMidiPortsAsDropdown(config, sequencer);
-    };
-
-
-    function getMidiInputs(cb, obj) {
-        var i, maxi;
-        if (obj === sequencer) {
-            for (i = 0, maxi = midiInputsOrder.length; i < maxi; i++) {
-                cb(obj.midiInputs[midiInputsOrder[i].id], i);
-            }
-        } else {
-            objectForEach(obj.midiInputs, function (port) {
-                cb(port, i);
-            });
-        }
-    }
-
-
-    function getMidiOutputs(cb, obj) {
-        var i, maxi;
-        if (obj === sequencer) {
-            for (i = 0, maxi = midiOutputsOrder.length; i < maxi; i++) {
-                cb(obj.midiOutputs[midiOutputsOrder[i].id], i);
-            }
-        } else {
-            objectForEach(obj.midiOutputs, function (port, i) {
-                cb(port, i);
-            });
-        }
-    }
-
-
-    sequencer.getMidiInputs = function (cb) {
-        getMidiInputs(cb, sequencer);
-    };
-
-
-    sequencer.getMidiOutputs = function (cb) {
-        getMidiOutputs(cb, sequencer);
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function () {
-        context = sequencer.protectedScope.context;
-        createMidiNote = sequencer.createMidiNote;
-        createMidiEvent = sequencer.createMidiEvent;
-        typeString = sequencer.protectedScope.typeString;
-        objectForEach = sequencer.protectedScope.objectForEach;
+    outputs.forEach(function (output) {
+      midiOutputsOrder.push({ name: output.name, id: output.id });
+      sequencer.midiOutputs[output.id] = output;
     });
 
 
-    // close_module.js
-    sequencer.protectedScope.initMidi = initMidi;
+    midiOutputsOrder.sort(function (a, b) {
+      var nameA = a.name.toLowerCase(),
+        nameB = b.name.toLowerCase();
+      if (nameA < nameB) { //sort string ascending
+        return -1;
+      } else if (nameA > nameB) {
+        return 1;
+      }
+      return 0; //default return value (no sorting)
+    });
 
-    // song.js
-    sequencer.protectedScope.initMidiSong = initMidiSong;
-    sequencer.protectedScope.getMidiInputs = getMidiInputs;
-    sequencer.protectedScope.getMidiOutputs = getMidiOutputs;
-    sequencer.protectedScope.setMidiInputSong = setMidiInputSong;
-    sequencer.protectedScope.setMidiOutputSong = setMidiOutputSong;
-    sequencer.protectedScope.addMidiEventListener = addMidiEventListener;
-    sequencer.protectedScope.getMidiPortsAsDropdown = getMidiPortsAsDropdown;
-    sequencer.protectedScope.removeMidiEventListener = removeMidiEventListener;
-    sequencer.protectedScope.removeMidiEventListeners = removeMidiEventListeners;
-    sequencer.protectedScope.handleMidiMessageTrack = handleMidiMessageTrack;
+    sequencer.numMidiOutputs = midiOutputsOrder.length;
+  }
+
+
+  function initMidiSong(song) {
+    songMidiEventListener = function (e) {
+      //console.log(e);
+      handleMidiMessageSong(e, song, this);
+    };
+
+    // by default a song listens to all available midi-in ports
+    objectForEach(sequencer.midiInputs, function (port) {
+      //port.addEventListener('midimessage', songMidiEventListener, false);
+      port.onmidimessage = songMidiEventListener;
+      song.midiInputs[port.id] = port;
+      //console.log(port);
+    });
+    //console.log(sequencer.midiInputs);
+
+    objectForEach(sequencer.midiOutputs, function (port) {
+      song.midiOutputs[port.id] = port;
+    });
+
+    song.numMidiInputs = sequencer.numMidiInputs;
+    song.numMidiOutputs = sequencer.numMidiOutputs;
+  }
+
+
+  function setMidiInputSong(id, flag, song) {
+    var input = sequencer.midiInputs[id],
+      tracks = song.tracks,
+      maxi = song.numTracks - 1,
+      i, track;
+
+    flag = flag === undefined ? true : flag;
+
+    if (input === undefined) {
+      if (sequencer.debug === true) {
+        console.log('no midi input with id', id, 'found');
+      }
+      return;
+    }
+
+    if (flag === false) {
+      delete song.midiInputs[id];
+      //input.removeEventListener('midimessage', songMidiEventListener, false);
+      input.onmidimessage = null;
+      song.numMidiInputs--;
+    } else if (input !== undefined) {
+      song.midiInputs[id] = input;
+      //input.addEventListener('midimessage', songMidiEventListener, false);
+      input.onmidimessage = songMidiEventListener;
+      song.numMidiInputs++;
+    }
+
+    for (i = maxi; i >= 0; i--) {
+      track = tracks[i];
+      track.setMidiInput(id, flag);
+      // if(flag === false){
+      //     delete track.midiInputs[id];
+      // }
+    }
+  }
+
+  function setMidiOutputSong(id, flag, song) {
+    var output = sequencer.midiOutputs[id],
+      tracks = song.tracks,
+      maxi = song.numTracks - 1,
+      i, track, time;
+
+    flag = flag === undefined ? true : flag;
+
+    if (output === undefined) {
+      if (sequencer.debug === true) {
+        console.log('no midi output with id', id, 'found');
+      }
+      return;
+    }
+
+    if (flag === false) {
+      delete song.midiOutputs[id];
+      song.numMidiOutputs--;
+      time = song.scheduler.lastEventTime + 100;
+      output.send([0xB0, 0x7B, 0x00], time); // stop all notes
+      output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+    } else if (output !== undefined) {
+      song.midiOutputs[id] = output;
+      song.numMidiOutputs++;
+    }
+
+    for (i = maxi; i >= 0; i--) {
+      track = tracks[i];
+      track.setMidiOutput(id, flag);
+      // if(flag === false){
+      //     delete track.midiOutputs[id];
+      // }
+    }
+  }
+
+  function handleMidiMessageSong(midiMessageEvent, song, input) {
+    var data = midiMessageEvent.data,
+      i, track,
+      tracks = song.tracks,
+      numTracks = song.numTracks,
+      midiEvent,
+      listeners;
+
+    //console.log(midiMessageEvent.data);
+    midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
+
+    for (i = 0; i < numTracks; i++) {
+      track = tracks[i];
+      //console.log(track.midiInputs, input);
+      /*
+      if(midiEvent.channel === track.channel || track.channel === 0 || track.channel === 'any'){
+          handleMidiMessageTrack(midiEvent, track);
+      }
+      */
+      // like in Cubase, midi events from all devices, sent on any midi channel are forwarded to all tracks
+      // set track.monitor to false if you don't want to receive midi events on a certain track
+      // note that track.monitor is by default set to false and that track.monitor is automatically set to true
+      // if you are recording on that track
+      // console.log(track.monitor, track.id, input.id);
+      if (track.monitor === true && track.midiInputs[input.id] !== undefined) {
+        handleMidiMessageTrack(midiEvent, track, input);
+      }
+    }
+
+    listeners = song.midiEventListeners[midiEvent.type];
+    if (listeners === undefined) {
+      return;
+    }
+
+    objectForEach(listeners, function (listener) {
+      listener(midiEvent, input);
+    });
+  }
+
+
+  //function handleMidiMessageTrack(midiMessageEvent, track, input){
+  function handleMidiMessageTrack(midiEvent, track, input) {
+    var song = track.song,
+      note, listeners, channel;
+    //data = midiMessageEvent.data,
+    //midiEvent = createMidiEvent(song.ticks, data[0], data[1], data[2]);
+
+    //midiEvent.source = midiMessageEvent.srcElement.name;
+    //console.log(midiMessageEvent)
+    //console.log('---->', midiEvent.type);
+
+    // add the exact time of this event so we can calculate its ticks position
+    midiEvent.recordMillis = context.currentTime * 1000; // millis
+    midiEvent.state = 'recorded';
+
+    if (midiEvent.type === 144) {
+      note = createMidiNote(midiEvent);
+      track.recordingNotes[midiEvent.data1] = note;
+      //track.song.recordingNotes[note.id] = note;
+    } else if (midiEvent.type === 128) {
+      note = track.recordingNotes[midiEvent.data1];
+      // check if the note exists: if the user plays notes on her keyboard before the midi system has
+      // been fully initialized, it can happen that the first incoming midi event is a NOTE OFF event
+      if (note === undefined) {
+        return;
+      }
+      note.addNoteOff(midiEvent);
+      delete track.recordingNotes[midiEvent.data1];
+      //delete track.song.recordingNotes[note.id];
+    }
+
+    //console.log(song.preroll, song.recording, track.recordEnabled);
+
+    if ((song.prerolling || song.recording) && track.recordEnabled === 'midi') {
+      if (midiEvent.type === 144) {
+        track.song.recordedNotes.push(note);
+      }
+      track.recordPart.addEvent(midiEvent);
+      // song.recordedEvents is used in the key editor
+      track.song.recordedEvents.push(midiEvent);
+    } else if (track.enableRetrospectiveRecording) {
+      track.retrospectiveRecording.push(midiEvent);
+    }
+
+    // call all midi event listeners
+    listeners = track.midiEventListeners[midiEvent.type];
+    if (listeners !== undefined) {
+      objectForEach(listeners, function (listener) {
+        listener(midiEvent, input);
+      });
+    }
+
+    channel = track.channel;
+    if (channel === 'any' || channel === undefined || isNaN(channel) === true) {
+      channel = 0;
+    }
+
+    objectForEach(track.midiOutputs, function (output) {
+      //console.log('midi out', output, midiEvent.type);
+      if (midiEvent.type === 128 || midiEvent.type === 144 || midiEvent.type === 176) {
+        //console.log(midiEvent.type, midiEvent.data1, midiEvent.data2);
+        output.send([midiEvent.type, midiEvent.data1, midiEvent.data2]);
+        // }else if(midiEvent.type === 192){
+        //     output.send([midiEvent.type + channel, midiEvent.data1]);
+      }
+      //output.send([midiEvent.status + channel, midiEvent.data1, midiEvent.data2]);
+    });
+
+    // @TODO: maybe a track should be able to send its event to both a midi-out port and an internal heartbeat song?
+    //console.log(track.routeToMidiOut);
+    if (track.routeToMidiOut === false) {
+      midiEvent.track = track;
+      track.instrument.processEvent(midiEvent);
+    }
+  }
+
+
+  function addMidiEventListener(args, obj) { // obj can be a track or a song
+    args = slice.call(args);
+
+    var id = midiEventListenerId++,
+      types = {},
+      ids = [],
+      listener,
+      loop;
+
+
+    // should I inline this?
+    loop = function (args, i, maxi) {
+      for (i = 0; i < maxi; i++) {
+        var arg = args[i],
+          type = typeString(arg);
+        //console.log(type);
+        if (type === 'array') {
+          loop(arg, 0, arg.length);
+        } else if (type === 'function') {
+          listener = arg;
+        } else if (isNaN(arg) === false) {
+          arg = parseInt(arg, 10);
+          if (sequencer.checkEventType(arg) !== false) {
+            types[arg] = arg;
+          }
+        } else if (type === 'string') {
+          if (sequencer.checkEventType(arg) !== false) {
+            arg = sequencer.midiEventNumberByName(arg);
+            types[arg] = arg;
+          }
+        }
+      }
+    };
+
+    loop(args, 0, args.length);
+    //console.log('types', types, 'listener', listener);
+
+    objectForEach(types, function (type) {
+      //console.log(type);
+      if (obj.midiEventListeners[type] === undefined) {
+        obj.midiEventListeners[type] = {};
+      }
+      obj.midiEventListeners[type][id] = listener;
+      ids.push(type + '_' + id);
+    });
+
+    //console.log(obj.midiEventListeners);
+    return ids.length === 1 ? ids[0] : ids;
+  }
+
+
+  function removeMidiEventListener(id, obj) {
+    var type;
+    id = id.split('_');
+    type = id[0];
+    id = id[1];
+    delete obj.midiEventListeners[type][id];
+  }
+
+
+  function removeMidiEventListeners() {
+
+  }
+
+
+  function getMidiPortsAsDropdown(config, obj) {
+    var select = document.createElement('select'),
+      option, ports,
+      type = config.type,
+      id = config.id || type,
+      div = config.div,
+      firstOption = config.firstOption;
+
+    if (type !== 'input' && type !== 'output') {
+      console.log('please set type to "input" or "output"');
+      return;
+    }
+
+    if (firstOption === undefined) {
+      firstOption = type === 'input' ? 'choose MIDI in' : 'choose MIDI out';
+    }
+
+    select.id = id;
+    ports = type === 'input' ? obj.midiInputs : obj.midiOutputs;
+
+    if (firstOption !== false) {
+      option = document.createElement('option');
+      option.value = -1;
+      option.innerHTML = firstOption;
+      select.appendChild(option);
+    }
+
+    objectForEach(ports, function (port) {
+      option = document.createElement('option');
+      option.value = port.id;
+      option.innerHTML = port.name;
+      select.appendChild(option);
+    });
+
+    if (div) {
+      div.appendChild(select);
+    }
+    return select;
+  }
+
+
+  sequencer.getMidiPortsAsDropdown = function () {
+    getMidiPortsAsDropdown(sequencer);
+  };
+
+
+  sequencer.getMidiInputsAsDropdown = function (config) {
+    config = config || {
+      type: 'input'
+    };
+    return getMidiPortsAsDropdown(config, sequencer);
+  };
+
+
+  sequencer.getMidiOutputsAsDropdown = function (config) {
+    config = config || {
+      type: 'output'
+    };
+    return getMidiPortsAsDropdown(config, sequencer);
+  };
+
+
+  function getMidiInputs(cb, obj) {
+    var i, maxi;
+    if (obj === sequencer) {
+      for (i = 0, maxi = midiInputsOrder.length; i < maxi; i++) {
+        cb(obj.midiInputs[midiInputsOrder[i].id], i);
+      }
+    } else {
+      objectForEach(obj.midiInputs, function (port) {
+        cb(port, i);
+      });
+    }
+  }
+
+
+  function getMidiOutputs(cb, obj) {
+    var i, maxi;
+    if (obj === sequencer) {
+      for (i = 0, maxi = midiOutputsOrder.length; i < maxi; i++) {
+        cb(obj.midiOutputs[midiOutputsOrder[i].id], i);
+      }
+    } else {
+      objectForEach(obj.midiOutputs, function (port, i) {
+        cb(port, i);
+      });
+    }
+  }
+
+
+  sequencer.getMidiInputs = function (cb) {
+    getMidiInputs(cb, sequencer);
+  };
+
+
+  sequencer.getMidiOutputs = function (cb) {
+    getMidiOutputs(cb, sequencer);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    context = sequencer.protectedScope.context;
+    createMidiNote = sequencer.createMidiNote;
+    createMidiEvent = sequencer.createMidiEvent;
+    typeString = sequencer.protectedScope.typeString;
+    objectForEach = sequencer.protectedScope.objectForEach;
+  });
+
+
+  // close_module.js
+  sequencer.protectedScope.initMidi = initMidi;
+
+  // song.js
+  sequencer.protectedScope.initMidiSong = initMidiSong;
+  sequencer.protectedScope.getMidiInputs = getMidiInputs;
+  sequencer.protectedScope.getMidiOutputs = getMidiOutputs;
+  sequencer.protectedScope.setMidiInputSong = setMidiInputSong;
+  sequencer.protectedScope.setMidiOutputSong = setMidiOutputSong;
+  sequencer.protectedScope.addMidiEventListener = addMidiEventListener;
+  sequencer.protectedScope.getMidiPortsAsDropdown = getMidiPortsAsDropdown;
+  sequencer.protectedScope.removeMidiEventListener = removeMidiEventListener;
+  sequencer.protectedScope.removeMidiEventListeners = removeMidiEventListeners;
+  sequencer.protectedScope.handleMidiMessageTrack = handleMidiMessageTrack;
 
 }
 
@@ -13042,6 +13058,7 @@ function samplePack() {
         typeString, // defined in util.js
         objectForEach, // defined in util.js
         context,
+        getTimeDiff,
 
         // the amount of time in millis that events are scheduled ahead relative to the current playhead position, defined in open_module.js
         //bufferTime = sequencer.bufferTime * 1000,
@@ -13054,6 +13071,7 @@ function samplePack() {
         this.looped = false;
         this.notes = {};
         this.audioEvents = {};
+        this.timeDiff = getTimeDiff();
     };
 
 
@@ -13265,7 +13283,9 @@ function samplePack() {
             numEvents,
             events,
             track,
-            channel;
+            channel,
+            // timeDiff = this.timeDiff;
+            timeDiff = getTimeDiff();
 
         this.prevMaxtime = this.maxtime;
 
@@ -13279,7 +13299,6 @@ function samplePack() {
                 this.songMillis = 0;//this.song.millis;
                 this.maxtime = this.song.millis + (sequencer.bufferTime * 1000);
                 this.startTime = this.song.startTime;
-                this.startTime2 = this.song.startTime2;
                 this.songStartMillis = this.song.startMillis;
                 events = this.getEvents();
             }
@@ -13287,7 +13306,6 @@ function samplePack() {
             this.songMillis = this.song.millis;
             this.maxtime = this.songMillis + (sequencer.bufferTime * 1000);
             this.startTime = this.song.startTime;
-            this.startTime2 = this.song.startTime2;
             this.songStartMillis = this.song.startMillis;
             events = this.getEvents();
         }
@@ -13333,8 +13351,8 @@ function samplePack() {
                     objectForEach(track.midiOutputs, function (midiOutput) {
                         if (event.type === 128 || event.type === 144 || event.type === 176) {
                             // midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
-                            console.log(context.currentTime, performance.now(), event.time + track.audioLatency);
-                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency);
+                            // console.log(context.currentTime, performance.now(), timeDiff, event.time + track.audioLatency);
+                            midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency + timeDiff);
                         } else if (event.type === 192 || event.type === 224) {
                             midiOutput.send([event.type + channel, event.data1], event.time + track.audioLatency);
                         }
@@ -13394,6 +13412,7 @@ function samplePack() {
     };
 
     sequencer.protectedScope.addInitMethod(function () {
+        getTimeDiff = sequencer.getTimeDiff;
         context = sequencer.protectedScope.context;
         typeString = sequencer.protectedScope.typeString;
         objectForEach = sequencer.protectedScope.objectForEach;
@@ -14114,3289 +14133,3281 @@ function samplePack() {
 */
 function song() {
 
-    'use strict';
+  'use strict';
 
+  var
+    slice = Array.prototype.slice,
+
+    //import
+    createMidiEvent, // → defined in midi_event.js
+    createPlayhead, // → defined in playhead.js
+    createFollowEvent, // → defined in song_follow_event.js
+    createScheduler, // → defined in scheduler.js
+    createMetronome, // → defined in metronome.js
+    followEvent, // → defined in follow_event_song.js
+    masterGainNode, // -> defined in open_module.js
+    context, // -> defined in open_module.js
+    timedTasks, // -> defined in open_module.js
+    repetitiveTasks, // -> defined in open_module.js
+    initMidi, // defined in midi_system.js
+    addMidiEventListener, // defined in midi_system.js
+    removeMidiEventListener, // defined in midi_system.js
+    setMidiInput, // defined in midi_system.js
+    setMidiOutput, // defined in midi_system.js
+    getMidiInputs, // defined in midi_system.js
+    getMidiOutputs, // defined in midi_system.js
+    getMidiPortsAsDropdown, // defined in midi_system.js
+
+    getPosition, // → defined in position.js
+    millisToTicks, // → defined in position.js
+    ticksToMillis, // → defined in position.js
+    ticksToBars, // → defined in position.js
+    millisToBars, // → defined in position.js
+    barsToTicks, // → defined in position.js
+    barsToMillis, // → defined in position.js
+
+    addEventListener, // → defined in song_event_listener.js
+    removeEventListener, // → defined in song_event_listener.js
+    dispatchEvent, // → defined in song_event_listener.js
+
+    update, // → defined in song_update.js
+    checkDuration, // → defined in song_update.js
+    addMetronomeEvents, // → defined in song_update.js
+
+    gridToSong, // → defined in song_grid.js
+    noteToGrid, // → defined in song_grid.js
+    eventToGrid, // → defined in song_grid.js
+    positionToGrid, // → defined in song_grid.js
+
+    //createTrack, // → defined in track.js
+    typeString, // → defined in util.js
+    removeFromArray, // → defined in util.js
+    removeFromArray2, // → defined in util.js
+    getNoteLengthName, // → defined in util.js
+    getStats, // → defined in event_statistics.js
+    findEvent, // → defined in find_event.js
+    findNote, // → defined in find_event.js
+
+    objectForEach, // → defined in util.js
+    addSong, // → defined in sequencer.js
+
+    //private
+    _removeTracks,
+    pulse,
+    getArguments,
+    getTrack,
+    addTracks,
+    getPart,
+    getParts,
+    getTimeEvents,
+    setRecordingStatus,
+    _getRecordingPerTrack,
+
+    songIndex = 0,
+
+    //protected
+    createGrid,
+
+    //public
+    Song;
+
+  Song = function (config) {
+    //Object.defineProperty(this,'tracks',{value: []});
+    //Object.defineProperty(this, 'events', {value: 'val'});
+
+    config = config || {};
+
+    this.id = 'S' + songIndex++ + '' + new Date().getTime();
+    this.name = config.name || this.id;
+    this.className = 'Song';
+    addSong(this);
+
+    this.midiInputs = {};
+    this.midiOutputs = {};
+    initMidi(this);
+
+    this.bpm = config.bpm || 120;
+    this.ppq = config.ppq || sequencer.defaultPPQ;
+    this.bars = config.bars || 30; //default song duration is 30 bars @ 120 bpm is 1 minute
+    this.lastBar = this.bars;
+    this.lowestNote = config.lowestNote || 0;
+    this.highestNote = config.highestNote || 127;
+    this.pitchRange = this.highestNote - this.lowestNote + 1;
+    this.nominator = config.nominator || 4;
+    this.denominator = config.denominator || 4;
+    this.factor = 4 / this.denominator;
+    this.ticksPerBeat = this.ppq * this.factor;
+    this.ticksPerBar = this.ticksPerBeat * this.nominator;
+    this.millisPerTick = (60000 / this.bpm / this.ppq);
+    this.quantizeValue = config.quantizeValue || '8';
+    this.fixedLengthValue = config.fixedLengthValue || false;
+    this.positionType = config.positionType || 'all';
+    this.useMetronome = config.useMetronome;
+    this.autoSize = config.autoSize === undefined ? true : config.autoSize === true;
+    this.playbackSpeed = 1;
+    this.defaultInstrument = config.defaultInstrument || sequencer.defaultInstrument;
+    this.recordId = -1;
+    this.autoQuantize = false;
+    this.loop = config.loop || false;
+    this.doLoop = false;
+    this.illegalLoop = true;
+    this.loopStart = 0;
+    this.loopEnd = 0;
+    this.loopDuration = 0;
+    this.audioRecordingLatency = 0;
+
+    //console.log('PPQ song', this.ppq)
+
+    if (this.useMetronome !== true && this.useMetronome !== false) {
+      this.useMetronome = false;
+    }
+    //console.log(this.useMetronome);
+
+    this.grid = undefined;
+
+    if (config.timeEvents && config.timeEvents.length > 0) {
+      this.timeEvents = [].concat(config.timeEvents);
+
+      this.tempoEvent = getTimeEvents(sequencer.TEMPO, this)[0];
+      this.timeSignatureEvent = getTimeEvents(sequencer.TIME_SIGNATURE, this)[0];
+
+      if (this.tempoEvent === undefined) {
+        this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
+        this.timeEvents.unshift(this.tempoEvent);
+      } else {
+        this.bpm = this.tempoEvent.bpm;
+      }
+      if (this.timeSignatureEvent === undefined) {
+        this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
+        this.timeEvents.unshift(this.timeSignatureEvent);
+      } else {
+        this.nominator = this.timeSignatureEvent.nominator;
+        this.denominator = this.timeSignatureEvent.denominator;
+      }
+      //console.log(1, this.nominator, this.denominator, this.bpm);
+    } else {
+      // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated, and moreover, it is dictated by the MIDI standard
+      this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
+      this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
+      this.timeEvents = [
+        this.tempoEvent,
+        this.timeSignatureEvent
+      ];
+    }
+
+    // TODO: A value for bpm, nominator and denominator in the config overrules the time events specified in the config -> maybe this should be the other way round
+
+    // if a value for bpm is set in the config, and this value is different from the bpm value of the first
+    // tempo event, all tempo events will be updated to the bpm value in the config.
+    if (config.timeEvents !== undefined && config.bpm !== undefined) {
+      if (this.bpm !== config.bpm) {
+        this.setTempo(config.bpm, false);
+      }
+    }
+
+    // if a value for nominator and/or denominator is set in the config, and this/these value(s) is/are different from the values
+    // of the first time signature event, all time signature events will be updated to the values in the config.
+    // @TODO: maybe only the first time signature event should be updated?
+    if (config.timeEvents !== undefined && (config.nominator !== undefined || config.denominator !== undefined)) {
+      if (this.nominator !== config.nominator || this.denominator !== config.denominator) {
+        this.setTimeSignature(config.nominator || this.nominator, config.denominator || this.denominator, false);
+      }
+    }
+
+    //console.log(2, this.nominator, this.denominator, this.bpm);
+
+    this.tracks = [];
+    this.parts = [];
+    this.notes = [];
+    this.events = [];//.concat(this.timeEvents);
+    this.allEvents = []; // all events plus metronome ticks
+
+    this.tracksById = {};
+    this.tracksByName = {};
+    this.partsById = {};
+    this.notesById = {};
+    this.eventsById = {};
+
+    this.activeEvents = null;
+    this.activeNotes = null;
+    this.activeParts = null;
+
+    this.recordedNotes = [];
+    this.recordedEvents = [];
+    this.recordingNotes = {}; // notes that don't have their note off events yet
+
+    this.numTracks = 0;
+    this.numParts = 0;
+    this.numNotes = 0;
+    this.numEvents = 0;
+    this.instruments = [];
+
+    this.playing = false;
+    this.paused = false;
+    this.stopped = true;
+    this.recording = false;
+    this.prerolling = false;
+    this.precounting = false;
+    this.preroll = true;
+    this.precount = 0;
+    this.listeners = {};
+
+    this.playhead = createPlayhead(this, this.positionType, this.id, this);//, this.position);
+    this.playheadRecording = createPlayhead(this, 'all', this.id + '_recording');
+    this.scheduler = createScheduler(this);
+    this.followEvent = createFollowEvent(this);
+
+    this.volume = 1;
+    this.gainNode = context.createGainNode();
+    this.gainNode.gain.value = this.volume;
+    this.metronome = createMetronome(this, dispatchEvent);
+    this.connect();
+
+
+    if (config.className === 'MidiFile' && config.loaded === false) {
+      if (sequencer.debug) {
+        console.warn('midifile', config.name, 'has not yet been loaded!');
+      }
+    }
+
+    //if(config.tracks && config.tracks.length > 0){
+    if (config.tracks) {
+      this.addTracks(config.tracks);
+    }
+
+    if (config.parts) {
+      this.addParts(config.parts);
+    }
+
+    if (config.events) {
+      this.addEvents(config.events);
+    }
+
+    if (config.events || config.parts || config.tracks) {
+      //console.log(config.events, config.parts, config.tracks)
+      // the length of the song will be determined by the events, parts and/or tracks that are added to the song
+      if (config.bars === undefined) {
+        this.lastBar = 0;
+      }
+      this.lastEvent = createMidiEvent([this.lastBar, sequencer.END_OF_TRACK]);
+    } else {
+      this.lastEvent = createMidiEvent([this.bars * this.ticksPerBar, sequencer.END_OF_TRACK]);
+    }
+    //console.log('update');
+    this.update(true);
+
+    this.numTimeEvents = this.timeEvents.length;
+    this.playhead.set('ticks', 0);
+    this.midiEventListeners = {};
+    //console.log(this.timeEvents);
+  };
+
+
+  getPart = function (data, song) {
+    var part = false;
+    if (data === undefined) {
+      part = false;
+    } else if (part.className === 'Part') {
+      part = data;
+    } else if (typeString(data) === 'string') {
+      part = song.partsById[data];
+    } else if (isNaN(data) === false) {
+      part = song.parts[data];
+    }
+    return part;
+  };
+
+
+  getTrack = function (data, song) {
+    var track = false;
+    //console.log(data);
+    if (data === undefined) {
+      track = false;
+    } else if (data.className === 'Track') {
+      track = data;
+    } else if (typeString(data) === 'string') {
+      track = song.tracksById[data];
+      if (track === undefined) {
+        track = song.tracksByName[data];
+        // objectForEach(song.tracksById, function(t){
+        //     if(t.name === data){
+        //         track = t;
+        //     }
+        // });
+      }
+    } else if (isNaN(data) === false) {
+      track = song.tracks[data];
+    }
+
+    if (track === undefined) {
+      track = false;
+    }
+    return track;
+  };
+
+
+  addTracks = function (newTracks, song) {
+    //console.log('addTracks');
+    var tracksById = song.tracksById,
+      tracksByName = song.tracksByName,
+      addedIds = [],
+      i, part, track;
+
+    for (i = newTracks.length - 1; i >= 0; i--) {
+      track = getTrack(newTracks[i]);
+      if (track === false) {
+        continue;
+      }
+      //console.log(track.song);
+      if (track.song !== undefined && track.song !== null) {
+        track = track.copy();
+      }
+      track.song = song;
+      track.instrument.song = song;
+      track.quantizeValue = song.quantizeValue;
+      track.connect(song.gainNode);
+      /*
+                  // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
+                  //console.log(song.midiInputs);
+                  objectForEach(song.midiInputs, function(port){
+                      //console.log(port.id);
+                      track.setMidiInput(port.id, true);
+                  });
+      */
+
+      track.state = 'new';
+      track.needsUpdate = true;
+      tracksById[track.id] = track;
+      tracksByName[track.name] = track;
+      addedIds.push(track.id);
+
+      objectForEach(track.partsById, function (part) {
+        part.state = 'new';
+      });
+      /*
+                  for(j in track.partsById){
+                      if(track.partsById.hasOwnProperty(j)){
+                          //console.log('addTracks, part', part);
+                          part = track.partsById[j];
+                          //part.song = song;
+                          part.state = 'new';
+                      }
+                  }
+      */
+    }
+    return addedIds;
+  };
+
+
+  _removeTracks = function (tobeRemoved) {
+    var i, track, removed = [];
+
+    for (i = tobeRemoved.length - 1; i >= 0; i--) {
+      track = getTrack(tobeRemoved[i]);
+      if (track === false) {
+        continue;
+      }
+      //console.log(track);
+      if (track.song !== undefined && track.song !== this) {
+        console.warn('can\'t remove: this track belongs to song', track.song.id);
+        continue;
+      }
+      track.state = 'removed';
+      track.disconnect(this.gainNode);
+      track.reset();
+      delete this.tracksById[track.id];
+      delete this.tracksByName[track.name];
+      removed.push(track);
+    }
+    return removed;
+  };
+
+  /*
+      getParts = function(args, song){
+          var part, i,
+              result = [];
+          for(i = args.length - 1; i >= 0; i--){
+              part = getPart(args[i], song);
+              if(part){
+                  result.push(part);
+              }
+          }
+          return result;
+      };
+  */
+
+  getParts = function (args) {
+    var part, i,
+      result = [];
+    for (i = args.length - 1; i >= 0; i--) {
+      part = getPart(args[i], this);
+      if (part) {
+        result.push(part);
+      }
+    }
+    return result;
+  };
+
+
+  function getEvents(args, song) {
+    var result = [];
+
+    args = slice.call(args);
+    //console.log(args);
+
+    function loop(data, i, maxi) {
+      var arg, type, event;
+
+      for (i = 0; i < maxi; i++) {
+        arg = data[i];
+        type = typeString(arg);
+
+        if (type === 'array') {
+          loop(arg, 0, arg.length);
+        }
+
+        else if (type === 'string') {
+          event = song.eventsById[arg];
+          if (event !== undefined) {
+            result.push(arg);
+          }
+        }
+
+        else if (arg.className === 'MidiEvent') {
+          result.push(arg);
+        }
+      }
+    }
+
+    loop(args, 0, args.length);
+    return result;
+  }
+
+
+  getTimeEvents = function (type, song) {
+    var events = [];
+    song.timeEvents.forEach(function (event) {
+      if (event.type === type) {
+        events.push(event);
+      }
+    });
+    return events;
+  };
+
+
+  pulse = function (song) {
     var
-        slice = Array.prototype.slice,
+      //now = window.performance.now(),
+      now = sequencer.getTime() * 1000,
+      diff = now - song.timeStamp,
+      millis = song.millis + diff;
 
-        //import
-        createMidiEvent, // → defined in midi_event.js
-        createPlayhead, // → defined in playhead.js
-        createFollowEvent, // → defined in song_follow_event.js
-        createScheduler, // → defined in scheduler.js
-        createMetronome, // → defined in metronome.js
-        followEvent, // → defined in follow_event_song.js
-        masterGainNode, // -> defined in open_module.js
-        context, // -> defined in open_module.js
-        timedTasks, // -> defined in open_module.js
-        repetitiveTasks, // -> defined in open_module.js
-        initMidi, // defined in midi_system.js
-        addMidiEventListener, // defined in midi_system.js
-        removeMidiEventListener, // defined in midi_system.js
-        setMidiInput, // defined in midi_system.js
-        setMidiOutput, // defined in midi_system.js
-        getMidiInputs, // defined in midi_system.js
-        getMidiOutputs, // defined in midi_system.js
-        getMidiPortsAsDropdown, // defined in midi_system.js
+    song.diff = diff;
+    //console.log(diff);
+    //console.log(now, song.recordTimestamp, song.eventsMidiAudioMetronome[0].time);
 
-        getPosition, // → defined in position.js
-        millisToTicks, // → defined in position.js
-        ticksToMillis, // → defined in position.js
-        ticksToBars, // → defined in position.js
-        millisToBars, // → defined in position.js
-        barsToTicks, // → defined in position.js
-        barsToMillis, // → defined in position.js
+    song.timeStamp = now;
 
-        addEventListener, // → defined in song_event_listener.js
-        removeEventListener, // → defined in song_event_listener.js
-        dispatchEvent, // → defined in song_event_listener.js
+    if (song.precounting === true) {
+      song.metronome.millis += diff;
+      song.scheduler.update(diff);
+      // now return otherwise the position of the song gets updated
+      return;
+    }
 
-        update, // → defined in song_update.js
-        checkDuration, // → defined in song_update.js
-        addMetronomeEvents, // → defined in song_update.js
+    // is this comment still valid?
+    // put followEvent and scheduler before playhead.update(), otherwise followEvent will miss the first event (scheduler could come after playhead.update)
+    song.prevMillis = song.millis;
+    //song.playhead.update('millis', diff);
+    // song.followEvent.update();
+    // song.scheduler.update();
+    //console.log(song.millis, diff, song.loopEnd);
+    //console.log(song.doLoop, song.scheduler.looped, song.millis > song.loopEnd);
+    //console.log(song.scheduler.prevMaxtime, song.loopEnd);
+    if (song.doLoop && song.scheduler.looped && millis >= song.loopEnd) {// && song.jump !== true){
+      //console.log(song.prevMillis, song.millis);
+      //song.scheduler.looped = false;
+      song.followEvent.resetAllListeners();
+      song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
+      song.followEvent.update();
+      //console.log('-->', song.millis);
+      song.scheduler.update();
+      dispatchEvent(song, 'loop');
+      //song.startTime += (song.loopEnd - song.loopStart);
+    } else if (millis >= song.durationMillis) {
+      song.playhead.update('millis', song.durationMillis - song.millis);
+      song.followEvent.update();
+      song.pause();
+      song.endOfSong = true;
+      dispatchEvent(song, 'end');
+    } else {
+      song.playhead.update('millis', diff);
+      song.followEvent.update();
+      song.scheduler.update();
+    }
 
-        gridToSong, // → defined in song_grid.js
-        noteToGrid, // → defined in song_grid.js
-        eventToGrid, // → defined in song_grid.js
-        positionToGrid, // → defined in song_grid.js
+    song.jump = false;
 
-        //createTrack, // → defined in track.js
-        typeString, // → defined in util.js
-        removeFromArray, // → defined in util.js
-        removeFromArray2, // → defined in util.js
-        getNoteLengthName, // → defined in util.js
-        getStats, // → defined in event_statistics.js
-        findEvent, // → defined in find_event.js
-        findNote, // → defined in find_event.js
+    //console.log(now, sequencer.getTime());
+    //console.log(song.barsAsString);
+    //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
+    //console.log(song.millis);
+  };
 
-        objectForEach, // → defined in util.js
-        addSong, // → defined in sequencer.js
 
-        //private
-        _removeTracks,
-        pulse,
-        getArguments,
-        getTrack,
-        addTracks,
-        getPart,
-        getParts,
-        getTimeEvents,
-        setRecordingStatus,
-        _getRecordingPerTrack,
+  Song.prototype.remove = function () {
+    console.warn('Song.remove() is deprecated, please use sequencer.deleteSong()');
+    sequencer.deleteSong(this);
+  };
 
-        songIndex = 0,
 
-        //protected
-        createGrid,
+  Song.prototype.play = function () {
+    sequencer.unlockWebAudio();
+    var song, playstart;
 
-        //public
-        Song;
+    //console.log(this.playing);
+    if (this.playing) {
+      this.pause();
+      return;
+    }
+    // tell the scheduler to schedule the audio events that start before the current position of the playhead
+    this.scheduler.firstRun = true;
 
-    Song = function (config) {
-        //Object.defineProperty(this,'tracks',{value: []});
-        //Object.defineProperty(this, 'events', {value: 'val'});
+    // only loop when the loop is legal and this.loop is set to true
+    this.doLoop = (this.illegalLoop === false && this.loop === true);
+    //console.log('play', this.doLoop, this.illegalLoop, this.loop);
+    // or should I move to loopStart here if loop is enabled?
+    if (this.endOfSong) {
+      this.followEvent.resetAllListeners();
+      this.playhead.set('millis', 0);
+      this.scheduler.setIndex(0);
+    }
+    // timeStamp is used for calculating the diff in time of every consecutive frame
+    this.timeStamp = sequencer.getTime() * 1000;
+    this.startTime = this.timeStamp;
+    try {
+      this.startTime2 = window.performance.now();
+      //this.startTime2 = undefined;
+    } catch (e) {
+      if (sequencer.debug) {
+        console.log('window.performance.now() not supported');
+      }
+    }
 
-        config = config || {};
+    if (this.precounting) {
+      this.metronome.startTime = this.startTime;
+      this.metronome.startTime2 = this.startTime2;
+      this.startTime += this.metronome.precountDurationInMillis;
+      this.startTime2 += this.metronome.precountDurationInMillis;
 
-        this.id = 'S' + songIndex++ + '' + new Date().getTime();
-        this.name = config.name || this.id;
-        this.className = 'Song';
-        addSong(this);
+      //console.log(this.metronome.startTime, this.recordTimestamp);
 
-        this.midiInputs = {};
-        this.midiOutputs = {};
-        initMidi(this);
+      song = this;
+      playstart = this.startTime / 1000;
 
-        this.bpm = config.bpm || 120;
-        this.ppq = config.ppq || sequencer.defaultPPQ;
-        this.bars = config.bars || 30; //default song duration is 30 bars @ 120 bpm is 1 minute
-        this.lastBar = this.bars;
-        this.lowestNote = config.lowestNote || 0;
-        this.highestNote = config.highestNote || 127;
-        this.pitchRange = this.highestNote - this.lowestNote + 1;
-        this.nominator = config.nominator || 4;
-        this.denominator = config.denominator || 4;
-        this.factor = 4 / this.denominator;
-        this.ticksPerBeat = this.ppq * this.factor;
-        this.ticksPerBar = this.ticksPerBeat * this.nominator;
-        this.millisPerTick = (60000 / this.bpm / this.ppq);
-        this.quantizeValue = config.quantizeValue || '8';
-        this.fixedLengthValue = config.fixedLengthValue || false;
-        this.positionType = config.positionType || 'all';
-        this.useMetronome = config.useMetronome;
-        this.autoSize = config.autoSize === undefined ? true : config.autoSize === true;
-        this.playbackSpeed = 1;
-        this.defaultInstrument = config.defaultInstrument || sequencer.defaultInstrument;
-        this.recordId = -1;
-        this.autoQuantize = false;
-        this.loop = config.loop || false;
-        this.doLoop = false;
-        this.illegalLoop = true;
-        this.loopStart = 0;
-        this.loopEnd = 0;
-        this.loopDuration = 0;
-        this.audioRecordingLatency = 0;
+      //console.log(this.startTime, playstart, this.recordTimestamp/1000 - playstart);
 
-        //console.log('PPQ song', this.ppq)
-
-        if (this.useMetronome !== true && this.useMetronome !== false) {
-            this.useMetronome = false;
+      repetitiveTasks.playAfterPrecount = function () {
+        if (sequencer.getTime() >= playstart) {
+          song.precounting = false;
+          song.prerolling = false;
+          song.recording = true;
+          song.playing = true;
+          dispatchEvent(song, 'record_start');
+          dispatchEvent(song, 'play');
+          //console.log('playAfterPrecount', sequencer.getTime(), playstart, song.metronome.precountDurationInMillis);
+          repetitiveTasks.playAfterPrecount = undefined;
+          delete repetitiveTasks.playAfterPrecount;
         }
-        //console.log(this.useMetronome);
+      };
+    }
+    // this value will be deducted from the millis value of the event as soon as the event get scheduled
+    this.startMillis = this.millis;
+    //console.log(this.startMillis);
 
-        this.grid = undefined;
+    // make first call right after setting a time stamp to avoid delay
+    //pulse(this);
 
-        if (config.timeEvents && config.timeEvents.length > 0) {
-            this.timeEvents = [].concat(config.timeEvents);
+    song = this;
 
-            this.tempoEvent = getTimeEvents(sequencer.TEMPO, this)[0];
-            this.timeSignatureEvent = getTimeEvents(sequencer.TIME_SIGNATURE, this)[0];
+    // fixes bug: when an event listener is added to a midi note, the listener sometimes misses the first note
+    song.playhead.update('millis', 0);
+    song.followEvent.update();
 
-            if (this.tempoEvent === undefined) {
-                this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
-                this.timeEvents.unshift(this.tempoEvent);
-            } else {
-                this.bpm = this.tempoEvent.bpm;
-            }
-            if (this.timeSignatureEvent === undefined) {
-                this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
-                this.timeEvents.unshift(this.timeSignatureEvent);
-            } else {
-                this.nominator = this.timeSignatureEvent.nominator;
-                this.denominator = this.timeSignatureEvent.denominator;
-            }
-            //console.log(1, this.nominator, this.denominator, this.bpm);
-        } else {
-            // there has to be a tempo and time signature event at ticks 0, otherwise the position can't be calculated, and moreover, it is dictated by the MIDI standard
-            this.tempoEvent = createMidiEvent(0, sequencer.TEMPO, this.bpm);
-            this.timeSignatureEvent = createMidiEvent(0, sequencer.TIME_SIGNATURE, this.nominator, this.denominator);
-            this.timeEvents = [
-                this.tempoEvent,
-                this.timeSignatureEvent
-            ];
-        }
+    repetitiveTasks[this.id] = function () {
+      pulse(song);
+    };
 
-        // TODO: A value for bpm, nominator and denominator in the config overrules the time events specified in the config -> maybe this should be the other way round
+    this.paused = false;
+    this.stopped = false;
+    this.endOfSong = false;
+    if (this.precounting !== true) {
+      this.playing = true;
+      dispatchEvent(this, 'play');
+    }
+  };
 
-        // if a value for bpm is set in the config, and this value is different from the bpm value of the first
-        // tempo event, all tempo events will be updated to the bpm value in the config.
-        if (config.timeEvents !== undefined && config.bpm !== undefined) {
-            if (this.bpm !== config.bpm) {
-                this.setTempo(config.bpm, false);
-            }
-        }
 
-        // if a value for nominator and/or denominator is set in the config, and this/these value(s) is/are different from the values
-        // of the first time signature event, all time signature events will be updated to the values in the config.
-        // @TODO: maybe only the first time signature event should be updated?
-        if (config.timeEvents !== undefined && (config.nominator !== undefined || config.denominator !== undefined)) {
-            if (this.nominator !== config.nominator || this.denominator !== config.denominator) {
-                this.setTimeSignature(config.nominator || this.nominator, config.denominator || this.denominator, false);
-            }
-        }
+  Song.prototype.pause = function () {
+    if (this.recording === true || this.precounting === true) {
+      this.stop();
+      return;
+    }
+    if (this.stopped || this.paused) {
+      this.play();
+      return;
+    }
+    delete repetitiveTasks[this.id];
+    this.allNotesOff();
+    this.playing = false;
+    this.paused = true;
+    dispatchEvent(this, 'pause');
+  };
 
-        //console.log(2, this.nominator, this.denominator, this.bpm);
 
-        this.tracks = [];
-        this.parts = [];
-        this.notes = [];
-        this.events = [];//.concat(this.timeEvents);
-        this.allEvents = []; // all events plus metronome ticks
+  Song.prototype.stop = function () {
+    if (this.stopped) {
+      // is this necessary?
+      this.followEvent.resetAllListeners();
+      this.playhead.set('millis', 0);
+      this.scheduler.setIndex(0);
+      return;
+    }
+    if (this.recording === true || this.precounting === true) {
+      this.stopRecording();
+    }
+    delete repetitiveTasks[this.id];
+    // remove unschedule callback of all samples
+    objectForEach(timedTasks, function (task, id) {
+      //console.log(id);
+      if (id.indexOf('unschedule_') === 0 || id.indexOf('event_') === 0) {
+        task = null;
+        delete timedTasks[id];
+      }
+    });
+    this.allNotesOff();
 
-        this.tracksById = {};
-        this.tracksByName = {};
-        this.partsById = {};
-        this.notesById = {};
-        this.eventsById = {};
+    this.playing = false;
+    this.paused = false;
+    this.stopped = true;
+    this.endOfSong = false;
 
-        this.activeEvents = null;
-        this.activeNotes = null;
-        this.activeParts = null;
+    this.followEvent.resetAllListeners();
+    this.playhead.set('millis', 0);
+    this.scheduler.setIndex(0);
+    dispatchEvent(this, 'stop');
+  };
 
-        this.recordedNotes = [];
-        this.recordedEvents = [];
-        this.recordingNotes = {}; // notes that don't have their note off events yet
 
-        this.numTracks = 0;
-        this.numParts = 0;
-        this.numNotes = 0;
-        this.numEvents = 0;
-        this.instruments = [];
+  Song.prototype.adjustLatencyForAllRecordings = function (value) {
+    // @todo: add callback here!
+    this.audioRecordingLatency = value;
+    this.tracks.forEach(function (track) {
+      track.setAudioRecordingLatency(value);
+    });
+  };
 
-        this.playing = false;
-        this.paused = false;
-        this.stopped = true;
-        this.recording = false;
-        this.prerolling = false;
-        this.precounting = false;
-        this.preroll = true;
+
+  Song.prototype.setAudioRecordingLatency = function (recordId, value, callback) {
+    var i, event, sampleId;
+
+    for (i = this.audioEvents.length - 1; i >= 0; i--) {
+      event = this.audioEvents[i];
+      sampleId = event.sampleId;
+      if (sampleId === undefined) {
+        continue;
+      }
+      if (recordId === sampleId) {
+        break;
+      }
+    }
+    //console.log(recordId, value, callback);
+    event.track.setAudioRecordingLatency(recordId, value, callback);
+  };
+
+
+  Song.prototype.startRecording = Song.prototype.record = function (precount) {
+    //console.log(this.recording, this.precounting, precount);
+    if (this.recording === true || this.precounting === true) {
+      this.stop();
+      return;
+    }
+
+    var userFeedback = false,
+      audioRecording = false,
+      i, track, self = this;
+
+    this.metronome.precountDurationInMillis = 0;
+
+    // allow to start a recording while playing
+    if (this.playing) {
+      this.precount = 0;
+      this.recordStartMillis = this.millis;
+    } else {
+      if (precount === undefined) {
         this.precount = 0;
-        this.listeners = {};
+        this.recordStartMillis = this.millis;
+      } else {
+        // a recording with a precount always starts at the beginning of a bar
+        this.setPlayhead('barsbeats', this.bar);
+        this.metronome.createPrecountEvents(precount);
+        this.precount = precount;
+        this.recordStartMillis = this.millis - this.metronome.precountDurationInMillis;
+        //console.log(this.metronome.precountDurationInMillis);
+      }
+      /*
+                  if(this.preroll === true){
+                      // TODO: improve this -> leave it, preroll is always on unless the user sets it to false
+                      //this.preroll = (this.bar - this.precount) > 0;
+                  }
+      */
+    }
+    //console.log('preroll', this.preroll);
+    //console.log('precount', this.precount);
+    //console.log('precountDurationInMillis', this.metronome.precountDurationInMillis);
+    //console.log('recordStartMillis', this.recordStartMillis);
 
-        this.playhead = createPlayhead(this, this.positionType, this.id, this);//, this.position);
-        this.playheadRecording = createPlayhead(this, 'all', this.id + '_recording');
-        this.scheduler = createScheduler(this);
-        this.followEvent = createFollowEvent(this);
 
-        this.volume = 1;
-        this.gainNode = context.createGainNode();
-        this.gainNode.gain.value = this.volume;
-        this.metronome = createMetronome(this, dispatchEvent);
-        this.connect();
+    this.recordTimestampTicks = this.ticks;
+    this.recordId = 'REC' + new Date().getTime();
+    this.recordedNotes = [];
+    this.recordedEvents = [];
+    this.recordingNotes = {};
+    this.recordingAudio = false;
+
+    if (this.keyEditor !== undefined) {
+      this.keyEditor.prepareForRecording(this.recordId);
+    }
+
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      if (track.recordEnabled === 'audio') {
+        this.recordingAudio = true;
+      }
+      //console.log(track.name, track.index);
+      if (track.recordEnabled === 'audio') {
+        audioRecording = true;
+        track.prepareForRecording(this.recordId, function () {
+          if (userFeedback === false) {
+            userFeedback = true;
+            setRecordingStatus.call(self);
+          }
+        });
+      } else {
+        track.prepareForRecording(this.recordId);
+      }
+    }
+
+    if (audioRecording === false) {
+      setRecordingStatus.call(this);
+    }
+
+    return this.recordId;
+  };
 
 
-        if (config.className === 'MidiFile' && config.loaded === false) {
-            if (sequencer.debug) {
-                console.warn('midifile', config.name, 'has not yet been loaded!');
-            }
-        }
+  setRecordingStatus = function () {
 
-        //if(config.tracks && config.tracks.length > 0){
-        if (config.tracks) {
-            this.addTracks(config.tracks);
-        }
+    this.recordTimestamp = context.currentTime * 1000; // millis
 
-        if (config.parts) {
-            this.addParts(config.parts);
-        }
-
-        if (config.events) {
-            this.addEvents(config.events);
-        }
-
-        if (config.events || config.parts || config.tracks) {
-            //console.log(config.events, config.parts, config.tracks)
-            // the length of the song will be determined by the events, parts and/or tracks that are added to the song
-            if (config.bars === undefined) {
-                this.lastBar = 0;
-            }
-            this.lastEvent = createMidiEvent([this.lastBar, sequencer.END_OF_TRACK]);
+    if (this.playing === false) {
+      if (this.precount > 0) {
+        // recording with precount always starts at the beginning of a bar
+        //this.setPlayhead('barsbeats', this.bar);
+        this.precounting = true;
+        this.prerolling = this.preroll;
+        if (this.prerolling) {
+          dispatchEvent(this, 'record_preroll');
         } else {
-            this.lastEvent = createMidiEvent([this.bars * this.ticksPerBar, sequencer.END_OF_TRACK]);
+          dispatchEvent(this, 'record_precount');
         }
-        //console.log('update');
-        this.update(true);
+      } else {
+        this.recording = true;
+        dispatchEvent(this, 'record_start');
+      }
+      this.play();
+    } else {
+      this.recording = true;
+      this.precounting = false;
+      dispatchEvent(this, 'record_start');
+    }
+  };
 
-        this.numTimeEvents = this.timeEvents.length;
-        this.playhead.set('ticks', 0);
-        this.midiEventListeners = {};
-        //console.log(this.timeEvents);
-    };
 
+  _getRecordingPerTrack = function (index, recordingHistory, callback) {
+    var track, scope = this;
 
-    getPart = function (data, song) {
-        var part = false;
-        if (data === undefined) {
-            part = false;
-        } else if (part.className === 'Part') {
-            part = data;
-        } else if (typeString(data) === 'string') {
-            part = song.partsById[data];
-        } else if (isNaN(data) === false) {
-            part = song.parts[data];
+    if (index < this.numTracks) {
+      track = this.tracks[index];
+      track.stopRecording(this.recordId, function (events) {
+        if (events !== undefined) {
+          recordingHistory[track.name] = events;
         }
-        return part;
-    };
+        index++;
+        _getRecordingPerTrack.call(scope, index, recordingHistory, callback);
+      });
+    } else {
+      callback(recordingHistory);
+    }
+  };
 
 
-    getTrack = function (data, song) {
-        var track = false;
-        //console.log(data);
-        if (data === undefined) {
-            track = false;
-        } else if (data.className === 'Track') {
-            track = data;
-        } else if (typeString(data) === 'string') {
-            track = song.tracksById[data];
-            if (track === undefined) {
-                track = song.tracksByName[data];
-                // objectForEach(song.tracksById, function(t){
-                //     if(t.name === data){
-                //         track = t;
-                //     }
-                // });
-            }
-        } else if (isNaN(data) === false) {
-            track = song.tracks[data];
-        }
+  Song.prototype.stopRecording = function () {
+    if (this.recording === false) {
+      return;
+    }
+    this.recording = false;
+    this.prerolling = false;
+    this.precounting = false;
 
-        if (track === undefined) {
-            track = false;
-        }
-        return track;
-    };
+    //repetitiveTasks.playAfterPrecount = undefined;
+    delete repetitiveTasks.playAfterPrecount;
+    var scope = this;
+
+    _getRecordingPerTrack.call(this, 0, {}, function (history) {
+      scope.update();
+      dispatchEvent(scope, 'recorded_events', history);
+    });
+
+    // perform update immediately for midi recordings
+    this.update();
+
+    dispatchEvent(this, 'record_stop');
+
+    return this.recordId;
+  };
 
 
-    addTracks = function (newTracks, song) {
-        //console.log('addTracks');
-        var tracksById = song.tracksById,
-            tracksByName = song.tracksByName,
-            addedIds = [],
-            i, part, track;
+  Song.prototype.undoRecording = function (history) {
+    var i, tracksByName;
 
-        for (i = newTracks.length - 1; i >= 0; i--) {
-            track = getTrack(newTracks[i]);
-            if (track === false) {
-                continue;
-            }
-            //console.log(track.song);
-            if (track.song !== undefined && track.song !== null) {
-                track = track.copy();
-            }
-            track.song = song;
-            track.instrument.song = song;
-            track.quantizeValue = song.quantizeValue;
-            track.connect(song.gainNode);
-/*
-            // -> not possible because of the endless midi feedback loop with IAC virtual midi ports on OSX
-            //console.log(song.midiInputs);
-            objectForEach(song.midiInputs, function(port){
-                //console.log(port.id);
-                track.setMidiInput(port.id, true);
-            });
-*/
-
-            track.state = 'new';
-            track.needsUpdate = true;
-            tracksById[track.id] = track;
-            tracksByName[track.name] = track;
-            addedIds.push(track.id);
-
-            objectForEach(track.partsById, function (part) {
-                part.state = 'new';
-            });
-            /*
-                        for(j in track.partsById){
-                            if(track.partsById.hasOwnProperty(j)){
-                                //console.log('addTracks, part', part);
-                                part = track.partsById[j];
-                                //part.song = song;
-                                part.state = 'new';
-                            }
-                        }
-            */
-        }
-        return addedIds;
-    };
+    if (history === undefined) {
+      for (i = this.numTracks - 1; i >= 0; i--) {
+        this.tracks[i].undoRecording(this.recordId);
+      }
+    } else {
+      tracksByName = this.tracksByName;
+      objectForEach(history, function (events, name) {
+        var track = tracksByName[name];
+        track.undoRecording(events);
+      });
+    }
+    //this.update();
+  };
 
 
-    _removeTracks = function (tobeRemoved) {
-        var i, track, removed = [];
+  Song.prototype.getAudioRecordingData = function (recordId) {
+    var i, event, sampleId;
 
-        for (i = tobeRemoved.length - 1; i >= 0; i--) {
-            track = getTrack(tobeRemoved[i]);
-            if (track === false) {
-                continue;
-            }
-            //console.log(track);
-            if (track.song !== undefined && track.song !== this) {
-                console.warn('can\'t remove: this track belongs to song', track.song.id);
-                continue;
-            }
-            track.state = 'removed';
-            track.disconnect(this.gainNode);
-            track.reset();
-            delete this.tracksById[track.id];
-            delete this.tracksByName[track.name];
-            removed.push(track);
-        }
-        return removed;
-    };
+    for (i = this.audioEvents.length - 1; i >= 0; i--) {
+      event = this.audioEvents[i];
+      sampleId = event.sampleId;
+      if (sampleId === undefined) {
+        continue;
+      }
+      if (recordId === sampleId) {
+        break;
+      }
+    }
+    if (event === undefined) {
+      return false;
+    }
+    return event.track.getAudioRecordingData(recordId);
+  };
 
+
+  // non-mandatory arguments: quantize value, history object
+  Song.prototype.quantize = function () {
+    var i, track, arg, type,
+      args = slice.call(arguments),
+      numArgs = args.length,
+      value,
+      historyObject = {};
+
+    //console.log(arguments);
+
+    for (i = 0; i < numArgs; i++) {
+      arg = args[i];
+      type = typeString(arg);
+      //console.log(arg, type);
+      if (type === 'string' || type === 'number') {
+        // overrule the quantize values of all tracks in this song, but the song's quantizeValue doesn't change
+        value = arg;
+      } else if (type === 'object') {
+        historyObject = arg;
+      }
+    }
+
+    //console.log(value, historyObject)
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      // if no value is specified, use the value of the track
+      if (value === undefined) {
+        value = track.quantizeValue;
+      }
+      sequencer.quantize(track.events, value, this.ppq, historyObject);
+    }
+
+    return historyObject;
+    //this.update();
+  };
+
+
+  Song.prototype.undoQuantize = function (history) {
+    if (history === undefined) {
+      if (sequencer.debug >= 2) {
+        console.warn('please pass a quantize history object');
+      }
+      return;
+    }
+
+    var i, track;
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      track.undoQuantize(history);
+    }
+  };
+
+
+  Song.prototype.quantizeRecording = function (value) {
+    var i, track;
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      if (track.recordId === this.recordId) {
+        track.quantizeRecording(value);
+      }
+    }
+    //this.update();
+  };
+
+
+  // left: song position >= left locator
+  Song.prototype.setLeftLocator = function () {
+    //var pos = getPosition(this, [].concat(type, value));
+    //this.leftLocator = AP.slice.call(arguments);
+    var pos = getPosition(this, slice.call(arguments));
+    if (pos !== undefined) {
+      this.loopStartPosition = pos;
+      this.loopStart = pos.millis;
+      this.loopStartTicks = pos.ticks;
+    }
+    this.illegalLoop = this.loopStart >= this.loopEnd;
+    this.doLoop = (this.illegalLoop === false && this.loop === true);
+    this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
+    // if(this.doLoop === false && this.loop === true){
+    //     dispatchEvent('loop_off', this);
+    // }
+    //console.log('left', this.doLoop, this.illegalLoop, this.loop);
+    //console.log(pos.millis, pos.millis, pos.ticks);
+    //console.log('l', this.loopStartPosition, pos);
+  };
+
+
+  // right: song position < right locator
+  Song.prototype.setRightLocator = function () {//(value){
+    //var pos = getPosition(this, [].concat(type, value));
+    //this.rightLocator = AP.slice.call(arguments);
+    var pos = getPosition(this, slice.call(arguments)),
+      previousState = this.illegalLoop;
+    //var pos = getPosition(this, value);
+    if (pos !== undefined) {
+      this.loopEndPosition = pos;
+      this.loopEnd = pos.millis;
+      this.loopEndTicks = pos.ticks;
+    }
+    //console.log(this.loopEnd);
+    this.illegalLoop = this.loopEnd <= this.loopStart;
+    this.doLoop = (this.illegalLoop === false && this.loop === true);
+    this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
+    // if(previousState !== false && this.loop === true){
+    //     dispatchEvent('loop_off', this);
+    // }
+    //console.log('right', this.doLoop, this.illegalLoop, this.loop);
+    //console.log(pos.millis, pos.millis, pos.ticks);
+    //console.log('r', this.loopEndPosition);
+  };
+
+
+  Song.prototype.setLoop = function (flag) {
+    if (flag === undefined) {
+      this.loop = !this.loop;
+    } else if (flag === true || flag === false) {
+      this.loop = flag;
+    } else {
+      if (sequencer.debug >= 1) {
+        console.error('pass "true", "false" or no value');
+      }
+      return;
+    }
+    this.doLoop = (this.illegalLoop === false && this.loop === true);
+  };
+
+
+  Song.prototype.setPlayhead = function () {
+    //console.log('setPlayhead');
+    this.jump = true;
+    this.scheduler.looped = false;
+    this.scheduler.firstRun = true;
+    this.timeStamp = sequencer.getTime() * 1000;
+    this.startTime = this.timeStamp;
+
+    if (this.playing) {
+      this.allNotesOff();
+    }
+
+    //console.log(slice.call(arguments));
+    var pos = getPosition(this, slice.call(arguments)),
+      millis = pos.millis;
+    this.startMillis = millis;
+    this.playhead.set('millis', millis);
+    this.scheduler.setIndex(millis);
+    //console.log(pos.bar, this.bar);
+    //console.log(this.playhead.activeEvents);
+  };
+
+
+  Song.prototype.addEventListener = function () {
+    return addEventListener.apply(this, arguments);
+  };
+
+
+  Song.prototype.removeEventListener = function () {
+    removeEventListener.apply(this, arguments);
+  };
+
+
+  Song.prototype.addEvent = Song.prototype.addEvents = function () {
+    var track, part;
+
+    track = this.tracks[0];
+    if (track === undefined) {
+      track = sequencer.createTrack();
+      this.addTrack(track);
+    }
+    // we need to find the first part on the track, so update the track if necessary
+    if (track.needsUpdate) {
+      track.update();
+    }
+
+    part = track.parts[0];
+    if (part === undefined) {
+      part = sequencer.createPart();
+      track.addPart(part);
+    }
+    part.addEvents.apply(part, arguments);
+    //console.log(part.needsUpdate);
+    return this;
+  };
+
+
+  Song.prototype.addPart = Song.prototype.addParts = function () {
+    var track = this.tracks[0];
+    if (track === undefined) {
+      //console.log('-> create track for parts')
+      track = sequencer.createTrack();
+      this.addTrack(track);
+    }
+    //console.log(arguments);
+    track.addParts.apply(track, arguments);
+    return this;
+  };
+
+
+  Song.prototype.addTrack = function () {
+    var args = getArguments(arguments),
+      arg0 = args[0],
+      numArgs = args.length;
+
+    if (typeString(arg0) === 'array' || numArgs > 1) {
+      console.warn('please use addTracks() if you want to get more that one tracks');
+      args = [arg0];
+    }
+    return addTracks(args, this)[0];
+  };
+
+
+  Song.prototype.addTracks = function () {
+    //console.log(arguments, getArguments(arguments));
+    return addTracks(getArguments(arguments), this);
+  };
+
+
+  Song.prototype.getTrack = function (arg) {
+    return getTrack(arg, this);
+  };
+
+
+  Song.prototype.getTracks = function () {
+    var args = getArguments(arguments),
+      track, i,
+      result = [];
+    for (i = args.length - 1; i >= 0; i--) {
+      track = getTrack(args[i], this);
+      if (track) {
+        result.push(track);
+      }
+    }
+    return result;
+  };
+
+
+  Song.prototype.getPart = function () {
+    var args = getArguments(arguments);
+    if (args.length > 1) {
+      console.warn('please use getParts() if you want to get more that one part');
+    }
+    //@TODO: check if a call is faster
+    //return getParts(args, this)[0];
+    return getParts.call(this, args)[0];
+  };
+
+
+  Song.prototype.getParts = function () {
+    var args = getArguments(arguments);
+    //return getParts(args, this);
+    return getParts.call(this, args);
+  };
+
+
+  Song.prototype.removeTrack = function () {
+    var args = getArguments(arguments);
+    //var args = getArguments.apply(null, arguments);
+    if (args.length > 1) {
+      console.warn('please use removeTracks() if you want to remove more that one tracks');
+    }
+    //return _removeTracks(args, this)[0];
+    return _removeTracks.call(this, args)[0];
+  };
+
+
+  Song.prototype.removeTracks = function () {
+    return _removeTracks.call(this, getArguments(arguments));
+  };
+
+
+  Song.prototype.setPlaybackSpeed = function (speed) {
+    if (speed < 0.01 || speed > 100) {
+      console.error('playback speed has to be > 0.01 and < 100');
+      return;
+    }
+    var ticks = this.ticks,
+      startLoop, endLoop, newPos;
+
+    this.playbackSpeed = speed;
+    //console.log('setPlaybackSpeed -> update()');
+    this.update(true);
+
+    // get the new position of the locators after the update
+    if (this.loopStartTicks !== undefined) {
+      startLoop = this.getPosition('ticks', this.loopStartTicks);
+      this.loopStart = startLoop.millis;
+      this.loopStartTicks = startLoop.ticks;
+    }
+    if (this.loopEndTicks !== undefined) {
+      endLoop = this.getPosition('ticks', this.loopEndTicks);
+      this.loopEnd = endLoop.millis;
+      this.loopEndTicks = endLoop.ticks;
+    }
+
+    // get the new position of the playhead after the update
+    newPos = this.getPosition('ticks', ticks);
+    this.setPlayhead('ticks', newPos.ticks);
+  };
+
+
+  Song.prototype.gridToSong = function (x, y, width, height) {
+    return gridToSong(this, x, y, width, height);
+  };
+
+
+  Song.prototype.noteToGrid = function (note, height) {
+    return noteToGrid(note, height, this);
+  };
+
+
+  Song.prototype.eventToGrid = function (event, width, height) {
+    return eventToGrid(event, width, height, this);
+  };
+
+
+  Song.prototype.positionToGrid = function (position, width) {
+    return positionToGrid(position, width, this);
+  };
+
+
+  Song.prototype.getPosition = function () {
+    //console.log(slice.call(arguments));
+    return getPosition(this, slice.call(arguments));
+  };
+
+
+  Song.prototype.ticksToMillis = function (ticks, beyondEndOfSong) {
+    return ticksToMillis(this, ticks, beyondEndOfSong);
+  };
+
+
+  Song.prototype.millisToTicks = function (millis, beyondEndOfSong) {
+    return millisToTicks(this, millis, beyondEndOfSong);
+  };
+
+
+  Song.prototype.ticksToBars = function (ticks, beyondEndOfSong) {
+    return ticksToBars(this, ticks, beyondEndOfSong);
+  };
+
+
+  Song.prototype.millisToBars = function (millis, beyondEndOfSong) {
+    return millisToBars(this, millis, beyondEndOfSong);
+  };
+
+
+  Song.prototype.barsToTicks = function () {
+    return barsToTicks(this, slice.call(arguments));
+  };
+
+
+  Song.prototype.barsToMillis = function () {
+    return barsToMillis(this, slice.call(arguments));
+  };
+
+
+  Song.prototype.findEvent = Song.prototype.findEvents = function (pattern) {
+    return findEvent(this, pattern);
+  };
+
+
+  Song.prototype.findNote = Song.prototype.findNotes = function (pattern) {
+    return findNote(this, pattern);
+  };
+
+
+  Song.prototype.getStats = function (pattern) {
+    return getStats(this, pattern);
+  };
+
+
+  Song.prototype.createGrid = function (config) {
+    if (this.grid === undefined) {
+      this.grid = createGrid(this, config);
+    } else {
+      this.grid.update(config);
+    }
+    return this.grid;
+  };
+
+
+  Song.prototype.update = function (updateTimeEvents) {
+    //console.log('Song.update()');
+    update(this, updateTimeEvents);
+  };
+
+
+  Song.prototype.updateGrid = function (config) {
+    this.grid.update(config);
+    return this.grid;
+  };
+
+
+  Song.prototype.updateTempoEvent = function (event, bpm) {
+    if (event.type !== sequencer.TEMPO) {
+      if (sequencer.debug >= 4) {
+        console.error('this is not a tempo event');
+      }
+      return;
+    }
+    if (event.song !== this) {
+      if (sequencer.debug >= 4) {
+        console.error('this event has not been added to this song yet');
+      }
+      return;
+    }
+    var ticks = this.ticks,
+      percentage = this.percentage;
+    event.bpm = bpm;
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.updateTimeSignatureEvent = function (event, nominator, denominator) {
+    if (event.type !== sequencer.TIME_SIGNATURE) {
+      if (sequencer.debug >= 4) {
+        console.error('this is not a time signature event');
+      }
+      return;
+    }
+    if (event.song !== this) {
+      if (sequencer.debug >= 4) {
+        console.error('this event has not been added to this song yet');
+      }
+      return;
+    }
+    var ticks = this.ticks,
+      percentage = this.percentage;
+    event.nominator = nominator || event.nominator;
+    event.denominator = denominator || event.denominator;
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.getTempoEvents = function () {
+    return getTimeEvents(sequencer.TEMPO, this);
+  };
+
+
+  Song.prototype.getTimeSignatureEvents = function () {
+    return getTimeEvents(sequencer.TIME_SIGNATURE, this);
+  };
+
+
+  Song.prototype.updatePlayheadAndLocators = function (ticks) {
+    var newStartPos,
+      newEndPos,
+      startPos = this.loopStartPosition,
+      endPos = this.loopEndPosition,
+      newPos;
+
+    // get the new position of the locators after the update
+    if (startPos !== undefined) {
+      /*
+      newStartPos = this.getPosition('barsbeats', startPos.bar, startPos.beat, startPos.sixteenth, startPos.tick);
+      if(newStartPos.ticks > this.durationTicks || newStartPos.bar > this.bars + 1){
+          newStartPos = this.getPosition('barsbeats', 1, 1, 1, 0);
+          console.log('start', newStartPos.barsAsString);
+      }
+      */
+      newStartPos = this.getPosition('ticks', startPos.ticks);
+      this.loopStart = newStartPos.millis;
+      this.loopStartTicks = newStartPos.ticks;
+      this.loopStartPosition = newStartPos;
+    }
+    if (endPos !== undefined) {
+      /*
+      newEndPos = this.getPosition('barsbeats', endPos.bar, endPos.beat, endPos.sixteenth, endPos.tick);
+      if(newEndPos.ticks > this.durationTicks || newEndPos.bar > this.bars + 1){
+          newEndPos = this.getPosition('barsbeats', this.bars, 1, 1, 0);
+          console.log('end', newEndPos.barsAsString);
+      }
+      */
+      //console.log('right locator', endPos.barsAsString, endPos.ticks);
+      newEndPos = this.getPosition('ticks', endPos.ticks);
+      if (newEndPos.ticks > this.durationTicks) {
+        //console.log('right locator beyond end of song');
+        newEndPos = this.getPosition('ticks', this.bars);
+      }
+      this.loopEnd = newEndPos.millis;
+      this.loopEndTicks = newEndPos.ticks;
+      this.loopEndPosition = newEndPos;
+      //console.log('right locator', newEndPos.barsAsString, newEndPos.ticks);
+    }
+    //console.log('l', this.loopStartPosition, 'r', this.loopEndPosition);
+
+    // get the new position of the playhead after the update
     /*
-        getParts = function(args, song){
-            var part, i,
-                result = [];
-            for(i = args.length - 1; i >= 0; i--){
-                part = getPart(args[i], song);
-                if(part){
-                    result.push(part);
-                }
+            newPos = this.getPosition('ticks', ticks);
+            if(newPos.ticks > this.durationTicks || newPos.bar > this.bars + 1){
+                newPos = this.getPosition('barsbeats', 1, 1, 1, 0);
+                //console.log('playhead', newPos.barsAsString);
             }
-            return result;
-        };
     */
-
-    getParts = function (args) {
-        var part, i,
-            result = [];
-        for (i = args.length - 1; i >= 0; i--) {
-            part = getPart(args[i], this);
-            if (part) {
-                result.push(part);
-            }
-        }
-        return result;
-    };
-
-
-    function getEvents(args, song) {
-        var result = [];
-
-        args = slice.call(args);
-        //console.log(args);
-
-        function loop(data, i, maxi) {
-            var arg, type, event;
-
-            for (i = 0; i < maxi; i++) {
-                arg = data[i];
-                type = typeString(arg);
-
-                if (type === 'array') {
-                    loop(arg, 0, arg.length);
-                }
-
-                else if (type === 'string') {
-                    event = song.eventsById[arg];
-                    if (event !== undefined) {
-                        result.push(arg);
-                    }
-                }
-
-                else if (arg.className === 'MidiEvent') {
-                    result.push(arg);
-                }
-            }
-        }
-
-        loop(args, 0, args.length);
-        return result;
+    newPos = this.getPosition('ticks', ticks);
+    if (this.doLoop && newPos.ticks > this.durationTicks) {
+      //console.log('playhead beyond end of song');
+      this.setPlayhead('ticks', 0);
+    } else {
+      this.setPlayhead('ticks', newPos.ticks);
     }
 
 
-    getTimeEvents = function (type, song) {
-        var events = [];
-        song.timeEvents.forEach(function (event) {
-            if (event.type === type) {
-                events.push(event);
-            }
-        });
-        return events;
-    };
-
-
-    pulse = function (song) {
-        var
-            //now = window.performance.now(),
-            now = sequencer.getTime() * 1000,
-            diff = now - song.timeStamp,
-            millis = song.millis + diff;
-
-        song.diff = diff;
-        //console.log(diff);
-        //console.log(now, song.recordTimestamp, song.eventsMidiAudioMetronome[0].time);
-
-        song.timeStamp = now;
-
-        if (song.precounting === true) {
-            song.metronome.millis += diff;
-            song.scheduler.update(diff);
-            // now return otherwise the position of the song gets updated
-            return;
-        }
-
-        // is this comment still valid?
-        // put followEvent and scheduler before playhead.update(), otherwise followEvent will miss the first event (scheduler could come after playhead.update)
-        song.prevMillis = song.millis;
-        //song.playhead.update('millis', diff);
-        // song.followEvent.update();
-        // song.scheduler.update();
-        //console.log(song.millis, diff, song.loopEnd);
-        //console.log(song.doLoop, song.scheduler.looped, song.millis > song.loopEnd);
-        //console.log(song.scheduler.prevMaxtime, song.loopEnd);
-        if (song.doLoop && song.scheduler.looped && millis >= song.loopEnd) {// && song.jump !== true){
-            //console.log(song.prevMillis, song.millis);
-            //song.scheduler.looped = false;
-            song.followEvent.resetAllListeners();
-            song.playhead.set('millis', song.loopStart + (millis - song.loopEnd));
-            song.followEvent.update();
-            //console.log('-->', song.millis);
-            song.scheduler.update();
-            dispatchEvent(song, 'loop');
-            //song.startTime += (song.loopEnd - song.loopStart);
-        } else if (millis >= song.durationMillis) {
-            song.playhead.update('millis', song.durationMillis - song.millis);
-            song.followEvent.update();
-            song.pause();
-            song.endOfSong = true;
-            dispatchEvent(song, 'end');
-        } else {
-            song.playhead.update('millis', diff);
-            song.followEvent.update();
-            song.scheduler.update();
-        }
-
-        song.jump = false;
-
-        //console.log(now, sequencer.getTime());
-        //console.log(song.barsAsString);
-        //console.log('pulse', song.playhead.barsAsString, song.playhead.millis);
-        //console.log(song.millis);
-    };
-
-
-    Song.prototype.remove = function () {
-        console.warn('Song.remove() is deprecated, please use sequencer.deleteSong()');
-        sequencer.deleteSong(this);
-    };
-
-
-    Song.prototype.play = function () {
-        sequencer.unlockWebAudio();
-        var song, playstart;
-
-        //console.log(this.playing);
-        if (this.playing) {
-            this.pause();
-            return;
-        }
-        // tell the scheduler to schedule the audio events that start before the current position of the playhead
-        this.scheduler.firstRun = true;
-
-        // only loop when the loop is legal and this.loop is set to true
-        this.doLoop = (this.illegalLoop === false && this.loop === true);
-        //console.log('play', this.doLoop, this.illegalLoop, this.loop);
-        // or should I move to loopStart here if loop is enabled?
-        if (this.endOfSong) {
-            this.followEvent.resetAllListeners();
-            this.playhead.set('millis', 0);
-            this.scheduler.setIndex(0);
-        }
-        // timeStamp is used for calculating the diff in time of every consecutive frame
-        this.timeStamp = sequencer.getTime() * 1000;
-        this.startTime = this.timeStamp;
-        try {
-            this.startTime2 = window.performance.now();
-            //this.startTime2 = undefined;
-        } catch (e) {
-            if (sequencer.debug) {
-                console.log('window.performance.now() not supported');
-            }
-        }
-
-        if (this.precounting) {
-            this.metronome.startTime = this.startTime;
-            this.metronome.startTime2 = this.startTime2;
-            this.startTime += this.metronome.precountDurationInMillis;
-            this.startTime2 += this.metronome.precountDurationInMillis;
-
-            //console.log(this.metronome.startTime, this.recordTimestamp);
-
-            song = this;
-            playstart = this.startTime / 1000;
-
-            //console.log(this.startTime, playstart, this.recordTimestamp/1000 - playstart);
-
-            repetitiveTasks.playAfterPrecount = function () {
-                if (sequencer.getTime() >= playstart) {
-                    song.precounting = false;
-                    song.prerolling = false;
-                    song.recording = true;
-                    song.playing = true;
-                    dispatchEvent(song, 'record_start');
-                    dispatchEvent(song, 'play');
-                    //console.log('playAfterPrecount', sequencer.getTime(), playstart, song.metronome.precountDurationInMillis);
-                    repetitiveTasks.playAfterPrecount = undefined;
-                    delete repetitiveTasks.playAfterPrecount;
-                }
-            };
-        }
-        // this value will be deducted from the millis value of the event as soon as the event get scheduled
-        this.startMillis = this.millis;
-        //console.log(this.startMillis);
-
-        // make first call right after setting a time stamp to avoid delay
-        //pulse(this);
-
-        song = this;
-
-        // fixes bug: when an event listener is added to a midi note, the listener sometimes misses the first note
-        song.playhead.update('millis', 0);
-        song.followEvent.update();
-
-        repetitiveTasks[this.id] = function () {
-            pulse(song);
-        };
-
-        this.paused = false;
-        this.stopped = false;
-        this.endOfSong = false;
-        if (this.precounting !== true) {
-            this.playing = true;
-            dispatchEvent(this, 'play');
-        }
-    };
-
-
-    Song.prototype.pause = function () {
-        if (this.recording === true || this.precounting === true) {
-            this.stop();
-            return;
-        }
-        if (this.stopped || this.paused) {
-            this.play();
-            return;
-        }
-        delete repetitiveTasks[this.id];
-        this.allNotesOff();
-        this.playing = false;
-        this.paused = true;
-        dispatchEvent(this, 'pause');
-    };
-
-
-    Song.prototype.stop = function () {
-        if (this.stopped) {
-            // is this necessary?
-            this.followEvent.resetAllListeners();
-            this.playhead.set('millis', 0);
-            this.scheduler.setIndex(0);
-            return;
-        }
-        if (this.recording === true || this.precounting === true) {
-            this.stopRecording();
-        }
-        delete repetitiveTasks[this.id];
-        // remove unschedule callback of all samples
-        objectForEach(timedTasks, function (task, id) {
-            //console.log(id);
-            if (id.indexOf('unschedule_') === 0 || id.indexOf('event_') === 0) {
-                task = null;
-                delete timedTasks[id];
-            }
-        });
-        this.allNotesOff();
-
-        this.playing = false;
-        this.paused = false;
-        this.stopped = true;
-        this.endOfSong = false;
-
-        this.followEvent.resetAllListeners();
-        this.playhead.set('millis', 0);
-        this.scheduler.setIndex(0);
-        dispatchEvent(this, 'stop');
-    };
-
-
-    Song.prototype.adjustLatencyForAllRecordings = function (value) {
-        // @todo: add callback here!
-        this.audioRecordingLatency = value;
-        this.tracks.forEach(function (track) {
-            track.setAudioRecordingLatency(value);
-        });
-    };
-
-
-    Song.prototype.setAudioRecordingLatency = function (recordId, value, callback) {
-        var i, event, sampleId;
-
-        for (i = this.audioEvents.length - 1; i >= 0; i--) {
-            event = this.audioEvents[i];
-            sampleId = event.sampleId;
-            if (sampleId === undefined) {
-                continue;
-            }
-            if (recordId === sampleId) {
-                break;
-            }
-        }
-        //console.log(recordId, value, callback);
-        event.track.setAudioRecordingLatency(recordId, value, callback);
-    };
-
-
-    Song.prototype.startRecording = Song.prototype.record = function (precount) {
-        //console.log(this.recording, this.precounting, precount);
-        if (this.recording === true || this.precounting === true) {
-            this.stop();
-            return;
-        }
-
-        var userFeedback = false,
-            audioRecording = false,
-            i, track, self = this;
-
-        this.metronome.precountDurationInMillis = 0;
-
-        // allow to start a recording while playing
-        if (this.playing) {
-            this.precount = 0;
-            this.recordStartMillis = this.millis;
-        } else {
-            if (precount === undefined) {
-                this.precount = 0;
-                this.recordStartMillis = this.millis;
-            } else {
-                // a recording with a precount always starts at the beginning of a bar
-                this.setPlayhead('barsbeats', this.bar);
-                this.metronome.createPrecountEvents(precount);
-                this.precount = precount;
-                this.recordStartMillis = this.millis - this.metronome.precountDurationInMillis;
-                //console.log(this.metronome.precountDurationInMillis);
-            }
-            /*
-                        if(this.preroll === true){
-                            // TODO: improve this -> leave it, preroll is always on unless the user sets it to false
-                            //this.preroll = (this.bar - this.precount) > 0;
-                        }
-            */
-        }
-        //console.log('preroll', this.preroll);
-        //console.log('precount', this.precount);
-        //console.log('precountDurationInMillis', this.metronome.precountDurationInMillis);
-        //console.log('recordStartMillis', this.recordStartMillis);
-
-
-        this.recordTimestampTicks = this.ticks;
-        this.recordId = 'REC' + new Date().getTime();
-        this.recordedNotes = [];
-        this.recordedEvents = [];
-        this.recordingNotes = {};
-        this.recordingAudio = false;
-
-        if (this.keyEditor !== undefined) {
-            this.keyEditor.prepareForRecording(this.recordId);
-        }
-
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            if (track.recordEnabled === 'audio') {
-                this.recordingAudio = true;
-            }
-            //console.log(track.name, track.index);
-            if (track.recordEnabled === 'audio') {
-                audioRecording = true;
-                track.prepareForRecording(this.recordId, function () {
-                    if (userFeedback === false) {
-                        userFeedback = true;
-                        setRecordingStatus.call(self);
-                    }
-                });
-            } else {
-                track.prepareForRecording(this.recordId);
-            }
-        }
-
-        if (audioRecording === false) {
-            setRecordingStatus.call(this);
-        }
-
-        return this.recordId;
-    };
-
-
-    setRecordingStatus = function () {
-
-        this.recordTimestamp = context.currentTime * 1000; // millis
-
-        if (this.playing === false) {
-            if (this.precount > 0) {
-                // recording with precount always starts at the beginning of a bar
-                //this.setPlayhead('barsbeats', this.bar);
-                this.precounting = true;
-                this.prerolling = this.preroll;
-                if (this.prerolling) {
-                    dispatchEvent(this, 'record_preroll');
-                } else {
-                    dispatchEvent(this, 'record_precount');
-                }
-            } else {
-                this.recording = true;
-                dispatchEvent(this, 'record_start');
-            }
-            this.play();
-        } else {
-            this.recording = true;
-            this.precounting = false;
-            dispatchEvent(this, 'record_start');
-        }
-    };
-
-
-    _getRecordingPerTrack = function (index, recordingHistory, callback) {
-        var track, scope = this;
-
-        if (index < this.numTracks) {
-            track = this.tracks[index];
-            track.stopRecording(this.recordId, function (events) {
-                if (events !== undefined) {
-                    recordingHistory[track.name] = events;
-                }
-                index++;
-                _getRecordingPerTrack.call(scope, index, recordingHistory, callback);
-            });
-        } else {
-            callback(recordingHistory);
-        }
-    };
-
-
-    Song.prototype.stopRecording = function () {
-        if (this.recording === false) {
-            return;
-        }
-        this.recording = false;
-        this.prerolling = false;
-        this.precounting = false;
-
-        //repetitiveTasks.playAfterPrecount = undefined;
-        delete repetitiveTasks.playAfterPrecount;
-        var scope = this;
-
-        _getRecordingPerTrack.call(this, 0, {}, function (history) {
-            scope.update();
-            dispatchEvent(scope, 'recorded_events', history);
-        });
-
-        // perform update immediately for midi recordings
-        this.update();
-
-        dispatchEvent(this, 'record_stop');
-
-        return this.recordId;
-    };
-
-
-    Song.prototype.undoRecording = function (history) {
-        var i, tracksByName;
-
-        if (history === undefined) {
-            for (i = this.numTracks - 1; i >= 0; i--) {
-                this.tracks[i].undoRecording(this.recordId);
-            }
-        } else {
-            tracksByName = this.tracksByName;
-            objectForEach(history, function (events, name) {
-                var track = tracksByName[name];
-                track.undoRecording(events);
-            });
-        }
-        //this.update();
-    };
-
-
-    Song.prototype.getAudioRecordingData = function (recordId) {
-        var i, event, sampleId;
-
-        for (i = this.audioEvents.length - 1; i >= 0; i--) {
-            event = this.audioEvents[i];
-            sampleId = event.sampleId;
-            if (sampleId === undefined) {
-                continue;
-            }
-            if (recordId === sampleId) {
-                break;
-            }
-        }
-        if (event === undefined) {
-            return false;
-        }
-        return event.track.getAudioRecordingData(recordId);
-    };
-
-
-    // non-mandatory arguments: quantize value, history object
-    Song.prototype.quantize = function () {
-        var i, track, arg, type,
-            args = slice.call(arguments),
-            numArgs = args.length,
-            value,
-            historyObject = {};
-
-        //console.log(arguments);
-
-        for (i = 0; i < numArgs; i++) {
-            arg = args[i];
-            type = typeString(arg);
-            //console.log(arg, type);
-            if (type === 'string' || type === 'number') {
-                // overrule the quantize values of all tracks in this song, but the song's quantizeValue doesn't change
-                value = arg;
-            } else if (type === 'object') {
-                historyObject = arg;
-            }
-        }
-
-        //console.log(value, historyObject)
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            // if no value is specified, use the value of the track
-            if (value === undefined) {
-                value = track.quantizeValue;
-            }
-            sequencer.quantize(track.events, value, this.ppq, historyObject);
-        }
-
-        return historyObject;
-        //this.update();
-    };
-
-
-    Song.prototype.undoQuantize = function (history) {
-        if (history === undefined) {
-            if (sequencer.debug >= 2) {
-                console.warn('please pass a quantize history object');
-            }
-            return;
-        }
-
-        var i, track;
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            track.undoQuantize(history);
-        }
-    };
-
-
-    Song.prototype.quantizeRecording = function (value) {
-        var i, track;
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            if (track.recordId === this.recordId) {
-                track.quantizeRecording(value);
-            }
-        }
-        //this.update();
-    };
-
-
-    // left: song position >= left locator
-    Song.prototype.setLeftLocator = function () {
-        //var pos = getPosition(this, [].concat(type, value));
-        //this.leftLocator = AP.slice.call(arguments);
-        var pos = getPosition(this, slice.call(arguments));
-        if (pos !== undefined) {
-            this.loopStartPosition = pos;
-            this.loopStart = pos.millis;
-            this.loopStartTicks = pos.ticks;
-        }
-        this.illegalLoop = this.loopStart >= this.loopEnd;
-        this.doLoop = (this.illegalLoop === false && this.loop === true);
-        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
-        // if(this.doLoop === false && this.loop === true){
-        //     dispatchEvent('loop_off', this);
-        // }
-        //console.log('left', this.doLoop, this.illegalLoop, this.loop);
-        //console.log(pos.millis, pos.millis, pos.ticks);
-        //console.log('l', this.loopStartPosition, pos);
-    };
-
-
-    // right: song position < right locator
-    Song.prototype.setRightLocator = function () {//(value){
-        //var pos = getPosition(this, [].concat(type, value));
-        //this.rightLocator = AP.slice.call(arguments);
-        var pos = getPosition(this, slice.call(arguments)),
-            previousState = this.illegalLoop;
-        //var pos = getPosition(this, value);
-        if (pos !== undefined) {
-            this.loopEndPosition = pos;
-            this.loopEnd = pos.millis;
-            this.loopEndTicks = pos.ticks;
-        }
-        //console.log(this.loopEnd);
-        this.illegalLoop = this.loopEnd <= this.loopStart;
-        this.doLoop = (this.illegalLoop === false && this.loop === true);
-        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
-        // if(previousState !== false && this.loop === true){
-        //     dispatchEvent('loop_off', this);
-        // }
-        //console.log('right', this.doLoop, this.illegalLoop, this.loop);
-        //console.log(pos.millis, pos.millis, pos.ticks);
-        //console.log('r', this.loopEndPosition);
-    };
-
-
-    Song.prototype.setLoop = function (flag) {
-        if (flag === undefined) {
-            this.loop = !this.loop;
-        } else if (flag === true || flag === false) {
-            this.loop = flag;
-        } else {
-            if (sequencer.debug >= 1) {
-                console.error('pass "true", "false" or no value');
-            }
-            return;
-        }
-        this.doLoop = (this.illegalLoop === false && this.loop === true);
-    };
-
-
-    Song.prototype.setPlayhead = function () {
-        //console.log('setPlayhead');
-        this.jump = true;
-        this.scheduler.looped = false;
-        this.scheduler.firstRun = true;
-        this.timeStamp = sequencer.getTime() * 1000;
-        this.startTime = this.timeStamp;
-        try {
-            this.startTime2 = window.performance.now();
-            //this.startTime2 = undefined;
-        } catch (e) {
-            if (sequencer.debug) {
-                console.log('window.performance.now() not supported');
-            }
-        }
-
-        if (this.playing) {
-            this.allNotesOff();
-        }
-
-        //console.log(slice.call(arguments));
-        var pos = getPosition(this, slice.call(arguments)),
-            millis = pos.millis;
-        this.startMillis = millis;
-        this.playhead.set('millis', millis);
-        this.scheduler.setIndex(millis);
-        //console.log(pos.bar, this.bar);
-        //console.log(this.playhead.activeEvents);
-    };
-
-
-    Song.prototype.addEventListener = function () {
-        return addEventListener.apply(this, arguments);
-    };
-
-
-    Song.prototype.removeEventListener = function () {
-        removeEventListener.apply(this, arguments);
-    };
-
-
-    Song.prototype.addEvent = Song.prototype.addEvents = function () {
-        var track, part;
-
-        track = this.tracks[0];
-        if (track === undefined) {
-            track = sequencer.createTrack();
-            this.addTrack(track);
-        }
-        // we need to find the first part on the track, so update the track if necessary
-        if (track.needsUpdate) {
-            track.update();
-        }
-
-        part = track.parts[0];
-        if (part === undefined) {
-            part = sequencer.createPart();
-            track.addPart(part);
-        }
-        part.addEvents.apply(part, arguments);
-        //console.log(part.needsUpdate);
-        return this;
-    };
-
-
-    Song.prototype.addPart = Song.prototype.addParts = function () {
-        var track = this.tracks[0];
-        if (track === undefined) {
-            //console.log('-> create track for parts')
-            track = sequencer.createTrack();
-            this.addTrack(track);
-        }
-        //console.log(arguments);
-        track.addParts.apply(track, arguments);
-        return this;
-    };
-
-
-    Song.prototype.addTrack = function () {
-        var args = getArguments(arguments),
-            arg0 = args[0],
-            numArgs = args.length;
-
-        if (typeString(arg0) === 'array' || numArgs > 1) {
-            console.warn('please use addTracks() if you want to get more that one tracks');
-            args = [arg0];
-        }
-        return addTracks(args, this)[0];
-    };
-
-
-    Song.prototype.addTracks = function () {
-        //console.log(arguments, getArguments(arguments));
-        return addTracks(getArguments(arguments), this);
-    };
-
-
-    Song.prototype.getTrack = function (arg) {
-        return getTrack(arg, this);
-    };
-
-
-    Song.prototype.getTracks = function () {
-        var args = getArguments(arguments),
-            track, i,
-            result = [];
-        for (i = args.length - 1; i >= 0; i--) {
-            track = getTrack(args[i], this);
-            if (track) {
-                result.push(track);
-            }
-        }
-        return result;
-    };
-
-
-    Song.prototype.getPart = function () {
-        var args = getArguments(arguments);
-        if (args.length > 1) {
-            console.warn('please use getParts() if you want to get more that one part');
-        }
-        //@TODO: check if a call is faster
-        //return getParts(args, this)[0];
-        return getParts.call(this, args)[0];
-    };
-
-
-    Song.prototype.getParts = function () {
-        var args = getArguments(arguments);
-        //return getParts(args, this);
-        return getParts.call(this, args);
-    };
-
-
-    Song.prototype.removeTrack = function () {
-        var args = getArguments(arguments);
-        //var args = getArguments.apply(null, arguments);
-        if (args.length > 1) {
-            console.warn('please use removeTracks() if you want to remove more that one tracks');
-        }
-        //return _removeTracks(args, this)[0];
-        return _removeTracks.call(this, args)[0];
-    };
-
-
-    Song.prototype.removeTracks = function () {
-        return _removeTracks.call(this, getArguments(arguments));
-    };
-
-
-    Song.prototype.setPlaybackSpeed = function (speed) {
-        if (speed < 0.01 || speed > 100) {
-            console.error('playback speed has to be > 0.01 and < 100');
-            return;
-        }
-        var ticks = this.ticks,
-            startLoop, endLoop, newPos;
-
-        this.playbackSpeed = speed;
-        //console.log('setPlaybackSpeed -> update()');
-        this.update(true);
-
-        // get the new position of the locators after the update
-        if (this.loopStartTicks !== undefined) {
-            startLoop = this.getPosition('ticks', this.loopStartTicks);
-            this.loopStart = startLoop.millis;
-            this.loopStartTicks = startLoop.ticks;
-        }
-        if (this.loopEndTicks !== undefined) {
-            endLoop = this.getPosition('ticks', this.loopEndTicks);
-            this.loopEnd = endLoop.millis;
-            this.loopEndTicks = endLoop.ticks;
-        }
-
-        // get the new position of the playhead after the update
-        newPos = this.getPosition('ticks', ticks);
-        this.setPlayhead('ticks', newPos.ticks);
-    };
-
-
-    Song.prototype.gridToSong = function (x, y, width, height) {
-        return gridToSong(this, x, y, width, height);
-    };
-
-
-    Song.prototype.noteToGrid = function (note, height) {
-        return noteToGrid(note, height, this);
-    };
-
-
-    Song.prototype.eventToGrid = function (event, width, height) {
-        return eventToGrid(event, width, height, this);
-    };
-
-
-    Song.prototype.positionToGrid = function (position, width) {
-        return positionToGrid(position, width, this);
-    };
-
-
-    Song.prototype.getPosition = function () {
-        //console.log(slice.call(arguments));
-        return getPosition(this, slice.call(arguments));
-    };
-
-
-    Song.prototype.ticksToMillis = function (ticks, beyondEndOfSong) {
-        return ticksToMillis(this, ticks, beyondEndOfSong);
-    };
-
-
-    Song.prototype.millisToTicks = function (millis, beyondEndOfSong) {
-        return millisToTicks(this, millis, beyondEndOfSong);
-    };
-
-
-    Song.prototype.ticksToBars = function (ticks, beyondEndOfSong) {
-        return ticksToBars(this, ticks, beyondEndOfSong);
-    };
-
-
-    Song.prototype.millisToBars = function (millis, beyondEndOfSong) {
-        return millisToBars(this, millis, beyondEndOfSong);
-    };
-
-
-    Song.prototype.barsToTicks = function () {
-        return barsToTicks(this, slice.call(arguments));
-    };
-
-
-    Song.prototype.barsToMillis = function () {
-        return barsToMillis(this, slice.call(arguments));
-    };
-
-
-    Song.prototype.findEvent = Song.prototype.findEvents = function (pattern) {
-        return findEvent(this, pattern);
-    };
-
-
-    Song.prototype.findNote = Song.prototype.findNotes = function (pattern) {
-        return findNote(this, pattern);
-    };
-
-
-    Song.prototype.getStats = function (pattern) {
-        return getStats(this, pattern);
-    };
-
-
-    Song.prototype.createGrid = function (config) {
-        if (this.grid === undefined) {
-            this.grid = createGrid(this, config);
-        } else {
-            this.grid.update(config);
-        }
-        return this.grid;
-    };
-
-
-    Song.prototype.update = function (updateTimeEvents) {
-        //console.log('Song.update()');
-        update(this, updateTimeEvents);
-    };
-
-
-    Song.prototype.updateGrid = function (config) {
-        this.grid.update(config);
-        return this.grid;
-    };
-
-
-    Song.prototype.updateTempoEvent = function (event, bpm) {
-        if (event.type !== sequencer.TEMPO) {
-            if (sequencer.debug >= 4) {
-                console.error('this is not a tempo event');
-            }
-            return;
-        }
-        if (event.song !== this) {
-            if (sequencer.debug >= 4) {
-                console.error('this event has not been added to this song yet');
-            }
-            return;
-        }
-        var ticks = this.ticks,
-            percentage = this.percentage;
-        event.bpm = bpm;
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.updateTimeSignatureEvent = function (event, nominator, denominator) {
-        if (event.type !== sequencer.TIME_SIGNATURE) {
-            if (sequencer.debug >= 4) {
-                console.error('this is not a time signature event');
-            }
-            return;
-        }
-        if (event.song !== this) {
-            if (sequencer.debug >= 4) {
-                console.error('this event has not been added to this song yet');
-            }
-            return;
-        }
-        var ticks = this.ticks,
-            percentage = this.percentage;
-        event.nominator = nominator || event.nominator;
-        event.denominator = denominator || event.denominator;
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.getTempoEvents = function () {
-        return getTimeEvents(sequencer.TEMPO, this);
-    };
-
-
-    Song.prototype.getTimeSignatureEvents = function () {
-        return getTimeEvents(sequencer.TIME_SIGNATURE, this);
-    };
-
-
-    Song.prototype.updatePlayheadAndLocators = function (ticks) {
-        var newStartPos,
-            newEndPos,
-            startPos = this.loopStartPosition,
-            endPos = this.loopEndPosition,
-            newPos;
-
-        // get the new position of the locators after the update
-        if (startPos !== undefined) {
-            /*
-            newStartPos = this.getPosition('barsbeats', startPos.bar, startPos.beat, startPos.sixteenth, startPos.tick);
-            if(newStartPos.ticks > this.durationTicks || newStartPos.bar > this.bars + 1){
-                newStartPos = this.getPosition('barsbeats', 1, 1, 1, 0);
-                console.log('start', newStartPos.barsAsString);
-            }
-            */
-            newStartPos = this.getPosition('ticks', startPos.ticks);
-            this.loopStart = newStartPos.millis;
-            this.loopStartTicks = newStartPos.ticks;
-            this.loopStartPosition = newStartPos;
-        }
-        if (endPos !== undefined) {
-            /*
-            newEndPos = this.getPosition('barsbeats', endPos.bar, endPos.beat, endPos.sixteenth, endPos.tick);
-            if(newEndPos.ticks > this.durationTicks || newEndPos.bar > this.bars + 1){
-                newEndPos = this.getPosition('barsbeats', this.bars, 1, 1, 0);
-                console.log('end', newEndPos.barsAsString);
-            }
-            */
-            //console.log('right locator', endPos.barsAsString, endPos.ticks);
-            newEndPos = this.getPosition('ticks', endPos.ticks);
-            if (newEndPos.ticks > this.durationTicks) {
-                //console.log('right locator beyond end of song');
-                newEndPos = this.getPosition('ticks', this.bars);
-            }
-            this.loopEnd = newEndPos.millis;
-            this.loopEndTicks = newEndPos.ticks;
-            this.loopEndPosition = newEndPos;
-            //console.log('right locator', newEndPos.barsAsString, newEndPos.ticks);
-        }
-        //console.log('l', this.loopStartPosition, 'r', this.loopEndPosition);
-
-        // get the new position of the playhead after the update
-        /*
-                newPos = this.getPosition('ticks', ticks);
-                if(newPos.ticks > this.durationTicks || newPos.bar > this.bars + 1){
-                    newPos = this.getPosition('barsbeats', 1, 1, 1, 0);
-                    //console.log('playhead', newPos.barsAsString);
-                }
-        */
-        newPos = this.getPosition('ticks', ticks);
-        if (this.doLoop && newPos.ticks > this.durationTicks) {
-            //console.log('playhead beyond end of song');
-            this.setPlayhead('ticks', 0);
-        } else {
+    this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
+    /*
+            console.log(percentage);
+            newPos = this.getPosition('percentage', percentage);
             this.setPlayhead('ticks', newPos.ticks);
-        }
-
-
-        this.loopDuration = this.illegalLoop === true ? 0 : this.loopEnd - this.loopStart;
-        /*
-                console.log(percentage);
-                newPos = this.getPosition('percentage', percentage);
-                this.setPlayhead('ticks', newPos.ticks);
-        */
-    };
-
-
-    Song.prototype.setTempo = function (bpm, update) {
-        var timeEvents = getTimeEvents(sequencer.TEMPO, this),
-            i, event,
-            ticks = this.ticks,
-            percentage = this.percentage,
-            ratio = bpm / timeEvents[0].bpm;
-
-        for (i = timeEvents.length - 1; i >= 0; i--) {
-            event = timeEvents[i];
-            event.bpm = ratio * event.bpm;
-        }
-        this.bpm = bpm;
-
-        if (update === false) {
-            return;
-        }
-        //console.log('setTempo -> update()');
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.setTimeSignature = function (nominator, denominator, update) {
-        var timeEvents = getTimeEvents(sequencer.TIME_SIGNATURE, this),
-            i, event,
-            percentage = this.percentage,
-            ticks = this.ticks;
-
-        for (i = timeEvents.length - 1; i >= 0; i--) {
-            event = timeEvents[i];
-            event.nominator = nominator;
-            event.denominator = denominator;
-        }
-        this.nominator = nominator;
-        this.denominator = denominator;
-
-        if (update === false) {
-            return;
-        }
-
-        //console.log('setTimeSignature -> update()');
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.resetTempo = function (bpm) {
-        var firstTempoEvent = getTimeEvents(sequencer.TEMPO, this)[0],
-            timeEvents = this.timeEvents;
-
-        firstTempoEvent.bpm = bpm;
-
-        timeEvents = removeFromArray2(timeEvents, function (event) {
-            if (event.type === 0x51) {
-                return true;
-            }
-            return false;
-        });
-
-        this.numTimeEvents = timeEvents.length;
-        this.update(true);
-    };
-
-
-    Song.prototype.resetTimeSignature = function (nominator, denominator) {
-        var firstTimeSignatureEvent = getTimeEvents(sequencer.TIME_SIGNATURE, this)[0],
-            timeEvents = this.timeEvents,
-            ticks = this.ticks;
-
-        firstTimeSignatureEvent.nominator = nominator;
-        firstTimeSignatureEvent.denominator = denominator;
-
-        timeEvents = removeFromArray2(timeEvents, function (event) {
-            if (event.type === 0x58) {
-                return true;
-            }
-            return false;
-        });
-
-        this.numTimeEvents = timeEvents.length;
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.addTimeEvent = Song.prototype.addTimeEvents = function () {
-        var events = getArguments(arguments),
-            ticks = this.ticks,
-            i, event, position;
-
-        // console.log(events);
-
-        for (i = events.length - 1; i >= 0; i--) {
-            event = events[i];
-            if (event.className === 'MidiEvent') {
-                if (event.type === sequencer.TEMPO) {
-                    this.timeEvents.push(event);
-                } else if (event.type === sequencer.TIME_SIGNATURE) {
-                    /*
-                        A time signature event can only be positioned at the beginning of a bar,
-                        so we look for the nearest bar and put the event there.
-                    */
-                    position = this.getPosition('ticks', event.ticks);
-                    if (position.beat > position.nominator / 2) {
-                        position = this.getPosition('barsbeats', position.bar + 1);
-                    } else {
-                        position = this.getPosition('barsbeats', position.bar);
-                    }
-                    event.ticks = position.ticks;
-                    this.timeEvents.push(event);
-                }
-            }
-        }
-        this.numTimeEvents = this.timeEvents.length;
-        this.update(true);
-        //console.log('addTimeEvents', this.timeEvents);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-    /*
-        Song.prototype.addTimeEvent = function(){
-            var events = getArguments(arguments),
-                arg0 = events[0],
-                numArgs = events.length;
-    
-            if(typeString(arg0) === 'array' || numArgs > 1){
-                console.warn('please use addTimeEvents() if you want to add more that one time event');
-                events = [arg0];
-            }
-            addTimeEvents(events, this);
-        };
     */
-
-    Song.prototype.removeTimeEvent = Song.prototype.removeTimeEvents = function () {
-        var tmp = getArguments(arguments),
-            i, maxi = tmp.length,
-            event,
-            ticks = this.ticks,
-            events = [];
-
-        for (i = 0; i < maxi; i++) {
-            event = tmp[i];
-            if (event !== this.tempoEvent && event !== this.timeSignatureEvent) {
-                events.push(event);
-            }
-        }
-        //console.log(events);
-
-        this.timeEvents = removeFromArray(events, this.timeEvents);
-        this.numTimeEvents = this.timeEvents.length;
-        this.update(true);
-        this.updatePlayheadAndLocators(ticks);
-    };
-
-
-    Song.prototype.removeDoubleTimeEvents = function () {
-        var events = [],
-            i, event, ticks, type,
-            eventsByTicks = {
-                '81': {},
-                '88': {},
-            };
-
-        //console.log('before', this.timeEvents);
-
-        for (i = this.timeEvents.length - 1; i >= 0; i--) {
-            event = this.timeEvents[i];
-            if (eventsByTicks[event.type][event.ticks] !== undefined) {
-                continue;
-            }
-
-            type = event.type;
-            ticks = event.ticks;
-            eventsByTicks[type][ticks] = event;
-
-            if (ticks === 0) {
-                if (type === 0x51) {
-                    this.tempoEvent = event;
-                } else if (type === 0x58) {
-                    this.timeSignatureEvent = event;
-                }
-            }
-        }
-
-        objectForEach(eventsByTicks['81'], function (event) {
-            events.push(event);
-        });
-
-        objectForEach(eventsByTicks['88'], function (event) {
-            events.push(event);
-        });
-
-        this.timeEvents = events;
-        this.update(true);
-
-        //console.log('after', this.timeEvents);
-        //this.timeEvents.forEach(function(event){
-        //    console.log(event.barsAsString, event.bpm, event.nominator, event.denominator);
-        //});
-        //console.log('tempo', this.tempoEvent.bpm, this.tempoEvent.nominator, this.tempoEvent.denominator, this.tempoEvent.barsAsString);
-        //console.log('time signature', this.timeSignatureEvent.bpm, this.timeSignatureEvent.nominator, this.timeSignatureEvent.denominator, this.timeSignatureEvent.barsAsString);
-    };
-
-
-    Song.prototype.setPitchRange = function (min, max) {
-        var me = this;
-        me.lowestNote = min;
-        me.highestNote = max;
-        me.numNotes = me.pitchRange = me.highestNote - me.lowestNote + 1;
-    };
-
-
-    Song.prototype.trim = function () {
-        checkDuration(this, true);
-    };
-
-
-    Song.prototype.setDurationInBars = function (bars) {
-        var me = this,
-            removedEvents = me.findEvent('bar > ' + bars),
-            removedParts = [],
-            changedTracks = [],
-            changedParts = [],
-            dirtyTracks = {},
-            dirtyParts = {};
-
-        //console.log(removedEvents);
-
-        removedEvents.forEach(function (event) {
-            var trackId = event.trackId,
-                partId = event.partId;
-
-            if (dirtyTracks[trackId] === undefined) {
-                dirtyTracks[trackId] = [];
-            }
-            dirtyTracks[trackId].push(event);
-
-            if (dirtyParts[partId] === undefined) {
-                dirtyParts[partId] = event.part;
-                //console.log(me.getPart(partId));
-            }
-        });
-
-        objectForEach(dirtyTracks, function (events, trackId) {
-            var track = me.getTrack(trackId);
-            //console.log(track.name)
-            track.removeEvents(events);
-            changedTracks.push(track);
-        });
-
-        objectForEach(dirtyParts, function (part, partId) {
-            if (part.events.length === 0) {
-                //console.log(partId, 'has no events');
-                part.track.removePart(part);
-                removedParts.push(part);
-            } else {
-                changedParts.push(part);
-            }
-        });
-
-        me.bars = bars;
-        me.lastBar = bars;
-
-        // user needs to call song.update() after setDurationInBars()!
-        //checkDuration(this);
-
-        //console.log(this.ticks);
-
-        return {
-            removedEvents: removedEvents,
-            removedParts: removedParts,
-            changedTracks: changedTracks,
-            changedParts: changedParts
-        };
-    };
-
-
-    Song.prototype.addEffect = function () {
-    };
-
-
-    Song.prototype.removeEffect = function () {
-    };
-
-
-    Song.prototype.setVolume = function () { // value, Track, Track, Track, etc. in any order
-        var args = slice.call(arguments),
-            numArgs = args.length,
-            tracks = [],
-            value, i;
-
-        function loop(data, i, maxi) {
-            for (i = 0; i < maxi; i++) {
-                var arg = data[i],
-                    type = typeString(arg);
-
-                if (type === 'array') {
-                    loop(arg, 0, arg.length);
-                } else if (type === 'number') {
-                    value = arg;
-                } else if (arg.className === 'Track') {
-                    tracks.push(arg);
-                }
-            }
-        }
-
-        if (numArgs === 1) {
-            value = args[0];
-            if (isNaN(value)) {
-                console.warn('please pass a number');
-                return;
-            }
-            this.volume = value < 0 ? 0 : value > 1 ? 1 : value;
-            this.gainNode.gain.value = this.volume;
-        } else {
-            loop(args, 0, numArgs);
-            for (i = tracks.length - 1; i >= 0; i--) {
-                tracks[i].setVolume(value);
-            }
-        }
-    };
-
-
-    Song.prototype.getVolume = function () {
-        return this.gainNode.gain.value;
-    };
-
-
-    Song.prototype.connect = function () {
-        this.gainNode.connect(masterGainNode);
-        //this.gainNode.connect(context.destination);
-    };
-
-
-    Song.prototype.disconnect = function () {
-        this.gainNode.disconnect(masterGainNode);
-        //this.gainNode.disconnect(context.destination);
-    };
-
-    /*
-        Song.prototype.cleanUp = function(){
-            // add other references that need to be removed
-            this.disconnect(masterGainNode);
-            //this.disconnect(context.destination);
-        };
-    */
-
-    Song.prototype.getMidiInputs = function (cb) {
-        getMidiInputs(cb, this);
-    };
-
-
-    Song.prototype.getMidiOutputs = function (cb) {
-        getMidiOutputs(cb, this);
-    };
-
-
-    Song.prototype.setTrackSolo = function (soloTrack, flag) {
-        var i, track;
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            if (flag === true) {
-                track.mute = track === soloTrack ? !flag : flag;
-            } else if (flag === false) {
-                track.mute = false;
-            }
-            track.solo = track === soloTrack ? flag : false;
-        }
-    };
-
-
-    Song.prototype.muteAllTracks = function (flag) {
-        var i, track;
-        for (i = this.numTracks - 1; i >= 0; i--) {
-            track = this.tracks[i];
-            track.mute = flag;
-        }
-    };
-
-
-    Song.prototype.setMetronomeVolume = function (value) {
-        this.metronome.setVolume(value);
-    };
-
-    Song.prototype.configureMetronome = function (config) {
-        //console.log(config)
-        this.metronome.configure(config);
-    };
-
-    Song.prototype.resetMetronome = function () {
-        this.metronome.reset();
-    };
-
-
-    Song.prototype.setPrecount = function (value) {
-        this.precount = value;
-    };
-
-
-    Song.prototype.allNotesOff = function () {
-        //console.log('song.allNotesOff');
-        /*
-        var i;
-        for(i in this.tracks){
-            if(this.tracks.hasOwnProperty(i)){
-                this.tracks[i].instrument.allNotesOff();
-            }
-        }
-        */
-        objectForEach(this.tracks, function (track) {
-            track.allNotesOff();
-            // track.audio.allNotesOff();
-            // track.instrument.allNotesOff();
-        });
-        this.metronome.allNotesOff();
-        this.resetExternalMidiDevices();
-    };
-
-
-    Song.prototype.resetExternalMidiDevices = function () {
-        //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
-        var time = this.scheduler.lastEventTime + 100;
-        if (isNaN(time)) {
-            time = 100;
-        }
-        //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
-        objectForEach(this.midiOutputs, function (output) {
-            //console.log(output);
-            output.send([0xB0, 0x7B, 0x00], time); // stop all notes
-            output.send([0xB0, 0x79, 0x00], time); // reset all controllers
-            //output.send([176, 123, 0], sequencer.getTime());
-        });
-    };
-
-
-    Song.prototype.addMidiEventListener = function () {
-        return addMidiEventListener(arguments, this);
-    };
-
-
-    Song.prototype.removeMidiEventListener = function (id) {
-        removeMidiEventListener(id, this);
-    };
-
-
-    Song.prototype.removeMidiEventListeners = function () {
-        removeMidiEventListener(arguments, this);
-    };
-
-
-    Song.prototype.getMidiInputsAsDropdown = function (config) {
-        config = config || {
-            type: 'input'
-        };
-        return getMidiPortsAsDropdown(config, this);
-    };
-
-
-    Song.prototype.getMidiOutputsAsDropdown = function (config) {
-        config = config || {
-            type: 'output'
-        };
-        return getMidiPortsAsDropdown(config, this);
-    };
-
-    Song.prototype.setMidiInput = function (id, flag) {
-        setMidiInput(id, flag, this);
-    };
-
-
-    Song.prototype.setMidiOutput = function (id, flag) {
-        setMidiOutput(id, flag, this);
-    };
-
-
-    Song.prototype.getNoteLengthName = function (ticks) {
-        return getNoteLengthName(this, ticks);
-
-/*
-        var args = slice(arguments);
-        if(args.length > 0){
-            pos = getPosition.apply(this, args);
-        }
-*/
-    };
-
-    //sequencer.Song = Song;
-
-    sequencer.createSong = function (config) {
-        return new Song(config);
-    };
-
-
-    sequencer.protectedScope.addInitMethod(function () {
-        context = sequencer.protectedScope.context;
-        timedTasks = sequencer.protectedScope.timedTasks;
-        repetitiveTasks = sequencer.protectedScope.repetitiveTasks;
-        masterGainNode = sequencer.protectedScope.masterGainNode;
-
-        createMidiEvent = sequencer.createMidiEvent;
-        createGrid = sequencer.protectedScope.createGrid;
-
-        initMidi = sequencer.protectedScope.initMidiSong;
-        setMidiInput = sequencer.protectedScope.setMidiInputSong;
-        setMidiOutput = sequencer.protectedScope.setMidiOutputSong;
-        getMidiInputs = sequencer.protectedScope.getMidiInputs;
-        getMidiOutputs = sequencer.protectedScope.getMidiOutputs;
-        addMidiEventListener = sequencer.protectedScope.addMidiEventListener;
-        getMidiPortsAsDropdown = sequencer.protectedScope.getMidiPortsAsDropdown;
-        removeMidiEventListener = sequencer.protectedScope.removeMidiEventListener;
-
-        getPosition = sequencer.protectedScope.getPosition;
-        millisToTicks = sequencer.protectedScope.millisToTicks;
-        ticksToMillis = sequencer.protectedScope.ticksToMillis;
-        ticksToBars = sequencer.protectedScope.ticksToBars;
-        millisToBars = sequencer.protectedScope.millisToBars;
-        barsToTicks = sequencer.protectedScope.barsToTicks;
-        barsToMillis = sequencer.protectedScope.barsToMillis;
-
-        typeString = sequencer.protectedScope.typeString;
-        removeFromArray = sequencer.protectedScope.removeFromArray;
-        removeFromArray2 = sequencer.protectedScope.removeFromArray2;
-        findEvent = sequencer.findEvent;
-        findNote = sequencer.findNote;
-        getStats = sequencer.getStats;
-
-        gridToSong = sequencer.gridToSong;
-        noteToGrid = sequencer.noteToGrid;
-        eventToGrid = sequencer.eventToGrid;
-        positionToGrid = sequencer.positionToGrid;
-
-        getArguments = sequencer.protectedScope.getArguments;
-        objectForEach = sequencer.protectedScope.objectForEach;
-        getNoteLengthName = sequencer.protectedScope.getNoteLengthName;
-
-        update = sequencer.protectedScope.update;
-        checkDuration = sequencer.protectedScope.checkDuration;
-        addMetronomeEvents = sequencer.protectedScope.addMetronomeEvents;
-
-        followEvent = sequencer.protectedScope.followEvent;
-        createPlayhead = sequencer.protectedScope.createPlayhead;
-        createScheduler = sequencer.protectedScope.createScheduler;
-        createFollowEvent = sequencer.protectedScope.createFollowEvent;
-        createMetronome = sequencer.protectedScope.createMetronome;
-
-        addEventListener = sequencer.protectedScope.songAddEventListener;
-        removeEventListener = sequencer.protectedScope.songRemoveEventListener;
-        dispatchEvent = sequencer.protectedScope.songDispatchEvent;
-        addSong = sequencer.protectedScope.addSong;
+  };
+
+
+  Song.prototype.setTempo = function (bpm, update) {
+    var timeEvents = getTimeEvents(sequencer.TEMPO, this),
+      i, event,
+      ticks = this.ticks,
+      percentage = this.percentage,
+      ratio = bpm / timeEvents[0].bpm;
+
+    for (i = timeEvents.length - 1; i >= 0; i--) {
+      event = timeEvents[i];
+      event.bpm = ratio * event.bpm;
+    }
+    this.bpm = bpm;
+
+    if (update === false) {
+      return;
+    }
+    //console.log('setTempo -> update()');
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.setTimeSignature = function (nominator, denominator, update) {
+    var timeEvents = getTimeEvents(sequencer.TIME_SIGNATURE, this),
+      i, event,
+      percentage = this.percentage,
+      ticks = this.ticks;
+
+    for (i = timeEvents.length - 1; i >= 0; i--) {
+      event = timeEvents[i];
+      event.nominator = nominator;
+      event.denominator = denominator;
+    }
+    this.nominator = nominator;
+    this.denominator = denominator;
+
+    if (update === false) {
+      return;
+    }
+
+    //console.log('setTimeSignature -> update()');
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.resetTempo = function (bpm) {
+    var firstTempoEvent = getTimeEvents(sequencer.TEMPO, this)[0],
+      timeEvents = this.timeEvents;
+
+    firstTempoEvent.bpm = bpm;
+
+    timeEvents = removeFromArray2(timeEvents, function (event) {
+      if (event.type === 0x51) {
+        return true;
+      }
+      return false;
     });
+
+    this.numTimeEvents = timeEvents.length;
+    this.update(true);
+  };
+
+
+  Song.prototype.resetTimeSignature = function (nominator, denominator) {
+    var firstTimeSignatureEvent = getTimeEvents(sequencer.TIME_SIGNATURE, this)[0],
+      timeEvents = this.timeEvents,
+      ticks = this.ticks;
+
+    firstTimeSignatureEvent.nominator = nominator;
+    firstTimeSignatureEvent.denominator = denominator;
+
+    timeEvents = removeFromArray2(timeEvents, function (event) {
+      if (event.type === 0x58) {
+        return true;
+      }
+      return false;
+    });
+
+    this.numTimeEvents = timeEvents.length;
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.addTimeEvent = Song.prototype.addTimeEvents = function () {
+    var events = getArguments(arguments),
+      ticks = this.ticks,
+      i, event, position;
+
+    // console.log(events);
+
+    for (i = events.length - 1; i >= 0; i--) {
+      event = events[i];
+      if (event.className === 'MidiEvent') {
+        if (event.type === sequencer.TEMPO) {
+          this.timeEvents.push(event);
+        } else if (event.type === sequencer.TIME_SIGNATURE) {
+          /*
+              A time signature event can only be positioned at the beginning of a bar,
+              so we look for the nearest bar and put the event there.
+          */
+          position = this.getPosition('ticks', event.ticks);
+          if (position.beat > position.nominator / 2) {
+            position = this.getPosition('barsbeats', position.bar + 1);
+          } else {
+            position = this.getPosition('barsbeats', position.bar);
+          }
+          event.ticks = position.ticks;
+          this.timeEvents.push(event);
+        }
+      }
+    }
+    this.numTimeEvents = this.timeEvents.length;
+    this.update(true);
+    //console.log('addTimeEvents', this.timeEvents);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+  /*
+      Song.prototype.addTimeEvent = function(){
+          var events = getArguments(arguments),
+              arg0 = events[0],
+              numArgs = events.length;
+  
+          if(typeString(arg0) === 'array' || numArgs > 1){
+              console.warn('please use addTimeEvents() if you want to add more that one time event');
+              events = [arg0];
+          }
+          addTimeEvents(events, this);
+      };
+  */
+
+  Song.prototype.removeTimeEvent = Song.prototype.removeTimeEvents = function () {
+    var tmp = getArguments(arguments),
+      i, maxi = tmp.length,
+      event,
+      ticks = this.ticks,
+      events = [];
+
+    for (i = 0; i < maxi; i++) {
+      event = tmp[i];
+      if (event !== this.tempoEvent && event !== this.timeSignatureEvent) {
+        events.push(event);
+      }
+    }
+    //console.log(events);
+
+    this.timeEvents = removeFromArray(events, this.timeEvents);
+    this.numTimeEvents = this.timeEvents.length;
+    this.update(true);
+    this.updatePlayheadAndLocators(ticks);
+  };
+
+
+  Song.prototype.removeDoubleTimeEvents = function () {
+    var events = [],
+      i, event, ticks, type,
+      eventsByTicks = {
+        '81': {},
+        '88': {},
+      };
+
+    //console.log('before', this.timeEvents);
+
+    for (i = this.timeEvents.length - 1; i >= 0; i--) {
+      event = this.timeEvents[i];
+      if (eventsByTicks[event.type][event.ticks] !== undefined) {
+        continue;
+      }
+
+      type = event.type;
+      ticks = event.ticks;
+      eventsByTicks[type][ticks] = event;
+
+      if (ticks === 0) {
+        if (type === 0x51) {
+          this.tempoEvent = event;
+        } else if (type === 0x58) {
+          this.timeSignatureEvent = event;
+        }
+      }
+    }
+
+    objectForEach(eventsByTicks['81'], function (event) {
+      events.push(event);
+    });
+
+    objectForEach(eventsByTicks['88'], function (event) {
+      events.push(event);
+    });
+
+    this.timeEvents = events;
+    this.update(true);
+
+    //console.log('after', this.timeEvents);
+    //this.timeEvents.forEach(function(event){
+    //    console.log(event.barsAsString, event.bpm, event.nominator, event.denominator);
+    //});
+    //console.log('tempo', this.tempoEvent.bpm, this.tempoEvent.nominator, this.tempoEvent.denominator, this.tempoEvent.barsAsString);
+    //console.log('time signature', this.timeSignatureEvent.bpm, this.timeSignatureEvent.nominator, this.timeSignatureEvent.denominator, this.timeSignatureEvent.barsAsString);
+  };
+
+
+  Song.prototype.setPitchRange = function (min, max) {
+    var me = this;
+    me.lowestNote = min;
+    me.highestNote = max;
+    me.numNotes = me.pitchRange = me.highestNote - me.lowestNote + 1;
+  };
+
+
+  Song.prototype.trim = function () {
+    checkDuration(this, true);
+  };
+
+
+  Song.prototype.setDurationInBars = function (bars) {
+    var me = this,
+      removedEvents = me.findEvent('bar > ' + bars),
+      removedParts = [],
+      changedTracks = [],
+      changedParts = [],
+      dirtyTracks = {},
+      dirtyParts = {};
+
+    //console.log(removedEvents);
+
+    removedEvents.forEach(function (event) {
+      var trackId = event.trackId,
+        partId = event.partId;
+
+      if (dirtyTracks[trackId] === undefined) {
+        dirtyTracks[trackId] = [];
+      }
+      dirtyTracks[trackId].push(event);
+
+      if (dirtyParts[partId] === undefined) {
+        dirtyParts[partId] = event.part;
+        //console.log(me.getPart(partId));
+      }
+    });
+
+    objectForEach(dirtyTracks, function (events, trackId) {
+      var track = me.getTrack(trackId);
+      //console.log(track.name)
+      track.removeEvents(events);
+      changedTracks.push(track);
+    });
+
+    objectForEach(dirtyParts, function (part, partId) {
+      if (part.events.length === 0) {
+        //console.log(partId, 'has no events');
+        part.track.removePart(part);
+        removedParts.push(part);
+      } else {
+        changedParts.push(part);
+      }
+    });
+
+    me.bars = bars;
+    me.lastBar = bars;
+
+    // user needs to call song.update() after setDurationInBars()!
+    //checkDuration(this);
+
+    //console.log(this.ticks);
+
+    return {
+      removedEvents: removedEvents,
+      removedParts: removedParts,
+      changedTracks: changedTracks,
+      changedParts: changedParts
+    };
+  };
+
+
+  Song.prototype.addEffect = function () {
+  };
+
+
+  Song.prototype.removeEffect = function () {
+  };
+
+
+  Song.prototype.setVolume = function () { // value, Track, Track, Track, etc. in any order
+    var args = slice.call(arguments),
+      numArgs = args.length,
+      tracks = [],
+      value, i;
+
+    function loop(data, i, maxi) {
+      for (i = 0; i < maxi; i++) {
+        var arg = data[i],
+          type = typeString(arg);
+
+        if (type === 'array') {
+          loop(arg, 0, arg.length);
+        } else if (type === 'number') {
+          value = arg;
+        } else if (arg.className === 'Track') {
+          tracks.push(arg);
+        }
+      }
+    }
+
+    if (numArgs === 1) {
+      value = args[0];
+      if (isNaN(value)) {
+        console.warn('please pass a number');
+        return;
+      }
+      this.volume = value < 0 ? 0 : value > 1 ? 1 : value;
+      this.gainNode.gain.value = this.volume;
+    } else {
+      loop(args, 0, numArgs);
+      for (i = tracks.length - 1; i >= 0; i--) {
+        tracks[i].setVolume(value);
+      }
+    }
+  };
+
+
+  Song.prototype.getVolume = function () {
+    return this.gainNode.gain.value;
+  };
+
+
+  Song.prototype.connect = function () {
+    this.gainNode.connect(masterGainNode);
+    //this.gainNode.connect(context.destination);
+  };
+
+
+  Song.prototype.disconnect = function () {
+    this.gainNode.disconnect(masterGainNode);
+    //this.gainNode.disconnect(context.destination);
+  };
+
+  /*
+      Song.prototype.cleanUp = function(){
+          // add other references that need to be removed
+          this.disconnect(masterGainNode);
+          //this.disconnect(context.destination);
+      };
+  */
+
+  Song.prototype.getMidiInputs = function (cb) {
+    getMidiInputs(cb, this);
+  };
+
+
+  Song.prototype.getMidiOutputs = function (cb) {
+    getMidiOutputs(cb, this);
+  };
+
+
+  Song.prototype.setTrackSolo = function (soloTrack, flag) {
+    var i, track;
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      if (flag === true) {
+        track.mute = track === soloTrack ? !flag : flag;
+      } else if (flag === false) {
+        track.mute = false;
+      }
+      track.solo = track === soloTrack ? flag : false;
+    }
+  };
+
+
+  Song.prototype.muteAllTracks = function (flag) {
+    var i, track;
+    for (i = this.numTracks - 1; i >= 0; i--) {
+      track = this.tracks[i];
+      track.mute = flag;
+    }
+  };
+
+
+  Song.prototype.setMetronomeVolume = function (value) {
+    this.metronome.setVolume(value);
+  };
+
+  Song.prototype.configureMetronome = function (config) {
+    //console.log(config)
+    this.metronome.configure(config);
+  };
+
+  Song.prototype.resetMetronome = function () {
+    this.metronome.reset();
+  };
+
+
+  Song.prototype.setPrecount = function (value) {
+    this.precount = value;
+  };
+
+
+  Song.prototype.allNotesOff = function () {
+    //console.log('song.allNotesOff');
+    /*
+    var i;
+    for(i in this.tracks){
+        if(this.tracks.hasOwnProperty(i)){
+            this.tracks[i].instrument.allNotesOff();
+        }
+    }
+    */
+    objectForEach(this.tracks, function (track) {
+      track.allNotesOff();
+      // track.audio.allNotesOff();
+      // track.instrument.allNotesOff();
+    });
+    this.metronome.allNotesOff();
+    this.resetExternalMidiDevices();
+  };
+
+
+  Song.prototype.resetExternalMidiDevices = function () {
+    //var time = this.millis + (sequencer.bufferTime * 1000); // this doesn't work, why? -> because the scheduler uses a different time
+    var time = this.scheduler.lastEventTime + 100;
+    if (isNaN(time)) {
+      time = 100;
+    }
+    //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
+    objectForEach(this.midiOutputs, function (output) {
+      //console.log(output);
+      output.send([0xB0, 0x7B, 0x00], time); // stop all notes
+      output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+      //output.send([176, 123, 0], sequencer.getTime());
+    });
+  };
+
+
+  Song.prototype.addMidiEventListener = function () {
+    return addMidiEventListener(arguments, this);
+  };
+
+
+  Song.prototype.removeMidiEventListener = function (id) {
+    removeMidiEventListener(id, this);
+  };
+
+
+  Song.prototype.removeMidiEventListeners = function () {
+    removeMidiEventListener(arguments, this);
+  };
+
+
+  Song.prototype.getMidiInputsAsDropdown = function (config) {
+    config = config || {
+      type: 'input'
+    };
+    return getMidiPortsAsDropdown(config, this);
+  };
+
+
+  Song.prototype.getMidiOutputsAsDropdown = function (config) {
+    config = config || {
+      type: 'output'
+    };
+    return getMidiPortsAsDropdown(config, this);
+  };
+
+  Song.prototype.setMidiInput = function (id, flag) {
+    setMidiInput(id, flag, this);
+  };
+
+
+  Song.prototype.setMidiOutput = function (id, flag) {
+    setMidiOutput(id, flag, this);
+  };
+
+
+  Song.prototype.getNoteLengthName = function (ticks) {
+    return getNoteLengthName(this, ticks);
+
+    /*
+            var args = slice(arguments);
+            if(args.length > 0){
+                pos = getPosition.apply(this, args);
+            }
+    */
+  };
+
+  //sequencer.Song = Song;
+
+  sequencer.createSong = function (config) {
+    return new Song(config);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    context = sequencer.protectedScope.context;
+    timedTasks = sequencer.protectedScope.timedTasks;
+    repetitiveTasks = sequencer.protectedScope.repetitiveTasks;
+    masterGainNode = sequencer.protectedScope.masterGainNode;
+
+    createMidiEvent = sequencer.createMidiEvent;
+    createGrid = sequencer.protectedScope.createGrid;
+
+    initMidi = sequencer.protectedScope.initMidiSong;
+    setMidiInput = sequencer.protectedScope.setMidiInputSong;
+    setMidiOutput = sequencer.protectedScope.setMidiOutputSong;
+    getMidiInputs = sequencer.protectedScope.getMidiInputs;
+    getMidiOutputs = sequencer.protectedScope.getMidiOutputs;
+    addMidiEventListener = sequencer.protectedScope.addMidiEventListener;
+    getMidiPortsAsDropdown = sequencer.protectedScope.getMidiPortsAsDropdown;
+    removeMidiEventListener = sequencer.protectedScope.removeMidiEventListener;
+
+    getPosition = sequencer.protectedScope.getPosition;
+    millisToTicks = sequencer.protectedScope.millisToTicks;
+    ticksToMillis = sequencer.protectedScope.ticksToMillis;
+    ticksToBars = sequencer.protectedScope.ticksToBars;
+    millisToBars = sequencer.protectedScope.millisToBars;
+    barsToTicks = sequencer.protectedScope.barsToTicks;
+    barsToMillis = sequencer.protectedScope.barsToMillis;
+
+    typeString = sequencer.protectedScope.typeString;
+    removeFromArray = sequencer.protectedScope.removeFromArray;
+    removeFromArray2 = sequencer.protectedScope.removeFromArray2;
+    findEvent = sequencer.findEvent;
+    findNote = sequencer.findNote;
+    getStats = sequencer.getStats;
+
+    gridToSong = sequencer.gridToSong;
+    noteToGrid = sequencer.noteToGrid;
+    eventToGrid = sequencer.eventToGrid;
+    positionToGrid = sequencer.positionToGrid;
+
+    getArguments = sequencer.protectedScope.getArguments;
+    objectForEach = sequencer.protectedScope.objectForEach;
+    getNoteLengthName = sequencer.protectedScope.getNoteLengthName;
+
+    update = sequencer.protectedScope.update;
+    checkDuration = sequencer.protectedScope.checkDuration;
+    addMetronomeEvents = sequencer.protectedScope.addMetronomeEvents;
+
+    followEvent = sequencer.protectedScope.followEvent;
+    createPlayhead = sequencer.protectedScope.createPlayhead;
+    createScheduler = sequencer.protectedScope.createScheduler;
+    createFollowEvent = sequencer.protectedScope.createFollowEvent;
+    createMetronome = sequencer.protectedScope.createMetronome;
+
+    addEventListener = sequencer.protectedScope.songAddEventListener;
+    removeEventListener = sequencer.protectedScope.songRemoveEventListener;
+    dispatchEvent = sequencer.protectedScope.songDispatchEvent;
+    addSong = sequencer.protectedScope.addSong;
+  });
 }
 function songEventListener() {
 
-    'use strict';
+  'use strict';
 
-    var
-        slice = Array.prototype.slice,
+  var
+    slice = Array.prototype.slice,
 
-        // import
-        typeString, // defined in util.js
-        listenerIndex = 0,
+    // import
+    typeString, // defined in util.js
+    listenerIndex = 0,
 
-        addEventListener,
-        removeEventListener,
-        dispatchEvent;
+    addEventListener,
+    removeEventListener,
+    dispatchEvent;
 
 
-    dispatchEvent = function () {
-        var i, tmp, listener,
-            args = slice.call(arguments),
-            numArgs = args.length,
-            song = args[0],
-            type = args[1],
-            params = [];
+  dispatchEvent = function () {
+    var i, tmp, listener,
+      args = slice.call(arguments),
+      numArgs = args.length,
+      song = args[0],
+      type = args[1],
+      params = [];
 
-        //console.log(arguments, args);
+    //console.log(arguments, args);
 
-        // if there are arguments specified, put them before the argument song
-        if (numArgs > 2) {
-            i = 2;
-            while (i < numArgs) {
-                params.push(args[i]);
-                i++;
-            }
+    // if there are arguments specified, put them before the argument song
+    if (numArgs > 2) {
+      i = 2;
+      while (i < numArgs) {
+        params.push(args[i]);
+        i++;
+      }
+    }
+    params.push(song);
+
+    tmp = song.listeners[type];
+    if (tmp === undefined || tmp.length === undefined) {
+      return;
+    }
+
+    for (i = tmp.length - 1; i >= 0; i--) {
+      listener = tmp[i];
+      if (listener.callback) {
+        listener.callback.apply(null, params);
+      }
+    }
+  };
+
+
+  //@param: type, callback
+  //@param: type, data, callback
+  addEventListener = function () {
+    var args = slice.call(arguments),
+      listenerId,
+      type = args[0];
+
+    switch (type) {
+      case 'play':
+      case 'stop':
+      case 'pause':
+      case 'end':
+      case 'record_start':
+      case 'record_stop':
+      case 'record_precount':
+      case 'record_preroll':
+      case 'recorded_events':
+      case 'latency_adjusted':
+      case 'loop_off':
+      case 'loop_on':
+      case 'loop': // the playhead jumps from the loop end position to the loop start position
+      case 'sustain_pedal':
+        if (this.listeners[type] === undefined) {
+          this.listeners[type] = [];
         }
-        params.push(song);
+        listenerId = type + '_' + listenerIndex++;
+        this.listeners[type].push({
+          id: listenerId,
+          callback: args[1]
+        });
+        //console.log(type, listenerId);
+        return listenerId;
+      case 'note':
+      case 'event':
+      case 'position':
+        //console.log(type, args[1], args[2]);
+        return this.followEvent.addEventListener(type, args[1], args[2]);
+      default:
+        console.log(type, 'is not a supported event');
+    }
+  };
 
-        tmp = song.listeners[type];
-        if (tmp === undefined || tmp.length === undefined) {
-            return;
-        }
 
-        for (i = tmp.length - 1; i >= 0; i--) {
+  removeEventListener = function () {
+    var args = slice.call(arguments),
+      tmp,
+      arg0 = args[0],
+      callback = args[1],
+      type, id,
+      filteredListeners = [],
+      i, listener;
+
+    if (arg0.indexOf('_') !== -1) {
+      tmp = arg0.split('_');
+      type = tmp[0];
+      id = arg0;
+    } else {
+      type = arg0;
+    }
+
+    // an array of listener ids is provided so this is not a transport event -> send to FollowEvent
+    if (typeString(type) === 'array') {
+      return this.followEvent.removeEventListener(args);
+    }
+
+
+    switch (type) {
+      case 'play':
+      case 'stop':
+      case 'pause':
+      case 'end':
+      case 'record_start':
+      case 'record_stop':
+      case 'record_precount':
+      case 'record_preroll':
+      case 'recorded_events':
+      case 'latency_adjusted':
+      case 'loop_off':
+      case 'loop_on':
+      case 'loop': // the playhead jumps from the loop end position to the loop start position
+      case 'sustain_pedal':
+        tmp = this.listeners[type];
+        if (tmp && tmp.length > 0) {
+          for (i = tmp.length - 1; i >= 0; i--) {
             listener = tmp[i];
-            if(listener.callback) {
-                listener.callback.apply(null, params);
+            // remove by id
+            if (id !== undefined) {
+              if (listener.id !== id) {
+                filteredListeners.push(listener);
+              }
+              // remove by callback
+            } else if (callback !== undefined && listener.callback !== callback) {
+              filteredListeners.push(listener);
             }
+          }
+          this.listeners[type] = [].concat(filteredListeners);
         }
-    };
+        break;
+      case 'note':
+      case 'event':
+      case 'position':
+        return this.followEvent.removeEventListener(args);
+      default:
+        console.error('unsupported event');
+    }
+  };
 
 
-    //@param: type, callback
-    //@param: type, data, callback
-    addEventListener = function () {
-        var args = slice.call(arguments),
-            listenerId,
-            type = args[0];
+  sequencer.protectedScope.songAddEventListener = addEventListener;
+  sequencer.protectedScope.songRemoveEventListener = removeEventListener;
+  sequencer.protectedScope.songDispatchEvent = dispatchEvent;
 
-        switch (type) {
-            case 'play':
-            case 'stop':
-            case 'pause':
-            case 'end':
-            case 'record_start':
-            case 'record_stop':
-            case 'record_precount':
-            case 'record_preroll':
-            case 'recorded_events':
-            case 'latency_adjusted':
-            case 'loop_off':
-            case 'loop_on':
-            case 'loop': // the playhead jumps from the loop end position to the loop start position
-            case 'sustain_pedal':
-                if (this.listeners[type] === undefined) {
-                    this.listeners[type] = [];
-                }
-                listenerId = type + '_' + listenerIndex++;
-                this.listeners[type].push({
-                    id: listenerId,
-                    callback: args[1]
-                });
-                //console.log(type, listenerId);
-                return listenerId;
-            case 'note':
-            case 'event':
-            case 'position':
-                //console.log(type, args[1], args[2]);
-                return this.followEvent.addEventListener(type, args[1], args[2]);
-            default:
-                console.log(type, 'is not a supported event');
-        }
-    };
-
-
-    removeEventListener = function () {
-        var args = slice.call(arguments),
-            tmp,
-            arg0 = args[0],
-            callback = args[1],
-            type, id,
-            filteredListeners = [],
-            i, listener;
-
-        if (arg0.indexOf('_') !== -1) {
-            tmp = arg0.split('_');
-            type = tmp[0];
-            id = arg0;
-        } else {
-            type = arg0;
-        }
-
-        // an array of listener ids is provided so this is not a transport event -> send to FollowEvent
-        if (typeString(type) === 'array') {
-            return this.followEvent.removeEventListener(args);
-        }
-
-
-        switch (type) {
-            case 'play':
-            case 'stop':
-            case 'pause':
-            case 'end':
-            case 'record_start':
-            case 'record_stop':
-            case 'record_precount':
-            case 'record_preroll':
-            case 'recorded_events':
-            case 'latency_adjusted':
-            case 'loop_off':
-            case 'loop_on':
-            case 'loop': // the playhead jumps from the loop end position to the loop start position
-            case 'sustain_pedal':
-                tmp = this.listeners[type];
-                if (tmp && tmp.length > 0) {
-                    for (i = tmp.length - 1; i >= 0; i--) {
-                        listener = tmp[i];
-                        // remove by id
-                        if (id !== undefined) {
-                            if (listener.id !== id) {
-                                filteredListeners.push(listener);
-                            }
-                            // remove by callback
-                        } else if (callback !== undefined && listener.callback !== callback) {
-                            filteredListeners.push(listener);
-                        }
-                    }
-                    this.listeners[type] = [].concat(filteredListeners);
-                }
-                break;
-            case 'note':
-            case 'event':
-            case 'position':
-                return this.followEvent.removeEventListener(args);
-            default:
-                console.error('unsupported event');
-        }
-    };
-
-
-    sequencer.protectedScope.songAddEventListener = addEventListener;
-    sequencer.protectedScope.songRemoveEventListener = removeEventListener;
-    sequencer.protectedScope.songDispatchEvent = dispatchEvent;
-
-    sequencer.protectedScope.addInitMethod(function () {
-        typeString = sequencer.protectedScope.typeString;
-    });
+  sequencer.protectedScope.addInitMethod(function () {
+    typeString = sequencer.protectedScope.typeString;
+  });
 
 }function songFollowEvent() {
 
-    'use strict';
+  'use strict';
 
-    var
-        //import
-        findEvent, // → defined in find_position.js
-        typeString, // → defined in util.js
-        getPosition, // → defined in get_position.js
-        midiEventNameByNumber, // → defined in midi_event_names.js
-        midiEventNumberByName, // → defined in midi_event_names.js
+  var
+    //import
+    findEvent, // → defined in find_position.js
+    typeString, // → defined in util.js
+    getPosition, // → defined in get_position.js
+    midiEventNameByNumber, // → defined in midi_event_names.js
+    midiEventNumberByName, // → defined in midi_event_names.js
 
-        listenerIndex = 0, // global id that increases per created eventlistener
+    listenerIndex = 0, // global id that increases per created eventlistener
 
-        supportedTimeEvents = {
+    supportedTimeEvents = {
 
-            //bars and beats
-            bar: 1,
-            beat: 1,
-            sixteenth: 1,
-            tick: 0, // the granularity of requestAnimationFrame is too coarse for tick values
-            ticks: 1, // from start of song
-            barsbeats: 1, // as number (will be interpreted as bar) or as array of numbers: [bar,beat,sixteenth,tick]
-            barsandbeats: 1, // same as above
+      //bars and beats
+      bar: 1,
+      beat: 1,
+      sixteenth: 1,
+      tick: 0, // the granularity of requestAnimationFrame is too coarse for tick values
+      ticks: 1, // from start of song
+      barsbeats: 1, // as number (will be interpreted as bar) or as array of numbers: [bar,beat,sixteenth,tick]
+      barsandbeats: 1, // same as above
 
-            //time
-            hour: 1,
-            minute: 1,
-            second: 1,
-            millisecond: 0, // the granularity of requestAnimationFrame is too coarse for millisecond values
-            millis: 1, // from start of song
-            time: 1 // as number (will be interpreted as second) or as array of numbers: [hour,minute,second,millisecond]
-        },
+      //time
+      hour: 1,
+      minute: 1,
+      second: 1,
+      millisecond: 0, // the granularity of requestAnimationFrame is too coarse for millisecond values
+      millis: 1, // from start of song
+      time: 1 // as number (will be interpreted as second) or as array of numbers: [hour,minute,second,millisecond]
+    },
 
-        supportedOperators = '= == === > >= < <= != !== %=', //'= == === > >= < <= != !== *= ^= ~= $=',
-        //supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g,' | ').replace(/\*/,'\\*') + ' '),
-        supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g, ' | ') + ' '),
-
-
-        //private
-        getEvents,
-        checkOperatorConflict,
-
-        //private class, only accessible in Song
-        FollowEvent;
+    supportedOperators = '= == === > >= < <= != !== %=', //'= == === > >= < <= != !== *= ^= ~= $=',
+    //supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g,' | ').replace(/\*/,'\\*') + ' '),
+    supportedOperatorsRegex = new RegExp(' ' + supportedOperators.replace(/\s+/g, ' | ') + ' '),
 
 
-    FollowEvent = function (song) {
-        this.song = song;
+    //private
+    getEvents,
+    checkOperatorConflict,
 
-        this.allListenersById = {};
-        this.allListenersByType = {};
-        this.searchPatterns = [];
+    //private class, only accessible in Song
+    FollowEvent;
 
-        this.eventListenersBySearchstring = {};
-        this.positionListenersBySearchstring = {};
 
-        this.allListenersByType = {
-            'event': {
-                // all events that are registered as event, keys are the event ids, values are array with listener ids
-                'instance': {},
-                // all events that are registered after a search action, for instance: addEventListener('event', 'velocity > 50', callback)
-                'searchstring': {}
-            },
-            'position': {
-                // millis, ticks, time, barsbeats
-                'ticks': [],
-                // every bar, beat, sixteenth, hour, minute, second
-                'repetitive': {},
-                // on single conditional values of bar, beat, sixteenth, hour, minute, second, e.g. bar > 3, bar %= 2, bar === 3
-                'conditional_simple': {},
-                // on conditional values of bar, beat, sixteenth, hour, minute, second, e.g. bar > 3 < 10
-                'conditional_complex': {}
-            }
+  FollowEvent = function (song) {
+    this.song = song;
+
+    this.allListenersById = {};
+    this.allListenersByType = {};
+    this.searchPatterns = [];
+
+    this.eventListenersBySearchstring = {};
+    this.positionListenersBySearchstring = {};
+
+    this.allListenersByType = {
+      'event': {
+        // all events that are registered as event, keys are the event ids, values are array with listener ids
+        'instance': {},
+        // all events that are registered after a search action, for instance: addEventListener('event', 'velocity > 50', callback)
+        'searchstring': {}
+      },
+      'position': {
+        // millis, ticks, time, barsbeats
+        'ticks': [],
+        // every bar, beat, sixteenth, hour, minute, second
+        'repetitive': {},
+        // on single conditional values of bar, beat, sixteenth, hour, minute, second, e.g. bar > 3, bar %= 2, bar === 3
+        'conditional_simple': {},
+        // on conditional values of bar, beat, sixteenth, hour, minute, second, e.g. bar > 3 < 10
+        'conditional_complex': {}
+      }
+    };
+  };
+
+
+  FollowEvent.prototype.updateSong = function () {
+
+    //adjust all event listeners based on registered events and events found by a searchstring
+
+    var i, j, e, eventId, events, tmp, data,
+      listenerIds = [], listeners,
+      listener, listenerId;
+
+    listeners = this.allListenersByType.event.instance;
+    // loop over event ids
+    for (eventId in listeners) {
+      if (listeners.hasOwnProperty(eventId)) {
+        // check if event has been removed
+        if (this.song.eventsById[eventId] === undefined) {
+          // get all listeners that are registered to this event and delete them
+          listenerIds = listeners[eventId];
+          for (i = listenerIds.length - 1; i >= 0; i--) {
+            listenerId = listenerIds[i];
+            delete this.allListenersById[listenerId];
+          }
+          //delete listeners[eventId];
+          delete this.allListenersByType.event.instance[eventId];
+        }
+      }
+    }
+
+    //console.log(listeners);
+
+    // remove all listeners that are currently bound to found events
+    listeners = this.allListenersByType.event.searchstring;
+    listenerIds = [];
+    for (eventId in listeners) {
+      // step 1: collect all ids of listeners
+      if (listeners.hasOwnProperty(eventId)) {
+        listenerIds = listenerIds.concat(listeners[eventId]);
+      }
+    }
+    // step 2: delete the listeners
+    for (i = listenerIds.length - 1; i >= 0; i--) {
+      delete this.allListenersById[listenerIds[i]];
+    }
+
+    // all event listeners have been removed, now create a new object and run search string on updated song
+    this.allListenersByType.event.searchstring = {};
+    tmp = this.allListenersByType.event.searchstring;
+
+    //@TODO: this can't possibly work!! -> but it actually does..
+
+    for (i = this.searchPatterns.length - 1; i >= 0; i--) {
+      data = this.searchPatterns[i];
+      events = findEvent(this.song, data.searchstring);
+      //console.log(data, events);
+
+      //add listeners for both note on and note off and ignore the other event types
+      if (tmp.type === 'note') {
+        events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
+      }
+
+      for (j = events.length - 1; j >= 0; j--) {
+        e = events[j];
+
+        listenerId = 'event_' + listenerIndex++;
+        listener = {
+          id: listenerId,
+          event: e,
+          type: data.type,
+          subtype: data.subtype,
+          callback: data.callback
         };
-    };
-
-
-    FollowEvent.prototype.updateSong = function () {
-
-        //adjust all event listeners based on registered events and events found by a searchstring
-
-        var i, j, e, eventId, events, tmp, data,
-            listenerIds = [], listeners,
-            listener, listenerId;
-
-        listeners = this.allListenersByType.event.instance;
-        // loop over event ids
-        for (eventId in listeners) {
-            if (listeners.hasOwnProperty(eventId)) {
-                // check if event has been removed
-                if (this.song.eventsById[eventId] === undefined) {
-                    // get all listeners that are registered to this event and delete them
-                    listenerIds = listeners[eventId];
-                    for (i = listenerIds.length - 1; i >= 0; i--) {
-                        listenerId = listenerIds[i];
-                        delete this.allListenersById[listenerId];
-                    }
-                    //delete listeners[eventId];
-                    delete this.allListenersByType.event.instance[eventId];
-                }
-            }
-        }
-
-        //console.log(listeners);
-
-        // remove all listeners that are currently bound to found events
-        listeners = this.allListenersByType.event.searchstring;
-        listenerIds = [];
-        for (eventId in listeners) {
-            // step 1: collect all ids of listeners
-            if (listeners.hasOwnProperty(eventId)) {
-                listenerIds = listenerIds.concat(listeners[eventId]);
-            }
-        }
-        // step 2: delete the listeners
-        for (i = listenerIds.length - 1; i >= 0; i--) {
-            delete this.allListenersById[listenerIds[i]];
-        }
-
-        // all event listeners have been removed, now create a new object and run search string on updated song
-        this.allListenersByType.event.searchstring = {};
-        tmp = this.allListenersByType.event.searchstring;
-
-        //@TODO: this can't possibly work!! -> but it actually does..
-
-        for (i = this.searchPatterns.length - 1; i >= 0; i--) {
-            data = this.searchPatterns[i];
-            events = findEvent(this.song, data.searchstring);
-            //console.log(data, events);
-
-            //add listeners for both note on and note off and ignore the other event types
-            if (tmp.type === 'note') {
-                events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
-            }
-
-            for (j = events.length - 1; j >= 0; j--) {
-                e = events[j];
-
-                listenerId = 'event_' + listenerIndex++;
-                listener = {
-                    id: listenerId,
-                    event: e,
-                    type: data.type,
-                    subtype: data.subtype,
-                    callback: data.callback
-                };
-
-                this.allListenersById[listenerId] = listener;
-
-                if (tmp[e.id] === undefined) {
-                    tmp[e.id] = [];
-                }
-                tmp[e.id].push(listenerId);
-                //listenerIds.push(listenerId);
-            }
-        }
-
-        //console.log(allListenersByType.event.searchstring);
-        //console.log(allListenersByType.event.instance);
-        //console.log(allListenersById);
-    };
-
-
-    FollowEvent.prototype.update = function () {
-        var
-            i,
-            position = this.song,
-            ticks = position.ticks,
-            events = [],
-            numEvents,
-            event;
-
-        //events = this.song.playhead.activeEvents;
-        events = this.song.playhead.collectedEvents;
-        //      events = this.song.playhead.changedEvents; -> do something with a snapshot here
-        numEvents = events.length;
-        /*
-                if(numEvents !== undefined && numEvents > 0){
-                    console.log(numEvents, position.barsAsString, this.bar, this.beat);
-                }
-        */
-        //call event listeners registered to specific midi events
-        for (i = 0; i < numEvents; i++) {
-            event = events[i];
-            //console.log(event, event.ticks);
-            this.callEventListeners(event.id, event);
-        }
-
-        this.callListenersPositionTicks(ticks);
-
-        if (position.bar !== this.bar) {
-            this.bar = position.bar;
-            this.callListenersPositionRepetitive('bar');
-            this.callListenersPositionConditionalSimple('bar', this.bar);
-            this.callListenersPositionConditionalComplex('bar', this.bar);
-        }
-
-        if (position.beat !== this.beat) {
-            this.beat = position.beat;
-            this.callListenersPositionRepetitive('beat');
-            this.callListenersPositionConditionalSimple('beat', this.beat);
-            this.callListenersPositionConditionalComplex('beat', this.beat);
-        }
-
-        if (position.sixteenth !== this.sixteenth) {
-            this.sixteenth = position.sixteenth;
-            this.callListenersPositionRepetitive('sixteenth');
-            this.callListenersPositionConditionalSimple('sixteenth', this.sixteenth);
-            this.callListenersPositionConditionalComplex('sixteenth', this.sixteenth);
-        }
-
-        if (position.hour !== this.hour) {
-            this.hour = position.hour;
-            this.callListenersPositionRepetitive('hour');
-            this.callListenersPositionConditionalSimple('hour', this.hour);
-            this.callListenersPositionConditionalComplex('hour', this.hour);
-        }
-
-        if (position.minute !== this.minute) {
-            this.minute = position.minute;
-            this.callListenersPositionRepetitive('minute');
-            this.callListenersPositionConditionalSimple('minute', this.minute);
-            this.callListenersPositionConditionalComplex('minute', this.minute);
-        }
-
-        if (position.second !== this.second) {
-            this.second = position.second;
-            this.callListenersPositionRepetitive('second');
-            this.callListenersPositionConditionalSimple('second', this.second);
-            this.callListenersPositionConditionalComplex('second', this.second);
-        }
-    };
-
-
-    // call callbacks that are bound to a specific event
-    FollowEvent.prototype.callEventListeners = function (eventId, event) {
-        var i, id, tmp,
-            listener,
-            listenerIds = [];
-
-        tmp = this.allListenersByType.event.instance;
-        if (tmp[eventId]) {
-            listenerIds = listenerIds.concat(tmp[eventId]);
-        }
-
-        tmp = this.allListenersByType.event.searchstring;
-        if (tmp[eventId]) {
-            listenerIds = listenerIds.concat(tmp[eventId]);
-        }
-
-        if (listenerIds.length > 0) {
-            //console.log(listenerIds, event.id, event.ticks);
-        }
-
-        for (i = listenerIds.length - 1; i >= 0; i--) {
-            id = listenerIds[i];
-            listener = this.allListenersById[id];
-            if (listener.called !== true) {
-                listener.called = true;
-                listener.callback(event);
-                //console.log('called', event.id)
-            }
-        }
-    };
-
-
-    // for instance: addEventListener('position', 'bar') -> call callback every bar
-    FollowEvent.prototype.callListenersPositionRepetitive = function (positionType) {
-        var listener,
-            listenerIds = this.allListenersByType.position.repetitive[positionType],
-            me = this;
-
-        if (listenerIds) {
-            listenerIds.forEach(function (id) {
-                listener = me.allListenersById[id];
-                listener.callback(listener.searchstring);
-            });
-        }
-    };
-
-
-    // can be repetitive or fire once:
-    // addEventListener('position', 'beat === 2') -> call callback every second beat
-    // addEventListener('position', 'bar === 2') -> call callback at start of bar 2
-    FollowEvent.prototype.callListenersPositionConditionalSimple = function (positionType, value) {
-        var listener,
-            data,
-            operator,
-            call = false,
-            listenerIds = this.allListenersByType.position.conditional_simple[positionType],
-            me = this;
-
-        //console.log(positionType, listenerIds);
-
-        if (listenerIds) {
-            listenerIds.forEach(function (id) {
-                // -> check condition
-                listener = me.allListenersById[id];
-                data = listener.data;
-                operator = listener.operator;
-
-                switch (operator) {
-                    case '>':
-                        call = value > data;
-                        break;
-                    case '<':
-                        call = value < data;
-                        break;
-                    case '%=':
-                        //call = (value + 1) % (data + 1) === 0;
-                        call = value % data === 0;
-                        break;
-                    case '!=':
-                    case '!==':
-                        call = value !== data;
-                        break;
-                    case '===':
-                        call = value === data;
-                        break;
-                }
-
-                if (call === true) {
-                    listener.callback(listener.searchstring);
-                }
-            });
-        }
-    };
-
-
-    // for instance: addEventListener('position', 'bar > 2 < 7') -> call callback every bar from bar 3 to 6
-    FollowEvent.prototype.callListenersPositionConditionalComplex = function (positionType, value) {
-        var listener,
-            value1,
-            value2,
-            operator1,
-            operator2,
-            listenerIds = this.allListenersByType.position.conditional_complex[positionType],
-            me = this;
-
-        if (listenerIds) {
-            listenerIds.forEach(function (id) {
-                // -> check condition(s)
-                listener = me.allListenersById[id];
-                value1 = listener.value1;
-                value2 = listener.value2;
-                operator1 = listener.operator1;
-                operator2 = listener.operator2;
-                if (operator1 === '<') {
-                    if (value < value1 || value > value2) {
-                        listener.callback(listener.searchstring);
-                    }
-                } else if (operator1 === '>') {
-                    //console.log(value1,value2,value,operator1,operator2);
-                    if (value > value1 && value < value2) {
-                        listener.callback(listener.searchstring);
-                    }
-                }
-            });
-        }
-    };
-
-
-    FollowEvent.prototype.callListenersPositionTicks = function (ticks) {
-        var tmp = this.allListenersByType.position.ticks,
-            i, maxi = tmp.length,
-            listener;
-
-        for (i = 0; i < maxi; i++) {
-            listener = this.allListenersById[tmp[i]];
-            //console.log(listener,ticks);
-            if (ticks >= listener.ticks && !listener.called) {
-                listener.callback(listener.searchstring);
-                listener.called = true;
-            }
-        }
-    };
-
-
-    /*
-        event types: event, note or position
-
-        event → when the playhead passes the event
-
-        note → both on the note on and the note off event, the events array may be an array of notes or an array of events
-
-        position
-            'bar' -> every bar
-            'bar = 3' -> start of bar 3
-            'bar > 3 < 7' -> every bar after bar 3 and before bar 7
-
-            'beat' -> every beat
-            'beat = 3' -> start of beat 3
-            'beat > 3' -> every beat after beat 3
-
-            etc.
-
-
-        addEventListener('event',eventsArray,callback)
-        addEventListener('event',findEvent(eventsArray,'type = NOTE_ON'),callback)
-
-        addEventListener('note',eventsArray,callback)
-        addEventListener('note',findEvent(eventsArray,'velocity = 90'),callback)
-
-        addEventListener('event','bar > 5', callback)
-        addEventListener('note','id = 45654544345',callback)
-
-        addEventListener('position','bar',callback)
-        addEventListener('position','bar > 5 < 17',callback)
-        addEventListener('position','beat',callback)
-
-        addEventListener('position','second',callback)
-        addEventListener('position','second > 5',callback)
-
-        addEventListener('position','barsbeats = 1,2,0,0',callback)
-
-
-    */
-
-    FollowEvent.prototype.addEventListener = function (type, data, callback) {
-        var i, events, event, storeArray, tmp, subtype,
-            listener, listenerId, listenerIds = [],
-            dataType = typeString(data);
-
-        //console.log(type,data,callback);
-        //console.log(dataType, data);
-
-        if (typeString(callback) !== 'function') {
-            console.error(callback, 'is not a function; please provide a function for callback');
-            return -1;
-        }
-
-
-        if (type === 'position') {
-            listenerId = this.addPositionEventListener(data, callback);
-            //console.log(allListenersByType, allListenersById);
-            return listenerId;
-        }
-
-
-        if (dataType === 'string') {
-            events = findEvent(this.song, data);
-            // store the search string so we can run it again after the song has changed
-            this.searchPatterns.push({
-                searchstring: data,
-                callback: callback,
-                type: 'event',
-                subtype: 'searchstring'
-            });
-            //console.log(data, events);
-
-            if (events.length === 0) {
-                return -1;
-            }
-            subtype = 'searchstring';
-            storeArray = this.allListenersByType.event.searchstring;
-            this.eventListenersBySearchstring[data] = tmp = [];
-        } else {
-            events = getEvents(type, data);
-            if (events === -1) {
-                return -1;
-            }
-            subtype = 'instance';
-            storeArray = this.allListenersByType.event.instance;
-        }
-
-
-        //add listeners for both note on and note off and ignore the other event types
-        if (type === 'note') {
-            events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
-        }
-
-        for (i = events.length - 1; i >= 0; i--) {
-            event = events[i];
-            listenerId = 'event_' + listenerIndex++;
-            listener = {
-                id: listenerId,
-                event: event,
-                type: type,
-                subtype: subtype,
-                callback: callback
-            };
-
-            //allListeners.push(listener);
-            this.allListenersById[listenerId] = listener;
-
-            if (storeArray[event.id] === undefined) {
-                storeArray[event.id] = [];
-            }
-            storeArray[event.id].push(listenerId);
-            listenerIds.push(listenerId);
-
-            if (subtype === 'searchstring') {
-                tmp.push(listenerId);
-            }
-        }
-        //console.log(this.allListenersById, this.allListenersByType);
-
-        if (subtype === 'searchstring' || dataType === 'array' || type === 'note') {
-            return listenerIds;
-        } else {
-            //console.log('num listeners:', listenerIds.length);
-            return listenerIds[0];
-        }
-    };
-
-
-    /*
-
-        'bar'; -> repetitive
-        'bar == 3'; -> fire once
-        'bar < 3 > 5'; -> conditionally repetitive
-        'bar = 3 AND beat > 1' -> not supported here! (doesn't make sense, use events or position instead)
-
-        - check if has valid operators
-        - some types need an operator -> filter
-        - check values that the operator has to act upon
-        - split into repetitive and one-shot listeners
-
-    */
-    FollowEvent.prototype.addPositionEventListener = function (data, callback) {
-        var tmp,
-            listenerId, listener,
-            millis,
-            searchString = data.split(/[\s+]/g),
-            len = searchString.length,
-            type = searchString[0],
-            operator1 = searchString[1],
-            value1 = searchString[2],
-            operator2 = searchString[3],
-            value2 = searchString[4],
-            value1Type = typeString(value1);
-        //hasOperator = supportedOperatorsRegex.test(data);
-
-        //console.log(data, searchString, len);
-        //console.log(type, value1, operator1, value2, operator2);
-
-        if (len !== 1 && len !== 3 && len !== 5) {
-            console.error('invalid search string, please consult documentation');
-            return false;
-        }
-        /*
-                //split position data into an array -> is now done in find_event.js -> not anymore ;)
-                if(value1 && value1.indexOf(',') !== -1){
-                    value1 = value1.split(',');
-                }
-        
-                if(value2 && value2.indexOf(',') !== -1){
-                    value2 = value2.split(',');
-                }
-        */
-
-        if (supportedTimeEvents[type] !== 1) {
-            console.error(type, 'is not a supported event id, please consult documentation');
-            return -1;
-        }
-
-        if (operator1 === '=' || operator1 === '==') {
-            operator1 = '===';
-        }
-
-
-        // check values per type
-
-        switch (type) {
-            // these type can only fire once
-            case 'barsbeats':
-            case 'barsandbeats':
-            case 'time':
-            //case 'musical_time':
-            //case 'linear_time':
-            case 'ticks':
-            case 'millis':
-                if (operator1 === undefined || operator1 !== '===') {
-                    console.error(type, 'can only be used conditionally with the operators \'===\', \'==\' or \'=\'');
-                    return -1;
-                }
-                // if(isNaN(value1) && typeString(value1) !== 'array'){
-                //  console.error('please provide a number or an array of numbers');
-                //  return -1;
-                // }
-                if (operator2) {
-                    console.warn('this position event type can only be used with a single condition, ignoring second condition');
-                }
-                break;
-
-            // these type fire repeatedly or once
-            case 'bar': // -> fired once if used with === operator
-            case 'beat':
-            case 'sixteenth':
-            //case 'tick':
-            case 'hour': // -> fired once if used with === operator
-            case 'minute':
-            case 'second':
-                //case 'millisecond':
-
-                if (value1 && isNaN(value1)) {
-                    console.error('please provide a number');
-                    return -1;
-                }
-                if (value2 && isNaN(value2)) {
-                    console.error('please provide a number');
-                    return -1;
-                }
-                break;
-        }
-
-
-        // check operators
-
-        if (operator1 && supportedOperators.indexOf(operator1) === -1) {
-            console.error(operator1, 'is not a supported operator, please use any of', supportedOperators);
-            return -1;
-        }
-
-        if (operator1 && value1 === undefined) {
-            console.error('operator without value');
-            return;
-        }
-
-        if (operator2 && supportedOperators.indexOf(operator1) === -1) {
-            console.error(operator2, 'is not a supported operator, please use any of', supportedOperators);
-            return -1;
-        }
-
-        if (operator2 && value2 === undefined) {
-            console.error('operator without value');
-            return;
-        }
-
-        if (operator1 && operator2 && checkOperatorConflict(operator1, operator2) === false) {
-            console.error('you can\'t use ' + operator1 + ' together with ' + operator2);
-            return -1;
-        }
-
-
-        // check callback
-
-        if (typeString(callback) !== 'function') {
-            console.error(callback, 'is not a function; please provide a function for callback');
-            return -1;
-        }
-
-
-        // simplify searchstring and adjust values
-
-        switch (type) {
-
-            // event types that fire repeatedly or once
-
-            case 'bar':
-            case 'beat':
-            case 'sixteenth':
-                // make zero based
-                value1 = value1 - 0;
-                value2 = value2 - 0;
-            //case 'tick':
-            case 'hour':
-            case 'minute':
-            case 'second':
-                //case 'millisecond':
-                // make zero based
-                value1 = value1 - 0;
-                value2 = value2 - 0;
-
-                // convert <= to < and >= to > to make it easier
-                if (operator1) {
-                    if (operator1 === '<=') {
-                        value1++;
-                        operator1 = '<';
-                    } else if (operator1 === '>=') {
-                        value1--;
-                        operator1 = '>';
-                    }
-                }
-
-                if (operator2) {
-                    if (operator2 === '<=') {
-                        value2++;
-                        operator2 = '<';
-                    } else if (operator2 === '>=') {
-                        value2--;
-                        operator2 = '>';
-                    }
-                }
-
-                break;
-
-
-            // event types that fire only once, these get all converted to type 'ticks'
-
-            case 'ticks':
-                // we already have the position value in ticks
-                value1 = value1 - 0;
-                break;
-
-
-            case 'barsbeats':
-            case 'barsandbeats':
-                //case 'musical_time':
-
-                // convert position value to ticks
-                if (!isNaN(value1)) {
-                    // only a single number is provided, we consider it to be the bar number
-                    value1 = getPosition(this.song, ['barsbeats', value1, 1, 1, 0]).ticks;
-                } else if (value1Type === 'string') {
-                    // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
-                    value1 = value1.replace(/[\[\]\s]/g, '');
-                    value1 = value1.split(',');
-                    value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1] || 1, value1[2] || 1, value1[3] || 0]).ticks;
-                    /*
-                                    }else if(value1Type === 'array'){
-                                        // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
-                                        value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1], value1[2], value1[3]]).ticks;
-                    */
-                } else {
-                    console.error('please provide a number or an array of numbers');
-                }
-                type = 'ticks';
-                break;
-
-
-            case 'millis':
-                // convert position value to ticks
-                value1 = getPosition(this.song, ['millis', value1]).ticks;
-                type = 'ticks';
-                break;
-
-
-            case 'time':
-                //case 'linear_time':
-                // convert position value to ticks
-                if (!isNaN(value1)) {
-                    // a single number is provided, we treat this as the value for minutes
-                    millis = value1 * 60 * 1000; //seconds
-                    value1 = getPosition(this.song, ['millis', millis]).ticks;
-                } else if (value1Type === 'string') {
-                    // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
-                    value1 = value1.replace(/[\[\]\s]/g, '');
-                    console.log(value1);
-                    value1 = value1.split(',');
-                    if (value1.length === 1) {
-                        millis = value1[0] * 60 * 1000;
-                        value1 = getPosition(this.song, ['millis', millis]).ticks;
-                    } else {
-                        value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
-                    }
-                    /*
-                                    }else if(value1Type === 'array'){
-                                        // a full time array is provided: hours, minutes, seconds, millis
-                                        value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
-                    */
-                } else {
-                    console.error('please provide a number or an array of numbers');
-                }
-                console.log(value1);
-                type = 'ticks';
-                break;
-        }
-
-
-        listenerId = 'position_' + listenerIndex++;
-
-        //console.log(value1,value2);
-
-        if (type === 'ticks') {
-            //console.log(value1,listenerId)
-
-            listener = {
-                id: listenerId,
-                callback: callback,
-                type: 'position',
-                subtype: 'ticks',
-                ticks: value1,
-                searchstring: data
-            };
-
-            this.allListenersByType.position.ticks.push(listenerId);
-
-        } else if (!operator1 && !operator2) {
-            // every bar, beat, sixteenth, hour, minute, second
-            listener = {
-                id: listenerId,
-                callback: callback,
-                type: 'position',
-                subtype: 'repetitive',
-                position_type: type,
-                searchstring: data
-            };
-
-            tmp = this.allListenersByType.position.repetitive;
-            if (tmp[type] === undefined) {
-                tmp[type] = [];
-            }
-            tmp[type].push(listenerId);
-
-        } else if (operator1 && !operator2) {
-            // every time a bar, beat, sixteenth, hour, minute, second meets a certain simple condition, can be both repetitive and fire once
-            listener = {
-                id: listenerId,
-                callback: callback,
-                type: 'position',
-                subtype: 'conditional_simple',
-                position_type: type,
-                data: value1,
-                operator: operator1,
-                searchstring: data
-            };
-
-            tmp = this.allListenersByType.position.conditional_simple;
-            if (tmp[type] === undefined) {
-                tmp[type] = [];
-            }
-            tmp[type].push(listenerId);
-
-        } else if (operator1 && operator2) {
-            // every time a bar, beat, sixteenth, hour, minute, second meets a certain complex condition
-            listener = {
-                id: listenerId,
-                callback: callback,
-                type: 'position',
-                subtype: 'conditional_complex',
-                position_type: type,
-                value1: value1,
-                value2: value2,
-                operator1: operator1,
-                operator2: operator2,
-                searchstring: data
-            };
-
-            tmp = this.allListenersByType.position.conditional_complex;
-            if (tmp[type] === undefined) {
-                tmp[type] = [];
-            }
-            tmp[type].push(listenerId);
-
-        }
 
         this.allListenersById[listenerId] = listener;
-        this.positionListenersBySearchstring[data] = listenerId;
-        return listenerId;
-    };
 
-    // @param type, data, callback
-    // @param id
-    FollowEvent.prototype.removeEventListener = function (args) {
-        var
-            //args = Array.prototype.slice.call(arguments),
-            arg0,
-            numArgs,
-            type, subtype, data, callback, id, ids, tmp,
-            listener, listenerId,
-            event, eventId, eventIds,
-            i, j, k, removeMe,
-            listenerIds,
-            filteredListenerIds = [],
-            removedListenerIds = [],
-            dataType;
-
-        //console.log(args);
-        //args = Array.prototype.slice.call(args[0]);
-        arg0 = args[0];
-        numArgs = args.length;
-
-        if (numArgs === 1) {
-            if (typeString(arg0) === 'array') {
-                ids = arg0;
-            } else {
-                ids = [arg0];
-            }
-            //console.log(ids);
-
-            for (i = ids.length - 1; i >= 0; i--) {
-                id = ids[i];
-                //console.log(id);
-                if (this.allListenersById[id] !== undefined) {
-                    listener = this.allListenersById[id];
-                    type = listener.type;
-                    subtype = listener.subtype;
-
-                    if (type === 'position') {
-                        // reference to an array of all the listeners bound to this event type
-                        listenerIds = this.allListenersByType[type][subtype][listener.position_type];
-                        // loop over listeners and filter the one that has to be removed
-                        for (j = listenerIds.length - 1; j >= 0; j--) {
-                            listenerId = listenerIds[j];
-                            if (listenerId !== id) {
-                                filteredListenerIds.push(listenerId);
-                            }
-                        }
-                        // add the filtered array back
-                        this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
-                        delete this.allListenersById[id];
-
-                    } else if (type === 'event' || type === 'note') {
-                        event = listener.event;
-                        eventId = event.id;
-                        listenerIds = this.allListenersByType.event[subtype][eventId];
-                        for (j = listenerIds.length - 1; j >= 0; j--) {
-                            listenerId = listenerIds[j];
-                            listener = this.allListenersById[listenerId];
-                            if (listenerId !== id) {
-                                filteredListenerIds.push(listenerId);
-                                break;
-                            }
-                        }
-                        // add the filtered array back per event
-                        this.allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
-                        delete this.allListenersById[id];
-
-                        //@TODO: we have to add allListenersByType.notes
-                        /*
-                                                if(type === 'note'){
-                                                    console.log(event);
-                                                    if(event.type === sequencer.NOTE_ON){
-                                                        eventId = event.midiNote.noteOff.id;
-                                                        tmp = allListenersByType.event[subtype][eventId];
-                                                        listenerIds = listenerIds.concat(tmp);
-                                                    }else if(event.type === sequencer.NOTE_OFF){
-                                                        eventId = event.midiNote.noteOn.id;
-                                                        tmp = allListenersByType.event[subtype][eventId];
-                                                        listenerIds = listenerIds.concat(tmp);
-                                                    }
-                        
-                                                    for(j = listenerIds.length - 1; j >= 0; j--){
-                                                        listenerId = listenerIds[j];
-                                                        listener = allListenersById[listenerId];
-                                                        if(listenerId !== id){
-                                                            filteredListenerIds.push(listenerId);
-                                                            break;
-                                                        }
-                                                    }
-                                                    // add the filtered array back per event
-                                                    allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
-                                                    delete allListenersById[id];
-                                                }
-                        */
-                    }
-
-                    //console.log(this.allListenersById,this.allListenersByType);
-
-                } else {
-                    console.warn('no event listener found with id', id);
-                }
-            }
-
-        } else if (numArgs === 2 || numArgs === 3) {
-
-            type = args[0];
-            data = args[1];
-            callback = args[2];
-            dataType = typeString(data);
-
-            //console.log(type, data, callback, dataType);
-
-            switch (type) {
-                case 'position':
-                    if (dataType === 'string') {
-                        // get the id of the listener by the searchstring
-                        id = this.positionListenersBySearchstring[data];
-                        // get the listener by id
-                        listener = this.allListenersById[id];
-                        // reference to an array of all the listeners bound to this event type
-                        listenerIds = this.allListenersByType[listener.type][listener.subtype][listener.position_type];
-                        // loop over listeners and filter the one that has to be removed
-                        for (i = listenerIds.length - 1; i >= 0; i--) {
-                            listenerId = listenerIds[i];
-                            if (listenerId !== id) {
-                                filteredListenerIds.push(listenerId);
-                            }
-                        }
-                        // add the filtered array back
-                        this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
-                        delete this.allListenersById[id];
-                        delete this.positionListenersBySearchstring[data];
-                        //console.log(allListenersById, allListenersByType, positionListenersBySearchstring);
-                    }
-                    break;
-
-                case 'event':
-                case 'note':
-
-                    if (dataType === 'string') {
-                        // get all listener ids that are connected to this searchstring
-                        listenerIds = this.eventListenersBySearchstring[data];
-                        for (i = listenerIds.length - 1; i >= 0; i--) {
-                            // collect all ids of listeners that need to be removed
-                            removedListenerIds.push(listenerIds[i]);
-                        }
-
-                        // loop over all searchstring listeners and filter the ones that have to be removed
-                        eventIds = this.allListenersByType.event.searchstring;
-                        for (eventId in eventIds) {
-                            if (eventIds.hasOwnProperty(eventId)) {
-                                listenerIds = eventIds[eventId];
-                                filteredListenerIds = [];
-                                for (i = listenerIds.length - 1; i >= 0; i--) {
-                                    listenerId = listenerIds[i];
-                                    removeMe = false;
-                                    for (j = removedListenerIds.length - 1; j >= 0; j--) {
-                                        //console.log(listenerId, removedListenerIds[j], callback);
-                                        if (listenerId === removedListenerIds[j]) {
-                                            removeMe = true;
-                                            /*
-                                            if(callback === undefined){
-                                                removeMe = true;
-                                            }else{
-                                                removeMe = allListenersById[listenerId].callback === callback
-                                            }
-                                            */
-                                            break;
-                                        }
-                                    }
-                                    if (removeMe === false) {
-                                        filteredListenerIds.push(listenerId);
-                                    } else {
-                                        // remove the listeners from the id library
-                                        delete this.allListenersById[listenerIds[i]];
-                                    }
-                                }
-                                // add the filtered array back
-                                this.allListenersByType.event.searchstring[eventId] = [].concat(filteredListenerIds);
-                            }
-                        }
-                        // delete the searchstring listeners array
-                        delete this.eventListenersBySearchstring[data];
-                        //console.log(allListenersById,eventListenersBySearchstring,allListenersByType);
-
-                    } else if (dataType === 'object') {
-                        if (data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
-                            console.error('please provide a midi event or a midi note');
-                            return;
-                        }
-                        if (data.className === 'MidiNote') {
-                            id = data.noteOn.id;
-                        } else if (data.className === 'MidiEvent') {
-                            id = data.id;
-                        }
-                        if (this.allListenersByType.event.instance[id] !== undefined) {
-                            type = 'instance';
-                            listenerIds = this.allListenersByType.event.instance[id];
-                        } else if (this.allListenersByType.event.searchstring[id] !== undefined) {
-                            type = 'searchstring';
-                            listenerIds = this.allListenersByType.event.searchstring[id];
-                        }
-                        if (listenerIds === undefined) {
-                            console.warn('no event listener bound to event with id', id);
-                            return;
-                        }
-                        if (data.className === 'MidiNote') {
-                            ids = this.allListenersByType.event[type][data.noteOff.id];
-                            listenerIds = listenerIds.concat(ids);
-                        }
-                        //console.log(listenerIds);
-                        for (i = listenerIds.length - 1; i >= 0; i--) {
-                            listenerId = listenerIds[i];
-                            listener = this.allListenersById[listenerId];
-                            if (callback && listener.callback !== callback) {
-                                filteredListenerIds.push(listener.id);
-                            } else {
-                                delete this.allListenersById[listener.id];
-                            }
-                            this.allListenersByType.event[type][listener.event.id] = [].concat(filteredListenerIds);
-                        }
-                        //console.log(allListenersById,allListenersByType);
-                    }
-                    break;
-            }
+        if (tmp[e.id] === undefined) {
+          tmp[e.id] = [];
         }
-    };
+        tmp[e.id].push(listenerId);
+        //listenerIds.push(listenerId);
+      }
+    }
+
+    //console.log(allListenersByType.event.searchstring);
+    //console.log(allListenersByType.event.instance);
+    //console.log(allListenersById);
+  };
 
 
-    // set the 'called' key of every listener to false, this is necessary if the playhead is moved (by a loop of by the user)
-    FollowEvent.prototype.resetAllListeners = function () {
-        var listeners = this.allListenersById, key, listener;
+  FollowEvent.prototype.update = function () {
+    var
+      i,
+      position = this.song,
+      ticks = position.ticks,
+      events = [],
+      numEvents,
+      event;
 
-        for (key in listeners) {
-            if (listeners.hasOwnProperty(key)) {
-                listener = listeners[key];
-                listener.called = false;
-                //console.log(listener);
+    //events = this.song.playhead.activeEvents;
+    events = this.song.playhead.collectedEvents;
+    //      events = this.song.playhead.changedEvents; -> do something with a snapshot here
+    numEvents = events.length;
+    /*
+            if(numEvents !== undefined && numEvents > 0){
+                console.log(numEvents, position.barsAsString, this.bar, this.beat);
             }
-        }
-    };
+    */
+    //call event listeners registered to specific midi events
+    for (i = 0; i < numEvents; i++) {
+      event = events[i];
+      //console.log(event, event.ticks);
+      this.callEventListeners(event.id, event);
+    }
+
+    this.callListenersPositionTicks(ticks);
+
+    if (position.bar !== this.bar) {
+      this.bar = position.bar;
+      this.callListenersPositionRepetitive('bar');
+      this.callListenersPositionConditionalSimple('bar', this.bar);
+      this.callListenersPositionConditionalComplex('bar', this.bar);
+    }
+
+    if (position.beat !== this.beat) {
+      this.beat = position.beat;
+      this.callListenersPositionRepetitive('beat');
+      this.callListenersPositionConditionalSimple('beat', this.beat);
+      this.callListenersPositionConditionalComplex('beat', this.beat);
+    }
+
+    if (position.sixteenth !== this.sixteenth) {
+      this.sixteenth = position.sixteenth;
+      this.callListenersPositionRepetitive('sixteenth');
+      this.callListenersPositionConditionalSimple('sixteenth', this.sixteenth);
+      this.callListenersPositionConditionalComplex('sixteenth', this.sixteenth);
+    }
+
+    if (position.hour !== this.hour) {
+      this.hour = position.hour;
+      this.callListenersPositionRepetitive('hour');
+      this.callListenersPositionConditionalSimple('hour', this.hour);
+      this.callListenersPositionConditionalComplex('hour', this.hour);
+    }
+
+    if (position.minute !== this.minute) {
+      this.minute = position.minute;
+      this.callListenersPositionRepetitive('minute');
+      this.callListenersPositionConditionalSimple('minute', this.minute);
+      this.callListenersPositionConditionalComplex('minute', this.minute);
+    }
+
+    if (position.second !== this.second) {
+      this.second = position.second;
+      this.callListenersPositionRepetitive('second');
+      this.callListenersPositionConditionalSimple('second', this.second);
+      this.callListenersPositionConditionalComplex('second', this.second);
+    }
+  };
 
 
-    getEvents = function (type, data) {
+  // call callbacks that are bound to a specific event
+  FollowEvent.prototype.callEventListeners = function (eventId, event) {
+    var i, id, tmp,
+      listener,
+      listenerIds = [];
 
-        var dataType = typeString(data),
-            events = [], i, e;
+    tmp = this.allListenersByType.event.instance;
+    if (tmp[eventId]) {
+      listenerIds = listenerIds.concat(tmp[eventId]);
+    }
 
-        if (dataType !== 'array' && data !== undefined && data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
-            console.error(data, ' is not valid data for event type \'event\', please consult documentation');
-            return -1;
+    tmp = this.allListenersByType.event.searchstring;
+    if (tmp[eventId]) {
+      listenerIds = listenerIds.concat(tmp[eventId]);
+    }
+
+    if (listenerIds.length > 0) {
+      //console.log(listenerIds, event.id, event.ticks);
+    }
+
+    for (i = listenerIds.length - 1; i >= 0; i--) {
+      id = listenerIds[i];
+      listener = this.allListenersById[id];
+      if (listener.called !== true) {
+        listener.called = true;
+        listener.callback(event);
+        //console.log('called', event.id)
+      }
+    }
+  };
+
+
+  // for instance: addEventListener('position', 'bar') -> call callback every bar
+  FollowEvent.prototype.callListenersPositionRepetitive = function (positionType) {
+    var listener,
+      listenerIds = this.allListenersByType.position.repetitive[positionType],
+      me = this;
+
+    if (listenerIds) {
+      listenerIds.forEach(function (id) {
+        listener = me.allListenersById[id];
+        listener.callback(listener.searchstring);
+      });
+    }
+  };
+
+
+  // can be repetitive or fire once:
+  // addEventListener('position', 'beat === 2') -> call callback every second beat
+  // addEventListener('position', 'bar === 2') -> call callback at start of bar 2
+  FollowEvent.prototype.callListenersPositionConditionalSimple = function (positionType, value) {
+    var listener,
+      data,
+      operator,
+      call = false,
+      listenerIds = this.allListenersByType.position.conditional_simple[positionType],
+      me = this;
+
+    //console.log(positionType, listenerIds);
+
+    if (listenerIds) {
+      listenerIds.forEach(function (id) {
+        // -> check condition
+        listener = me.allListenersById[id];
+        data = listener.data;
+        operator = listener.operator;
+
+        switch (operator) {
+          case '>':
+            call = value > data;
+            break;
+          case '<':
+            call = value < data;
+            break;
+          case '%=':
+            //call = (value + 1) % (data + 1) === 0;
+            call = value % data === 0;
+            break;
+          case '!=':
+          case '!==':
+            call = value !== data;
+            break;
+          case '===':
+            call = value === data;
+            break;
         }
 
-        if (dataType === 'array') {
-            for (i = data.length - 1; i >= 0; i--) {
-                e = data[i];
-                if (type === 'event' && e.className !== 'MidiEvent' && e.className !== 'AudioEvent') {
-                    console.warn('skipping', e, 'because it is not a MidiEvent nor an AudioEvent');
-                    continue;
-                } else if (type === 'note' && e.className !== 'MidiNote') {
-                    console.warn('skipping', e, 'because it is not a MidiNote');
-                    continue;
-                }
-                events.push(e);
+        if (call === true) {
+          listener.callback(listener.searchstring);
+        }
+      });
+    }
+  };
+
+
+  // for instance: addEventListener('position', 'bar > 2 < 7') -> call callback every bar from bar 3 to 6
+  FollowEvent.prototype.callListenersPositionConditionalComplex = function (positionType, value) {
+    var listener,
+      value1,
+      value2,
+      operator1,
+      operator2,
+      listenerIds = this.allListenersByType.position.conditional_complex[positionType],
+      me = this;
+
+    if (listenerIds) {
+      listenerIds.forEach(function (id) {
+        // -> check condition(s)
+        listener = me.allListenersById[id];
+        value1 = listener.value1;
+        value2 = listener.value2;
+        operator1 = listener.operator1;
+        operator2 = listener.operator2;
+        if (operator1 === '<') {
+          if (value < value1 || value > value2) {
+            listener.callback(listener.searchstring);
+          }
+        } else if (operator1 === '>') {
+          //console.log(value1,value2,value,operator1,operator2);
+          if (value > value1 && value < value2) {
+            listener.callback(listener.searchstring);
+          }
+        }
+      });
+    }
+  };
+
+
+  FollowEvent.prototype.callListenersPositionTicks = function (ticks) {
+    var tmp = this.allListenersByType.position.ticks,
+      i, maxi = tmp.length,
+      listener;
+
+    for (i = 0; i < maxi; i++) {
+      listener = this.allListenersById[tmp[i]];
+      //console.log(listener,ticks);
+      if (ticks >= listener.ticks && !listener.called) {
+        listener.callback(listener.searchstring);
+        listener.called = true;
+      }
+    }
+  };
+
+
+  /*
+      event types: event, note or position
+
+      event → when the playhead passes the event
+
+      note → both on the note on and the note off event, the events array may be an array of notes or an array of events
+
+      position
+          'bar' -> every bar
+          'bar = 3' -> start of bar 3
+          'bar > 3 < 7' -> every bar after bar 3 and before bar 7
+
+          'beat' -> every beat
+          'beat = 3' -> start of beat 3
+          'beat > 3' -> every beat after beat 3
+
+          etc.
+
+
+      addEventListener('event',eventsArray,callback)
+      addEventListener('event',findEvent(eventsArray,'type = NOTE_ON'),callback)
+
+      addEventListener('note',eventsArray,callback)
+      addEventListener('note',findEvent(eventsArray,'velocity = 90'),callback)
+
+      addEventListener('event','bar > 5', callback)
+      addEventListener('note','id = 45654544345',callback)
+
+      addEventListener('position','bar',callback)
+      addEventListener('position','bar > 5 < 17',callback)
+      addEventListener('position','beat',callback)
+
+      addEventListener('position','second',callback)
+      addEventListener('position','second > 5',callback)
+
+      addEventListener('position','barsbeats = 1,2,0,0',callback)
+
+
+  */
+
+  FollowEvent.prototype.addEventListener = function (type, data, callback) {
+    var i, events, event, storeArray, tmp, subtype,
+      listener, listenerId, listenerIds = [],
+      dataType = typeString(data);
+
+    //console.log(type,data,callback);
+    //console.log(dataType, data);
+
+    if (typeString(callback) !== 'function') {
+      console.error(callback, 'is not a function; please provide a function for callback');
+      return -1;
+    }
+
+
+    if (type === 'position') {
+      listenerId = this.addPositionEventListener(data, callback);
+      //console.log(allListenersByType, allListenersById);
+      return listenerId;
+    }
+
+
+    if (dataType === 'string') {
+      events = findEvent(this.song, data);
+      // store the search string so we can run it again after the song has changed
+      this.searchPatterns.push({
+        searchstring: data,
+        callback: callback,
+        type: 'event',
+        subtype: 'searchstring'
+      });
+      //console.log(data, events);
+
+      if (events.length === 0) {
+        return -1;
+      }
+      subtype = 'searchstring';
+      storeArray = this.allListenersByType.event.searchstring;
+      this.eventListenersBySearchstring[data] = tmp = [];
+    } else {
+      events = getEvents(type, data);
+      if (events === -1) {
+        return -1;
+      }
+      subtype = 'instance';
+      storeArray = this.allListenersByType.event.instance;
+    }
+
+
+    //add listeners for both note on and note off and ignore the other event types
+    if (type === 'note') {
+      events = findEvent(events, 'type = NOTE_ON OR type = NOTE_OFF');
+    }
+
+    for (i = events.length - 1; i >= 0; i--) {
+      event = events[i];
+      listenerId = 'event_' + listenerIndex++;
+      listener = {
+        id: listenerId,
+        event: event,
+        type: type,
+        subtype: subtype,
+        callback: callback
+      };
+
+      //allListeners.push(listener);
+      this.allListenersById[listenerId] = listener;
+
+      if (storeArray[event.id] === undefined) {
+        storeArray[event.id] = [];
+      }
+      storeArray[event.id].push(listenerId);
+      listenerIds.push(listenerId);
+
+      if (subtype === 'searchstring') {
+        tmp.push(listenerId);
+      }
+    }
+    //console.log(this.allListenersById, this.allListenersByType);
+
+    if (subtype === 'searchstring' || dataType === 'array' || type === 'note') {
+      return listenerIds;
+    } else {
+      //console.log('num listeners:', listenerIds.length);
+      return listenerIds[0];
+    }
+  };
+
+
+  /*
+
+      'bar'; -> repetitive
+      'bar == 3'; -> fire once
+      'bar < 3 > 5'; -> conditionally repetitive
+      'bar = 3 AND beat > 1' -> not supported here! (doesn't make sense, use events or position instead)
+
+      - check if has valid operators
+      - some types need an operator -> filter
+      - check values that the operator has to act upon
+      - split into repetitive and one-shot listeners
+
+  */
+  FollowEvent.prototype.addPositionEventListener = function (data, callback) {
+    var tmp,
+      listenerId, listener,
+      millis,
+      searchString = data.split(/[\s+]/g),
+      len = searchString.length,
+      type = searchString[0],
+      operator1 = searchString[1],
+      value1 = searchString[2],
+      operator2 = searchString[3],
+      value2 = searchString[4],
+      value1Type = typeString(value1);
+    //hasOperator = supportedOperatorsRegex.test(data);
+
+    //console.log(data, searchString, len);
+    //console.log(type, value1, operator1, value2, operator2);
+
+    if (len !== 1 && len !== 3 && len !== 5) {
+      console.error('invalid search string, please consult documentation');
+      return false;
+    }
+    /*
+            //split position data into an array -> is now done in find_event.js -> not anymore ;)
+            if(value1 && value1.indexOf(',') !== -1){
+                value1 = value1.split(',');
             }
+    
+            if(value2 && value2.indexOf(',') !== -1){
+                value2 = value2.split(',');
+            }
+    */
+
+    if (supportedTimeEvents[type] !== 1) {
+      console.error(type, 'is not a supported event id, please consult documentation');
+      return -1;
+    }
+
+    if (operator1 === '=' || operator1 === '==') {
+      operator1 = '===';
+    }
+
+
+    // check values per type
+
+    switch (type) {
+      // these type can only fire once
+      case 'barsbeats':
+      case 'barsandbeats':
+      case 'time':
+      //case 'musical_time':
+      //case 'linear_time':
+      case 'ticks':
+      case 'millis':
+        if (operator1 === undefined || operator1 !== '===') {
+          console.error(type, 'can only be used conditionally with the operators \'===\', \'==\' or \'=\'');
+          return -1;
+        }
+        // if(isNaN(value1) && typeString(value1) !== 'array'){
+        //  console.error('please provide a number or an array of numbers');
+        //  return -1;
+        // }
+        if (operator2) {
+          console.warn('this position event type can only be used with a single condition, ignoring second condition');
+        }
+        break;
+
+      // these type fire repeatedly or once
+      case 'bar': // -> fired once if used with === operator
+      case 'beat':
+      case 'sixteenth':
+      //case 'tick':
+      case 'hour': // -> fired once if used with === operator
+      case 'minute':
+      case 'second':
+        //case 'millisecond':
+
+        if (value1 && isNaN(value1)) {
+          console.error('please provide a number');
+          return -1;
+        }
+        if (value2 && isNaN(value2)) {
+          console.error('please provide a number');
+          return -1;
+        }
+        break;
+    }
+
+
+    // check operators
+
+    if (operator1 && supportedOperators.indexOf(operator1) === -1) {
+      console.error(operator1, 'is not a supported operator, please use any of', supportedOperators);
+      return -1;
+    }
+
+    if (operator1 && value1 === undefined) {
+      console.error('operator without value');
+      return;
+    }
+
+    if (operator2 && supportedOperators.indexOf(operator1) === -1) {
+      console.error(operator2, 'is not a supported operator, please use any of', supportedOperators);
+      return -1;
+    }
+
+    if (operator2 && value2 === undefined) {
+      console.error('operator without value');
+      return;
+    }
+
+    if (operator1 && operator2 && checkOperatorConflict(operator1, operator2) === false) {
+      console.error('you can\'t use ' + operator1 + ' together with ' + operator2);
+      return -1;
+    }
+
+
+    // check callback
+
+    if (typeString(callback) !== 'function') {
+      console.error(callback, 'is not a function; please provide a function for callback');
+      return -1;
+    }
+
+
+    // simplify searchstring and adjust values
+
+    switch (type) {
+
+      // event types that fire repeatedly or once
+
+      case 'bar':
+      case 'beat':
+      case 'sixteenth':
+        // make zero based
+        value1 = value1 - 0;
+        value2 = value2 - 0;
+      //case 'tick':
+      case 'hour':
+      case 'minute':
+      case 'second':
+        //case 'millisecond':
+        // make zero based
+        value1 = value1 - 0;
+        value2 = value2 - 0;
+
+        // convert <= to < and >= to > to make it easier
+        if (operator1) {
+          if (operator1 === '<=') {
+            value1++;
+            operator1 = '<';
+          } else if (operator1 === '>=') {
+            value1--;
+            operator1 = '>';
+          }
+        }
+
+        if (operator2) {
+          if (operator2 === '<=') {
+            value2++;
+            operator2 = '<';
+          } else if (operator2 === '>=') {
+            value2--;
+            operator2 = '>';
+          }
+        }
+
+        break;
+
+
+      // event types that fire only once, these get all converted to type 'ticks'
+
+      case 'ticks':
+        // we already have the position value in ticks
+        value1 = value1 - 0;
+        break;
+
+
+      case 'barsbeats':
+      case 'barsandbeats':
+        //case 'musical_time':
+
+        // convert position value to ticks
+        if (!isNaN(value1)) {
+          // only a single number is provided, we consider it to be the bar number
+          value1 = getPosition(this.song, ['barsbeats', value1, 1, 1, 0]).ticks;
+        } else if (value1Type === 'string') {
+          // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
+          value1 = value1.replace(/[\[\]\s]/g, '');
+          value1 = value1.split(',');
+          value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1] || 1, value1[2] || 1, value1[3] || 0]).ticks;
+          /*
+                          }else if(value1Type === 'array'){
+                              // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
+                              value1 = getPosition(this.song, ['barsbeats', value1[0], value1[1], value1[2], value1[3]]).ticks;
+          */
         } else {
-            if (type === 'event') {
-                if (data.className !== 'MidiEvent' && data.className !== 'AudioEvent') {
-                    console.error(data, ' is not a MidiEvent nor an AudioEvent');
-                    return -1;
-                } else {
-                    events = [data];
-                }
-            } else if (type === 'note') {
-                if (data.className !== 'MidiNote') {
-                    console.error(data, ' is not a MidiNote');
-                    return -1;
-                } else {
-                    events = [data.noteOn, data.noteOff];
-                }
+          console.error('please provide a number or an array of numbers');
+        }
+        type = 'ticks';
+        break;
+
+
+      case 'millis':
+        // convert position value to ticks
+        value1 = getPosition(this.song, ['millis', value1]).ticks;
+        type = 'ticks';
+        break;
+
+
+      case 'time':
+        //case 'linear_time':
+        // convert position value to ticks
+        if (!isNaN(value1)) {
+          // a single number is provided, we treat this as the value for minutes
+          millis = value1 * 60 * 1000; //seconds
+          value1 = getPosition(this.song, ['millis', millis]).ticks;
+        } else if (value1Type === 'string') {
+          // a full barsandbeats array is provided: bar, beat, sixteenth, ticks
+          value1 = value1.replace(/[\[\]\s]/g, '');
+          console.log(value1);
+          value1 = value1.split(',');
+          if (value1.length === 1) {
+            millis = value1[0] * 60 * 1000;
+            value1 = getPosition(this.song, ['millis', millis]).ticks;
+          } else {
+            value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
+          }
+          /*
+                          }else if(value1Type === 'array'){
+                              // a full time array is provided: hours, minutes, seconds, millis
+                              value1 = getPosition(this.song, ['time', value1[0], value1[1], value1[2], value1[3]]).ticks;
+          */
+        } else {
+          console.error('please provide a number or an array of numbers');
+        }
+        console.log(value1);
+        type = 'ticks';
+        break;
+    }
+
+
+    listenerId = 'position_' + listenerIndex++;
+
+    //console.log(value1,value2);
+
+    if (type === 'ticks') {
+      //console.log(value1,listenerId)
+
+      listener = {
+        id: listenerId,
+        callback: callback,
+        type: 'position',
+        subtype: 'ticks',
+        ticks: value1,
+        searchstring: data
+      };
+
+      this.allListenersByType.position.ticks.push(listenerId);
+
+    } else if (!operator1 && !operator2) {
+      // every bar, beat, sixteenth, hour, minute, second
+      listener = {
+        id: listenerId,
+        callback: callback,
+        type: 'position',
+        subtype: 'repetitive',
+        position_type: type,
+        searchstring: data
+      };
+
+      tmp = this.allListenersByType.position.repetitive;
+      if (tmp[type] === undefined) {
+        tmp[type] = [];
+      }
+      tmp[type].push(listenerId);
+
+    } else if (operator1 && !operator2) {
+      // every time a bar, beat, sixteenth, hour, minute, second meets a certain simple condition, can be both repetitive and fire once
+      listener = {
+        id: listenerId,
+        callback: callback,
+        type: 'position',
+        subtype: 'conditional_simple',
+        position_type: type,
+        data: value1,
+        operator: operator1,
+        searchstring: data
+      };
+
+      tmp = this.allListenersByType.position.conditional_simple;
+      if (tmp[type] === undefined) {
+        tmp[type] = [];
+      }
+      tmp[type].push(listenerId);
+
+    } else if (operator1 && operator2) {
+      // every time a bar, beat, sixteenth, hour, minute, second meets a certain complex condition
+      listener = {
+        id: listenerId,
+        callback: callback,
+        type: 'position',
+        subtype: 'conditional_complex',
+        position_type: type,
+        value1: value1,
+        value2: value2,
+        operator1: operator1,
+        operator2: operator2,
+        searchstring: data
+      };
+
+      tmp = this.allListenersByType.position.conditional_complex;
+      if (tmp[type] === undefined) {
+        tmp[type] = [];
+      }
+      tmp[type].push(listenerId);
+
+    }
+
+    this.allListenersById[listenerId] = listener;
+    this.positionListenersBySearchstring[data] = listenerId;
+    return listenerId;
+  };
+
+  // @param type, data, callback
+  // @param id
+  FollowEvent.prototype.removeEventListener = function (args) {
+    var
+      //args = Array.prototype.slice.call(arguments),
+      arg0,
+      numArgs,
+      type, subtype, data, callback, id, ids, tmp,
+      listener, listenerId,
+      event, eventId, eventIds,
+      i, j, k, removeMe,
+      listenerIds,
+      filteredListenerIds = [],
+      removedListenerIds = [],
+      dataType;
+
+    //console.log(args);
+    //args = Array.prototype.slice.call(args[0]);
+    arg0 = args[0];
+    numArgs = args.length;
+
+    if (numArgs === 1) {
+      if (typeString(arg0) === 'array') {
+        ids = arg0;
+      } else {
+        ids = [arg0];
+      }
+      //console.log(ids);
+
+      for (i = ids.length - 1; i >= 0; i--) {
+        id = ids[i];
+        //console.log(id);
+        if (this.allListenersById[id] !== undefined) {
+          listener = this.allListenersById[id];
+          type = listener.type;
+          subtype = listener.subtype;
+
+          if (type === 'position') {
+            // reference to an array of all the listeners bound to this event type
+            listenerIds = this.allListenersByType[type][subtype][listener.position_type];
+            // loop over listeners and filter the one that has to be removed
+            for (j = listenerIds.length - 1; j >= 0; j--) {
+              listenerId = listenerIds[j];
+              if (listenerId !== id) {
+                filteredListenerIds.push(listenerId);
+              }
             }
+            // add the filtered array back
+            this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
+            delete this.allListenersById[id];
+
+          } else if (type === 'event' || type === 'note') {
+            event = listener.event;
+            eventId = event.id;
+            listenerIds = this.allListenersByType.event[subtype][eventId];
+            for (j = listenerIds.length - 1; j >= 0; j--) {
+              listenerId = listenerIds[j];
+              listener = this.allListenersById[listenerId];
+              if (listenerId !== id) {
+                filteredListenerIds.push(listenerId);
+                break;
+              }
+            }
+            // add the filtered array back per event
+            this.allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
+            delete this.allListenersById[id];
+
+            //@TODO: we have to add allListenersByType.notes
+            /*
+                                    if(type === 'note'){
+                                        console.log(event);
+                                        if(event.type === sequencer.NOTE_ON){
+                                            eventId = event.midiNote.noteOff.id;
+                                            tmp = allListenersByType.event[subtype][eventId];
+                                            listenerIds = listenerIds.concat(tmp);
+                                        }else if(event.type === sequencer.NOTE_OFF){
+                                            eventId = event.midiNote.noteOn.id;
+                                            tmp = allListenersByType.event[subtype][eventId];
+                                            listenerIds = listenerIds.concat(tmp);
+                                        }
+            
+                                        for(j = listenerIds.length - 1; j >= 0; j--){
+                                            listenerId = listenerIds[j];
+                                            listener = allListenersById[listenerId];
+                                            if(listenerId !== id){
+                                                filteredListenerIds.push(listenerId);
+                                                break;
+                                            }
+                                        }
+                                        // add the filtered array back per event
+                                        allListenersByType.event[subtype][eventId] = [].concat(filteredListenerIds);
+                                        delete allListenersById[id];
+                                    }
+            */
+          }
+
+          //console.log(this.allListenersById,this.allListenersByType);
+
+        } else {
+          console.warn('no event listener found with id', id);
         }
+      }
 
-        return events;
-    };
+    } else if (numArgs === 2 || numArgs === 3) {
+
+      type = args[0];
+      data = args[1];
+      callback = args[2];
+      dataType = typeString(data);
+
+      //console.log(type, data, callback, dataType);
+
+      switch (type) {
+        case 'position':
+          if (dataType === 'string') {
+            // get the id of the listener by the searchstring
+            id = this.positionListenersBySearchstring[data];
+            // get the listener by id
+            listener = this.allListenersById[id];
+            // reference to an array of all the listeners bound to this event type
+            listenerIds = this.allListenersByType[listener.type][listener.subtype][listener.position_type];
+            // loop over listeners and filter the one that has to be removed
+            for (i = listenerIds.length - 1; i >= 0; i--) {
+              listenerId = listenerIds[i];
+              if (listenerId !== id) {
+                filteredListenerIds.push(listenerId);
+              }
+            }
+            // add the filtered array back
+            this.allListenersByType[listener.type][listener.subtype][listener.position_type] = [].concat(filteredListenerIds);
+            delete this.allListenersById[id];
+            delete this.positionListenersBySearchstring[data];
+            //console.log(allListenersById, allListenersByType, positionListenersBySearchstring);
+          }
+          break;
+
+        case 'event':
+        case 'note':
+
+          if (dataType === 'string') {
+            // get all listener ids that are connected to this searchstring
+            listenerIds = this.eventListenersBySearchstring[data];
+            for (i = listenerIds.length - 1; i >= 0; i--) {
+              // collect all ids of listeners that need to be removed
+              removedListenerIds.push(listenerIds[i]);
+            }
+
+            // loop over all searchstring listeners and filter the ones that have to be removed
+            eventIds = this.allListenersByType.event.searchstring;
+            for (eventId in eventIds) {
+              if (eventIds.hasOwnProperty(eventId)) {
+                listenerIds = eventIds[eventId];
+                filteredListenerIds = [];
+                for (i = listenerIds.length - 1; i >= 0; i--) {
+                  listenerId = listenerIds[i];
+                  removeMe = false;
+                  for (j = removedListenerIds.length - 1; j >= 0; j--) {
+                    //console.log(listenerId, removedListenerIds[j], callback);
+                    if (listenerId === removedListenerIds[j]) {
+                      removeMe = true;
+                      /*
+                      if(callback === undefined){
+                          removeMe = true;
+                      }else{
+                          removeMe = allListenersById[listenerId].callback === callback
+                      }
+                      */
+                      break;
+                    }
+                  }
+                  if (removeMe === false) {
+                    filteredListenerIds.push(listenerId);
+                  } else {
+                    // remove the listeners from the id library
+                    delete this.allListenersById[listenerIds[i]];
+                  }
+                }
+                // add the filtered array back
+                this.allListenersByType.event.searchstring[eventId] = [].concat(filteredListenerIds);
+              }
+            }
+            // delete the searchstring listeners array
+            delete this.eventListenersBySearchstring[data];
+            //console.log(allListenersById,eventListenersBySearchstring,allListenersByType);
+
+          } else if (dataType === 'object') {
+            if (data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
+              console.error('please provide a midi event or a midi note');
+              return;
+            }
+            if (data.className === 'MidiNote') {
+              id = data.noteOn.id;
+            } else if (data.className === 'MidiEvent') {
+              id = data.id;
+            }
+            if (this.allListenersByType.event.instance[id] !== undefined) {
+              type = 'instance';
+              listenerIds = this.allListenersByType.event.instance[id];
+            } else if (this.allListenersByType.event.searchstring[id] !== undefined) {
+              type = 'searchstring';
+              listenerIds = this.allListenersByType.event.searchstring[id];
+            }
+            if (listenerIds === undefined) {
+              console.warn('no event listener bound to event with id', id);
+              return;
+            }
+            if (data.className === 'MidiNote') {
+              ids = this.allListenersByType.event[type][data.noteOff.id];
+              listenerIds = listenerIds.concat(ids);
+            }
+            //console.log(listenerIds);
+            for (i = listenerIds.length - 1; i >= 0; i--) {
+              listenerId = listenerIds[i];
+              listener = this.allListenersById[listenerId];
+              if (callback && listener.callback !== callback) {
+                filteredListenerIds.push(listener.id);
+              } else {
+                delete this.allListenersById[listener.id];
+              }
+              this.allListenersByType.event[type][listener.event.id] = [].concat(filteredListenerIds);
+            }
+            //console.log(allListenersById,allListenersByType);
+          }
+          break;
+      }
+    }
+  };
 
 
-    checkOperatorConflict = function (operator1, operator2) {
+  // set the 'called' key of every listener to false, this is necessary if the playhead is moved (by a loop of by the user)
+  FollowEvent.prototype.resetAllListeners = function () {
+    var listeners = this.allListenersById, key, listener;
 
-        switch (operator1) {
-            case '=':
-            case '==':
-            case '===':
-                return false;
+    for (key in listeners) {
+      if (listeners.hasOwnProperty(key)) {
+        listener = listeners[key];
+        listener.called = false;
+        //console.log(listener);
+      }
+    }
+  };
+
+
+  getEvents = function (type, data) {
+
+    var dataType = typeString(data),
+      events = [], i, e;
+
+    if (dataType !== 'array' && data !== undefined && data.className !== 'MidiEvent' && data.className !== 'MidiNote') {
+      console.error(data, ' is not valid data for event type \'event\', please consult documentation');
+      return -1;
+    }
+
+    if (dataType === 'array') {
+      for (i = data.length - 1; i >= 0; i--) {
+        e = data[i];
+        if (type === 'event' && e.className !== 'MidiEvent' && e.className !== 'AudioEvent') {
+          console.warn('skipping', e, 'because it is not a MidiEvent nor an AudioEvent');
+          continue;
+        } else if (type === 'note' && e.className !== 'MidiNote') {
+          console.warn('skipping', e, 'because it is not a MidiNote');
+          continue;
         }
-
-        switch (operator2) {
-            case '=':
-            case '==':
-            case '===':
-                return false;
+        events.push(e);
+      }
+    } else {
+      if (type === 'event') {
+        if (data.className !== 'MidiEvent' && data.className !== 'AudioEvent') {
+          console.error(data, ' is not a MidiEvent nor an AudioEvent');
+          return -1;
+        } else {
+          events = [data];
         }
+      } else if (type === 'note') {
+        if (data.className !== 'MidiNote') {
+          console.error(data, ' is not a MidiNote');
+          return -1;
+        } else {
+          events = [data.noteOn, data.noteOff];
+        }
+      }
+    }
 
-        return true;
-    };
+    return events;
+  };
 
 
-    sequencer.protectedScope.createFollowEvent = function (song) {
-        return new FollowEvent(song);
-    };
+  checkOperatorConflict = function (operator1, operator2) {
+
+    switch (operator1) {
+      case '=':
+      case '==':
+      case '===':
+        return false;
+    }
+
+    switch (operator2) {
+      case '=':
+      case '==':
+      case '===':
+        return false;
+    }
+
+    return true;
+  };
 
 
-    sequencer.protectedScope.addInitMethod(function () {
-        typeString = sequencer.protectedScope.typeString;
-        getPosition = sequencer.protectedScope.getPosition;
-        midiEventNumberByName = sequencer.midiEventNumberByName;
-        midiEventNameByNumber = sequencer.midiEventNameByNumber;
-        findEvent = sequencer.findEvent;
-    });
+  sequencer.protectedScope.createFollowEvent = function (song) {
+    return new FollowEvent(song);
+  };
+
+
+  sequencer.protectedScope.addInitMethod(function () {
+    typeString = sequencer.protectedScope.typeString;
+    getPosition = sequencer.protectedScope.getPosition;
+    midiEventNumberByName = sequencer.midiEventNumberByName;
+    midiEventNameByNumber = sequencer.midiEventNameByNumber;
+    findEvent = sequencer.findEvent;
+  });
 }function songGrid() {
 
 	/*
@@ -19892,75 +19903,75 @@ function track() {
 }
 function transpose() {
 
-    'use strict';
+  'use strict';
 
-    var
-        // satisfy jslint
-        Pitchshift = window.Pitchshift,
+  var
+    // satisfy jslint
+    Pitchshift = window.Pitchshift,
 
-        context,
-        fftFrameSize = 2048,
-        shifter;
+    context,
+    fftFrameSize = 2048,
+    shifter;
 
-    function init() {
-        if (window.Pitchshift) {
-            shifter = new Pitchshift(fftFrameSize, context.sampleRate, 'FFT');
-        }
+  function init() {
+    if (window.Pitchshift) {
+      shifter = new Pitchshift(fftFrameSize, context.sampleRate, 'FFT');
+    }
+  }
+
+
+  function transpose(inputBuffer, semitones, cb) {
+    if (shifter === undefined) {
+      console.log('include Kiev II');
+      return;
+    }
+    if (semitones === 0) {
+      if (cb) {
+        //console.log(inputBuffer, semitones)
+        cb(inputBuffer);
+        return;
+      }
     }
 
+    var numChannels = inputBuffer.numberOfChannels,
+      c, input, length, output, outputs = [], shiftValue, i,
+      outputBuffer;
 
-    function transpose(inputBuffer, semitones, cb) {
-        if (shifter === undefined) {
-            console.log('include Kiev II');
-            return;
-        }
-        if (semitones === 0) {
-            if (cb) {
-                //console.log(inputBuffer, semitones)
-                cb(inputBuffer);
-                return;
-            }
-        }
+    //console.log(inputBuffer);
 
-        var numChannels = inputBuffer.numberOfChannels,
-            c, input, length, output, outputs = [], shiftValue, i,
-            outputBuffer;
-
-        //console.log(inputBuffer);
-
-        for (c = 0; c < numChannels; c++) {
-            input = inputBuffer.getChannelData(c);
-            length = input.length;
-            output = new Float32Array(length);
-            shiftValue = Math.pow(1.0595, semitones);
-            //shiftValue = 1.01;
-            shifter.process(shiftValue, input.length, 4, input);
-            //shifter.process(shiftValue, input.length, 8, input);
-            for (i = 0; i < length; i++) {
-                output[i] = shifter.outdata[i];
-            }
-            outputs[c] = output;
-        }
-
-        outputBuffer = context.createBuffer(
-            numChannels,
-            length,
-            inputBuffer.sampleRate
-        );
-
-        for (c = 0; c < numChannels; c++) {
-            outputBuffer.getChannelData(c).set(outputs[c]);
-        }
-
-        cb(outputBuffer);
+    for (c = 0; c < numChannels; c++) {
+      input = inputBuffer.getChannelData(c);
+      length = input.length;
+      output = new Float32Array(length);
+      shiftValue = Math.pow(1.0595, semitones);
+      //shiftValue = 1.01;
+      shifter.process(shiftValue, input.length, 4, input);
+      //shifter.process(shiftValue, input.length, 8, input);
+      for (i = 0; i < length; i++) {
+        output[i] = shifter.outdata[i];
+      }
+      outputs[c] = output;
     }
 
-    sequencer.protectedScope.transpose = transpose;
+    outputBuffer = context.createBuffer(
+      numChannels,
+      length,
+      inputBuffer.sampleRate
+    );
 
-    sequencer.protectedScope.addInitMethod(function () {
-        context = sequencer.protectedScope.context;
-        init();
-    });
+    for (c = 0; c < numChannels; c++) {
+      outputBuffer.getChannelData(c).set(outputs[c]);
+    }
+
+    cb(outputBuffer);
+  }
+
+  sequencer.protectedScope.transpose = transpose;
+
+  sequencer.protectedScope.addInitMethod(function () {
+    context = sequencer.protectedScope.context;
+    init();
+  });
 
 }function util() {
 
@@ -21654,134 +21665,134 @@ function transpose() {
     sequencer.getWaveformData = getWaveformData;
 }function closeModule(cb) {
 
-    'use strict';
+  'use strict';
 
-    var
-        ready = false,
-        readyCallbacks = [],
-        context,
-        initMidi,
-        base64ToBinary;
+  var
+    ready = false,
+    readyCallbacks = [],
+    context,
+    initMidi,
+    base64ToBinary;
 
-    sequencer.protectedScope.callInitMethods(); // defined in open_module.js
-    context = sequencer.protectedScope.context; // defined in open_module.js
-    initMidi = sequencer.protectedScope.initMidi; // defined in midi_system.js
-    base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
-    delete sequencer.protectedScope; //seal
+  sequencer.protectedScope.callInitMethods(); // defined in open_module.js
+  context = sequencer.protectedScope.context; // defined in open_module.js
+  initMidi = sequencer.protectedScope.initMidi; // defined in midi_system.js
+  base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
+  delete sequencer.protectedScope; //seal
 
-    sequencer.ready = function () {
-        return new Promise(resolve => {
-            if (ready === true) {
-                resolve();
-            } else {
-                readyCallbacks.push(resolve);
-            }
-        })
-    };
+  sequencer.ready = function () {
+    return new Promise(resolve => {
+      if (ready === true) {
+        resolve();
+      } else {
+        readyCallbacks.push(resolve);
+      }
+    })
+  };
 
-    sequencer.addInstrument({
-        name: 'sinewave',
-        folder: 'heartbeat',
-        autopan: false,
-        attack: 200,
-        keyrange: [21, 108],
-        release_duration: 50
+  sequencer.addInstrument({
+    name: 'sinewave',
+    folder: 'heartbeat',
+    autopan: false,
+    attack: 200,
+    keyrange: [21, 108],
+    release_duration: 50
+  });
+
+
+  sequencer.addInstrument({
+    name: 'metronome',
+    folder: 'heartbeat',
+    //release_duration: 250,
+    sample_path: 'heartbeat/metronome',
+    keyrange: [60, 61],
+    mapping: {
+      '60': { n: 'lowtick' },
+      '61': { n: 'hightick' }
+    }
+  });
+
+  //console.log(sequencer.os, sequencer.browser);
+
+  // safari supports only mp3 and all other browsers support mp3 among others, so although ogg is a better format, mp3 is the best choice here to cover all browsers
+  // -> but we use wav for the metronome tick to get rid of the padding at the start of a mp3 file
+  sequencer.addSamplePack({
+    name: 'metronome',
+    folder: 'heartbeat',
+    mapping: {
+      'hightick': 'UklGRkQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAFAACx/xf/dADOACwBsP3p+6H+zAGoBOkCCwBX/EH5OvxlA4kJ2wcSArT9E/ut+HT2evUx98n6OAF5CCUMwQvfCOsJxAx0DSIMEAq9BiAB3vhz7mLkT9sR133YxN2s5QLv0vrUBnwRnxuQJeEsSDCiMd8yFS8aKFIhohUsCKj64u625OraA9HuyPnElcP+wxvJWtW25637VQ0jHPgnBTDDM1o0CzKLK+8hzhgFDOz8Se4J47DYVtG0z5fQq9LB12rfA+j99roHAhelIyMwIjdTOuU8mjwIOGoxhCb5E53/j+3k3/fTY8pTw4y/Tr+ew8DMvdsk8RcHRRkSKO4yGTkHPkU/rzzyNcgsrR94Dp/5r+Zs17zOncoDxhfE38WLyn/TeOMi9r0IRxlRKIQzyTlOPKo9yjmWMcokDRLc/Y7rudtdzu/D2L1Iu+27JcG3yYrVLujl+3UOZx1UK5Q0qzmNPDk8ZjeeMPojzhH+/jLtPd5m0hHLHsYIw5TEMMnA0jvj8fSOBiwXASZgMzM8dUBGQbI+rzjpKkIZygZT9QflcdaRyqXCz7+VwUPH784r3K7s+v0KDu8bvyeLMb43NjrhOIo0dSvQHi0PnP6i7ovg3NTxy4/Gf8X8yH/QBtvX55P2Ygb0FcUjsy4LNmI5ejiXM38r7iC8FJwHPvok7dDgQdaJzlTKIsoFzsrVkuA87d/6qAi7FQ0h9ClKMLEz3TOrMBcqYSD8E9AFd/dS6kTf6dbU0XnQv9IH2MXfZ+ln9DEAFwwdFy8giib6KawqeChgI/UbHBOTCZj/vvXe7InlFuDN3P3b0d1F4gzpifG2+u4D7Qw1FfwbnCD+IlgjWyHLHPMVog2mBL37qvP+7NvnYuTv4rvjfubN6k3wpPZ0/WkEOwtiEUsWcxm+Gl4aOhhiFDAPIwmbAtn7TPVy77zqcefr5YHmHull7enyfPmcAHgHew1REr8Vhhd/F+AV1RJ0DikJWQNc/ZP3efKd7hvs2ur46rHs5u8e9N/48/0hA/8HFgwuD04RSBIREqsQOg7mCssGMAJW/Xn4G/TK8Lbuzu0I7qTvnPJy9sX6bP84BLYIbAwdD84QYxG7EOcODAxwCFMEAQC9+7P3SvTX8XHw+u9R8KTxIvSo9+X7VQCUBJ0IMwziDj4QLhAGD9UMrgnTBZcBRv1v+Xv2UfS+8tfx+vES87z0+vb3+Zf9ZgEQBSEIUArWC8kM2QyzC5EJEAdvBHgBXP5n++r4Avd89Wj07fMw9D31Jvfp+Uj9xQD9A8QG5QhXClELrAsvC9wJ7gd6BWIC3v6O+7T4PPZN9EHzWvNf9Pz1Fvit+qL9rQCHAwEG/weCCZUKFwvDCnIJcAcQBWcCaf8Z/CD55vaB9dD0wPSP9UL3m/k7/Mz+JwEyAw8FzAY7CBsJaQk5CWkI2gatBCICYf+j/Fr6vfiV9872sfZP91z4p/lR+3H9zf89AroEFAfjCP0Jcwo8CjAJdQdgBSEDkgDQ/Vj7ZfnR95T28fUd9v32Vvg2+nb8+/6xAWoE4AbDCP4JpAqbCqQJ0weEBfgCTACT/R37M/m+9672IPY69gb3afhW+tT8qf+MAj0FggcuCScKXAriCcMIEAfyBJYCFwCP/Rz7A/l793z2F/Zn9mH37fjd+i39yf9pAt0EFAfRCNkJGAqrCZYIvgZPBJ8B6P4//M350vdz9q/1lfUq9mz3RPmi+3H+bgFVBOQG3wgHCkwK0Am7CCAHCgWmAjAA',
+      'lowtick': 'UklGRlQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YTAFAAB0/5v+U/4T/3gA0wFTAuUB+f8d/nT90f1q/ub+tf46/mb/8wFQA9gC7wCd/mr+FAGRA3cE6wJf/h36evmv+8v/NwRHBZUC2/60+//5EvuZ/aX/bgFOAp8Azvzh9wfzLPF68zT4y/2BAygIfQwaEjYY0x31Irwl8SOWHVESOgPh9NfpReFt22nYHddD2BXcZeDa5InqgPDx9nP+6gS4CBYLnw0zES0WXxv4HkcgLh/1G+EX1RNpD4wKigXH/6r5/fNu7lTpj+Zu5hHoXOtL71byr/Qp91L64v6OBO4JoQ5zEskU+hU1FiQVeRP7EWgP4Qr0BIT+tPid9C3y1vCh8FDxJvK28vvyy/LA8pLzU/XP95v6xvw4/uD/RAK2BSkKcg6BEScTZBMeEqkPTQxjCKEEVwFi/nv7h/hp9aDyAvHP8MfxLvM+9PX0uPW19g/4Lfr7/C4AKgNaBXQGywb0BhIHWQfWB1oIzAjtCF8IHwdtBakDVwKLAeYA8v9w/kj81/nQ94v29/XX9bz1bPUY9Uz1Z/aH+Hr7yP4MAi4F+wcfCnYLNgyfDPsMSw0sDUAMfgrcB5IEMwFb/iX8T/pT+O/1X/Mf8cbvrO+18MLyvfVP+Rf9wgAoBCEHpwnIC5EN4Q5AD3wO1Ay0CpsIvwbvBNcCbQAr/nX8Ofsf+vb4mvda9rj1z/WX9pL3a/hH+ZX6R/wn/vP/eQESA/AE+wYDCcwKFAyPDCkMFQuSCe4HVQbSBHQDCwI8ANL9JPuY+HX28vTq82PzdPMV9Az1MfZ49zD5gftx/sQBBQXLB8cJ/gqpCw8MigwWDXENXQ2rDDUL7QgDBswCdv8S/K74WPVk8hXwou4P7mvu1+9T8pz1Uvli/ZoBwgWRCcsMPg/CEEQR4RDADwoO9wusCVMH4ARSApn/ufzd+Wj3bvX78xzzx/L68qzz1vSD9qX4Gfvd/c0AhwO/BWwHmghvCQEKVQonClsJCwiIBh0F0gOgAm0BOwAx/03+XP0g/Lb6cPmX+F/4vfh++TH6s/os+7/7cvwL/Zz9XP5O/3IA3AF9AzsF9gaUCAAKHgueCzcL9wntB3sF4wIzAI396fp1+Gv2IvWn9N30p/Xi9m74G/ru+9P9k/8aAYEC1AMTBSIG0wYuB1gHkgcACGEISAhTBzEFWAKt/5L92fuU+vX50fmf+SP5i/gb+Bf4mviv+Sr7kvyb/Uj+r/4X/8r/+gCiAo0EUAaRBzwISwjqB3IHGQfCBv8FpgTMApQAKf67+5n5/vfn9jz2yPVn9SL1RPXq9SP3Dvmr+6f+sQGKBAcH+whOCh0Laws3C28KLAmDB5AFfQNoAVP/Zv3e+7P6sfnL+Cv4vPeM95b37feV+Jn51Poq/LL9mv+YAVYD3gQuBmcHSAikCIEI7Af+BuEFngQXA1sBv/9v/pf9MP3W/Fj8q/sR+6H6U/o3+mP6y/pN+/f7xvye/WH+Jf9mAD4CQAQJBisHtgf6Bw0I8QdsB1sGywT4AggBCP/o/KX6mPg19572jfaz9uf2S/cM+E35E/tW/af/5wH1A8AFKgfkB/AHgwfxBlAGgQVIBMMCJwGs/43+vP0i/Zr8Lfzl+9H76fvi+9f75fsf/In8BP10/ej9cf4O/7f/dAAcAaUBEgKMAhgDpAMEBCEEDwTfA3IDxQL8ASoBUwCG/87+J/6h/Rr9pPxk/Gb8oPwJ/XH9w/39/UD+qP41/9D/WwDeAGsBAgKdAhEDQQNAA0sDbwOVA5YDVwPOAhgCVAGRAA=='
+    }
+  });
+
+  // console.log(initMidi);
+
+  sequencer.addTask({
+    type: 'init midi',
+    method: initMidi,
+    params: []
+  }, function () {
+    // setTimeout(function() {
+    readyCallbacks.forEach(function (cb) {
+      cb();
     });
+    ready = true;
+    console.timeEnd(label);
+    // }, 4000)
+  }, false); // @TODO: check this true | false
 
-
-    sequencer.addInstrument({
-        name: 'metronome',
-        folder: 'heartbeat',
-        //release_duration: 250,
-        sample_path: 'heartbeat/metronome',
-        keyrange: [60, 61],
-        mapping: {
-            '60': { n: 'lowtick' },
-            '61': { n: 'hightick' }
-        }
-    });
-
-    //console.log(sequencer.os, sequencer.browser);
-
-    // safari supports only mp3 and all other browsers support mp3 among others, so although ogg is a better format, mp3 is the best choice here to cover all browsers
-    // -> but we use wav for the metronome tick to get rid of the padding at the start of a mp3 file
-    sequencer.addSamplePack({
-        name: 'metronome',
-        folder: 'heartbeat',
-        mapping: {
-            'hightick': 'UklGRkQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YSAFAACx/xf/dADOACwBsP3p+6H+zAGoBOkCCwBX/EH5OvxlA4kJ2wcSArT9E/ut+HT2evUx98n6OAF5CCUMwQvfCOsJxAx0DSIMEAq9BiAB3vhz7mLkT9sR133YxN2s5QLv0vrUBnwRnxuQJeEsSDCiMd8yFS8aKFIhohUsCKj64u625OraA9HuyPnElcP+wxvJWtW25637VQ0jHPgnBTDDM1o0CzKLK+8hzhgFDOz8Se4J47DYVtG0z5fQq9LB12rfA+j99roHAhelIyMwIjdTOuU8mjwIOGoxhCb5E53/j+3k3/fTY8pTw4y/Tr+ew8DMvdsk8RcHRRkSKO4yGTkHPkU/rzzyNcgsrR94Dp/5r+Zs17zOncoDxhfE38WLyn/TeOMi9r0IRxlRKIQzyTlOPKo9yjmWMcokDRLc/Y7rudtdzu/D2L1Iu+27JcG3yYrVLujl+3UOZx1UK5Q0qzmNPDk8ZjeeMPojzhH+/jLtPd5m0hHLHsYIw5TEMMnA0jvj8fSOBiwXASZgMzM8dUBGQbI+rzjpKkIZygZT9QflcdaRyqXCz7+VwUPH784r3K7s+v0KDu8bvyeLMb43NjrhOIo0dSvQHi0PnP6i7ovg3NTxy4/Gf8X8yH/QBtvX55P2Ygb0FcUjsy4LNmI5ejiXM38r7iC8FJwHPvok7dDgQdaJzlTKIsoFzsrVkuA87d/6qAi7FQ0h9ClKMLEz3TOrMBcqYSD8E9AFd/dS6kTf6dbU0XnQv9IH2MXfZ+ln9DEAFwwdFy8giib6KawqeChgI/UbHBOTCZj/vvXe7InlFuDN3P3b0d1F4gzpifG2+u4D7Qw1FfwbnCD+IlgjWyHLHPMVog2mBL37qvP+7NvnYuTv4rvjfubN6k3wpPZ0/WkEOwtiEUsWcxm+Gl4aOhhiFDAPIwmbAtn7TPVy77zqcefr5YHmHull7enyfPmcAHgHew1REr8Vhhd/F+AV1RJ0DikJWQNc/ZP3efKd7hvs2ur46rHs5u8e9N/48/0hA/8HFgwuD04RSBIREqsQOg7mCssGMAJW/Xn4G/TK8Lbuzu0I7qTvnPJy9sX6bP84BLYIbAwdD84QYxG7EOcODAxwCFMEAQC9+7P3SvTX8XHw+u9R8KTxIvSo9+X7VQCUBJ0IMwziDj4QLhAGD9UMrgnTBZcBRv1v+Xv2UfS+8tfx+vES87z0+vb3+Zf9ZgEQBSEIUArWC8kM2QyzC5EJEAdvBHgBXP5n++r4Avd89Wj07fMw9D31Jvfp+Uj9xQD9A8QG5QhXClELrAsvC9wJ7gd6BWIC3v6O+7T4PPZN9EHzWvNf9Pz1Fvit+qL9rQCHAwEG/weCCZUKFwvDCnIJcAcQBWcCaf8Z/CD55vaB9dD0wPSP9UL3m/k7/Mz+JwEyAw8FzAY7CBsJaQk5CWkI2gatBCICYf+j/Fr6vfiV9872sfZP91z4p/lR+3H9zf89AroEFAfjCP0Jcwo8CjAJdQdgBSEDkgDQ/Vj7ZfnR95T28fUd9v32Vvg2+nb8+/6xAWoE4AbDCP4JpAqbCqQJ0weEBfgCTACT/R37M/m+9672IPY69gb3afhW+tT8qf+MAj0FggcuCScKXAriCcMIEAfyBJYCFwCP/Rz7A/l793z2F/Zn9mH37fjd+i39yf9pAt0EFAfRCNkJGAqrCZYIvgZPBJ8B6P4//M350vdz9q/1lfUq9mz3RPmi+3H+bgFVBOQG3wgHCkwK0Am7CCAHCgWmAjAA',
-            'lowtick': 'UklGRlQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YTAFAAB0/5v+U/4T/3gA0wFTAuUB+f8d/nT90f1q/ub+tf46/mb/8wFQA9gC7wCd/mr+FAGRA3cE6wJf/h36evmv+8v/NwRHBZUC2/60+//5EvuZ/aX/bgFOAp8Azvzh9wfzLPF68zT4y/2BAygIfQwaEjYY0x31Irwl8SOWHVESOgPh9NfpReFt22nYHddD2BXcZeDa5InqgPDx9nP+6gS4CBYLnw0zES0WXxv4HkcgLh/1G+EX1RNpD4wKigXH/6r5/fNu7lTpj+Zu5hHoXOtL71byr/Qp91L64v6OBO4JoQ5zEskU+hU1FiQVeRP7EWgP4Qr0BIT+tPid9C3y1vCh8FDxJvK28vvyy/LA8pLzU/XP95v6xvw4/uD/RAK2BSkKcg6BEScTZBMeEqkPTQxjCKEEVwFi/nv7h/hp9aDyAvHP8MfxLvM+9PX0uPW19g/4Lfr7/C4AKgNaBXQGywb0BhIHWQfWB1oIzAjtCF8IHwdtBakDVwKLAeYA8v9w/kj81/nQ94v29/XX9bz1bPUY9Uz1Z/aH+Hr7yP4MAi4F+wcfCnYLNgyfDPsMSw0sDUAMfgrcB5IEMwFb/iX8T/pT+O/1X/Mf8cbvrO+18MLyvfVP+Rf9wgAoBCEHpwnIC5EN4Q5AD3wO1Ay0CpsIvwbvBNcCbQAr/nX8Ofsf+vb4mvda9rj1z/WX9pL3a/hH+ZX6R/wn/vP/eQESA/AE+wYDCcwKFAyPDCkMFQuSCe4HVQbSBHQDCwI8ANL9JPuY+HX28vTq82PzdPMV9Az1MfZ49zD5gftx/sQBBQXLB8cJ/gqpCw8MigwWDXENXQ2rDDUL7QgDBswCdv8S/K74WPVk8hXwou4P7mvu1+9T8pz1Uvli/ZoBwgWRCcsMPg/CEEQR4RDADwoO9wusCVMH4ARSApn/ufzd+Wj3bvX78xzzx/L68qzz1vSD9qX4Gfvd/c0AhwO/BWwHmghvCQEKVQonClsJCwiIBh0F0gOgAm0BOwAx/03+XP0g/Lb6cPmX+F/4vfh++TH6s/os+7/7cvwL/Zz9XP5O/3IA3AF9AzsF9gaUCAAKHgueCzcL9wntB3sF4wIzAI396fp1+Gv2IvWn9N30p/Xi9m74G/ru+9P9k/8aAYEC1AMTBSIG0wYuB1gHkgcACGEISAhTBzEFWAKt/5L92fuU+vX50fmf+SP5i/gb+Bf4mviv+Sr7kvyb/Uj+r/4X/8r/+gCiAo0EUAaRBzwISwjqB3IHGQfCBv8FpgTMApQAKf67+5n5/vfn9jz2yPVn9SL1RPXq9SP3Dvmr+6f+sQGKBAcH+whOCh0Laws3C28KLAmDB5AFfQNoAVP/Zv3e+7P6sfnL+Cv4vPeM95b37feV+Jn51Poq/LL9mv+YAVYD3gQuBmcHSAikCIEI7Af+BuEFngQXA1sBv/9v/pf9MP3W/Fj8q/sR+6H6U/o3+mP6y/pN+/f7xvye/WH+Jf9mAD4CQAQJBisHtgf6Bw0I8QdsB1sGywT4AggBCP/o/KX6mPg19572jfaz9uf2S/cM+E35E/tW/af/5wH1A8AFKgfkB/AHgwfxBlAGgQVIBMMCJwGs/43+vP0i/Zr8Lfzl+9H76fvi+9f75fsf/In8BP10/ej9cf4O/7f/dAAcAaUBEgKMAhgDpAMEBCEEDwTfA3IDxQL8ASoBUwCG/87+J/6h/Rr9pPxk/Gb8oPwJ/XH9w/39/UD+qP41/9D/WwDeAGsBAgKdAhEDQQNAA0sDbwOVA5YDVwPOAhgCVAGRAA=='
-        }
-    });
-
-    // console.log(initMidi);
-
-    sequencer.addTask({
-        type: 'init midi',
-        method: initMidi,
-        params: []
-    }, function () {
-        // setTimeout(function() {
-            readyCallbacks.forEach(function (cb) {
-                cb();
-            });
-            ready = true;
-            console.timeEnd(label);
-        // }, 4000)
-    }, false); // @TODO: check this true | false
-
-    // sequencer.startTaskQueue();
+  // sequencer.startTaskQueue();
 }
 
 var label = 'heartbeat ' + version + ', initializing took';
 
 function initSequencer() {
-    console.time(label);
-    openModule();
-    assetManager();
-    assetPack();
-    // audioEncoder();
-    audioEvent();
-    audioRecorder();
-    // audioRecordingWorker();
-    audioTrack();
-    channelEffects();
-    eventStatistics();
-    findEvent();
-    instrument();
-    instrumentConfig();
-    keyEditor();
-    keyEditorIteratorFactory();
-    metronome();
-    midiEvent();
-    midiEventNames();
-    midiFile();
-    midiNote();
-    midiParse();
-    midiStream();
-    midiSystem();
-    midiWrite();
-    // musicXMLParser();
-    note();
-    parseEvents();
-    parseTimeEvents();
-    part();
-    playhead();
-    position();
-    quantizeFixedLength();
-    sample();
-    samplePack();
-    scheduler();
-    createSequencer();
-    song();
-    songEventListener();
-    songFollowEvent();
-    songGrid();
-    songUpdate();
-    track();
-    transpose();
-    util();
-    closeModule();
+  console.time(label);
+  openModule();
+  assetManager();
+  assetPack();
+  // audioEncoder();
+  audioEvent();
+  audioRecorder();
+  // audioRecordingWorker();
+  audioTrack();
+  channelEffects();
+  eventStatistics();
+  findEvent();
+  instrument();
+  instrumentConfig();
+  keyEditor();
+  keyEditorIteratorFactory();
+  metronome();
+  midiEvent();
+  midiEventNames();
+  midiFile();
+  midiNote();
+  midiParse();
+  midiStream();
+  midiSystem();
+  midiWrite();
+  // musicXMLParser();
+  note();
+  parseEvents();
+  parseTimeEvents();
+  part();
+  playhead();
+  position();
+  quantizeFixedLength();
+  sample();
+  samplePack();
+  scheduler();
+  createSequencer();
+  song();
+  songEventListener();
+  songFollowEvent();
+  songGrid();
+  songUpdate();
+  track();
+  transpose();
+  util();
+  closeModule();
 }
 
 initSequencer();
