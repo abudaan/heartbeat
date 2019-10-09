@@ -8,7 +8,11 @@ export function createPart(name?: string): Part
 export function createKeyEditor(song: Song, config: any): KeyEditor
 export function getMidiFiles(): MIDIFileJSON[]
 export function getInstruments(): Instrument[]
+<<<<<<< HEAD
 export function ready(): boolean
+=======
+export function ready(): Promise<boolean>
+>>>>>>> gh-pages
 export var browser: string
 export var midiInputs: WebMidi.MIDIInput[]
 export var midiOutputs: WebMidi.MIDIOutput[]

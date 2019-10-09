@@ -1,27 +1,34 @@
-import sequencer from 'heartbeat-sequencer';
-import 'jzz';
+window.onload = function(){
 
-window.onload = async () => {
-  const btnStop = document.getElementById('stop');
-  const btnStart = document.getElementById('start');
-  const bpm = 240;
+    'use strict';
 
-  await sequencer.ready();
+    var
+        // satisfy jslint
+        sequencer = window.sequencer,
+        console = window.console,
 
-  const events = sequencer.util.getRandomNotes({
-    minNoteNumber: 60,
-    maxNoteNumber: 100,
-    minVelocity: 30,
-    maxVelocity: 80,
-    noteDuration: 120, //ticks
-    numNotes: 30
-  });
+        btnStop = document.getElementById('stop'),
+        btnStart = document.getElementById('start'),
 
-  btnStart.addEventListener('click', () => {
-    sequencer.processEvents(events, bpm);
-  });
+        bpm = 240;
 
-  btnStop.addEventListener('click', () => {
-    sequencer.stopProcessEvents();
-  });
+
+    sequencer.ready(function init(){
+        var events = sequencer.util.getRandomNotes({
+            minNoteNumber: 60,
+            maxNoteNumber: 100,
+            minVelocity: 30,
+            maxVelocity: 80,
+            noteDuration: 120, //ticks
+            numNotes: 30
+        });
+
+        btnStart.addEventListener('click', function(){
+            sequencer.processEvents(events, bpm);
+        });
+
+        btnStop.addEventListener('click', function(){
+            sequencer.stopProcessEvents();
+        });
+    });
 };
