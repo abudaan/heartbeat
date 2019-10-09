@@ -1,59 +1,46 @@
-window.onload = function(){
+import sequencer from 'heartbeat-sequencer';
+import 'jzz';
 
-    'use strict';
+const bpm = 240;
+const noteDuration = 120; // ticks
+const numEvents = 100;
 
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
+window.onload = async () => {
+  await sequencer.ready();
 
-        btnStop = document.getElementById('stop'),
-        btnStart = document.getElementById('start'),
+  const btnStart = document.getElementById('start');
+  btnStart.addEventListener('click', function () {
+    createEvents(numEvents, noteDuration, bpm);
+  });
 
-        i, midiEvent,
-        ticks = 0,
-        noteNumber,
-        velocity,
-        bpm = 240,
-        noteDuration = 120, // ticks
-        numEvents = 100;
+  const btnStop = document.getElementById('stop');
+  btnStop.addEventListener('click', function () {
+    sequencer.stopProcessEvents();
+  });
 
-
-    sequencer.ready(function init(){
-        btnStart.addEventListener('click', function(){
-            createEvents();
-        });
-
-        btnStop.addEventListener('click', function(){
-            sequencer.stopProcessEvents();
-        });
-    });
-
-
-    function getRandom(min, max, round){
-        var r = Math.random() * (max - min) + min;
-        if(round === true){
-            return Math.round(r);
-        }else{
-            return r;
-        }
+  const getRandom = (min, max, round) => {
+    const r = Math.random() * (max - min) + min;
+    if (round === true) {
+      return Math.round(r);
+    } else {
+      return r;
     }
+  }
 
+  const createEvents = (numEvents, noteDuration, bpm) => {
+    let ticks = 0;
 
-    function createEvents(){
-        ticks = 0;
+    for (let i = 0; i < numEvents; i++) {
+      noteNumber = getRandom(50, 100, true);
+      velocity = getRandom(30, 80, true);
 
-        for(i = 0; i < numEvents; i++){
-            noteNumber = getRandom(50, 100, true);
-            velocity = getRandom(30, 80, true);
+      midiEvent = sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity);
+      sequencer.processEvents(midiEvent, bpm);
+      ticks += noteDuration;
 
-            midiEvent = sequencer.createMidiEvent(ticks, sequencer.NOTE_ON, noteNumber, velocity);
-            sequencer.processEvents(midiEvent, bpm);
-            ticks += noteDuration;
-
-            midiEvent = sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0);
-            sequencer.processEvents(midiEvent, bpm);
-            ticks += noteDuration;
-        }
+      midiEvent = sequencer.createMidiEvent(ticks, sequencer.NOTE_OFF, noteNumber, 0);
+      sequencer.processEvents(midiEvent, bpm);
+      ticks += noteDuration;
     }
+  }
 };
