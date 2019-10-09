@@ -1,3 +1,5 @@
+// import sequencer from 'heartbeat-sequencer';
+
 window.onload = function() {
 
     'use strict';

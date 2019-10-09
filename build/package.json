@@ -1,0 +1,8 @@
+{
+  "name": "heartbeat-sequencer",
+  "version": "0.0.13",
+  "description": "javascript sequencer",
+  "main": "./index.js",
+  "dependencies": {},
+  "devDependencies": {}
+}

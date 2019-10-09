@@ -1,0 +1,27 @@
+{
+  "name": "heartbeat-sequencer",
+  "version": "0.0.14",
+  "description": "javascript sequencer",
+  "main": "./build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cd ./tools && ./build.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abudaan/heartbeat.git#npm"
+  },
+  "keywords": [
+    "MIDI",
+    "sequencer",
+    "audio"
+  ],
+  "author": "abudaan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abudaan/heartbeat/issues"
+  },
+  "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md",
+  "dependencies": {},
+  "devDependencies": {}
+}
