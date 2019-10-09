@@ -9,86 +9,9 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 - [Morton Subotnick’s Music Academy](https://musicfirst.com/msma)
 
 
-#### example
-
-Install heartbeat:
-`yarn add heartbeat-sequencer`
-
-or:
-`npm install --save heartbeat-sequencer`
-
-
-```javascript
-import sequencer from 'heartbeat-sequencer';
-
-await sequencer.ready();
-
-const events = sequencer.util.getRandomNotes({
-    minNoteNumber: 60,
-    maxNoteNumber: 100,
-    minVelocity: 30,
-    maxVelocity: 80,
-    numNotes: 60
-});
-    
-const part = sequencer.createPart();
-part.addEvents(events);
-
-const song = sequencer.createSong({
-  parts: part,
-  useMetronome: true
-});
-
-document.addEventListener('click', () => {   
-  if (song.isPlaying) {
-    song.pause();
-  } else {
-    song.play();
-  }
-});
-
-```
-
-or:
-
-```javascript
-import sequencer from 'heartbeat-sequencer';
-
-sequencer
-.ready()
-.then(init);
-
-const init = () => {
-  const events = sequencer.util.getRandomNotes({
-    minNoteNumber: 60,
-    maxNoteNumber: 100,
-    minVelocity: 30,
-    maxVelocity: 80,
-    numNotes: 60
-  });
-      
-  const part = sequencer.createPart();
-  part.addEvents(events);
-
-  const song = sequencer.createSong({
-    parts: part,
-    useMetronome: true
-  });
-
-  document.addEventListener('click', () => {   
-    if (song.isPlaying) {
-      song.pause();
-    } else {
-      song.play();
-    }
-  });
-}
-
-
-```
-
 
 #### key features
+
 
 ###### MIDI
 - create MIDI file from scratch
@@ -120,7 +43,7 @@ const init = () => {
 - sustained instruments (like organ, stings, pads)
 - keyscaling for release and panning
 - configurable release duration and envelope type
-- support for .sfz format (up to a certain level)
+- support for .sfz format (upto a certain level)
 - instrument samples can be transposed at runtime (experimental)
 - 12 sample based instruments included for the sample player (570MB of samples)
 - 1 simple sinewave synthesizer included as fallback instrument
