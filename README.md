@@ -19,7 +19,7 @@ or:
 
 
 ```javascript
-import sequencer from './build/heartbeat';
+import sequencer from 'heartbeat-sequencer';
 
 await sequencer.ready();
 
@@ -35,16 +35,16 @@ const part = sequencer.createPart();
 part.addEvents(events);
 
 const song = sequencer.createSong({
-    parts: part,
-    useMetronome: true
+  parts: part,
+  useMetronome: true
 });
 
 document.addEventListener('click', () => {   
-    if (song.isPlaying) {
-        song.pause();
-    } else {
-        song.play();
-    }
+  if (song.isPlaying) {
+    song.pause();
+  } else {
+    song.play();
+  }
 });
 
 ```
@@ -52,36 +52,36 @@ document.addEventListener('click', () => {
 or:
 
 ```javascript
-import sequencer from './build/heartbeat';
+import sequencer from 'heartbeat-sequencer';
 
 sequencer
 .ready()
 .then(init);
 
 const init = () => {
-    const events = sequencer.util.getRandomNotes({
-        minNoteNumber: 60,
-        maxNoteNumber: 100,
-        minVelocity: 30,
-        maxVelocity: 80,
-        numNotes: 60
-    });
-        
-    const part = sequencer.createPart();
-    part.addEvents(events);
+  const events = sequencer.util.getRandomNotes({
+    minNoteNumber: 60,
+    maxNoteNumber: 100,
+    minVelocity: 30,
+    maxVelocity: 80,
+    numNotes: 60
+  });
+      
+  const part = sequencer.createPart();
+  part.addEvents(events);
 
-    const song = sequencer.createSong({
-        parts: part,
-        useMetronome: true
-    });
+  const song = sequencer.createSong({
+    parts: part,
+    useMetronome: true
+  });
 
-    document.addEventListener('click', () => {   
-        if (song.isPlaying) {
-            song.pause();
-        } else {
-            song.play();
-        }
-    });
+  document.addEventListener('click', () => {   
+    if (song.isPlaying) {
+      song.pause();
+    } else {
+      song.play();
+    }
+  });
 }
 
 
