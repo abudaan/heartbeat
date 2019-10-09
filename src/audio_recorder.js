@@ -62,7 +62,7 @@ function audioRecorder() {
                 waveform: {}
             };
 
-        for (i = 0; i < frameCount; i++) {
+    for (let i = 0; i < frameCount; i++) {
             samples[i] = planarSamples[i];
         }
         recording.audioBuffer = audioBuffer;

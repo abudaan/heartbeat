@@ -19,11 +19,7 @@ or:
 
 
 ```javascript
-<<<<<<< HEAD
-import sequencer from './build/heartbeat';
-=======
 import sequencer from 'heartbeat-sequencer';
->>>>>>> gh-pages
 
 await sequencer.ready();
 
@@ -39,18 +35,6 @@ const part = sequencer.createPart();
 part.addEvents(events);
 
 const song = sequencer.createSong({
-<<<<<<< HEAD
-    parts: part,
-    useMetronome: true
-});
-
-document.addEventListener('click', () => {   
-    if (song.isPlaying) {
-        song.pause();
-    } else {
-        song.play();
-    }
-=======
   parts: part,
   useMetronome: true
 });
@@ -61,7 +45,6 @@ document.addEventListener('click', () => {
   } else {
     song.play();
   }
->>>>>>> gh-pages
 });
 
 ```
@@ -69,42 +52,13 @@ document.addEventListener('click', () => {
 or:
 
 ```javascript
-<<<<<<< HEAD
-import sequencer from './build/heartbeat';
-=======
 import sequencer from 'heartbeat-sequencer';
->>>>>>> gh-pages
 
 sequencer
 .ready()
 .then(init);
 
 const init = () => {
-<<<<<<< HEAD
-    const events = sequencer.util.getRandomNotes({
-        minNoteNumber: 60,
-        maxNoteNumber: 100,
-        minVelocity: 30,
-        maxVelocity: 80,
-        numNotes: 60
-    });
-        
-    const part = sequencer.createPart();
-    part.addEvents(events);
-
-    const song = sequencer.createSong({
-        parts: part,
-        useMetronome: true
-    });
-
-    document.addEventListener('click', () => {   
-        if (song.isPlaying) {
-            song.pause();
-        } else {
-            song.play();
-        }
-    });
-=======
   const events = sequencer.util.getRandomNotes({
     minNoteNumber: 60,
     maxNoteNumber: 100,
@@ -128,7 +82,6 @@ const init = () => {
       song.play();
     }
   });
->>>>>>> gh-pages
 }
 
 
