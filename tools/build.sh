@@ -25,6 +25,7 @@ files="
     ../src/midi_stream.js
     ../src/midi_system.js
     ../src/midi_write.js
+    ../src/musicxml_parser.js
     ../src/note.js
     ../src/parse_events.js
     ../src/parse_time_events.js

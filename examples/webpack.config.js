@@ -7,6 +7,7 @@ module.exports = {
     'audio/add_audio_events_simple/': './audio/add_audio_events_simple/main.js',
     'process_event/process_event_array/': './process_event/process_event_array/main.js',
     'process_event/process_event_per_event/': './process_event/process_event_array/main.js',
+    'miscellaneous/musicxml/': './miscellaneous/musicxml/main.js',
   },
   output: {
     path: path.resolve(__dirname),

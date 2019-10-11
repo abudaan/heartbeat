@@ -1,7 +1,7 @@
 {
   "name": "heartbeat-sequencer-examples",
   "scripts": {
-    "w1": "webpack"
+    "w": "webpack"
   },
   "dependencies": {
     "heartbeat-sequencer": "file:../build",
