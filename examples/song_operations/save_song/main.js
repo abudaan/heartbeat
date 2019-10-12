@@ -3,11 +3,11 @@ import 'jzz';
 
 window.onload = async () => {
   await sequencer.ready();
-  sequencer.addMidiFile({ url: '/heartbeat/assets/midi/minute_waltz.mid' }, init);
+  sequencer.addMidiFile({ url: '/heartbeat/assets/midi/mozk545a.mid' }, init);
 };
 
 const init = () => {
-  const song = sequencer.createSong(sequencer.getMidiFile('minute_waltz'));
+  const song = sequencer.createSong(sequencer.getMidiFile('mozk545a'));
 
   const btnStart = document.getElementById('start');
   btnStart.addEventListener('click', () => {
