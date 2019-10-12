@@ -1,54 +1,45 @@
-window.onload = function(){
+import sequencer from 'heartbeat-sequencer';
+import 'jzz';
 
-    'use strict';
+window.onload = async () => {
+  await sequencer.ready();
 
-    var
-        // satisfy jslint
-        sequencer = window.sequencer,
-        console = window.console,
+  const btnStop = document.getElementById('stop');
+  const btnStart = document.getElementById('start');
 
-        btnStop = document.getElementById('stop'),
-        btnStart = document.getElementById('start');
+  // disable ui until all data is loaded
+  enableUI(false);
 
+  // add asset pack, this pack contains a piano
+  sequencer.addAssetPack({ url: '/heartbeat/assets/examples/asset_pack_basic.json' }, () => {
 
-    // disable ui until all data is loaded
-    enableUI(false);
+    //sequencer.loadMusicXML('/heartbeat/assets/simple_musicxml_test.xml', song => {
+    //sequencer.loadMusicXML('/heartbeat/assets/mozk545a.xml', song => {
+    sequencer.loadMusicXML('/heartbeat/assets/reunion.xml', song => {
+      //console.log(song);
+      song.tracks.forEach(track => {
+        track.setInstrument('piano');
+      });
 
+      btnStart.addEventListener('click', () => {
+        song.play();
+      });
 
-    // add asset pack, this pack contains a piano
-    //sequencer.ready(function init(){
-    sequencer.addAssetPack({url: '/heartbeat/assets/examples/asset_pack_basic.json'}, function init(){
+      btnStop.addEventListener('click', () => {
+        song.stop();
+      });
 
-        //sequencer.loadMusicXML('/heartbeat/assets/simple_musicxml_test.xml', function(song){
-        //sequencer.loadMusicXML('/heartbeat/assets/mozk545a.xml', function(song){
-        sequencer.loadMusicXML('/heartbeat/assets/reunion.xml', function(song){
-
-            //console.log(song);
-
-            song.tracks.forEach(function(track){
-                track.setInstrument('piano');
-            });
-
-            btnStart.addEventListener('click', function(){
-                song.play();
-            });
-
-            btnStop.addEventListener('click', function(){
-                song.stop();
-            });
-
-            enableUI(true);
-        });
+      enableUI(true);
     });
+  });
+};
 
+const enableUI = (flag) => {
+  const elements = document.querySelectorAll('input');
+  const maxi = elements.length;
 
-    function enableUI(flag){
-        var elements = document.querySelectorAll('input'),
-            i, element, maxi = elements.length;
-
-        for(i = 0; i < maxi; i++){
-            element = elements[i];
-            element.disabled = !flag;
-        }
-    }
+  for (let i = 0; i < maxi; i++) {
+    const element = elements[i];
+    element.disabled = !flag;
+  }
 };

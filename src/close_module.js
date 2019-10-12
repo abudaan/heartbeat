@@ -107,7 +107,7 @@ function initSequencer() {
   midiStream();
   midiSystem();
   midiWrite();
-  // musicXMLParser();
+  musicXMLParser();
   note();
   parseEvents();
   parseTimeEvents();
