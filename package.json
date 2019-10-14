@@ -25,6 +25,7 @@
   "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md",
   "dependencies": {},
   "devDependencies": {
+    "@types/webmidi": "^2.0.3",
     "tsc-watch": "^4.0.0",
     "tslint": "^5.20.0",
     "typescript": "^3.6.4"

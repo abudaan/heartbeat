@@ -1,10 +1,10 @@
-// import sequencer from 'heartbeat-sequencer';
+import sequencer from './close_module.js';
 
-// const addAssetPack = (ap: Heartbeat.AssetPack): Promise<void> => new Promise((resolve) => {
-//   sequencer.addAssetPack(ap, () => {
-//     resolve();
-//   });
-// })
+const addAssetPack = (ap: Heartbeat.AssetPack): Promise<void> => new Promise((resolve) => {
+  sequencer.addAssetPack(ap, () => {
+    resolve();
+  });
+})
 
 const loadMusicXMLFile = (url: string): Promise<XMLDocument> => {
   return new Promise((resolve, reject) => {
@@ -20,5 +20,5 @@ const loadMusicXMLFile = (url: string): Promise<XMLDocument> => {
 
 export {
   loadMusicXMLFile,
-  // addAssetPack,
+  addAssetPack,
 };

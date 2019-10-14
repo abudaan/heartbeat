@@ -22044,8 +22044,8 @@ function initSequencer() {
 
 initSequencer();
 
-import { someFunction } from './test';
-export { someFunction };
+import { loadMusicXMLFile, addAssetPack } from './load_musicxml_file';
+export { loadMusicXMLFile, addAssetPack };
 
 // hail hail esnext!
 export default sequencer;

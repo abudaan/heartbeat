@@ -132,8 +132,8 @@ function initSequencer() {
 
 initSequencer();
 
-import { loadMusicXMLFile } from './load_musicxml_file';
-export { loadMusicXMLFile };
+import { loadMusicXMLFile, addAssetPack } from './load_musicxml_file';
+export { loadMusicXMLFile, addAssetPack };
 
 // hail hail esnext!
 export default sequencer;
