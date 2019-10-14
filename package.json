@@ -5,7 +5,8 @@
   "main": "./build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "cd ./tools && ./build.sh"
+    "build": "cd ./tools && ./build.sh",
+    "watch": "tsc-watch"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,9 @@
   },
   "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "tsc-watch": "^4.0.0",
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.4"
+  }
 }

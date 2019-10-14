@@ -1,5 +1,8 @@
 /// <reference types="webmidi" />
 
+import { loadMusicXMLFile } from './load_musicxml_file';
+export { loadMusicXMLFile };
+
 export as namespace sequencer;
 
 export function createSong(config: any): Song
@@ -268,4 +271,3 @@ export type SnapShot = {
     changed: Part[]
   }
 }
-
