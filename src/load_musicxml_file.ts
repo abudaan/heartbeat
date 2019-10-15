@@ -1,7 +1,7 @@
-import sequencer from './close_module.js';
+import { addAssetPack as seq_addAssetPack } from './assetpack.js';
 
 const addAssetPack = (ap: Heartbeat.AssetPack): Promise<void> => new Promise((resolve) => {
-  sequencer.addAssetPack(ap, () => {
+  seq_addAssetPack(ap, () => {
     resolve();
   });
 })

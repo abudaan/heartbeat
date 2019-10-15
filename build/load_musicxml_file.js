@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var close_module_js_1 = __importDefault(require("./close_module.js"));
+var assetpack_js_1 = require("./assetpack.js");
 var addAssetPack = function (ap) { return new Promise(function (resolve) {
-    close_module_js_1.default.addAssetPack(ap, function () {
+    assetpack_js_1.addAssetPack(ap, function () {
         resolve();
     });
 }); };

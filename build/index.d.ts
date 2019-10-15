@@ -1,7 +1,7 @@
 /// <reference types="webmidi" />
 
-import { loadMusicXMLFile } from './load_musicxml_file';
-export { loadMusicXMLFile };
+import { loadMusicXMLFile, addAssetPack } from './load_musicxml_file';
+export { loadMusicXMLFile, addAssetPack };
 
 export as namespace sequencer;
 
