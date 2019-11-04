@@ -10,6 +10,8 @@ export function createTrack(name: string): Track
 export function createPart(name?: string): Part
 export function createKeyEditor(song: Song, config: any): KeyEditor
 export function getMidiFiles(): MIDIFileJSON[]
+export function addMidiFile(args: { url: string }, callback: (mf: MIDIFileJSON) => void): void
+export function addAssetPack(ap: AssetPack, callback: () => void): void
 export function getInstruments(): Instrument[]
 export function ready(): Promise<boolean>
 export function getNoteNumber(step: string, octave: number): number
