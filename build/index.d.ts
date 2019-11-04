@@ -13,6 +13,9 @@ export function getMidiFiles(): MIDIFileJSON[]
 export function getInstruments(): Instrument[]
 export function ready(): Promise<boolean>
 export function getNoteNumber(step: string, octave: number): number
+export function createMidiEvent(ticks: number, type: number, data1: number, data2?: number): MIDIEvent
+export function processEvent(event: MIDIEvent, instrument: string): void
+export function stopProcessEvents(): void
 export var browser: string
 export var midiInputs: WebMidi.MIDIInput[]
 export var midiOutputs: WebMidi.MIDIOutput[]
@@ -102,12 +105,23 @@ export interface MIDIEvent {
   transpose: (semi: number) => void
 }
 
+export type Note = {
+  name: string
+  octave: number
+  fullName: string
+  number: number
+  frequency: number
+  blackKey: boolean
+}
+
 export interface MIDINote extends MIDIEvent {
   trackId: string
   track: Track
   number: number
   noteOn: MIDIEvent
   noteOff: MIDIEvent
+  durationTicks: number
+  note: Note
   mute: (flag: boolean) => void
 }
 
