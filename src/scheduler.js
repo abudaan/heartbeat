@@ -300,7 +300,12 @@ function scheduler() {
             if (event.type === 128 || event.type === 144 || event.type === 176) {
               // midiOutput.send([event.type, event.data1, event.data2], event.time + sequencer.midiOutLatency);
               // console.log(context.currentTime, performance.now(), timeDiff, event.time + track.audioLatency);
-              midiOutput.send([event.type + channel, event.data1, event.data2], event.time + track.audioLatency + timeDiff);
+              let vel = event.data2;
+              if (event.type === 128 || event.type === 144) {
+                vel *= track.volume;
+              }
+              midiOutput.send([event.type + channel, event.data1, vel], event.time + track.audioLatency + timeDiff);
+              // console.log('TIMEDIFF', timeDiff);
             } else if (event.type === 192 || event.type === 224) {
               midiOutput.send([event.type + channel, event.data1], event.time + track.audioLatency);
             }

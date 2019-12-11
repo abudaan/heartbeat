@@ -5,18 +5,18 @@ export { loadMusicXMLFile };
 
 export as namespace sequencer;
 
-export function createSong(config: any): Song
-export function createTrack(name: string): Track
-export function createPart(name?: string): Part
-export function createKeyEditor(song: Song, config: any): KeyEditor
-export function getMidiFiles(): MIDIFileJSON[]
-export function addMidiFile(args: { url: string }, callback: (mf: MIDIFileJSON) => void): void
-export function addAssetPack(ap: AssetPack, callback: () => void): void
-export function getInstruments(): Instrument[]
+export function createSong(config: any): Heartbeat.Song
+export function createTrack(name: string): Heartbeat.Track
+export function createPart(name?: string): Heartbeat.Part
+export function createKeyEditor(song: Song, config: any): Heartbeat.KeyEditor
+export function getMidiFiles(): Heartbeat.MIDIFileJSON[]
+export function addMidiFile(args: { url: string }, callback: (mf: Heartbeat.MIDIFileJSON) => void): void
+export function addAssetPack(ap: Heartbeat.AssetPack, callback: () => void): void
+export function getInstruments(): Heartbeat.Instrument[]
 export function ready(): Promise<boolean>
 export function getNoteNumber(step: string, octave: number): number
-export function createMidiEvent(ticks: number, type: number, data1: number, data2?: number): MIDIEvent
-export function processEvent(event: MIDIEvent, instrument: string): void
+export function createMidiEvent(ticks: number, type: number, data1: number, data2?: number): Heartbeat.MIDIEvent
+export function processEvent(event: Heartbeat.MIDIEvent, instrument: string): void
 export function stopProcessEvents(): void
 export var browser: string
 export var midiInputs: WebMidi.MIDIInput[]
@@ -47,7 +47,8 @@ export interface Song {
   sixteenth: number
   tick: number
   ticks: number
-  activeNotes: Array<MIDIEvent>
+  percentage: number
+  activeNotes: MIDIEvent[]
   id: string
   name: string
   loop: boolean
@@ -55,8 +56,8 @@ export interface Song {
   bpm: number
   durationTicks: number
   millisPerTick: number
-  parts: Array<Part>
-  tracks: Array<Track>
+  parts: Part[]
+  tracks: Track[]
   listeners: Listener
   loopEndPosition: SongPosition
   bars: number // number of bars in Song

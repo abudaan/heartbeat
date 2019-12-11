@@ -57,6 +57,7 @@ function song() {
 
     objectForEach, // → defined in util.js
     addSong, // → defined in sequencer.js
+    getTimeDiff, // → defined in open_module.js
 
     //private
     _removeTracks,
@@ -1805,13 +1806,22 @@ function song() {
         }
     }
     */
+    var time = this.scheduler.lastEventTime + 100;
     objectForEach(this.tracks, function (track) {
       track.allNotesOff();
+      if (track.routeToMidiOut) {
+        // console.log(track.channel);
+        objectForEach(track.midiOutputs, function (midiOutput) {
+          midiOutput.send([0xB0 + track.channel, 0x7B, 0x00], time + getTimeDiff() + 100 + track.audioLatency); // stop all notes
+          midiOutput.send([0xB0 + track.channel, 0x79, 0x00], time + getTimeDiff() + 100 + track.audioLatency); // reset all controllers
+        });
+      }
       // track.audio.allNotesOff();
       // track.instrument.allNotesOff();
     });
     this.metronome.allNotesOff();
-    this.resetExternalMidiDevices();
+    this.scheduler.unschedule();
+    // this.resetExternalMidiDevices();
   };
 
 
@@ -1821,11 +1831,15 @@ function song() {
     if (isNaN(time)) {
       time = 100;
     }
-    //console.log('allNotesOff', this.millis, this.scheduler.lastEventTime, time);
+
+
+    // console.log('allNotesOff', this.millis, time);
     objectForEach(this.midiOutputs, function (output) {
-      //console.log(output);
-      output.send([0xB0, 0x7B, 0x00], time); // stop all notes
-      output.send([0xB0, 0x79, 0x00], time); // reset all controllers
+      // console.log(output)
+      for (let i = 0xB0; i < 0xC0; i++) {
+        output.send([i, 0x7B, 0x00], time + getTimeDiff() + 100); // stop all notes
+        output.send([i, 0x79, 0x00], time + getTimeDiff() + 100); // reset all controllers
+      }
       //output.send([176, 123, 0], sequencer.getTime());
     });
   };
@@ -1945,5 +1959,8 @@ function song() {
     removeEventListener = sequencer.protectedScope.songRemoveEventListener;
     dispatchEvent = sequencer.protectedScope.songDispatchEvent;
     addSong = sequencer.protectedScope.addSong;
+
+    getTimeDiff = sequencer.getTimeDiff;
+
   });
 }

@@ -1,12 +1,15 @@
 {
   "name": "heartbeat-sequencer",
-  "version": "0.0.15",
+  "version": "0.0.17",
   "description": "javascript sequencer",
   "main": "./build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build2": "cd ./tools && ./build.sh && cd ../",
+    "build3": "cd ./tools && ./build.sh && cd ../ && webpack",
     "build": "cd ./tools && ./build.sh",
-    "watch": "tsc-watch"
+    "build-live": "cd ./tools && ./build.sh && cd ../ && parcel build ./build/index.js -d ./build",
+    "watch2": "tsc-watch"
   },
   "repository": {
     "type": "git",
@@ -27,6 +30,7 @@
   "devDependencies": {
     "tsc-watch": "^4.0.0",
     "tslint": "^5.20.0",
-    "typescript": "^3.6.4"
+    "typescript": "^3.6.4",
+    "parcel": "^1.12.4"
   }
 }

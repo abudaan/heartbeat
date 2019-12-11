@@ -15,12 +15,22 @@ function closeModule(cb) {
   base64ToBinary = sequencer.protectedScope.base64ToBinary; // defined in util.js
   delete sequencer.protectedScope; //seal
 
+  function addCleanup() {
+    window.addEventListener('beforeunload', function (event) {
+      // close all MIDI ports
+    });
+  }
+
   sequencer.ready = function () {
     return new Promise(resolve => {
       if (ready === true) {
+        addCleanup();
         resolve();
       } else {
-        readyCallbacks.push(resolve);
+        readyCallbacks.push(() => {
+          addCleanup();
+          resolve();
+        });
       }
     })
   };
@@ -132,8 +142,8 @@ function initSequencer() {
 
 initSequencer();
 
-import { loadMusicXMLFile } from './load_musicxml_file';
-export { loadMusicXMLFile };
+// import { loadMusicXMLFile } from './load_musicxml_file';
+// export { loadMusicXMLFile };
 
 // hail hail esnext!
 export default sequencer;
