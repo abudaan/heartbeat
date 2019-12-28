@@ -18,6 +18,7 @@ export function getNoteNumber(step: string, octave: number): number
 export function createMidiEvent(ticks: number, type: number, data1: number, data2?: number): Heartbeat.MIDIEvent
 export function processEvent(event: Heartbeat.MIDIEvent, instrument: string): void
 export function stopProcessEvents(): void
+export function getMidiFile(id: string): MIDIFileJSON
 export var browser: string
 export var midiInputs: WebMidi.MIDIInput[]
 export var midiOutputs: WebMidi.MIDIOutput[]
@@ -52,10 +53,11 @@ export interface Song {
   id: string
   name: string
   loop: boolean
-  playing: boolean
   bpm: number
   durationTicks: number
+  durationMillis: number
   millisPerTick: number
+  millis: number
   parts: Part[]
   tracks: Track[]
   listeners: Listener
@@ -84,8 +86,15 @@ export interface Song {
   setTrackSolo: (t: Track, f: boolean) => void
   getPosition: () => SongPosition
   addTrack: (t: Track) => void
+  setVolume: (val: any) => void
   paused: boolean
+  playing: boolean
   setPlayhead: (type: string, value: number) => void
+  playhead: {
+    data: {
+      timeAsString: string,
+    }
+  }
 }
 
 export interface MIDIEvent {

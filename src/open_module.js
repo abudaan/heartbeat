@@ -1,5 +1,6 @@
 var sequencer;
-import { version } from '../package.json';
+// import { version } from '../package.json';
+var version = '0.0.18';
 
 function openModule() {
 
@@ -119,7 +120,7 @@ function openModule() {
   */
   sequencer = {
     name: 'qambi',
-    version: version,
+    version,
     protectedScope: protectedScope,
     ui: {},
     ua: ua,
