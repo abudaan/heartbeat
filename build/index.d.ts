@@ -93,7 +93,9 @@ export interface Song {
   playhead: {
     data: {
       timeAsString: string,
-    }
+      barsAsString: string,
+    },
+    activeNotes: MIDINote[],
   }
 }
 
