@@ -19,6 +19,7 @@ export function createMidiEvent(ticks: number, type: number, data1: number, data
 export function processEvent(event: Heartbeat.MIDIEvent, instrument: string): void
 export function stopProcessEvents(): void
 export function getMidiFile(id: string): MIDIFileJSON
+export function getSnapshot(song: Heartbeat.Song, id?: string): Snapshot
 export var browser: string
 export var midiInputs: WebMidi.MIDIInput[]
 export var midiOutputs: WebMidi.MIDIOutput[]
@@ -90,13 +91,16 @@ export interface Song {
   paused: boolean
   playing: boolean
   setPlayhead: (type: string, value: number) => void
-  playhead: {
-    data: {
-      timeAsString: string,
-      barsAsString: string,
-    },
-    activeNotes: MIDINote[],
-  }
+  playhead: Playhead
+}
+
+export interface Playhead {
+  data: {
+    timeAsString: string,
+    barsAsString: string,
+    millis: number,
+  },
+  activeNotes: MIDINote[],
 }
 
 export interface MIDIEvent {
@@ -117,6 +121,7 @@ export interface MIDIEvent {
   part: null | Part
   clone: () => this
   transpose: (semi: number) => void
+  active?: boolean
 }
 
 export type Note = {
@@ -295,7 +300,38 @@ export type KeyEditor = {
 }
 
 export type SnapShot = {
+  events: {
+    active: MIDIEvent[],
+    inActive: MIDIEvent[],
+    recorded: MIDIEvent[],
+    new: MIDIEvent[],
+    changed: MIDIEvent[],
+    removed: MIDIEvent[],
+    stateChanged: MIDIEvent[],
+  },
+
+  notes: {
+    active: MIDINote[],
+    inActive: MIDINote[],
+    recorded: MIDINote[],
+    new: MIDINote[],
+    changed: MIDINote[],
+    removed: MIDINote[],
+    stateChanged: MIDINote[],
+  },
+
   parts: {
-    changed: Part[]
-  }
+    active: Part[],
+    inActive: Part[],
+    recorded: Part[],
+    new: Part[],
+    changed: Part[],
+    removed: Part[],
+    stateChanged: Part[],
+  },
+
+  // activeEvents: { [id: string]: MIDIEvent },
+  // activeNotes: { [id: string]: MIDINote },
+  // activeParts: { [id: string]: Part },
+
 }
