@@ -10,7 +10,7 @@ export function createTrack(name: string): Heartbeat.Track
 export function createPart(name?: string): Heartbeat.Part
 export function createKeyEditor(song: Song, config: any): Heartbeat.KeyEditor
 export function getMidiFiles(): Heartbeat.MIDIFileJSON[]
-export function addMidiFile(args: { url: string }, callback: (mf: Heartbeat.MIDIFileJSON) => void): void
+export function addMidiFile(args: { url?: string, arraybuffer?: ArrayBuffer }, callback: (mf: Heartbeat.MIDIFileJSON) => void): void
 export function addAssetPack(ap: Heartbeat.AssetPack, callback: () => void): void
 export function getInstruments(): Heartbeat.Instrument[]
 export function ready(): Promise<boolean>
