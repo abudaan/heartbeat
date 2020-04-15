@@ -1,0 +1,62 @@
+#drop-file {
+  width: 200px;
+  height: 100px;
+  line-height: 20px;
+  text-align: center;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.hidden {
+  display: none;
+}
+#load {
+  margin-top: 20px;
+}
+.prompt {
+  background-color: #ffffff;
+  border: 1px dotted #1bb2e0;
+  color: #1bb2e0;
+}
+.hover {
+  background-color: #1bb2e0;
+  border: 1px dotted #ffffff;
+  color: #ffffff;
+}
+.processing {
+  background-color: #71de71;
+  border: 1px dotted #ffffff;
+  color: #ffffff;
+}
+
+#loaded-midifile {
+  margin-bottom: 10px;
+}
+
+input,
+label {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+#outputs {
+  width: 350px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 3px;
+}
+
+#outputs div {
+  padding: 3px 5px 5px 3px;
+}
+
+label {
+  display: block;
+}
+
+input[type="checkbox"] {
+  vertical-align: middle;
+  position: relative;
+  bottom: 1px;
+}

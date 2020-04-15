@@ -1,29 +1,31 @@
-html, body{
-    height: 100%;
+html,
+body {
+  height: 100%;
 }
 
-input, label{
-    font-family: monospace;
-    font-size: 14px;
+input,
+label {
+  font-family: monospace;
+  font-size: 14px;
 }
 
-form{
-    width: 350px;
-    font-family: monospace;
-    font-size: 14px;
-    padding: 3px;
+form {
+  width: 350px;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 3px;
 }
 
-form div{
-    padding: 3px 5px 5px 3px;
+form div {
+  padding: 3px 5px 5px 3px;
 }
 
-label{
-    display: block;
+label {
+  display: block;
 }
 
-input[type='checkbox'] {
-    vertical-align: middle;
-    position: relative;
-    bottom: 1px;
+input[type="checkbox"] {
+  vertical-align: middle;
+  position: relative;
+  bottom: 1px;
 }
