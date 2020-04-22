@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
   entry: {
@@ -8,11 +8,13 @@ module.exports = {
     // 'process_event/process_event_array/': './process_event/process_event_array/main.js',
     // 'process_event/process_event_per_event/': './process_event/process_event_array/main.js',
     // 'miscellaneous/musicxml/': './miscellaneous/musicxml/main.js',
-    'midi_in_&_out/midi_out_file/': './midi_in_&_out/midi_out_file/main.js',
+    // 'midi_in_&_out/midi_out_file/': './midi_in_&_out/midi_out_file/main.js',
+    "managing_assets/1._midi_files/from_local_file_2/":
+      "./managing_assets/1._midi_files/from_local_file_2/main.js",
   },
   output: {
     path: path.resolve(__dirname),
-    filename: '[name]build.js'
+    filename: "[name]build.js",
   },
-  watch: true
+  watch: true,
 };
