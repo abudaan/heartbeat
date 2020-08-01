@@ -1,61 +1,64 @@
 var sequencer;
 // import { version } from '../package.json';
-var version = '0.0.18';
+var version = "0.0.21";
 
 function openModule() {
+  "use strict";
 
-  'use strict';
-
-  var
-    protectedScope,
+  var protectedScope,
     initMethods = [],
-
     webaudioUnlocked = false,
     src,
     context,
     gainNode,
     compressor,
     sampleIndex = 0,
-    compressorParams = ['threshold', 'knee', 'ratio', 'reduction', 'attack', 'release'],
-
+    compressorParams = [
+      "threshold",
+      "knee",
+      "ratio",
+      "reduction",
+      "attack",
+      "release",
+    ],
     ua = navigator.userAgent,
     os,
     browser,
     legacy = false;
 
   if (ua.match(/(iPad|iPhone|iPod)/g)) {
-    os = 'ios';
+    os = "ios";
     // webaudioUnlocked = false;
-  } else if (ua.indexOf('Android') !== -1) {
-    os = 'android';
-  } else if (ua.indexOf('Linux') !== -1) {
-    os = 'linux';
-  } else if (ua.indexOf('Macintosh') !== -1) {
-    os = 'osx';
-  } else if (ua.indexOf('Windows') !== -1) {
-    os = 'windows';
+  } else if (ua.indexOf("Android") !== -1) {
+    os = "android";
+  } else if (ua.indexOf("Linux") !== -1) {
+    os = "linux";
+  } else if (ua.indexOf("Macintosh") !== -1) {
+    os = "osx";
+  } else if (ua.indexOf("Windows") !== -1) {
+    os = "windows";
   }
 
-  if (ua.indexOf('Chrome') !== -1) {
+  if (ua.indexOf("Chrome") !== -1) {
     // chrome, chromium and canary
-    browser = 'chrome';
+    browser = "chrome";
 
-    if (ua.indexOf('OPR') !== -1) {
-      browser = 'opera';
-    } else if (ua.indexOf('Chromium') !== -1) {
-      browser = 'chromium';
+    if (ua.indexOf("OPR") !== -1) {
+      browser = "opera";
+    } else if (ua.indexOf("Chromium") !== -1) {
+      browser = "chromium";
     }
-  } else if (ua.indexOf('Safari') !== -1) {
-    browser = 'safari';
-  } else if (ua.indexOf('Firefox') !== -1) {
-    browser = 'firefox';
-  } else if (ua.indexOf('Trident') !== -1) {
-    browser = 'Internet Explorer';
+  } else if (ua.indexOf("Safari") !== -1) {
+    browser = "safari";
+  } else if (ua.indexOf("Firefox") !== -1) {
+    browser = "firefox";
+  } else if (ua.indexOf("Trident") !== -1) {
+    browser = "Internet Explorer";
   }
 
-  if (os === 'ios') {
-    if (ua.indexOf('CriOS') !== -1) {
-      browser = 'chrome';
+  if (os === "ios") {
+    if (ua.indexOf("CriOS") !== -1) {
+      browser = "chrome";
     }
   }
 
@@ -63,17 +66,21 @@ function openModule() {
 
   if (window.AudioContext) {
     context = new window.AudioContext();
-    if (typeof context.createGainNode !== 'function') {
+    if (typeof context.createGainNode !== "function") {
       context.createGainNode = context.createGain;
     }
   } else if (window.webkitAudioContext) {
     context = new window.webkitAudioContext();
-    if (typeof context.createGainNode !== 'function') {
+    if (typeof context.createGainNode !== "function") {
       context.createGainNode = context.createGain;
     }
   } else {
     //alert('Your browser does not support AudioContext!\n\nPlease use one of these browsers:\n\n- Chromium (Linux | Windows)\n- Firefox (OSX | Windows)\n- Chrome (Linux | Android | OSX | Windows)\n- Canary (OSX | Windows)\n- Safari (iOS 6.0+ | OSX)\n\nIf you use Chrome or Chromium, heartbeat uses the WebMIDI api');
-    throw new Error('The WebAudio API hasn\'t been implemented in ' + browser + ', please use any other browser');
+    throw new Error(
+      "The WebAudio API hasn't been implemented in " +
+        browser +
+        ", please use any other browser"
+    );
   }
 
   compressor = context.createDynamicsCompressor();
@@ -84,9 +91,7 @@ function openModule() {
   gainNode.connect(context.destination);
   gainNode.gain.value = 1;
 
-
   protectedScope = {
-
     context: context,
     //destination: context.destination,
     masterGainNode: gainNode,
@@ -99,7 +104,7 @@ function openModule() {
     repetitiveTasks: {},
 
     getSampleId: function () {
-      return 'S' + sampleIndex++ + new Date().getTime();
+      return "S" + sampleIndex++ + new Date().getTime();
     },
 
     addInitMethod: function (method) {
@@ -107,19 +112,19 @@ function openModule() {
     },
 
     callInitMethods: function () {
-      var i, maxi = initMethods.length;
+      var i,
+        maxi = initMethods.length;
       for (i = 0; i < maxi; i++) {
         initMethods[i]();
       }
-    }
+    },
   };
-
 
   /**
       @namespace sequencer
   */
   sequencer = {
-    name: 'qambi',
+    name: "qambi",
     version,
     protectedScope: protectedScope,
     ui: {},
@@ -137,11 +142,11 @@ function openModule() {
     bitrate_mp3_encoding: 128,
     util: {},
     debug: 0, // 0 = off, 1 = error, 2 = warn, 3 = info, 4 = log
-    defaultInstrument: 'sinewave',
+    defaultInstrument: "sinewave",
     pitch: 440,
     bufferTime: 350 / 1000, //seconds
     autoAdjustBufferTime: false,
-    noteNameMode: 'sharp',
+    noteNameMode: "sharp",
     minimalSongLength: 60000, //millis
     pauseOnBlur: false,
     restartOnFocus: true,
@@ -154,21 +159,21 @@ function openModule() {
 
     storage: {
       midi: {
-        id: 'midi'
+        id: "midi",
       },
       audio: {
-        id: 'audio',
-        recordings: {}
+        id: "audio",
+        recordings: {},
       },
       instruments: {
-        id: 'instruments'
+        id: "instruments",
       },
       samplepacks: {
-        id: 'samplepacks'
+        id: "samplepacks",
       },
       assetpacks: {
-        id: 'assetpacks'
-      }
+        id: "assetpacks",
+      },
     },
 
     getAudioContext: function () {
@@ -236,7 +241,7 @@ function openModule() {
         // console.log('already unlocked');
         return;
       }
-      if (typeof context.resume === 'function') {
+      if (typeof context.resume === "function") {
         context.resume();
       }
       var src = context.createOscillator(),
@@ -251,15 +256,12 @@ function openModule() {
       src.start(0);
       src.stop(0.001);
       webaudioUnlocked = true;
-    }
-
-
+    },
   };
 
   // debug levels
-  Object.defineProperty(sequencer, 'ERROR', { value: 1 });
-  Object.defineProperty(sequencer, 'WARN', { value: 2 });
-  Object.defineProperty(sequencer, 'INFO', { value: 3 });
-  Object.defineProperty(sequencer, 'LOG', { value: 4 });
-
+  Object.defineProperty(sequencer, "ERROR", { value: 1 });
+  Object.defineProperty(sequencer, "WARN", { value: 2 });
+  Object.defineProperty(sequencer, "INFO", { value: 3 });
+  Object.defineProperty(sequencer, "LOG", { value: 4 });
 }
