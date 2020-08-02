@@ -1,6 +1,6 @@
 var sequencer;
-// import { version } from '../package.json';
-var version = "0.0.21";
+import { version } from "../package.json";
+// var version = "0.0.21";
 
 function openModule() {
   "use strict";

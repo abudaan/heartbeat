@@ -119,7 +119,13 @@ export interface Song {
   addTimeEvents: (events: Array<MIDIEvent>) => void;
   removeTimeEvents: () => void;
   setTrackSolo: (t: Track, f: boolean) => void;
-  getPosition: () => SongPosition;
+  getPosition: (
+    arg1?: any,
+    arg2?: any,
+    arg3?: any,
+    arg4?: any,
+    arg5?: any
+  ) => SongPosition;
   addTrack: (t: Track) => void;
   setVolume: (val: any) => void;
   paused: boolean;
