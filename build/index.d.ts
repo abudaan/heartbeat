@@ -37,7 +37,7 @@ export function processEvent(
 ): void;
 export function stopProcessEvents(): void;
 export function getMidiFile(id: string): MIDIFileJSON;
-export function getSnapshot(song: Heartbeat.Song, id?: string): Snapshot;
+export function getSnapshot(song: Heartbeat.Song, id?: string): SnapShot;
 export var browser: string;
 export var midiInputs: WebMidi.MIDIInput[];
 export var midiOutputs: WebMidi.MIDIOutput[];
@@ -182,6 +182,7 @@ export interface MIDINote extends MIDIEvent {
   durationTicks: number;
   note: Note;
   mute: (flag: boolean) => void;
+  active?: boolean;
 }
 
 export interface Part {
@@ -336,7 +337,7 @@ export type KeyEditor = {
   };
   selectedPart: Part;
   song: Song;
-  getSnapshot: () => SnapShot;
+  getSnapshot: (id: string) => SnapShot;
 };
 
 export type SnapShot = {
