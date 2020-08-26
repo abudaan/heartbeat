@@ -1,6 +1,6 @@
 var sequencer;
 // import { version } from "../package.json";
-var version = "0.0.23";
+var version = "0.0.25";
 
 function openModule() {
   "use strict";
@@ -178,6 +178,10 @@ function openModule() {
 
     getAudioContext: function () {
       return context;
+    },
+
+    getMasterGainNode: function () {
+      return gainNode;
     },
 
     getTime: function () {

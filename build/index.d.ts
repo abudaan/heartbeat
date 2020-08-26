@@ -10,6 +10,8 @@ export function createTrack(name: string): Heartbeat.Track;
 export function createPart(name?: string): Heartbeat.Part;
 export function createKeyEditor(song: Song, config: any): Heartbeat.KeyEditor;
 export function getMidiFiles(): Heartbeat.MIDIFileJSON[];
+export function getAudioContext(): AudioContext;
+export function getMasterGainNode(): GainNode;
 export function addMidiFile(
   args: { url?: string; arraybuffer?: ArrayBuffer },
   callback: (mf: Heartbeat.MIDIFileJSON) => void
