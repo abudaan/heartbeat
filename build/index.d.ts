@@ -12,6 +12,7 @@ export function createKeyEditor(song: Song, config: any): Heartbeat.KeyEditor;
 export function getMidiFiles(): Heartbeat.MIDIFileJSON[];
 export function getAudioContext(): AudioContext;
 export function getMasterGainNode(): GainNode;
+export function createAudioEvent(config: any): Heartbeat.AudioEvent;
 export function addMidiFile(
   args: { url?: string; arraybuffer?: ArrayBuffer },
   callback: (mf: Heartbeat.MIDIFileJSON) => void
@@ -160,6 +161,7 @@ export interface MIDIEvent {
   muted: boolean;
   song: null | Heartbeat.Song;
   track: null | Track;
+  trackId: string;
   part: null | Part;
   clone: () => this;
   transpose: (semi: number) => void;
@@ -193,7 +195,7 @@ export interface Part {
   events: Array<MIDIEvent>;
   needsUpdate: boolean;
   eventsById: { [id: string]: MIDIEvent };
-  addEvents: (events: Array<MIDIEvent>) => void;
+  addEvents: (events: Array<MIDIEvent | AudioEvent>) => void;
   removeEvents: (events: Array<MIDIEvent>, part?: Part) => void;
   transposeAllEvents: (semi: number) => void;
   bbox: {
@@ -376,4 +378,9 @@ export type SnapShot = {
   // activeEvents: { [id: string]: MIDIEvent },
   // activeNotes: { [id: string]: MIDINote },
   // activeParts: { [id: string]: Part },
+};
+
+export type AudioEvent = {
+  buffer?: AudioBuffer;
+  path?: string;
 };
