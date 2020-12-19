@@ -3,7 +3,7 @@ heartbeat
 
 #### important update 19/12/2020
 
-Heartbeat will no longer be maintained it its own repository because heartbeat is now part of [WebDAW modules](https://github.com/abudaan/webdaw-modules). You can still use heartbeat like before but you have to import it to your project from `webdaw-modules`, see below.
+Heartbeat will no longer be maintained here it its own repository because heartbeat is now part of [WebDAW modules](https://github.com/abudaan/webdaw-modules). You can still use heartbeat like before but you have to import it to your project from `webdaw-modules`, see below.
 
 #### introduction
 
