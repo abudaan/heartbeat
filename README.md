@@ -3,19 +3,7 @@ heartbeat
 
 #### important update 19/12/2020
 
-This repository will no longer be maintained here as heartbeat is now part of [WebDAW modules](https://github.com/abudaan/webdaw-modules). You can still use heartbeat but you have to import it to your project like so:
-
-```typescript
-import { heartbeat, Heartbeat } from 'webdaw-modules';
-
-heartbeat.ready().then(() => {
-  const song: Heartbeat.Song = heartbeat.createSong();
-});
-```
-So `heartbeat` (all lowercase) is the module and `Heartbeat` (with capital) is the namespace where all heartbeat typings live.
-
-Obviously you don't have to use typescript and you can use in your plain javascript projects as well.
-
+Heartbeat will no longer be maintained it its own repository because heartbeat is now part of [WebDAW modules](https://github.com/abudaan/webdaw-modules). You can still use heartbeat like before but you have to import it to your project from `webdaw-modules`, see below.
 
 #### introduction
 
@@ -29,19 +17,19 @@ So far heartbeat has been used in 2 [MusicFirst](https://musicfirst.com/splash) 
 #### example
 
 Install heartbeat:
-`yarn add heartbeat-sequencer`
+`yarn add webdaw-modules`
 
 or:
-`npm i heartbeat-sequencer`
+`npm i webdaw-modules`
 
 
-```javascript
-import sequencer from 'heartbeat-sequencer';
+```typescript
+import { heartbeat, Heartbeat } from 'webdaw-modules';
 
 const init = async () => {
-  await sequencer.ready();
+  await heartbeat.ready();
 
-  const events = sequencer.util.getRandomNotes({
+  const events: Heartbeat.MIDIEvent[] = heartbeat.util.getRandomNotes({
       minNoteNumber: 60,
       maxNoteNumber: 100,
       minVelocity: 30,
@@ -49,10 +37,10 @@ const init = async () => {
       numNotes: 60
   });
       
-  const part = sequencer.createPart();
+  const part: Heartbeat.Part = heartbeat.createPart();
   part.addEvents(events);
 
-  const song = sequencer.createSong({
+  const song: Heartbeat.Song = heartbeat.createSong({
     parts: part,
     useMetronome: true
   });
@@ -70,10 +58,14 @@ init();
 
 ```
 
-or:
+So `heartbeat` (all lowercase) is the module and `Heartbeat` (with capital) is the namespace where all heartbeat typings live.
+
+Obviously you don't have to use typescript and you can use in your plain javascript projects as well.
+
+Another example if you don't want to use async await and prefer to keep using the name `sequencer` instead of `heartbeat`:
 
 ```javascript
-import sequencer from 'heartbeat-sequencer';
+import { heartbeat as sequencer } from 'heartbeat-sequencer';
 
 sequencer
 .ready()
@@ -105,9 +97,7 @@ const init = () => {
   });
 }
 
-
 ```
-
 
 #### key features
 
