@@ -1,6 +1,23 @@
 heartbeat
 =========
 
+#### important update 19/12/2020
+
+This repository will no longer be maintained here as heartbeat is now part of [WebDAW modules](https://github.com/abudaan/webdaw-modules). You can still use heartbeat but you have to import it to your project like so:
+
+```typescript
+import { heartbeat, Heartbeat } from 'webdaw-modules';
+
+heartbeat.ready().then(() => {
+  const song: Heartbeat.Song = heartbeat.createSong();
+});
+```
+So `heartbeat` (all lowercase) is the module and `Heartbeat` (with capital) is the namespace where all heartbeat typings live.
+
+Obviously you don't have to use typescript and you can use in your plain javascript projects as well.
+
+
+#### introduction
 
 Heartbeat is a MIDI/Audio sequencer for your browser. Heartbeat has no GUI. It is intended to be used as an engine behind your application. Heartbeat is set up very flexible so you can make any kind of application on top of it; a game, an online DAW, artistic sites, music science experiments and so on. [Read more](http://abudaan.github.io/heartbeat/docs).
 

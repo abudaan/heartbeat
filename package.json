@@ -26,7 +26,9 @@
     "url": "https://github.com/abudaan/heartbeat/issues"
   },
   "homepage": "https://github.com/abudaan/heartbeat/blob/npm/README.md",
-  "dependencies": {},
+  "dependencies": {
+    "@types/webmidi": "^2.0.4"
+  },
   "devDependencies": {
     "tsc-watch": "^4.0.0",
     "tslint": "^5.20.0",
